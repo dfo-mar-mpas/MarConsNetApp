@@ -1,39 +1,32 @@
 library(shiny)
-library(shinyjs)
 
+# Define the UI
 ui <- fluidPage(
-  useShinyjs(),  # Initialize shinyjs
-  uiOutput("pageContent")
+  titlePanel("Shiny App with Side Panel Buttons"),
+  sidebarLayout(
+    sidebarPanel(
+      # First fluidRow with two action buttons
+      fluidRow(
+        column(6, actionButton("button1", "Button 1")),
+        column(6, actionButton("button2", "Button 2"))
+      ),
+      # Second fluidRow with two action buttons
+      fluidRow(
+        column(6, actionButton("button3", "Button 3")),
+        column(6, actionButton("button4", "Button 4"))
+      )
+    ),
+    mainPanel(
+      # Any other content for the main panel
+      h3("Main Panel Content")
+    )
+  )
 )
 
-server <- function(input, output, session) {
-  current_page <- reactiveVal("home")
-
-  observeEvent(input$go_to_page2, {
-    current_page("page2")
-  })
-
-  observeEvent(input$go_to_home, {
-    current_page("home")
-  })
-
-  output$pageContent <- renderUI({
-    if (current_page() == "home") {
-      fluidRow(
-        column(12,
-               h1("Welcome to the Home Page"),
-               actionButton("go_to_page2", "Go to Page 2")
-        )
-      )
-    } else if (current_page() == "page2") {
-      fluidRow(
-        column(12,
-               h1("Welcome to Page 2"),
-               actionButton("go_to_home", "Go to Home")
-        )
-      )
-    }
-  })
+# Define the server logic
+server <- function(input, output) {
+  # You can define server logic here if needed
 }
 
+# Run the application
 shinyApp(ui = ui, server = server)
