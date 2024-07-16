@@ -20,6 +20,8 @@ om <- getData(type="om", age=3000, cookie="cookie")
 areas <- c("stAnnsBank", "musquash", "laurentianChannel", "gully", "gilbert", "eastport",
            "basinHead", "bancsDesAmericains")
 
+# Step 1: Halle
+
 objectives <- lapply(areas, function(x) data_objectives(type="site", area=x))
 Objectives <- vector(mode="list", length(objectives))
 for (i in seq_along(objectives)) {
@@ -31,7 +33,6 @@ for (i in seq_along(objectives)) {
 }
 Objectives <- lapply(Objectives, unlist)
 names(Objectives) <- areas
-
 
 
 # Theme
@@ -71,6 +72,7 @@ ui <- fluidPage(
       ),
       uiOutput("go_home")
       ),
+    # Step 3: Halle
     mainPanel(leafletOutput("map"),
               fluidRow(column(6, align="left", uiOutput("networkObjectiveText")),
                        column(6, align="right", uiOutput("siteObjectiveText"))),
@@ -184,6 +186,8 @@ output$report <- renderUI({
       }
     }
   })
+
+  # Step 2: Halle
 
   output$objectives <- renderText({
     if (current_page() == "home" && !(is.null(input$mpas))) {
