@@ -14,7 +14,12 @@ subarea_coords <- getLatLon(MPAs)
 load(file.path(system.file(package="MarConsNetData"),"data", "dataTable.rda"))
 
 # 3. dataSPA om data
+
+if (exists("om")) {
+om <- om
+} else {
 om <- getData(type="om", age=3000, cookie="cookie")
+}
 
 # 4. Objectives
 areas <- c("stAnnsBank", "musquash", "laurentianChannel", "gully", "gilbert", "eastport",
@@ -33,6 +38,12 @@ for (i in seq_along(objectives)) {
 }
 Objectives <- lapply(Objectives, unlist)
 names(Objectives) <- areas
+
+networkObjectives <- data_objectives(type="network")
+for (i in seq_along(networkObjectives)) {
+  networkObjectives[i] <- newLine(networkObjectives[i])
+}
+
 
 
 # Theme
@@ -76,11 +87,11 @@ ui <- fluidPage(
     mainPanel(leafletOutput("map"),
               fluidRow(column(6, align="left", uiOutput("networkObjectiveText")),
                        column(6, align="right", uiOutput("siteObjectiveText"))),
+
               #fluidRow(column(width=6, offset=6, uiOutput("siteObjectiveText"))),
-              fluidRow(column(width=6, offset=6, textOutput("objectives", container=pre)))
+              fluidRow(column(width=6, align="left", textOutput("nobjectives", container=pre)),
+                       column(width=6, align="right", textOutput("objectives", container=pre)))
               ) #MAIN
-
-
   )
 )
 
@@ -199,6 +210,12 @@ output$report <- renderUI({
        }
     }
   })
+
+  output$nobjectives <- renderText({
+    if (current_page() == "home" && !(is.null(input$mpas))) {
+      networkObjectives
+    }
+})
 
   # Render the map with selected coordinates
   output$map <- renderLeaflet({
