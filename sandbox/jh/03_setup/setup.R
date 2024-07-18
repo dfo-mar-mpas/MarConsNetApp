@@ -13,5 +13,4 @@ load_all("../dataSPA")
 source("R/getLatLon.R")
 source("R/newLine.R")
 # Define a cookie. This tells R that you have the credentials to look at the project planning tool
-cookie <- "csrftoken=hallestoken; sessionid=hallesid"
 om <- dataSPA::getData(type="om", age=0, cookie=cookie, keep=TRUE, path="../Github") # Gets O&M information from PPT and saves it in your GitHub repository

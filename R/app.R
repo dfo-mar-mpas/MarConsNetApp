@@ -39,12 +39,6 @@ for (i in seq_along(objectives)) {
 Objectives <- lapply(Objectives, unlist)
 names(Objectives) <- areas
 
-networkObjectives <- data_objectives(type="network")
-for (i in seq_along(networkObjectives)) {
-  networkObjectives[i] <- newLine(networkObjectives[i])
-}
-
-
 
 # Theme
 my_theme <- bslib::bs_theme(
@@ -89,8 +83,8 @@ ui <- fluidPage(
                        column(6, align="right", uiOutput("siteObjectiveText"))),
 
               #fluidRow(column(width=6, offset=6, uiOutput("siteObjectiveText"))),
-              fluidRow(column(width=6, align="left", textOutput("nobjectives", container=pre)),
-                       column(width=6, align="right", textOutput("objectives", container=pre)))
+              fluidRow(
+                       column(width=6, offset=6, textOutput("objectives", container=pre)))
               ) #MAIN
   )
 )
@@ -210,12 +204,6 @@ output$report <- renderUI({
        }
     }
   })
-
-  output$nobjectives <- renderText({
-    if (current_page() == "home" && !(is.null(input$mpas))) {
-      networkObjectives
-    }
-})
 
   # Render the map with selected coordinates
   output$map <- renderLeaflet({
