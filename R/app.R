@@ -3,7 +3,7 @@ library(leaflet)
 library(dplyr)
 library(sf)
 library(shinyjs)
-
+library(viridis)
 
 # Getting the data
 # 1. MPAs
@@ -24,8 +24,6 @@ om <- getData(type="om", age=3000, cookie="cookie")
 # 4. Objectives
 areas <- c("stAnnsBank", "musquash", "laurentianChannel", "gully", "gilbert", "eastport",
            "basinHead", "bancsDesAmericains")
-
-# Step 1: Halle
 
 objectives <- lapply(areas, function(x) data_objectives(type="site", area=x))
 Objectives <- vector(mode="list", length(objectives))
@@ -52,6 +50,18 @@ for (i in seq_along(Nobjectives)) {
 
 }
 N_Objectives <- unlist(N_Objectives)
+
+
+# 5. Project Data
+projectData <- NULL
+for (i in seq_along(dataTable$id)) {
+  message("i = ", i)
+  pd <- get_project_data(ids=projectIds[i], taxize=FALSE)
+  projectData[[i]] <- pd
+}
+
+names(projectData) <- dataTable$id
+
 
 # Theme
 my_theme <- bslib::bs_theme(
@@ -232,6 +242,7 @@ output$report <- renderUI({
 
   # Render the map with selected coordinates
   output$map <- renderLeaflet({
+    palette <- viridis(length(input$projects))
     if (current_page() == "home") {
     if (!(is.null(input$mpas))) {
     coords <- subarea_coords[[input$mpas]]
@@ -256,16 +267,22 @@ output$report <- renderUI({
 
 
     # NOTE THIS ALL WORKS BUT MUST FIX GET_PROJECT_DATA FIRST JAIM
-    # if (!(is.null(input$projects))) {
-    #   projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
-    #   projectData <- NULL
-    #   for (i in seq_along(projectIds)) {
-    #     pd <- get_project_data(ids=projectIds[i], taxize=FALSE)
-    #     projectData[[i]] <- pd
-    #     map <- map %>%
-    #       addCircleMarkers(pd[[i]]$lon, pd[[i]]$lat)
-    #   }
-    # }
+    if (!(is.null(input$projects))) {
+      projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+      for (i in seq_along(projectIds)) {
+        pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
+        map <- map %>%
+          addCircleMarkers(pd[[1]]$lon, pd[[1]]$lat, radius=3, color=palette[i])
+      }
+
+      map <- map %>%
+        addLegend(
+        "bottomright",
+        colors = palette,
+        labels = input$projects,
+        opacity = 1
+      )
+    }
 
     map
     }
