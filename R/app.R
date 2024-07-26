@@ -4,10 +4,12 @@ library(dplyr)
 library(sf)
 library(shinyjs)
 library(viridis)
+library(dataSPA)
+library(arcpullr)
 
 # Getting the data
 # 1. MPAs
-MPAs <- data_CPCAD_areas(data_bioregion(),  zones = FALSE)
+MPAs <- data_CPCAD_areas(data_bioregion(),  zones = TRUE)
 subarea_coords <- getLatLon(MPAs)
 
 # 2. Project Titles
@@ -56,12 +58,11 @@ N_Objectives <- unlist(N_Objectives)
 projectData <- NULL
 for (i in seq_along(dataTable$id)) {
   message("i = ", i)
-  pd <- get_project_data(ids=projectIds[i], taxize=FALSE)
+  pd <- get_project_data(ids=dataTable$id[i], taxize=FALSE)
   projectData[[i]] <- pd
 }
 
 names(projectData) <- dataTable$id
-
 
 # Theme
 my_theme <- bslib::bs_theme(
@@ -88,15 +89,9 @@ ui <- fluidPage(
       uiOutput("functionalGroup"),
       uiOutput("section"),
       uiOutput("division"),
-      uiOutput("international"),
       uiOutput("report"),
       fluidRow(
-        column(6, uiOutput("go_page2")),
-        column(6, uiOutput("go_page3"))
-      ),
-      fluidRow(
-        column(6, uiOutput("go_page4")),
-        column(6, uiOutput("go_page5"))
+        column(6, uiOutput("go_page2"))
       ),
       uiOutput("go_home")
       ),
@@ -172,12 +167,6 @@ output$report <- renderUI({
   }
 })
 
-  output$international <- renderUI({
-    if (current_page() == "home") {
-      h3("Ecosystem Based Management")
-    }
-  })
-
 
   output$go_page2 <- renderUI({
     if (current_page()=="home") {
@@ -185,23 +174,6 @@ output$report <- renderUI({
     }
   })
 
-  output$go_page3 <- renderUI({
-    if (current_page()=="home") {
-      actionButton("go_page3", "Productivity")
-    }
-  })
-
-  output$go_page4 <- renderUI({
-    if (current_page()=="home") {
-      actionButton("go_page4", "Habitat")
-    }
-  })
-
-  output$go_page5 <- renderUI({
-    if (current_page()=="home") {
-      actionButton("go_page5", "Threats")
-    }
-  })
 
   output$networkObjectiveText <- renderUI({
     if (current_page() == "home" && !(is.null(input$mpas))) {
@@ -266,7 +238,6 @@ output$report <- renderUI({
     }
 
 
-    # NOTE THIS ALL WORKS BUT MUST FIX GET_PROJECT_DATA FIRST JAIM
     if (!(is.null(input$projects))) {
       projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
       for (i in seq_along(projectIds)) {
@@ -307,20 +278,6 @@ output$report <- renderUI({
     }
   })
 
-  ## PAGE 3
-  observeEvent(input$go_page3, {
-    current_page("page3")
-  })
-
-  ## PAGE 4
-  observeEvent(input$go_page4, {
-    current_page("page4")
-  })
-
-  ## PAGE 5
-  observeEvent(input$go_page5, {
-    current_page("page5")
-  })
 
 
 }
