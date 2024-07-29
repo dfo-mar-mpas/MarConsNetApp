@@ -9,7 +9,7 @@ library(arcpullr)
 
 # Getting the data
 # 1. MPAs
-MPAs <- data_CPCAD_areas(data_bioregion(),  zones = TRUE)
+MPAs <- data_CPCAD_areas(data_bioregion(),  zones = FALSE)
 subarea_coords <- getLatLon(MPAs)
 
 # 2. Project Titles
@@ -167,13 +167,11 @@ output$report <- renderUI({
   }
 })
 
-
   output$go_page2 <- renderUI({
     if (current_page()=="home") {
       actionButton("go_page2", "Biodiversity")
     }
   })
-
 
   output$networkObjectiveText <- renderUI({
     if (current_page() == "home" && !(is.null(input$mpas))) {
@@ -277,8 +275,6 @@ output$report <- renderUI({
       actionButton("go_home", "Home")
     }
   })
-
-
 
 }
 
