@@ -5,8 +5,6 @@ objectives <- c("Objective1", "Objective2")
 
 # Define UI
 ui <- fluidPage(
-  titlePanel("Objectives as Links"),
-
   # CSS to hide the tab headers
   tags$style(HTML("
     .nav-tabs { display: none; }

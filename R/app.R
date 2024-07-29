@@ -95,7 +95,6 @@ ui <- fluidPage(
       ),
       uiOutput("go_home")
       ),
-    # Step 3: Halle
     mainPanel(leafletOutput("map"),
               fluidRow(column(6, align="left", uiOutput("networkObjectiveText")),
                        column(6, align="right", uiOutput("siteObjectiveText"))),
@@ -189,8 +188,6 @@ output$report <- renderUI({
       }
     }
   })
-
-  # Step 2: Halle
 
   output$objectives <- renderText({
     if (current_page() == "home" && !(is.null(input$mpas))) {
