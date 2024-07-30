@@ -12,7 +12,11 @@ source("data_app.R")
 ui <- fluidPage(
   useShinyjs(),
   titlePanel("Maritimes Conservation Network App"),
-  theme = my_theme,
+  #theme = my_theme,
+  # Makes the tabs hide
+  tags$style(HTML("
+    .nav-tabs { display: none; }
+  ")),
   sidebarLayout(
     sidebarPanel(
       uiOutput("mpas"),
@@ -28,14 +32,16 @@ ui <- fluidPage(
       ),
       uiOutput("go_home")
       ),
-    mainPanel(leafletOutput("map"),
+    mainPanel(
+      uiOutput('mytabs'),
+              leafletOutput("map"),
               fluidRow(column(6, align="left", uiOutput("networkObjectiveText")),
                        column(6, align="right", uiOutput("siteObjectiveText"))),
 
               #fluidRow(column(width=6, offset=6, uiOutput("siteObjectiveText"))),
               fluidRow(
                 column(width=6, align="left", textOutput("network", container=pre)),
-                       column(width=6, textOutput("objectives", container=pre))
+                       column(width=6, uiOutput("objectives", container=pre))
 
 
                        )#FLUID
@@ -47,6 +53,13 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
+  output$mytabs = renderUI({
+    nTabs = length(do.call(c,Objectives))
+    myTabs = lapply(paste('Tab', 1: nTabs), tabPanel)
+    do.call(tabsetPanel, myTabs)
+  })
+
+
   current_page <- reactiveVal("home")
 
   ## PAGE 1 (HOME)
@@ -122,13 +135,15 @@ output$report <- renderUI({
     }
   })
 
-  output$objectives <- renderText({
+  output$objectives <- renderUI({
     if (current_page() == "home" && !(is.null(input$mpas))) {
        string <- gsub("\\.", "", gsub(" ", "", input$mpas))
        keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
        if (!(length(keepO) == 0)) {
        textO <- Objectives[[keepO]]
-       return(textO)
+       links <- lapply(textO, function(obj) {
+         actionLink(inputId = obj, label = obj)
+       })
        }
     }
   })
@@ -167,12 +182,12 @@ output$report <- renderUI({
 
 
      if (!(is.null(input$projects))) {
-    #   projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
-    #   for (i in seq_along(projectIds)) {
-    #     pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
-    #     map <- map %>%
-    #       addCircleMarkers(pd[[1]]$lon, pd[[1]]$lat, radius=3, color=palette[i])
-    #   }
+      # projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+      # for (i in seq_along(projectIds)) {
+      #   pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
+      #   map <- map %>%
+      #     addCircleMarkers(pd[[1]]$lon, pd[[1]]$lat, radius=3, color=palette[i])
+      # }
 
       map <- map %>%
         addLegend(

@@ -7,7 +7,6 @@ library(viridis)
 library(dataSPA)
 library(arcpullr)
 
-# Getting the data
 # 1. MPAs
 MPAs <- data_CPCAD_areas(data_bioregion(),  zones = FALSE)
 subarea_coords <- getLatLon(MPAs)
@@ -16,7 +15,6 @@ subarea_coords <- getLatLon(MPAs)
 load(file.path(system.file(package="MarConsNetData"),"data", "dataTable.rda"))
 
 # 3. dataSPA om data
-
 if (exists("om")) {
   om <- om
 } else {
@@ -64,7 +62,7 @@ N_Objectives <- unlist(N_Objectives)
 #
 # names(projectData) <- dataTable$id
 
-# Theme
+# 6. Theme
 my_theme <- bslib::bs_theme(
   bg = "#ecf0f1",
   # Light grey text
@@ -74,3 +72,6 @@ my_theme <- bslib::bs_theme(
   # Blue primary color for buttons
   primary_hover = "#3498db" # Lighter blue on hover for buttons
 )
+
+# 7. Indicators
+
