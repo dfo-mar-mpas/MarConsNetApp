@@ -55,14 +55,14 @@ N_Objectives <- unlist(N_Objectives)
 
 
 # 5. Project Data
-projectData <- NULL
-for (i in seq_along(dataTable$id)) {
-  message("i = ", i)
-  pd <- get_project_data(ids=dataTable$id[i], taxize=FALSE)
-  projectData[[i]] <- pd
-}
-
-names(projectData) <- dataTable$id
+# projectData <- NULL
+# for (i in seq_along(dataTable$id)) {
+#   message("i = ", i)
+#   pd <- get_project_data(ids=dataTable$id[i], taxize=FALSE)
+#   projectData[[i]] <- pd
+# }
+#
+# names(projectData) <- dataTable$id
 
 # Theme
 my_theme <- bslib::bs_theme(
@@ -233,13 +233,13 @@ output$report <- renderUI({
     }
 
 
-    if (!(is.null(input$projects))) {
-      projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
-      for (i in seq_along(projectIds)) {
-        pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
-        map <- map %>%
-          addCircleMarkers(pd[[1]]$lon, pd[[1]]$lat, radius=3, color=palette[i])
-      }
+     if (!(is.null(input$projects))) {
+    #   projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+    #   for (i in seq_along(projectIds)) {
+    #     pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
+    #     map <- map %>%
+    #       addCircleMarkers(pd[[1]]$lon, pd[[1]]$lat, radius=3, color=palette[i])
+    #   }
 
       map <- map %>%
         addLegend(
