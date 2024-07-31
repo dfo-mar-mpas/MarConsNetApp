@@ -13,7 +13,7 @@ ui <- fluidPage(
   useShinyjs(),
   titlePanel("Maritimes Conservation Network App"),
   #theme = my_theme,
-  # Makes the tabs hide
+  #Makes the tabs hide
   tags$style(HTML("
     .nav-tabs { display: none; }
   ")),
@@ -55,7 +55,8 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   output$mytabs = renderUI({
     nTabs = length(do.call(c,Objectives))
-    myTabs = lapply(paste('Tab', 1: nTabs), tabPanel)
+    myTabs = lapply(paste('tab_', 1: nTabs), tabPanel)
+    #browser()
     do.call(tabsetPanel, myTabs)
   })
 
@@ -141,12 +142,20 @@ output$report <- renderUI({
        keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
        if (!(length(keepO) == 0)) {
        textO <- Objectives[[keepO]]
-       links <- lapply(textO, function(obj) {
-         actionLink(inputId = obj, label = obj)
+       links <- lapply(seq_along(textO), function(i) {
+         actionLink(inputId = odf$link[which(odf$objectives == textO[[1]])], label = textO[[i]])
        })
        }
     }
   })
+
+  # TEST JAIM
+  # observeEvent(input$link_13, {
+  #   browser()
+  #   updateTabsetPanel(session, "mytabs", selected = odf$tab[which(odf$link == "link_13")])
+  # })
+  #TEST
+
 
   output$network <- renderText({
     if (current_page() == "home" && !(is.null(input$mpas))) {

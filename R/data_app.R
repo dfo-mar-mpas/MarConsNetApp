@@ -37,6 +37,12 @@ for (i in seq_along(objectives)) {
 Objectives <- lapply(Objectives, unlist)
 names(Objectives) <- areas
 
+odf <- data.frame(
+  objectives = do.call(c,unname(Objectives))
+)
+odf$tab <- paste0("tab_", 1:length(odf$objectives))
+odf$link <- paste0("link_", 1:length(odf$objectives))
+
 
 # Obtaining network objectives
 
@@ -50,6 +56,7 @@ for (i in seq_along(Nobjectives)) {
 
 }
 N_Objectives <- unlist(N_Objectives)
+
 
 
 # 5. Project Data
@@ -74,4 +81,8 @@ my_theme <- bslib::bs_theme(
 )
 
 # 7. Indicators
+indicators <- data_indicators()
+
+
+
 
