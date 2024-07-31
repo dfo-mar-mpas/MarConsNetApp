@@ -26,11 +26,7 @@ ui <- fluidPage(
       uiOutput("functionalGroup"),
       uiOutput("section"),
       uiOutput("division"),
-      uiOutput("report"),
-      fluidRow(
-        column(6, uiOutput("go_page2"))
-      ),
-      uiOutput("go_home")
+      uiOutput("report")
       ),
     mainPanel(
       uiOutput('mytabs'),
@@ -42,9 +38,8 @@ ui <- fluidPage(
               fluidRow(
                 column(width=6, align="left", textOutput("network", container=pre)),
                        column(width=6, uiOutput("objectives", container=pre))
-
-
-                       )#FLUID
+                       ),#FLUID,
+      uiOutput("indicatorText")
 
               ) #MAIN
   )
@@ -55,79 +50,80 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   output$mytabs = renderUI({
     nTabs = length(do.call(c,Objectives))
-    myTabs = lapply(paste('tab_', 1: nTabs), tabPanel)
-    #browser()
-    do.call(tabsetPanel, myTabs)
+    myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
+    do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
-
-
-  current_page <- reactiveVal("home")
 
   ## PAGE 1 (HOME)
 
   output$mpas <- renderUI({
-    if (current_page() == "home") {
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
     selectInput("mpas","Select Protected/Conserved Area:",choices = c("All", MPAs$NAME_E))
     }
   })
 
   output$projects <- renderUI({
-    if (current_page() == "home") {
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
     selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE)
     }
   })
 
   output$fundingSource <- renderUI({
-    if (current_page() == "home") {
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
       selectInput("fundingSource", "Select Funding Source(s):", choices=unique(om$funding_source_display), multiple=TRUE)
     }
   })
 
 output$theme <- renderUI({
-  if (current_page() == "home") {
+  req(input$tabs)
+  if (input$tabs == "tab_0") {
     selectInput("theme", "Select Theme(s):", choices=unique(om$theme), multiple=TRUE)
   }
 })
 
 output$functionalGroup <- renderUI({
-  if (current_page() == "home") {
+  req(input$tabs)
+  if (input$tabs == "tab_0") {
     selectInput("functionalGroup", "Select Functional Group(s):", choices=unique(om$functional_group), multiple=TRUE)
   }
 })
 
 output$section <- renderUI({
-  if (current_page() == "home") {
+  req(input$tabs)
+  if (input$tabs == "tab_0") {
     selectInput("section", "Select Section(s):", choices=subsetSPA(om=om, section="return"), multiple=TRUE)
   }
 })
 
 output$division <- renderUI({
-  if (current_page() == "home") {
+  req(input$tabs)
+  if (input$tabs == "tab_0") {
     selectInput("division", "Select Division(s):", choices=subsetSPA(om=om, division="return"), multiple=TRUE)
   }
 })
 
 output$report <- renderUI({
-  if (current_page() == "home") {
+  req(input$tabs)
+  if (input$tabs == "tab_0") {
     actionButton("report", "Create Report")
   }
 })
 
-  output$go_page2 <- renderUI({
-    if (current_page()=="home") {
-      actionButton("go_page2", "Biodiversity")
-    }
-  })
 
   output$networkObjectiveText <- renderUI({
-    if (current_page() == "home" && !(is.null(input$mpas))) {
+    req(input$tabs)
+    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
       tags$b("Network Level Objectives")
     }
   })
 
 
   output$siteObjectiveText <- renderUI({
-    if (current_page() == "home" && !(is.null(input$mpas))) {
+    req(input$tabs)
+    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
       string <- gsub("\\.", "", gsub(" ", "", input$mpas))
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
@@ -137,28 +133,51 @@ output$report <- renderUI({
   })
 
   output$objectives <- renderUI({
-    if (current_page() == "home" && !(is.null(input$mpas))) {
+    req(input$tabs)
+    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
        string <- gsub("\\.", "", gsub(" ", "", input$mpas))
        keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
        if (!(length(keepO) == 0)) {
        textO <- Objectives[[keepO]]
        links <- lapply(seq_along(textO), function(i) {
-         actionLink(inputId = odf$link[which(odf$objectives == textO[[1]])], label = textO[[i]])
+         actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]])
        })
        }
     }
   })
 
   # TEST JAIM
-  # observeEvent(input$link_13, {
-  #   browser()
-  #   updateTabsetPanel(session, "mytabs", selected = odf$tab[which(odf$link == "link_13")])
-  # })
+  # Dynmaically coding in which actionLink is selected will update the tab
+  for (i in 0:(length(odf$objectives)-1)) {
+    local({
+      link_id <- paste0("link_", i)
+      observeEvent(input[[link_id]], {
+        selected_tab <- odf$tab[which(odf$link == link_id)]
+        updateTabsetPanel(session, "tabs", selected = selected_tab)
+      })
+    })
+  }
+
+  # Dynmaically coding in which actionLink is will paste indicators
+
+  output$indicatorText <- renderText({
+    req(input$tabs)
+    req(input$mpas)
+    for (i in 0:(length(odf$objectives)-1)) {
+      link_id <- paste0("link_", i)
+      if (input$tabs == paste0("tab_", i)) {
+        if (!(input$tabs == "tab_0"))
+        return(paste0(odf$objectives[which(odf$link == link_id)], " indicators will go here"))
+      }
+    }
+  })
+
   #TEST
 
 
   output$network <- renderText({
-    if (current_page() == "home" && !(is.null(input$mpas))) {
+    req(input$tabs)
+    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
       N_Objectives
       }
   })
@@ -166,8 +185,9 @@ output$report <- renderUI({
 
   # Render the map with selected coordinates
   output$map <- renderLeaflet({
+    req(input$tabs)
     palette <- viridis(length(input$projects))
-    if (current_page() == "home") {
+    if (input$tabs == "tab_0") {
     if (!(is.null(input$mpas))) {
     coords <- subarea_coords[[input$mpas]]
     map <- leaflet() %>%
@@ -211,25 +231,6 @@ output$report <- renderUI({
     }
   }
   })
-
-
-
-
-  ## PAGE 2
-  observeEvent(input$go_page2, {
-    current_page("page2")
-  })
-
-  observeEvent(input$go_home, {
-    current_page("home")
-  })
-
-  output$go_home <- renderUI({
-    if (!(current_page()=="home")) {
-      actionButton("go_home", "Home")
-    }
-  })
-
 }
 
 # Run the application

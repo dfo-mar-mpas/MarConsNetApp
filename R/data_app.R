@@ -38,10 +38,10 @@ Objectives <- lapply(Objectives, unlist)
 names(Objectives) <- areas
 
 odf <- data.frame(
-  objectives = do.call(c,unname(Objectives))
+  objectives = c(0, do.call(c,unname(Objectives)))
 )
-odf$tab <- paste0("tab_", 1:length(odf$objectives))
-odf$link <- paste0("link_", 1:length(odf$objectives))
+odf$tab <- c("tab_0", paste0("tab_", 1:(length(odf$objectives)-1)))
+odf$link <- c("link_0", paste0("link_", 1:(length(odf$objectives)-1)))
 
 
 # Obtaining network objectives
