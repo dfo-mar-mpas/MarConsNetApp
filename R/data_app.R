@@ -1,8 +1,8 @@
-library(shiny)
+
 library(leaflet)
 library(dplyr)
 library(sf)
-library(shinyjs)
+
 library(viridis)
 library(dataSPA)
 library(arcpullr)
@@ -84,5 +84,6 @@ my_theme <- bslib::bs_theme(
 indicators <- data_indicators()
 
 
-
+# 8. Context
+Context <- lapply(areas, function(x) data_context(type="site", area=x))
 

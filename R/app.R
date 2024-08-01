@@ -12,6 +12,7 @@ source("data_app.R")
 ui <- fluidPage(
   useShinyjs(),
   titlePanel("Maritimes Conservation Network App"),
+  uiOutput("contextButton"),
   #theme = my_theme,
   #Makes the tabs hide
   tags$style(HTML("
@@ -144,6 +145,28 @@ output$report <- renderUI({
        })
        }
     }
+  })
+
+
+  output$contextButton <- renderUI({
+    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
+      string <- gsub("\\.", "", gsub(" ", "", input$mpas))
+      keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
+      if (!(length(keepO) == 0)) {
+        actionButton(inputId="contextButton", label="Context")
+      }
+    }
+  })
+
+  observeEvent(input$contextButton, {
+    string <- gsub("\\.", "", gsub(" ", "", input$mpas))
+    keepC <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
+    textC <- Context[[keepC]]
+    textC <- unlist(lapply(textC, function(x) paste(x, "\n\n")))
+    showModal(modalDialog(
+      title = "Marine Protected Area Context",
+      HTML(textC)
+    ))
   })
 
   # TEST JAIM
