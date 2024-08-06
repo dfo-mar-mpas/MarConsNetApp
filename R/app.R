@@ -169,7 +169,6 @@ output$report <- renderUI({
     ))
   })
 
-  # TEST JAIM
   # Dynmaically coding in which actionLink is selected will update the tab
   for (i in 0:(length(odf$objectives)-1)) {
     local({
@@ -194,8 +193,6 @@ output$report <- renderUI({
       }
     }
   })
-
-  #TEST
 
 
   output$network <- renderText({
@@ -233,13 +230,13 @@ output$report <- renderUI({
     }
 
 
-     # if (!(is.null(input$projects))) {
-     #  projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
-     #  for (i in seq_along(projectIds)) {
-     #    pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
-     #    map <- map %>%
-     #      addCircleMarkers(pd[[1]]$lon, pd[[1]]$lat, radius=3, color=palette[i])
-     #  }
+     if (!(is.null(input$projects))) {
+      # projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+      # for (i in seq_along(projectIds)) {
+      #   pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
+      #   map <- map %>%
+      #     addCircleMarkers(pd[[1]]$lon, pd[[1]]$lat, radius=3, color=palette[i])
+      # }
 
       map <- map %>%
         addLegend(
