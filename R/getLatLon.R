@@ -12,7 +12,6 @@ getLatLon <- function(sf=NULL) {
     for (i in seq_along(sf$SiteName_E)) {
       multipolygon[[i]] <- sf$geoms[i][[1]]
     }
-
   }
 
   # Convert to sfc object
