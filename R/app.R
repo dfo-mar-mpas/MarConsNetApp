@@ -13,6 +13,7 @@ ui <- fluidPage(
   useShinyjs(),
   titlePanel("Maritimes Conservation Network App"),
   uiOutput("contextButton"),
+  uiOutput("gohome"),
   #theme = my_theme,
   #Makes the tabs hide
   tags$style(HTML("
@@ -192,6 +193,18 @@ output$report <- renderUI({
         return(paste0(odf$objectives[which(odf$link == link_id)], " indicators will go here"))
       }
     }
+  })
+
+  output$gohome <- renderUI({
+    req(input$tabs)
+    req(input$mpas)
+    if (!(input$tabs == "tab_0")) {
+      actionButton(inputId = "gohome", "Go Home")
+    }
+  })
+
+  observeEvent(input$gohome, {
+    updateTabsetPanel(session, "tabs", selected = "tab_0")
   })
 
 
