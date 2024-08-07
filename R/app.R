@@ -46,6 +46,16 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
+#
+#   state <- reactiveValues(
+#     text1 = NULL,
+#     text2 = NULL
+#   )
+
+
+
+
+
   output$mytabs = renderUI({
     nTabs = length(unique(odf$flower_plot))
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)

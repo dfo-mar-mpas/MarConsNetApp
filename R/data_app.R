@@ -100,7 +100,6 @@ get_first_four_words <- function(texts) {
 }
 
 for (i in seq_along(odf$objectives)) {
-  message("i = ", i)
   ob <- gsub("[-\n]", "", odf$objectives[i])
   if (!(odf$objectives[i] == "0")) {
     keep <- which(tolower(get_first_four_words(fp$label_Objective)) == tolower(get_first_four_words(ob)[[1]]))
