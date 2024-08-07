@@ -31,27 +31,23 @@ ui <- fluidPage(
       uiOutput("report")
       ),
     mainPanel(
+      uiOutput("indicatorText"),
       uiOutput('mytabs'),
               leafletOutput("map"),
               fluidRow(column(6, align="left", uiOutput("networkObjectiveText")),
                        column(6, align="right", uiOutput("siteObjectiveText"))),
-
-              #fluidRow(column(width=6, offset=6, uiOutput("siteObjectiveText"))),
               fluidRow(
                 column(width=6, align="left", textOutput("network", container=pre)),
                        column(width=6, uiOutput("objectives", container=pre))
-                       ),#FLUID,
-      uiOutput("indicatorText")
-
+                       )
               ) #MAIN
   )
 )
 
-
 # Define server logic
 server <- function(input, output, session) {
   output$mytabs = renderUI({
-    nTabs = length(do.call(c,Objectives))
+    nTabs = length(unique(odf$flower_plot))
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
@@ -171,11 +167,11 @@ output$report <- renderUI({
   })
 
   # Dynmaically coding in which actionLink is selected will update the tab
-  for (i in 0:(length(odf$objectives)-1)) {
+  for (i in 0:(length(unique(odf$tab))-1)) {
     local({
       link_id <- paste0("link_", i)
       observeEvent(input[[link_id]], {
-        selected_tab <- odf$tab[which(odf$link == link_id)]
+        selected_tab <- unique(odf$tab[which(odf$link == link_id)])
         updateTabsetPanel(session, "tabs", selected = selected_tab)
       })
     })
@@ -190,7 +186,7 @@ output$report <- renderUI({
       link_id <- paste0("link_", i)
       if (input$tabs == paste0("tab_", i)) {
         if (!(input$tabs == "tab_0"))
-        return(paste0(odf$objectives[which(odf$link == link_id)], " indicators will go here"))
+        return(paste0(unique(odf$flower_plot[which(odf$link == link_id)])))
       }
     }
   })

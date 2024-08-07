@@ -1,4 +1,3 @@
-
 library(leaflet)
 library(dplyr)
 library(sf)
@@ -8,7 +7,7 @@ library(dataSPA)
 library(arcpullr)
 
 # 1. MPAs
-MPAs <- data_CPCAD_areas(data_bioregion(),  zones = FALSE)
+MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
 subarea_coords <- getLatLon(MPAs)
 
 # 2. Project Titles
@@ -22,8 +21,9 @@ if (exists("om")) {
 }
 
 # 4. Objectives
-areas <- c("stAnnsBank", "musquash", "laurentianChannel", "gully", "gilbert", "eastport",
-           "basinHead", "bancsDesAmericains")
+areas <- c("stAnnsBank", "musquash", "gully") # Only including Maritimes
+#areas <- c("stAnnsBank", "musquash", "laurentianChannel", "gully", "gilbert", "eastport",
+#           "basinHead", "bancsDesAmericains")
 
 objectives <- lapply(areas, function(x) data_objectives(type="site", area=x))
 Objectives <- vector(mode="list", length(objectives))
@@ -40,9 +40,6 @@ names(Objectives) <- areas
 odf <- data.frame(
   objectives = c(0, do.call(c,unname(Objectives)))
 )
-odf$tab <- c("tab_0", paste0("tab_", 1:(length(odf$objectives)-1)))
-odf$link <- c("link_0", paste0("link_", 1:(length(odf$objectives)-1)))
-
 
 # Obtaining network objectives
 
@@ -86,4 +83,47 @@ indicators <- data_indicators()
 
 # 8. Context
 Context <- lapply(areas, function(x) data_context(type="site", area=x))
+
+
+# 9. Flower plot site level CO to indicator bin
+# FIXME
+fp <- read.csv("../../MarConsNetAnalysis/sandbox/RD/metaframework.csv")
+
+# Link flower plot to odf
+odf$flower_plot <- 0
+get_first_four_words <- function(texts) {
+  lapply(texts, function(text) {
+    words <- strsplit(text, " ")[[1]] # Split each string into words
+    first_four_words <- paste(words[1:min(4, length(words))], collapse = " ") # Concatenate the first four words (or fewer if there are not enough words)
+    return(first_four_words)
+  })
+}
+
+for (i in seq_along(odf$objectives)) {
+  message("i = ", i)
+  ob <- gsub("[-\n]", "", odf$objectives[i])
+  if (!(odf$objectives[i] == "0")) {
+    keep <- which(tolower(get_first_four_words(fp$label_Objective)) == tolower(get_first_four_words(ob)[[1]]))
+    if (!(length(keep) == 0)) {
+    odf$flower_plot[i] <- fp$Flowerplot_connection[keep]
+    } else {
+      message("i is also wrong ", i)
+    }
+  } else {
+    odf$flower_plot[i] <- "flower_0"
+  }
+}
+
+odf$link <- 0
+odf$tab <- 0
+for (i in seq_along(odf$flower_plot)) {
+  if (!(odf$objectives[i] == "0")) {
+    L <- which(unique(odf$flower_plot) %in% odf$flower_plot[i])
+    odf$link[i] <- paste0("link_", L)
+    odf$tab[i] <- paste0("tab_", L)
+  } else {
+    odf$link[i] <- "link_0"
+    odf$tab[i] <- "tab_0"
+  }
+}
 
