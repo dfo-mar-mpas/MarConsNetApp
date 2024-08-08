@@ -46,13 +46,26 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
-#
-#   state <- reactiveValues(
-#     text1 = NULL,
-#     text2 = NULL
-#   )
+
+  state <- reactiveValues(
+    mpas = NULL,
+    projects = NULL,
+    fundingSource = NULL,
+    theme = NULL,
+    functionalGroup = NULL,
+    section = NULL,
+    division = NULL,
+    report = NULL
+  )
 
 
+  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report") # THE SAME AS STATE
+
+lapply(input_ids, function(id) {
+  observeEvent(input[[id]], {
+    state[[id]] <- input[[id]]
+  })
+})
 
 
 
@@ -62,54 +75,56 @@ server <- function(input, output, session) {
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
 
-  ## PAGE 1 (HOME)
+  # observeEvent(input$mpas, {
+  #   state$mpas <- input$mpas
+  # })
 
   output$mpas <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-    selectInput("mpas","Select Protected/Conserved Area:",choices = c("All", MPAs$NAME_E))
+    selectInput("mpas","Select Protected/Conserved Area:",choices = c("All", MPAs$NAME_E), selected=state$mpas)
     }
   })
 
   output$projects <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-    selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE)
+    selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE, selected=state$projects)
     }
   })
 
   output$fundingSource <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      selectInput("fundingSource", "Select Funding Source(s):", choices=unique(om$funding_source_display), multiple=TRUE)
+      selectInput("fundingSource", "Select Funding Source(s):", choices=unique(om$funding_source_display), multiple=TRUE, selected=state$fundingSource)
     }
   })
 
 output$theme <- renderUI({
   req(input$tabs)
   if (input$tabs == "tab_0") {
-    selectInput("theme", "Select Theme(s):", choices=unique(om$theme), multiple=TRUE)
+    selectInput("theme", "Select Theme(s):", choices=unique(om$theme), multiple=TRUE, selected=state$theme)
   }
 })
 
 output$functionalGroup <- renderUI({
   req(input$tabs)
   if (input$tabs == "tab_0") {
-    selectInput("functionalGroup", "Select Functional Group(s):", choices=unique(om$functional_group), multiple=TRUE)
+    selectInput("functionalGroup", "Select Functional Group(s):", choices=unique(om$functional_group), multiple=TRUE, selected=state$functionalGroup)
   }
 })
 
 output$section <- renderUI({
   req(input$tabs)
   if (input$tabs == "tab_0") {
-    selectInput("section", "Select Section(s):", choices=subsetSPA(om=om, section="return"), multiple=TRUE)
+    selectInput("section", "Select Section(s):", choices=subsetSPA(om=om, section="return"), multiple=TRUE, selected=state$section)
   }
 })
 
 output$division <- renderUI({
   req(input$tabs)
   if (input$tabs == "tab_0") {
-    selectInput("division", "Select Division(s):", choices=subsetSPA(om=om, division="return"), multiple=TRUE)
+    selectInput("division", "Select Division(s):", choices=subsetSPA(om=om, division="return"), multiple=TRUE, selected=state$division)
   }
 })
 
@@ -123,7 +138,7 @@ output$report <- renderUI({
 
   output$networkObjectiveText <- renderUI({
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       tags$b("Network Level Objectives")
     }
   })
@@ -131,8 +146,8 @@ output$report <- renderUI({
 
   output$siteObjectiveText <- renderUI({
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
-      string <- gsub("\\.", "", gsub(" ", "", input$mpas))
+    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+      string <- gsub("\\.", "", gsub(" ", "", state$mpas))
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
         tags$b("Site Level Objectives")
@@ -142,8 +157,8 @@ output$report <- renderUI({
 
   output$objectives <- renderUI({
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
-       string <- gsub("\\.", "", gsub(" ", "", input$mpas))
+    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+       string <- gsub("\\.", "", gsub(" ", "", state$mpas))
        keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
        if (!(length(keepO) == 0)) {
        textO <- Objectives[[keepO]]
@@ -156,8 +171,8 @@ output$report <- renderUI({
 
 
   output$contextButton <- renderUI({
-    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
-      string <- gsub("\\.", "", gsub(" ", "", input$mpas))
+    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+      string <- gsub("\\.", "", gsub(" ", "", state$mpas))
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
         actionButton(inputId="contextButton", label="Context")
@@ -191,7 +206,7 @@ output$report <- renderUI({
 
   output$indicatorText <- renderText({
     req(input$tabs)
-    req(input$mpas)
+    req(state$mpas)
     for (i in 0:(length(odf$objectives)-1)) {
       link_id <- paste0("link_", i)
       if (input$tabs == paste0("tab_", i)) {
@@ -203,7 +218,7 @@ output$report <- renderUI({
 
   output$gohome <- renderUI({
     req(input$tabs)
-    req(input$mpas)
+    req(state$mpas)
     if (!(input$tabs == "tab_0")) {
       actionButton(inputId = "gohome", "Go Home")
     }
@@ -216,7 +231,7 @@ output$report <- renderUI({
 
   output$network <- renderText({
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(input$mpas))) {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       N_Objectives
       }
   })
@@ -225,14 +240,15 @@ output$report <- renderUI({
   # Render the map with selected coordinates
   output$map <- renderLeaflet({
     req(input$tabs)
+    req(state$mpas)
     palette <- viridis(length(input$projects))
     if (input$tabs == "tab_0") {
-    if (!(is.null(input$mpas))) {
-    coords <- subarea_coords[[input$mpas]]
+    if (!(is.null(state$mpas))) {
+    coords <- subarea_coords[[state$mpas]]
     map <- leaflet() %>%
       addTiles()
 
-    if (!(is.null(input$mpas)) && !(input$mpas == "All")) {
+    if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
       map <- map %>% addPolygons(
         lng = coords$lng,
         lat = coords$lat,
@@ -240,7 +256,7 @@ output$report <- renderUI({
         fillOpacity = 0.5,
         weight = 2
       )
-    } else if (input$mpas == "All") {
+    } else if (state$mpas == "All") {
       for (c in seq_along(subarea_coords)) {
         coord <- subarea_coords[[c]]
         map <- map %>%
@@ -270,6 +286,7 @@ output$report <- renderUI({
     }
   }
   })
+
 }
 
 # Run the application
