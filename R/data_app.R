@@ -41,6 +41,9 @@ odf <- data.frame(
   objectives = c(0, do.call(c,unname(Objectives)))
 )
 
+odf$tab <- c("tab_0", paste0("tab_", 1:(length(odf$objectives)-1)))
+odf$link <- c("link_0", paste0("link_", 1:(length(odf$objectives)-1)))
+
 # Obtaining network objectives
 
 Nobjectives <- data_objectives(type="network")
@@ -113,16 +116,16 @@ for (i in seq_along(odf$objectives)) {
   }
 }
 
-odf$link <- 0
-odf$tab <- 0
-for (i in seq_along(odf$flower_plot)) {
-  if (!(odf$objectives[i] == "0")) {
-    L <- which(unique(odf$flower_plot) %in% odf$flower_plot[i])
-    odf$link[i] <- paste0("link_", L)
-    odf$tab[i] <- paste0("tab_", L)
-  } else {
-    odf$link[i] <- "link_0"
-    odf$tab[i] <- "tab_0"
-  }
-}
+# odf$link <- 0
+# odf$tab <- 0
+# for (i in seq_along(odf$flower_plot)) {
+#   if (!(odf$objectives[i] == "0")) {
+#     L <- which(unique(odf$flower_plot) %in% odf$flower_plot[i])
+#     odf$link[i] <- paste0("link_", L)
+#     odf$tab[i] <- paste0("tab_", L)
+#   } else {
+#     odf$link[i] <- "link_0"
+#     odf$tab[i] <- "tab_0"
+#   }
+# }
 

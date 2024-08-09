@@ -70,7 +70,9 @@ lapply(input_ids, function(id) {
 
 
   output$mytabs = renderUI({
-    nTabs = length(unique(odf$flower_plot))
+    nTabs = length(do.call(c, Objectives))
+    #nTabs = length(unique(odf$flower_plot))
+
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
@@ -211,7 +213,7 @@ output$report <- renderUI({
       link_id <- paste0("link_", i)
       if (input$tabs == paste0("tab_", i)) {
         if (!(input$tabs == "tab_0"))
-        return(paste0(unique(odf$flower_plot[which(odf$link == link_id)])))
+        return(paste0(unique(odf$flower_plot[which(odf$link == link_id)]), " is the Flower Plot."))
       }
     }
   })
