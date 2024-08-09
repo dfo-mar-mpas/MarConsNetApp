@@ -21,7 +21,7 @@ if (exists("om")) {
 }
 
 # 4. Objectives
-areas <- c("stAnnsBank", "musquash", "gully") # Only including Maritimes
+areas <- c("st_Anns_Bank_MPA", "musquash_MPA", "gully_MPA") # Only including Maritimes
 #areas <- c("stAnnsBank", "musquash", "laurentianChannel", "gully", "gilbert", "eastport",
 #           "basinHead", "bancsDesAmericains")
 
@@ -94,6 +94,7 @@ fp <- read.csv("../../MarConsNetAnalysis/sandbox/RD/metaframework.csv")
 
 # Link flower plot to odf
 odf$flower_plot <- 0
+odf$area <- 0
 get_first_four_words <- function(texts) {
   lapply(texts, function(text) {
     words <- strsplit(text, " ")[[1]] # Split each string into words
@@ -108,11 +109,13 @@ for (i in seq_along(odf$objectives)) {
     keep <- which(tolower(get_first_four_words(fp$label_Objective)) == tolower(get_first_four_words(ob)[[1]]))
     if (!(length(keep) == 0)) {
     odf$flower_plot[i] <- fp$Flowerplot_connection[keep]
+    odf$area[i] <- fp$label_Framework[keep]
     } else {
       message("i is also wrong ", i)
     }
   } else {
     odf$flower_plot[i] <- "flower_0"
+    odf$area[i] <= "area_0"
   }
 }
 

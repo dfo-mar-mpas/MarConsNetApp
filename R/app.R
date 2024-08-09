@@ -77,10 +77,6 @@ lapply(input_ids, function(id) {
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
 
-  # observeEvent(input$mpas, {
-  #   state$mpas <- input$mpas
-  # })
-
   output$mpas <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
@@ -149,7 +145,17 @@ output$report <- renderUI({
   output$siteObjectiveText <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      string <- gsub("\\.", "", gsub(" ", "", state$mpas))
+      # if (!(state$mpas) == "All") {
+      # browser()
+      # }
+      if (grepl("Marine Protected Area", state$mpas)) {
+        string <- gsub("Marine Protected Area", "MPA", state$mpas)
+        string <- gsub("\\.", "", string)
+      } else {
+        string <- state$mpas
+      }
+
+      string <- gsub(" ", "_", string)
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
         tags$b("Site Level Objectives")
@@ -160,7 +166,13 @@ output$report <- renderUI({
   output$objectives <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-       string <- gsub("\\.", "", gsub(" ", "", state$mpas))
+      if (grepl("Marine Protected Area", state$mpas)) {
+        string <- gsub("Marine Protected Area", "MPA", state$mpas)
+        string <- gsub("\\.", "", string)
+      } else {
+        string <- state$mpas
+      }
+      string <- gsub(" ", "_", string)
        keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
        if (!(length(keepO) == 0)) {
        textO <- Objectives[[keepO]]
@@ -174,16 +186,38 @@ output$report <- renderUI({
 
   output$contextButton <- renderUI({
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      string <- gsub("\\.", "", gsub(" ", "", state$mpas))
+      if (grepl("Marine Protected Area", state$mpas)) {
+        string <- gsub("Marine Protected Area", "MPA", state$mpas)
+        string <- gsub("\\.", "", string)
+      } else {
+        string <- state$mpas
+      }
+      string <- gsub(" ", "_", string)
+
+      #string <- gsub("\\.", "", gsub(" ", "", state$mpas))
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
+        #browser()
         actionButton(inputId="contextButton", label="Context")
       }
-    }
+    } # conditions
   })
 
   observeEvent(input$contextButton, {
-    string <- gsub("\\.", "", gsub(" ", "", input$mpas))
+
+    #JAIM
+    #browser()
+    if (grepl("Marine Protected Area", state$mpas)) {
+      string <- gsub("Marine Protected Area", "MPA", state$mpas)
+      string <- gsub("\\.", "", string)
+    } else {
+      string <- state$mpas
+    }
+    string <- gsub(" ", "_", string)
+
+
+
+    #string <- gsub("\\.", "", gsub(" ", "", input$mpas))
     keepC <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
     textC <- Context[[keepC]]
     textC <- unlist(lapply(textC, function(x) paste(x, "\n\n")))
@@ -251,6 +285,7 @@ output$report <- renderUI({
       addTiles()
 
     if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
+      #browser()
       map <- map %>% addPolygons(
         lng = coords$lng,
         lat = coords$lat,
