@@ -150,6 +150,9 @@ output$report <- renderUI({
       # }
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
+        if (grepl("Estuary", state$mpas)) {
+          string <- gsub("Estuary ", "", string)
+        }
         string <- gsub("\\.", "", string)
       } else {
         string <- state$mpas
@@ -168,6 +171,9 @@ output$report <- renderUI({
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
+        if (grepl("Estuary", state$mpas)) {
+          string <- gsub("Estuary ", "", string)
+        }
         string <- gsub("\\.", "", string)
       } else {
         string <- state$mpas
@@ -188,6 +194,9 @@ output$report <- renderUI({
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
+        if (grepl("Estuary", state$mpas)) {
+          string <- gsub("Estuary ", "", string)
+        }
         string <- gsub("\\.", "", string)
       } else {
         string <- state$mpas
@@ -209,6 +218,9 @@ output$report <- renderUI({
     #browser()
     if (grepl("Marine Protected Area", state$mpas)) {
       string <- gsub("Marine Protected Area", "MPA", state$mpas)
+      if (grepl("Estuary", state$mpas)) {
+        string <- gsub("Estuary ", "", string)
+      }
       string <- gsub("\\.", "", string)
     } else {
       string <- state$mpas
