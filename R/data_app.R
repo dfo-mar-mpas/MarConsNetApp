@@ -1,14 +1,16 @@
-library(leaflet)
-library(dplyr)
 library(sf)
-
+library(targets)
 library(viridis)
 library(dataSPA)
 library(arcpullr)
+library(dplyr)
+
 
 # 1. MPAs
-MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
-subarea_coords <- getLatLon(MPAs)
+#MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
+#subarea_coords <- getLatLon(MPAs)
+
+tar_load(c("MPAs", "subarea_coords"))
 
 # 2. Project Titles
 load(file.path(system.file(package="MarConsNetData"),"data", "dataTable.rda"))
