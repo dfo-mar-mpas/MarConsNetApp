@@ -6,7 +6,15 @@ library(shinyjs)
 library(viridis)
 library(dataSPA)
 library(arcpullr)
+library(devtools)
+#install_github("dfo-mar-mpas/MarConsNetAnalysis", ref="main")
+library(MarConsNetAnalysis)
+#install_github("dfo-mar-mpas/MarConsNetData", ref="main")
+library(MarConsNetData)
+library(readxl)
+
 source("data_app.R")
+
 
 # Define UI
 ui <- fluidPage(
@@ -145,9 +153,6 @@ output$report <- renderUI({
   output$siteObjectiveText <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      # if (!(state$mpas) == "All") {
-      # browser()
-      # }
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
         if (grepl("Estuary", state$mpas)) {
@@ -206,7 +211,6 @@ output$report <- renderUI({
       #string <- gsub("\\.", "", gsub(" ", "", state$mpas))
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
-        #browser()
         actionButton(inputId="contextButton", label="Context")
       }
     } # conditions
@@ -214,8 +218,6 @@ output$report <- renderUI({
 
   observeEvent(input$contextButton, {
 
-    #JAIM
-    #browser()
     if (grepl("Marine Protected Area", state$mpas)) {
       string <- gsub("Marine Protected Area", "MPA", state$mpas)
       if (grepl("Estuary", state$mpas)) {
@@ -252,17 +254,52 @@ output$report <- renderUI({
 
   # Dynmaically coding in which actionLink is will paste indicators
 
-  output$indicatorText <- renderText({
+  output$indicatorText <- renderUI({
     req(input$tabs)
     req(state$mpas)
     for (i in 0:(length(odf$objectives)-1)) {
       link_id <- paste0("link_", i)
       if (input$tabs == paste0("tab_", i)) {
-        if (!(input$tabs == "tab_0"))
-        return(paste0(unique(odf$flower_plot[which(odf$link == link_id)]), " is the Flower Plot."))
+        if (!(input$tabs == "tab_0")) {
+          objective <- gsub("\n", "",odf$objectives[which(odf$link == link_id)])
+          flower <- odf$flower_plot[which(odf$link == link_id)]
+          area <- gsub("_", " ", gsub("_CO$", "",odf$area[which(odf$link == link_id)]))
+          ki1 <- which(grepl(flower, binned_indicators$indicator_bin, ignore.case=TRUE)) # find matching flower plot
+          ki2 <-  which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all"))) # Find matching area
+          keepind <-intersect(ki1,ki2)
+          binned_ind <-  gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind]))
+          # which projects have that flower tag and are in the correct area
+          PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case=TRUE) & grepl(flower, om$tags, ignore.case=TRUE))]))
+          PPTtitles <- unlist(lapply(PPTProjects, function(x) unique(om$project_title[which(om$project_id == x)])))
+          formatted_projects <- paste0("<strong>", PPTProjects, "</strong> (", PPTtitles, ")")
+          indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"), "Ecosystem Based Management Objective:", "Indicator Bin:")
+
+
+          if (!(length(PPTProjects) == 0)) {
+            return(HTML(
+              paste(
+                "<p><strong>Site Level Objective:</strong></p>",
+                "<p>", objective, "</p>",
+                "<p><strong>Area:</strong></p>",
+                "<p>", area, "</p>",
+                "<p><strong>",indicator_label,"</strong></p>",
+                "<p>", flower, "</p>",
+                "<p><strong>Indicators:</strong></p>",
+                "<p>", paste0(binned_ind, collapse="<br>"), "</p>",
+                "<p><strong>Projects:</strong></p>",
+                "<p>", paste0(formatted_projects, collapse="<br>"), "</p>"
+              )
+            )
+            )
+            #HTML(paste("The Objective ", objective, " from ",area," is associated with the ", flower, " indicator bin. The following indicators apply: ", paste0(binned_ind, collapse="\n\n"), ". The following projects provide information: ", paste0(PPTProjects, collapse=",")))
+          } else {
+           return(paste0("No projects were identified for this area and indicator bin."))
+          }
+        }
       }
     }
   })
+
 
   output$gohome <- renderUI({
     req(input$tabs)
@@ -297,7 +334,6 @@ output$report <- renderUI({
       addTiles()
 
     if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
-      #browser()
       map <- map %>% addPolygons(
         lng = coords$lng,
         lat = coords$lat,
