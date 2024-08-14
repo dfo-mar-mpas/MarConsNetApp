@@ -1,3 +1,27 @@
+#'  Extract Latitude and Longitude from a Spatial Data Frame
+#'
+#'  This function extracts the latitude and longitude coordinates from a spatial data frame to display
+#'  protected area polygons on the map in the app.
+#'
+#'  @param sf argument of class 'sf', 'tbl_df', 'tbl', or 'data.frame'. Object must contain spatial data with
+#'  a geometry column and either a 'NAME_E' or 'SiteName_E' column.
+#'
+#'  @export
+#'
+#'  @examples
+#'    \dontrun{
+#'    polygons <- getLatLon(sf_data)
+#'    print(polygons)
+#'    }
+#'
+#'  @return A list where each element corresponds to a polygon in the input 'sf' object. Each element
+#'  is a list with the following components:
+#'  \describe{
+#'    \item{lat}{A vector of latitude coordinates.}
+#'    \item{lng}{A vector of longitude coordinates.}
+#'    \item{color}{the color assigned to the polygon, which is "hotpink".}
+#'    }
+#'
 getLatLon <- function(sf=NULL) {
 
   if (is.null(sf)) {
