@@ -90,7 +90,7 @@ Context <- lapply(areas, function(x) data_context(type="site", area=x))
 
 # 9. Flower plot site level CO to indicator bin
 # FIXME
-fp <- read.csv("../../MarConsNetAnalysis/sandbox/RD/metaframework.csv")
+fp <- read.csv("../../MarConsNetAnalysis/sandbox/JH/02_meta_names/metaframework.csv")
 
 # Link flower plot to odf
 odf$flower_plot <- 0
@@ -118,6 +118,10 @@ for (i in seq_along(odf$objectives)) {
     odf$area[i] <= "area_0"
   }
 }
+
+# 10. Getting indicator bins
+binned_indicators <- read_excel(file.path(system.file(package="MarConsNetAnalysis"),"data", "indicator_binning.xlsx"))
+
 
 # odf$link <- 0
 # odf$tab <- 0
