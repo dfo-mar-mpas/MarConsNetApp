@@ -1,5 +1,5 @@
 library(sf)
-library(targets)
+#library(targets)
 library(viridis)
 library(dataSPA)
 library(arcpullr)
@@ -7,10 +7,10 @@ library(dplyr)
 
 
 # 1. MPAs
-#MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
-#subarea_coords <- getLatLon(MPAs)
+MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
+subarea_coords <- getLatLon(MPAs)
 
-tar_load(c("MPAs", "subarea_coords"))
+#tar_load(c("MPAs", "subarea_coords"))
 
 # 2. Project Titles
 load(file.path(system.file(package="MarConsNetData"),"data", "dataTable.rda"))
@@ -23,7 +23,7 @@ if (exists("om")) {
 }
 
 # 4. Objectives
-areas <- c("st_Anns_Bank_MPA", "musquash_MPA", "gully_MPA") # Only including Maritimes
+areas <- c("st_Anns_Bank_MPA", "musquash_MPA", "gully_MPA", "WEBCA") # Only including Maritimes
 #areas <- c("stAnnsBank", "musquash", "laurentianChannel", "gully", "gilbert", "eastport",
 #           "basinHead", "bancsDesAmericains")
 

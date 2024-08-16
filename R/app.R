@@ -174,12 +174,15 @@ output$report <- renderUI({
   output$objectives <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
         if (grepl("Estuary", state$mpas)) {
           string <- gsub("Estuary ", "", string)
         }
         string <- gsub("\\.", "", string)
+      } else if (grepl("Western", state$mpas)) {
+        string <- "WEBCA"
       } else {
         string <- state$mpas
       }
@@ -197,12 +200,17 @@ output$report <- renderUI({
 
   output$contextButton <- renderUI({
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+      # if (!(state$mpas) == "All") {
+      # browser()
+      # }
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
         if (grepl("Estuary", state$mpas)) {
           string <- gsub("Estuary ", "", string)
         }
         string <- gsub("\\.", "", string)
+      } else if (grepl("Western", state$mpas, ignore.case=TRUE)) {
+        string <- "WEBCA"
       } else {
         string <- state$mpas
       }
@@ -224,6 +232,8 @@ output$report <- renderUI({
         string <- gsub("Estuary ", "", string)
       }
       string <- gsub("\\.", "", string)
+    } else if (grepl("Western", state$mpas, ignore.case=TRUE)) {
+      string <- "WEBCA"
     } else {
       string <- state$mpas
     }
@@ -274,7 +284,6 @@ output$report <- renderUI({
           formatted_projects <- paste0("<strong>", PPTProjects, "</strong> (", PPTtitles, ")")
           indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"), "Ecosystem Based Management Objective:", "Indicator Bin:")
 
-
           if (!(length(PPTProjects) == 0)) {
             return(HTML(
               paste(
@@ -293,7 +302,22 @@ output$report <- renderUI({
             )
             #HTML(paste("The Objective ", objective, " from ",area," is associated with the ", flower, " indicator bin. The following indicators apply: ", paste0(binned_ind, collapse="\n\n"), ". The following projects provide information: ", paste0(PPTProjects, collapse=",")))
           } else {
-           return(paste0("No projects were identified for this area and indicator bin."))
+            return(HTML(
+              paste(
+                "<p><strong>Site Level Objective:</strong></p>",
+                "<p>", objective, "</p>",
+                "<p><strong>Area:</strong></p>",
+                "<p>", area, "</p>",
+                "<p><strong>",indicator_label,"</strong></p>",
+                "<p>", flower, "</p>",
+                "<p><strong>Indicators:</strong></p>",
+                "<p>", paste0(binned_ind, collapse="<br>"), "</p>",
+                "<p><strong>Projects:</strong></p>",
+                "<p>", paste0("There are no projects for this area in this indicator bin."), "</p>"
+              )
+            )
+            )
+
           }
         }
       }
