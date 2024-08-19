@@ -3,6 +3,8 @@
 # Load packages required to define the pipeline:
 library(targets)
 
+tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))
+
 
 # Set target options:
 tar_option_set(
