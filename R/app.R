@@ -375,12 +375,14 @@ output$report <- renderUI({
 
 
      if (!(is.null(input$projects))) {
+      #COMMENT
       # projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
       # for (i in seq_along(projectIds)) {
       #   pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
       #   map <- map %>%
       #     addCircleMarkers(pd[[1]]$lon, pd[[1]]$lat, radius=3, color=palette[i])
       # }
+       # END COMMENT
 
       map <- map %>%
         addLegend(
