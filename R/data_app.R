@@ -16,6 +16,7 @@ subarea_coords <- getLatLon(MPAs)
 load(file.path(system.file(package="MarConsNetData"),"data", "dataTable.rda"))
 
 # 3. dataSPA om data
+# FIXME, A COOKIE WILL NEED TO BE GIVEN SOMEWHERE
 if (exists("om")) {
   om <- om
 } else {
@@ -63,22 +64,22 @@ N_Objectives <- unlist(N_Objectives)
 
 # 5. Project Data
 # COMMENT
-# projectData <- NULL
-# for (i in seq_along(dataTable$id)) {
-#   message("i = ", i)
-#   func_name <- dataTable$get_function[i]
-#   func <- get(func_name)  # Get the function object
-#   arguments <- names(formals(func))
-#   if ("taxize" %in% arguments) {
-#     pd <- get_project_data(ids=dataTable$id[i], taxize=FALSE)
-#   } else {
-#     #pd <- get_project_data(ids=dataTable$id[i], type="all")
-#   }
-#
-#   projectData[[i]] <- pd
-# }
-#
-# names(projectData) <- dataTable$id
+projectData <- NULL
+for (i in seq_along(dataTable$id)) {
+  message("i = ", i)
+  func_name <- dataTable$get_function[i]
+  func <- get(func_name)  # Get the function object
+  arguments <- names(formals(func))
+  if ("taxize" %in% arguments) {
+    pd <- get_project_data(ids=dataTable$id[i], taxize=FALSE)
+  } else {
+    #pd <- get_project_data(ids=dataTable$id[i], type="all")
+  }
+
+  projectData[[i]] <- pd
+}
+
+names(projectData) <- dataTable$id
 
 # 6. Theme
 my_theme <- bslib::bs_theme(

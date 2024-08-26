@@ -7,7 +7,6 @@
 #' @param text a character string
 #' @param line_length a number indicating which character to add the new line
 #' @export
-#'
 #' @examples
 #' \dontrun{
 #' newLine("This is a test to show the user how new line works.", 40)
