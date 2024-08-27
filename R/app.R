@@ -8,8 +8,9 @@ library(arcpullr)
 library(devtools)
 install_github("dfo-mar-mpas/MarConsNetAnalysis", ref="main")
 library(MarConsNetAnalysis)
-install_github("dfo-mar-mpas/MarConsNetData", ref="main")
-library(MarConsNetData)
+#install_github("dfo-mar-mpas/MarConsNetData", ref="main")
+#library(MarConsNetData)
+load_all("../../MarConsNetData/")
 install_github("https://github.com/dfo-mar-odis/TBSpayRates")
 library(TBSpayRates)
 install_github("https://github.com/j-harbin/dataSPA")
@@ -23,7 +24,10 @@ source("data_app.R")
 ui <- fluidPage(
   useShinyjs(),
   titlePanel("Maritimes Conservation Network App"),
-  uiOutput("contextButton"),
+  fluidRow(
+  column(2, uiOutput("contextButton")),
+  column(2, uiOutput("projectFilter"))
+  ),
   uiOutput("gohome"),
   #theme = my_theme,
   #Makes the tabs hide
@@ -68,6 +72,8 @@ server <- function(input, output, session) {
     division = NULL,
     report = NULL
   )
+
+  filter_selected <- reactiveVal(FALSE)
 
 
   input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report") # THE SAME AS STATE
@@ -197,6 +203,24 @@ output$report <- renderUI({
          actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]])
        })
        }
+    }
+  })
+
+  output$projectFilter <- renderUI({
+    req(state$mpas)
+    req(state$projects)
+    if (!(state$mpas == "All") && !(is.null(state$projects))) {
+      actionButton(inputId="projectFilter", label="Filter project data")
+    }
+  })
+
+  observeEvent(input$projectFilter, { #jaim
+    if (filter_selected()) {
+      updateActionButton(session, "projectFilter", label = "Filter project data")  # Revert label
+      filter_selected(FALSE)
+    } else {
+      updateActionButton(session, "projectFilter", label = "See all project data")  # Change label
+      filter_selected(TRUE)
     }
   })
 
