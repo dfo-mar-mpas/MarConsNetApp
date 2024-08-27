@@ -70,7 +70,8 @@ server <- function(input, output, session) {
     functionalGroup = NULL,
     section = NULL,
     division = NULL,
-    report = NULL
+    report = NULL,
+    projectFilter = NULL,
   )
 
   filter_selected <- reactiveVal(FALSE)
@@ -210,7 +211,7 @@ output$report <- renderUI({
     req(state$mpas)
     req(state$projects)
     if (!(state$mpas == "All") && !(is.null(state$projects))) {
-      actionButton(inputId="projectFilter", label="Filter project data")
+      actionButton(inputId="projectFilter", label="See all project data")
     }
   })
 
@@ -227,9 +228,6 @@ output$report <- renderUI({
 
   output$contextButton <- renderUI({
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      # if (!(state$mpas) == "All") {
-      # browser()
-      # }
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
         if (grepl("Estuary", state$mpas)) {
@@ -401,13 +399,29 @@ output$report <- renderUI({
     }
 
 
-     if (!(is.null(input$projects))) {
+     if (!(is.null(input$projects))) { #jaim
       #COMMENT
       projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
       for (i in seq_along(projectIds)) {
         pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
+        longitude <- pd[[1]]$lon
+        latitude <- pd[[1]]$lat
+
+        # TEST JAIM
+        if (!(filter_selected()) && !(state$mpas %in% "All")) { # We want it filtered
+        #browser()
+        m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas[i])]
+        coords <- cbind(longitude, latitude)
+        points_sf <- st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
+        points_within <- st_within(points_sf, m, sparse = FALSE)
+        within_points <- points_sf[apply(points_within, 1, any), ]
+        longitude <- st_coordinates(within_points)[, 1]
+        latitude <- st_coordinates(within_points)[, 2]
+        }
+
+        # END TEST JAIM
         map <- map %>%
-          addCircleMarkers(pd[[1]]$lon, pd[[1]]$lat, radius=3, color=palette[i])
+          addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
       }
        # END COMMENT
 
