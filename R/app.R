@@ -25,6 +25,12 @@ library(readxl)
 # Define UI
 ui <- fluidPage(
   useShinyjs(),
+  tags$head(
+    tags$style(HTML("
+      .shiny-notification {
+        background-color: yellow;
+      }
+    "))),
   titlePanel("Maritimes Conservation Network App"),
   fluidRow(
   column(2, uiOutput("contextButton")),
@@ -403,6 +409,9 @@ output$report <- renderUI({
      if (!(is.null(input$projects))) {
       #COMMENT
       projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+
+      LAT <- NULL
+      LON <- NULL
       for (i in seq_along(projectIds)) {
         pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
         longitude <- pd[[1]]$lon
@@ -419,9 +428,16 @@ output$report <- renderUI({
         latitude <- st_coordinates(within_points)[, 2]
         }
 
+        LAT[[i]] <- latitude
+        LON[[i]] <- longitude
+
         if (!(length(latitude) == 0)) {
         map <- map %>%
           addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
+        }
+
+        if (i == length(projectIds) && any(unlist(lapply(LAT, length))) == 0) {
+          showNotification("Not all of the selected projects exist in this area. Unfilter the data to see where this project takes place.", duration = 5)
         }
       }
        # END COMMENT
