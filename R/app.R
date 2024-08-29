@@ -6,6 +6,8 @@ library(shinyjs)
 library(viridis)
 library(arcpullr)
 library(devtools)
+source("getLatLon.R")
+source("newLine.R")
 install_github("dfo-mar-mpas/MarConsNetAnalysis", ref="main")
 library(MarConsNetAnalysis)
 #install_github("dfo-mar-mpas/MarConsNetData", ref="main")
@@ -17,7 +19,7 @@ install_github("https://github.com/j-harbin/dataSPA")
 library(dataSPA)
 library(readxl)
 
-source("data_app.R")
+#source("data_app.R")
 
 
 # Define UI
@@ -72,20 +74,19 @@ server <- function(input, output, session) {
     division = NULL,
     report = NULL,
     projectFilter = NULL,
+    filter_selected=FALSE,
   )
 
-  filter_selected <- reactiveVal(FALSE)
+  #filter_selected <- reactiveVal(FALSE)
 
 
-  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report") # THE SAME AS STATE
+  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report", "projectFilter", "filter_selected") # THE SAME AS STATE
 
 lapply(input_ids, function(id) {
   observeEvent(input[[id]], {
     state[[id]] <- input[[id]]
   })
 })
-
-
 
   output$mytabs = renderUI({
     nTabs = length(do.call(c, Objectives))
@@ -207,21 +208,22 @@ output$report <- renderUI({
     }
   })
 
-  output$projectFilter <- renderUI({
+  output$projectFilter <- renderUI({ #JAIM
     req(state$mpas)
     req(state$projects)
-    if (!(state$mpas == "All") && !(is.null(state$projects))) {
-      actionButton(inputId="projectFilter", label="See all project data")
+    if (!(state$mpas == "All") && !(is.null(state$projects)) && input$tabs == "tab_0") {
+      label <- if (!(state$filter_selected)) "See All Project Data" else "Filter Project Data"
+      actionButton(inputId="projectFilter", label=label)
     }
   })
 
-  observeEvent(input$projectFilter, { #jaim
-    if (filter_selected()) {
-      updateActionButton(session, "projectFilter", label = "Filter project data")  # Revert label
-      filter_selected(FALSE)
+  observeEvent(input$projectFilter, {
+    if (state$filter_selected) {
+      state$filter_selected <- FALSE
+      #updateActionButton(session, "projectFilter", label = "See All Project Data")
     } else {
-      updateActionButton(session, "projectFilter", label = "See all project data")  # Change label
-      filter_selected(TRUE)
+      state$filter_selected <- TRUE
+      #updateActionButton(session, "projectFilter", label = "Filter Project Data")
     }
   })
 
@@ -408,8 +410,7 @@ output$report <- renderUI({
         latitude <- pd[[1]]$lat
 
         # TEST JAIM
-        if (!(filter_selected()) && !(state$mpas %in% "All")) { # We want it filtered
-        #browser()
+        if (!(state$filter_selected) && !(state$mpas %in% "All")) { # We want it filtered
         m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas[i])]
         coords <- cbind(longitude, latitude)
         points_sf <- st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
@@ -419,7 +420,6 @@ output$report <- renderUI({
         latitude <- st_coordinates(within_points)[, 2]
         }
 
-        # END TEST JAIM
         map <- map %>%
           addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
       }
