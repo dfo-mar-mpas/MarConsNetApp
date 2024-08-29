@@ -401,7 +401,7 @@ output$report <- renderUI({
     }
 
 
-     if (!(is.null(input$projects))) { #jaim
+     if (!(is.null(input$projects))) {
       #COMMENT
       projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
       for (i in seq_along(projectIds)) {
@@ -420,8 +420,10 @@ output$report <- renderUI({
         latitude <- st_coordinates(within_points)[, 2]
         }
 
+        if (!(length(latitude) == 0)) {
         map <- map %>%
           addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
+        }
       }
        # END COMMENT
 
