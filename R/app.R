@@ -81,7 +81,7 @@ server <- function(input, output, session) {
     report = NULL,
   )
 
-  rv <- reactiveValues(button_label = "Filter Project Data")
+  rv <- reactiveValues(button_label = "See All Project Data")
 
   is_button_visible <- reactive({
     req(input$mpas)
@@ -222,7 +222,7 @@ output$report <- renderUI({
 
   # Update the button label when clicked
   observeEvent(input$filter_button, {
-    rv$button_label <- ifelse(rv$button_label == "Filter Project Data", "See All Data", "Filter Project Data")
+    rv$button_label <- ifelse(rv$button_label == "See All Project Data", "Filter Project Data", "See All Project Data")
   })
 
   # Render the action button UI
