@@ -34,7 +34,7 @@ ui <- fluidPage(
   titlePanel("Maritimes Conservation Network App"),
   fluidRow(
   column(2, uiOutput("contextButton")),
-  column(2, uiOutput("projectFilter"))
+  column(2, uiOutput("filter_button_ui"))
   ),
   uiOutput("gohome"),
   #theme = my_theme,
@@ -79,14 +79,19 @@ server <- function(input, output, session) {
     section = NULL,
     division = NULL,
     report = NULL,
-    projectFilter = NULL,
-    filter_selected=FALSE,
   )
 
-  #filter_selected <- reactiveVal(FALSE)
+  rv <- reactiveValues(button_label = "Filter Project Data")
+
+  is_button_visible <- reactive({
+    req(input$mpas)
+    req(input$projects)
+    length(input$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(input$mpas == "All")
+  })
 
 
-  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report", "projectFilter", "filter_selected") # THE SAME AS STATE
+
+  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report") # THE SAME AS STATE
 
 lapply(input_ids, function(id) {
   observeEvent(input[[id]], {
@@ -214,23 +219,28 @@ output$report <- renderUI({
     }
   })
 
-  output$projectFilter <- renderUI({
-    req(state$mpas)
-    if (input$tabs == "tab_0" && !is.null(state$mpas) && !(state$mpas == "All") && !is.null(state$projects) && length(state$projects) > 0) {
-        label <- if (!(state$filter_selected)) "See All Project Data" else "Filter Project Data"
-        actionButton(inputId="projectFilter", label=label)
-    }
-})
 
-  observeEvent(input$projectFilter, {
-    if (state$filter_selected) {
-      state$filter_selected <- FALSE
-      #updateActionButton(session, "projectFilter", label = "See All Project Data")
-    } else {
-      state$filter_selected <- TRUE
-      #updateActionButton(session, "projectFilter", label = "Filter Project Data")
+  # Update the button label when clicked
+  observeEvent(input$filter_button, {
+    rv$button_label <- ifelse(rv$button_label == "Filter Project Data", "See All Data", "Filter Project Data")
+  })
+
+  # Render the action button UI
+  output$filter_button_ui <- renderUI({
+    if (is_button_visible()) {
+      actionButton("filter_button", rv$button_label)
     }
   })
+
+  # Ensure the button is correctly displayed when navigating tabs
+  observe({
+    output$filter_button_ui <- renderUI({
+      if (is_button_visible()) {
+        actionButton("filter_button", rv$button_label)
+      }
+    })
+  })
+
 
 
   output$contextButton <- renderUI({
@@ -418,7 +428,8 @@ output$report <- renderUI({
         latitude <- pd[[1]]$lat
 
         # TEST JAIM
-        if (!(state$filter_selected) && !(state$mpas %in% "All")) { # We want it filtered
+        #browser()
+        if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) { # We want it filtered
         m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
         coords <- cbind(longitude, latitude)
         points_sf <- st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
