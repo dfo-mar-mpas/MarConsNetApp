@@ -208,14 +208,13 @@ output$report <- renderUI({
     }
   })
 
-  output$projectFilter <- renderUI({ #JAIM
+  output$projectFilter <- renderUI({
     req(state$mpas)
-    req(state$projects)
-    if (!(state$mpas == "All") && !(is.null(state$projects)) && input$tabs == "tab_0") {
-      label <- if (!(state$filter_selected)) "See All Project Data" else "Filter Project Data"
-      actionButton(inputId="projectFilter", label=label)
+    if (input$tabs == "tab_0" && !is.null(state$mpas) && !(state$mpas == "All") && !is.null(state$projects) && length(state$projects) > 0) {
+        label <- if (!(state$filter_selected)) "See All Project Data" else "Filter Project Data"
+        actionButton(inputId="projectFilter", label=label)
     }
-  })
+})
 
   observeEvent(input$projectFilter, {
     if (state$filter_selected) {
@@ -411,7 +410,7 @@ output$report <- renderUI({
 
         # TEST JAIM
         if (!(state$filter_selected) && !(state$mpas %in% "All")) { # We want it filtered
-        m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas[i])]
+        m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
         coords <- cbind(longitude, latitude)
         points_sf <- st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
         points_within <- st_within(points_sf, m, sparse = FALSE)
