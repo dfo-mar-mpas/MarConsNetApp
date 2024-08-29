@@ -1,10 +1,9 @@
 library(sf)
-#library(targets)
+library(targets)
 library(viridis)
 library(dataSPA)
 library(arcpullr)
 library(dplyr)
-
 
 # 1. MPAs
 MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
@@ -134,17 +133,7 @@ for (i in seq_along(odf$objectives)) {
 # 10. Getting indicator bins
 binned_indicators <- read_excel(file.path(system.file(package="MarConsNetAnalysis"),"data", "indicator_binning.xlsx"))
 
+# 11. Flower Plot
+tar_load(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","pipeline_targets"),"pillar_ecol_df")
 
-# odf$link <- 0
-# odf$tab <- 0
-# for (i in seq_along(odf$flower_plot)) {
-#   if (!(odf$objectives[i] == "0")) {
-#     L <- which(unique(odf$flower_plot) %in% odf$flower_plot[i])
-#     odf$link[i] <- paste0("link_", L)
-#     odf$tab[i] <- paste0("tab_", L)
-#   } else {
-#     odf$link[i] <- "link_0"
-#     odf$tab[i] <- "tab_0"
-#   }
-# }
 

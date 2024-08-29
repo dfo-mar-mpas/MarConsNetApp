@@ -18,9 +18,8 @@ library(TBSpayRates)
 install_github("https://github.com/j-harbin/dataSPA")
 library(dataSPA)
 library(readxl)
-
 #source("data_app.R")
-
+library(ggplot2)
 
 # Define UI
 ui <- fluidPage(
@@ -33,8 +32,8 @@ ui <- fluidPage(
     "))),
   titlePanel("Maritimes Conservation Network App"),
   fluidRow(
-  column(2, uiOutput("contextButton")),
-  column(2, uiOutput("filter_button_ui"))
+    column(2, uiOutput("contextButton")),
+    column(2, uiOutput("filter_button_ui"))
   ),
   uiOutput("gohome"),
   #theme = my_theme,
@@ -52,18 +51,19 @@ ui <- fluidPage(
       uiOutput("section"),
       uiOutput("division"),
       uiOutput("report")
-      ),
+    ),
     mainPanel(
       uiOutput("indicatorText"),
       uiOutput('mytabs'),
-              leafletOutput("map"),
-              fluidRow(column(6, align="left", uiOutput("networkObjectiveText")),
-                       column(6, align="right", uiOutput("siteObjectiveText"))),
-              fluidRow(
-                column(width=6, align="left", textOutput("network", container=pre)),
-                       column(width=6, uiOutput("objectives", container=pre))
-                       )
-              ) #MAIN
+      leafletOutput("map"),
+      fluidRow(column(6, offset=6, align="right", uiOutput("networkObjectiveText"))),
+      fluidRow(column(width=6, align="left", plotOutput("flowerPlot")),
+               column(width=6, align="right", textOutput("network", container=pre),
+                      uiOutput("siteObjectiveText"),
+                      uiOutput("objectives", container=pre)))
+      #fluidRow(column(6, offset=6, align="right", uiOutput("siteObjectiveText"))),
+      #fluidRow(column(width=6, offset=6, align="right", uiOutput("objectives", container=pre)))
+    ) #MAIN
   )
 )
 
@@ -93,12 +93,12 @@ server <- function(input, output, session) {
 
   input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report") # THE SAME AS STATE
 
-lapply(input_ids, function(id) {
-  observeEvent(input[[id]], {
-    state[[id]] <- input[[id]]
+  lapply(input_ids, function(id) {
+    observeEvent(input[[id]], {
+      state[[id]] <- input[[id]]
+    })
   })
-})
-
+browser()
   output$mytabs = renderUI({
     nTabs = length(do.call(c, Objectives))
     #nTabs = length(unique(odf$flower_plot))
@@ -110,14 +110,14 @@ lapply(input_ids, function(id) {
   output$mpas <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-    selectInput("mpas","Select Protected/Conserved Area:",choices = c("All", MPAs$NAME_E), selected=state$mpas)
+      selectInput("mpas","Select Protected/Conserved Area:",choices = c("All", MPAs$NAME_E), selected=state$mpas)
     }
   })
 
   output$projects <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-    selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE, selected=state$projects)
+      selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE, selected=state$projects)
     }
   })
 
@@ -128,40 +128,40 @@ lapply(input_ids, function(id) {
     }
   })
 
-output$theme <- renderUI({
-  req(input$tabs)
-  if (input$tabs == "tab_0") {
-    selectInput("theme", "Select Theme(s):", choices=unique(om$theme), multiple=TRUE, selected=state$theme)
-  }
-})
+  output$theme <- renderUI({
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      selectInput("theme", "Select Theme(s):", choices=unique(om$theme), multiple=TRUE, selected=state$theme)
+    }
+  })
 
-output$functionalGroup <- renderUI({
-  req(input$tabs)
-  if (input$tabs == "tab_0") {
-    selectInput("functionalGroup", "Select Functional Group(s):", choices=unique(om$functional_group), multiple=TRUE, selected=state$functionalGroup)
-  }
-})
+  output$functionalGroup <- renderUI({
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      selectInput("functionalGroup", "Select Functional Group(s):", choices=unique(om$functional_group), multiple=TRUE, selected=state$functionalGroup)
+    }
+  })
 
-output$section <- renderUI({
-  req(input$tabs)
-  if (input$tabs == "tab_0") {
-    selectInput("section", "Select Section(s):", choices=subsetSPA(om=om, section="return"), multiple=TRUE, selected=state$section)
-  }
-})
+  output$section <- renderUI({
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      selectInput("section", "Select Section(s):", choices=subsetSPA(om=om, section="return"), multiple=TRUE, selected=state$section)
+    }
+  })
 
-output$division <- renderUI({
-  req(input$tabs)
-  if (input$tabs == "tab_0") {
-    selectInput("division", "Select Division(s):", choices=subsetSPA(om=om, division="return"), multiple=TRUE, selected=state$division)
-  }
-})
+  output$division <- renderUI({
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      selectInput("division", "Select Division(s):", choices=subsetSPA(om=om, division="return"), multiple=TRUE, selected=state$division)
+    }
+  })
 
-output$report <- renderUI({
-  req(input$tabs)
-  if (input$tabs == "tab_0") {
-    actionButton("report", "Create Report")
-  }
-})
+  output$report <- renderUI({
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      actionButton("report", "Create Report")
+    }
+  })
 
 
   output$networkObjectiveText <- renderUI({
@@ -209,13 +209,13 @@ output$report <- renderUI({
         string <- state$mpas
       }
       string <- gsub(" ", "_", string)
-       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
-       if (!(length(keepO) == 0)) {
-       textO <- Objectives[[keepO]]
-       links <- lapply(seq_along(textO), function(i) {
-         actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]])
-       })
-       }
+      keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
+      if (!(length(keepO) == 0)) {
+        textO <- Objectives[[keepO]]
+        links <- lapply(seq_along(textO), function(i) {
+          actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]])
+        })
+      }
     }
   })
 
@@ -367,6 +367,26 @@ output$report <- renderUI({
   })
 
 
+
+  output$flowerPlot <- renderPlot({
+    req(input$mpas)
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      if (state$mpas == "All") {
+        NAME <- "Scotian Shelf"
+      } else {
+        NAME <- state$mpas
+      }
+      #browser()
+      plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
+                      grouping = "objective",
+                      labels = "bin",
+                      score = "ind_value")
+    }
+
+  })
+
+
   output$gohome <- renderUI({
     req(input$tabs)
     req(state$mpas)
@@ -384,7 +404,7 @@ output$report <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       N_Objectives
-      }
+    }
   })
 
 
@@ -394,77 +414,77 @@ output$report <- renderUI({
     req(state$mpas)
     palette <- viridis(length(input$projects))
     if (input$tabs == "tab_0") {
-    if (!(is.null(state$mpas))) {
-    coords <- subarea_coords[[state$mpas]]
-    map <- leaflet() %>%
-      addTiles()
+      if (!(is.null(state$mpas))) {
+        coords <- subarea_coords[[state$mpas]]
+        map <- leaflet() %>%
+          addTiles()
 
-    if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
-      map <- map %>% addPolygons(
-        lng = coords$lng,
-        lat = coords$lat,
-        fillColor = coords$color,
-        fillOpacity = 0.5,
-        weight = 2
-      )
-    } else if (state$mpas == "All") {
-      for (c in seq_along(subarea_coords)) {
-        coord <- subarea_coords[[c]]
-        map <- map %>%
-          addPolygons(lat = coord$lat, lng = coord$lng, fillColor = coord$color, fillOpacity = 0.5, weight = 2)
+        if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
+          map <- map %>% addPolygons(
+            lng = coords$lng,
+            lat = coords$lat,
+            fillColor = coords$color,
+            fillOpacity = 0.5,
+            weight = 2
+          )
+        } else if (state$mpas == "All") {
+          for (c in seq_along(subarea_coords)) {
+            coord <- subarea_coords[[c]]
+            map <- map %>%
+              addPolygons(lat = coord$lat, lng = coord$lng, fillColor = coord$color, fillOpacity = 0.5, weight = 2)
+          }
+        }
+
+
+        if (!(is.null(input$projects))) {
+          #COMMENT
+          projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+
+          LAT <- NULL
+          LON <- NULL
+          for (i in seq_along(projectIds)) {
+            pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
+            longitude <- pd[[1]]$lon
+            latitude <- pd[[1]]$lat
+
+            # TEST JAIM
+            #browser()
+            if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) { # We want it filtered
+              m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
+              coords <- cbind(longitude, latitude)
+              points_sf <- st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
+              points_within <- st_within(points_sf, m, sparse = FALSE)
+              within_points <- points_sf[apply(points_within, 1, any), ]
+              longitude <- st_coordinates(within_points)[, 1]
+              latitude <- st_coordinates(within_points)[, 2]
+            }
+
+            LAT[[i]] <- latitude
+            LON[[i]] <- longitude
+
+            if (!(length(latitude) == 0)) {
+              map <- map %>%
+                addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
+            }
+
+            if (i == length(projectIds) && any(unlist(lapply(LAT, length))) == 0) {
+              showNotification("Not all of the selected projects exist in this area. Unfilter the data to see where this project takes place.", duration = 5)
+            }
+          }
+          # END COMMENT
+
+          map <- map %>%
+            addLegend(
+              "bottomright",
+              colors = palette,
+              labels = input$projects,
+              opacity = 1
+            )
+        }
+
+        map
       }
     }
-
-
-     if (!(is.null(input$projects))) {
-      #COMMENT
-      projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
-
-      LAT <- NULL
-      LON <- NULL
-      for (i in seq_along(projectIds)) {
-        pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
-        longitude <- pd[[1]]$lon
-        latitude <- pd[[1]]$lat
-
-        # TEST JAIM
-        #browser()
-        if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) { # We want it filtered
-        m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
-        coords <- cbind(longitude, latitude)
-        points_sf <- st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
-        points_within <- st_within(points_sf, m, sparse = FALSE)
-        within_points <- points_sf[apply(points_within, 1, any), ]
-        longitude <- st_coordinates(within_points)[, 1]
-        latitude <- st_coordinates(within_points)[, 2]
-        }
-
-        LAT[[i]] <- latitude
-        LON[[i]] <- longitude
-
-        if (!(length(latitude) == 0)) {
-        map <- map %>%
-          addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
-        }
-
-        if (i == length(projectIds) && any(unlist(lapply(LAT, length))) == 0) {
-          showNotification("Not all of the selected projects exist in this area. Unfilter the data to see where this project takes place.", duration = 5)
-        }
-      }
-       # END COMMENT
-
-      map <- map %>%
-        addLegend(
-        "bottomright",
-        colors = palette,
-        labels = input$projects,
-        opacity = 1
-      )
-    }
-
-    map
-    }
-  }
   })
 
 }
