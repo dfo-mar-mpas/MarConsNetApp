@@ -41,12 +41,6 @@ for (i in seq_along(objectives)) {
 Objectives <- lapply(Objectives, unlist)
 names(Objectives) <- areas
 
-odf <- data.frame(
-  objectives = c(0, do.call(c,unname(Objectives)))
-)
-
-odf$tab <- c("tab_0", paste0("tab_", 1:(length(odf$objectives)-1)))
-odf$link <- c("link_0", paste0("link_", 1:(length(odf$objectives)-1)))
 
 # Obtaining network objectives
 
@@ -60,6 +54,13 @@ for (i in seq_along(Nobjectives)) {
 
 }
 N_Objectives <- unlist(N_Objectives)
+
+odf <- data.frame(
+  objectives = c(0, do.call(c,unname(Objectives)), N_Objectives)
+)
+
+odf$tab <- c("tab_0", paste0("tab_", 1:(length(odf$objectives)-1)))
+odf$link <- c("link_0", paste0("link_", 1:(length(odf$objectives)-1)))
 
 
 
@@ -104,6 +105,9 @@ Context <- lapply(areas, function(x) data_context(type="site", area=x))
 # 9. Flower plot site level CO to indicator bin
 # FIXME
 fp <- read.csv("../../MarConsNetAnalysis/sandbox/JH/02_meta_names/metaframework.csv")
+
+# Add network objectives to odf
+
 
 # Link flower plot to odf
 odf$flower_plot <- 0

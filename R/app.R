@@ -99,7 +99,7 @@ server <- function(input, output, session) {
     })
   })
   output$mytabs = renderUI({
-    nTabs = length(do.call(c, Objectives))
+    nTabs = length(do.call(c, Objectives))+length(N_Objectives)
     #nTabs = length(unique(odf$flower_plot))
 
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
@@ -168,7 +168,7 @@ server <- function(input, output, session) {
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       bsCollapse(id="networkObjectiveText", open=NULL,
                  bsCollapsePanel("Click to see Network Objectives",
-                                 textOutput("network", container=pre),
+                                 uiOutput("network", container=pre),
                                  style="primary"))
     }
   })
@@ -198,7 +198,6 @@ server <- function(input, output, session) {
   output$objectives <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
         if (grepl("Estuary", state$mpas)) {
@@ -210,7 +209,11 @@ server <- function(input, output, session) {
       } else {
         string <- state$mpas
       }
+      # if (grepl("Marine Protected Area", state$mpas)) {
+      # browser() #roxanne
+      # }
       string <- gsub(" ", "_", string)
+
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
         textO <- Objectives[[keepO]]
@@ -408,10 +411,14 @@ server <- function(input, output, session) {
   })
 
 
-  output$network <- renderText({
+  output$network <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      N_Objectives
+      string <- "Scotian_Shelf_CO" #roxanne
+      textN <- N_Objectives
+      links <- lapply(seq_along(textN), function(i) {
+        actionLink(inputId = odf$link[which(odf$objectives == textN[[i]])], label = textN[[i]])
+      })
     }
   })
 
