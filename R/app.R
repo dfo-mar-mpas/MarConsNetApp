@@ -209,9 +209,6 @@ server <- function(input, output, session) {
       } else {
         string <- state$mpas
       }
-      # if (grepl("Marine Protected Area", state$mpas)) {
-      # browser() #roxanne
-      # }
       string <- gsub(" ", "_", string)
 
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
@@ -415,7 +412,7 @@ server <- function(input, output, session) {
   output$network <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      string <- "Scotian_Shelf_CO" #roxanne
+      string <- "Scotian_Shelf_CO"
       textN <- N_Objectives
       links <- lapply(seq_along(textN), function(i) {
         actionLink(inputId = odf$link[which(odf$objectives == textN[[i]])], label = textN[[i]])
@@ -463,8 +460,6 @@ server <- function(input, output, session) {
             longitude <- pd[[1]]$lon
             latitude <- pd[[1]]$lat
 
-            # TEST JAIM
-            #browser()
             if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) { # We want it filtered
               m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
               coords <- cbind(longitude, latitude)
