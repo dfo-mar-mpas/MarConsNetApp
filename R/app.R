@@ -330,6 +330,7 @@ server <- function(input, output, session) {
           PPTtitles <- unlist(lapply(PPTProjects, function(x) unique(om$project_title[which(om$project_id == x)])))
           #formatted_projects <- paste0("<strong>", PPTProjects, "</strong> (", PPTtitles, ")")
           indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"), "Ecosystem Based Management Objective:", "Indicator Bin:")
+          CO_label <- ifelse(area %in% c("Scotian Shelf"), "Network Level Conservation Objective:", "Site Level Conservation Objective:")
 
           if (!(length(PPTProjects) == 0)) {
             urls <- paste0("https://dmapps/en/ppt/projects/", PPTProjects, "/view/")
@@ -340,7 +341,7 @@ server <- function(input, output, session) {
 
             return(HTML(
               paste(
-                "<p><strong>Site Level Objective:</strong></p>",
+                "<p><strong>",CO_label,"</strong></p>",
                 "<p>", objective, "</p>",
                 "<p><strong>Area:</strong></p>",
                 "<p>", area, "</p>",
@@ -357,7 +358,7 @@ server <- function(input, output, session) {
           } else {
             return(HTML(
               paste(
-                "<p><strong>Site Level Objective:</strong></p>",
+                "<p><strong>",CO_label,"</strong></p>",
                 "<p>", objective, "</p>",
                 "<p><strong>Area:</strong></p>",
                 "<p>", area, "</p>",
