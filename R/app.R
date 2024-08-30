@@ -20,6 +20,7 @@ library(dataSPA)
 library(readxl)
 #source("data_app.R")
 library(ggplot2)
+library(shinyBS)
 
 # Define UI
 ui <- fluidPage(
@@ -56,13 +57,12 @@ ui <- fluidPage(
       uiOutput("indicatorText"),
       uiOutput('mytabs'),
       leafletOutput("map"),
-      fluidRow(column(6, offset=6, align="right", uiOutput("networkObjectiveText"))),
-      fluidRow(column(width=6, align="left", plotOutput("flowerPlot")),
-               column(width=6, align="right", textOutput("network", container=pre),
+      fluidRow(column(width=6, align="left",
+                      plotOutput("flowerPlot")),
+               column(width=6, align="right",
+                      uiOutput("networkObjectiveText"),
                       uiOutput("siteObjectiveText"),
                       uiOutput("objectives", container=pre)))
-      #fluidRow(column(6, offset=6, align="right", uiOutput("siteObjectiveText"))),
-      #fluidRow(column(width=6, offset=6, align="right", uiOutput("objectives", container=pre)))
     ) #MAIN
   )
 )
@@ -98,7 +98,6 @@ server <- function(input, output, session) {
       state[[id]] <- input[[id]]
     })
   })
-browser()
   output$mytabs = renderUI({
     nTabs = length(do.call(c, Objectives))
     #nTabs = length(unique(odf$flower_plot))
@@ -167,7 +166,10 @@ browser()
   output$networkObjectiveText <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      tags$b("Network Level Objectives")
+      bsCollapse(id="networkObjectiveText", open=NULL,
+                 bsCollapsePanel("Click to see Network Objectives",
+                                 textOutput("network", container=pre),
+                                 style="primary"))
     }
   })
 
