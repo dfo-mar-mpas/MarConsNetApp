@@ -22,6 +22,8 @@ if (exists("om")) {
   om <- getData(type="om", age=3000, cookie="cookie")
 }
 
+om <- om[-(which(om$activity_type == "Other")),]
+
 # 4. Objectives
 areas <- c("st_Anns_Bank_MPA", "musquash_MPA", "gully_MPA", "WEBCA") # Only including Maritimes
 #areas <- c("stAnnsBank", "musquash", "laurentianChannel", "gully", "gilbert", "eastport",
