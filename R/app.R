@@ -99,7 +99,7 @@ server <- function(input, output, session) {
     })
   })
   output$mytabs = renderUI({
-    nTabs = length(do.call(c, Objectives))+length(N_Objectives)
+    nTabs = length(c(unlist(Objectives, use.names=FALSE),N_Objectives))
     #nTabs = length(unique(odf$flower_plot))
 
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
@@ -315,8 +315,9 @@ server <- function(input, output, session) {
       link_id <- paste0("link_", i)
       if (input$tabs == paste0("tab_", i)) {
         if (!(input$tabs == "tab_0")) {
+          #browser()
           objective <- gsub("\n", "",odf$objectives[which(odf$link == link_id)])
-          flower <- odf$flower_plot[which(odf$link == link_id)]
+          flower <- odf$flower_plot[which(odf$link == link_id)] # this could be an indicator as well
           area <- gsub("_", " ", gsub("_CO$", "",odf$area[which(odf$link == link_id)]))
           ki1 <- which(grepl(flower, binned_indicators$indicator_bin, ignore.case=TRUE)) # find matching flower plot
           ki2 <-  which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all"))) # Find matching area
@@ -328,6 +329,9 @@ server <- function(input, output, session) {
           #formatted_projects <- paste0("<strong>", PPTProjects, "</strong> (", PPTtitles, ")")
           indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"), "Ecosystem Based Management Objective:", "Indicator Bin:")
           CO_label <- ifelse(area %in% c("Scotian Shelf"), "Network Level Conservation Objective:", "Site Level Conservation Objective:")
+          indicator_bin_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", "Indicators:")
+          binned_indicator_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", paste0(binned_ind, collapse="<br>"))
+
 
           if (!(length(PPTProjects) == 0)) {
             urls <- paste0("https://dmapps/en/ppt/projects/", PPTProjects, "/view/")
@@ -344,7 +348,7 @@ server <- function(input, output, session) {
                 "<p>", area, "</p>",
                 "<p><strong>",indicator_label,"</strong></p>",
                 "<p>", flower, "</p>",
-                "<p><strong>Indicators:</strong></p>",
+                "<p><strong>",indicator_bin_label,"</strong></p>",
                 "<p>", paste0(binned_ind, collapse="<br>"), "</p>",
                 "<p><strong>Projects:</strong></p>",
                 "<p>", paste0(formatted_projects, collapse="<br>"), "</p>"
@@ -361,7 +365,7 @@ server <- function(input, output, session) {
                 "<p>", area, "</p>",
                 "<p><strong>",indicator_label,"</strong></p>",
                 "<p>", flower, "</p>",
-                "<p><strong>Indicators:</strong></p>",
+                "<p><strong>",indicator_bin_label,"</strong></p>",
                 "<p>", paste0(binned_ind, collapse="<br>"), "</p>",
                 "<p><strong>Projects:</strong></p>",
                 "<p>", paste0("There are no projects for this area in this indicator bin."), "</p>"
@@ -452,13 +456,37 @@ server <- function(input, output, session) {
         if (!(is.null(input$projects))) {
           #COMMENT
           projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+          projectPackages <- dataTable$package[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
 
           LAT <- NULL
           LON <- NULL
           for (i in seq_along(projectIds)) {
             pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
+            if (!(class(pd) == "argoFloats")) {
             longitude <- pd[[1]]$lon
             latitude <- pd[[1]]$lat
+            } else {
+              longitude <- pd[['longitude']]
+              latitude <- pd[['latitude']]
+            }
+            bad <- unique(c(which(is.na(longitude)), which(is.na(latitude))))
+            if (length(bad) > 0) {
+              latitude <- latitude[-bad]
+              longitude <- longitude[-bad]
+            }
+
+            if (length(latitude) > 1000) { # issue 21
+              latitude <- round(latitude,1)
+              longitude <- round(longitude,1)
+              coord <- data.frame(latitude, longitude)
+
+              # Get unique pairs
+              unique_coords <- unique(coord)
+              latitude <- unique_coords$latitude
+              longitude <- unique_coords$longitude
+
+            }
+
 
             if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) { # We want it filtered
               m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]

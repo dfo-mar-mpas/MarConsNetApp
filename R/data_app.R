@@ -4,6 +4,7 @@ library(viridis)
 library(dataSPA)
 library(arcpullr)
 library(dplyr)
+library(argoFloats)
 
 # 1. MPAs
 MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
@@ -56,7 +57,7 @@ for (i in seq_along(Nobjectives)) {
 N_Objectives <- unlist(N_Objectives)
 
 odf <- data.frame(
-  objectives = c(0, do.call(c,unname(Objectives)), N_Objectives)
+  objectives = c(0, unlist(Objectives, use.names = FALSE), N_Objectives)
 )
 
 odf$tab <- c("tab_0", paste0("tab_", 1:(length(odf$objectives)-1)))
@@ -72,10 +73,20 @@ for (i in seq_along(dataTable$id)) {
   func_name <- dataTable$get_function[i]
   func <- get(func_name)  # Get the function object
   arguments <- names(formals(func))
-  if ("taxize" %in% arguments) {
+  if (dataTable$package[i] == "MarConsNetData" && "taxize" %in% arguments) {
     pd <- get_project_data(ids=dataTable$id[i], taxize=FALSE)
   } else {
-    #pd <- get_project_data(ids=dataTable$id[i], type="all")
+    default_args <- formals(func)
+    default_args[is.null(default_args)] <- NA
+
+    # If you want to handle this gracefully:
+    filled_args <- lapply(default_args, function(arg) {
+      if (is.null(arg)) return(NA)
+      else return(arg)
+    })
+
+    # Use do.call to call the function with filled arguments
+    pd <- do.call(func, filled_args)
   }
 
   projectData[[i]] <- pd
