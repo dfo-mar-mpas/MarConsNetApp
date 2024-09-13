@@ -162,3 +162,29 @@ binned_indicators$link <- paste0("link_", length(odf$objectives)+(1:length(binne
 tar_load(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","pipeline_targets"),"pillar_ecol_df")
 
 
+# 12. Calculating indicators
+get_data('rv', data.dir="C:/Users/HarbinJ/Documents/data/rv")
+species <- c("COD(ATLANTIC)", "HADDOCK")
+
+RV_ABUNDANCE <- vector(mode="list", length(areas))
+
+for (i in seq_along(areas)) {
+  for (j in seq_along(species)) { # This has up to
+    message("i = ", i, " and j = ", j)
+    RV_ABUNDANCE[[i]][[j]] <- ind_rv_abundance(species = species[j], area=areas[i], MPAs=MPAs, data=GSSPECIES)
+  }
+}
+
+
+names(RV_ABUNDANCE) <- areas
+for (i in seq_along(RV_ABUNDANCE)) {
+  names(RV_ABUNDANCE[[i]]) <- species
+}
+
+# Linking indicators to plots
+indicator_to_plot <- data.frame(indicator=c(unique(binned_indicators$indicators), odf$objective[which(grepl("indicator", odf$flower_plot, ignore.case=TRUE))]))
+indicator_to_plot$plot <- 0
+# FIXME: Likely do this elsewhere (manually) this is a placeholder and will need to be changed
+indicator_to_plot$plot[length(indicator_to_plot$indicator)] <- "plot_rv_abundance(RV_ABUNDANCE[[4]][[2]])"
+
+

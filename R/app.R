@@ -21,6 +21,9 @@ library(readxl)
 #source("data_app.R")
 library(ggplot2)
 library(shinyBS)
+install_github("https://github.com/Maritimes/Mar.datawrangling")
+library(Mar.datawrangling)
+
 
 # Define UI
 ui <- fluidPage(
@@ -62,7 +65,9 @@ ui <- fluidPage(
                column(width=6, align="right",
                       uiOutput("networkObjectiveText"),
                       uiOutput("siteObjectiveText"),
-                      uiOutput("objectives", container=pre)))
+                      uiOutput("objectives", container=pre))),
+      plotOutput("indicatorPlot"),
+
     ) #MAIN
   )
 )
@@ -413,6 +418,19 @@ server <- function(input, output, session) {
     }
   })
 
+  output$indicatorPlot <- renderPlot({
+    req(input$tabs)
+    if (input$tabs %in% c(binned_indicators$tab, odf$tab[which(grepl("indicator", odf$flower_plot, ignore.case=TRUE))])) {
+      indy <- odf$objectives[which(odf$tab == input$tabs)]
+      if (length(indy) == 0) {
+        indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
+      }
+      plot <- indicator_to_plot$plot[which(indicator_to_plot$indicator == indy)]
+      eval(parse(text = plot))
+    }
+
+  })
+
 
 
   output$flowerPlot <- renderPlot({
@@ -552,7 +570,6 @@ server <- function(input, output, session) {
               opacity = 1
             )
         }
-
         map
       }
     }
