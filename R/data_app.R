@@ -67,6 +67,9 @@ odf$link <- c("link_0", paste0("link_", 1:(length(odf$objectives)-1)))
 
 # 5. Project Data
 # COMMENT
+# FIXME TEMPORARY:
+dataTable <- dataTable[-which(dataTable$id == 579),]
+
 projectData <- NULL
 for (i in seq_along(dataTable$id)) {
   message("i = ", i)
@@ -149,6 +152,11 @@ for (i in seq_along(odf$objectives)) {
 
 # 10. Getting indicator bins
 binned_indicators <- read_excel(file.path(system.file(package="MarConsNetAnalysis"),"data", "indicator_binning.xlsx"))
+
+## Giving indicator links
+binned_indicators$tab<- paste0("tab_", length(odf$objectives)+(1:length(binned_indicators$indicators)))
+binned_indicators$link <- paste0("link_", length(odf$objectives)+(1:length(binned_indicators$indicators)))
+
 
 # 11. Flower Plot
 tar_load(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","pipeline_targets"),"pillar_ecol_df")

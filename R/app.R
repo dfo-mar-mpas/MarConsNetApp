@@ -89,8 +89,6 @@ server <- function(input, output, session) {
     length(input$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(input$mpas == "All")
   })
 
-
-
   input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report") # THE SAME AS STATE
 
   lapply(input_ids, function(id) {
@@ -99,9 +97,7 @@ server <- function(input, output, session) {
     })
   })
   output$mytabs = renderUI({
-    nTabs = length(c(unlist(Objectives, use.names=FALSE),N_Objectives))
-    #nTabs = length(unique(odf$flower_plot))
-
+    nTabs = length(c(unlist(Objectives, use.names=FALSE),N_Objectives))+length(binned_indicators$indicators)
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
@@ -296,11 +292,14 @@ server <- function(input, output, session) {
   })
 
   # Dynmaically coding in which actionLink is selected will update the tab
-  for (i in 0:(length(unique(odf$tab))-1)) {
+  for (i in 0:(length(unique(odf$tab))-1+length(binned_indicators$indicators))) {
     local({
       link_id <- paste0("link_", i)
       observeEvent(input[[link_id]], {
         selected_tab <- unique(odf$tab[which(odf$link == link_id)])
+        if (length(selected_tab) == 0) {
+          selected_tab <- unique(binned_indicators$tab[which(binned_indicators$link == link_id)])
+        }
         updateTabsetPanel(session, "tabs", selected = selected_tab)
       })
     })
@@ -315,7 +314,6 @@ server <- function(input, output, session) {
       link_id <- paste0("link_", i)
       if (input$tabs == paste0("tab_", i)) {
         if (!(input$tabs == "tab_0")) {
-          #browser()
           objective <- gsub("\n", "",odf$objectives[which(odf$link == link_id)])
           flower <- odf$flower_plot[which(odf$link == link_id)] # this could be an indicator as well
           area <- gsub("_", " ", gsub("_CO$", "",odf$area[which(odf$link == link_id)]))
@@ -324,6 +322,25 @@ server <- function(input, output, session) {
           keepind <-intersect(ki1,ki2)
           binned_ind <-  gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind]))
           # which projects have that flower tag and are in the correct area
+
+          ind_links <- tagList(lapply(seq_along(binned_indicators$indicators[keepind]), function(i) {
+            tab_id <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "",binned_indicators$link[keepind][i]))
+            tagList(
+              tags$a(
+                href = paste0("#", tab_id),
+                gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
+                onclick = sprintf(
+                  "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
+                  tab_id,
+                  gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
+                  paste0('tab_', tab_id)  # Map `link_86` to `tab_86`
+                )
+              ),
+              tags$br()  # Add line break after each link
+            )
+          }))
+
+
           PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case=TRUE) & grepl(flower, om$tags, ignore.case=TRUE))]))
           PPTtitles <- unlist(lapply(PPTProjects, function(x) unique(om$project_title[which(om$project_id == x)])))
           #formatted_projects <- paste0("<strong>", PPTProjects, "</strong> (", PPTtitles, ")")
@@ -332,6 +349,23 @@ server <- function(input, output, session) {
           indicator_bin_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", "Indicators:")
           binned_indicator_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", paste0(binned_ind, collapse="<br>"))
 
+          # if (grepl("indicator", flower, ignore.case=TRUE)) {
+          #   tab_id <- odf$link[which(trimws(gsub("[-\n]", "", odf$objectives)) == trimws(gsub("[-\n]", "", objective)))]
+          #   c_objective <- trimws(gsub("[-\n]", "", objective))
+          #
+          #   # Create the tagList directly
+          #   objective <-
+          #     tags$a(
+          #       href = paste0("#", tab_id),
+          #       objective,
+          #       onclick = sprintf(
+          #         "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
+          #         tab_id,
+          #         objective,
+          #         paste0('tab_', tab_id)  # Map `link_86` to `tab_86`
+          #       )
+          #     )
+          # }
 
           if (!(length(PPTProjects) == 0)) {
             urls <- paste0("https://dmapps/en/ppt/projects/", PPTProjects, "/view/")
@@ -349,7 +383,7 @@ server <- function(input, output, session) {
                 "<p><strong>",indicator_label,"</strong></p>",
                 "<p>", flower, "</p>",
                 "<p><strong>",indicator_bin_label,"</strong></p>",
-                "<p>", paste0(binned_ind, collapse="<br>"), "</p>",
+                "<p>", paste0(ind_links, collapse="<br>"), "</p>",
                 "<p><strong>Projects:</strong></p>",
                 "<p>", paste0(formatted_projects, collapse="<br>"), "</p>"
               )
@@ -366,7 +400,7 @@ server <- function(input, output, session) {
                 "<p><strong>",indicator_label,"</strong></p>",
                 "<p>", flower, "</p>",
                 "<p><strong>",indicator_bin_label,"</strong></p>",
-                "<p>", paste0(binned_ind, collapse="<br>"), "</p>",
+                "<p>", ind_links, "</p>",
                 "<p><strong>Projects:</strong></p>",
                 "<p>", paste0("There are no projects for this area in this indicator bin."), "</p>"
               )
@@ -390,7 +424,6 @@ server <- function(input, output, session) {
       } else {
         NAME <- state$mpas
       }
-      #browser()
       plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
                       grouping = "objective",
                       labels = "bin",
@@ -423,7 +456,6 @@ server <- function(input, output, session) {
       })
     }
   })
-
 
   # Render the map with selected coordinates
   output$map <- renderLeaflet({
