@@ -39,9 +39,9 @@ ui <- fluidPage(
   ),
   uiOutput("gohome"),
   #Makes the tabs hide
-  tags$style(HTML("
-    .nav-tabs { display: none; }
-  ")),
+  # tags$style(HTML("
+  #   .nav-tabs { display: none; }
+  # ")),
   sidebarLayout(
     sidebarPanel(
       uiOutput("mpas"),
@@ -57,12 +57,14 @@ ui <- fluidPage(
       uiOutput("indicatorText"),
       uiOutput('mytabs'),
       uiOutput("conditionalPlot"),
+      textOutput('cut'),
+
       fluidRow(column(width=6, align="left",
-                      plotOutput("flowerPlot")),
+                      plotOutput("flowerPlot",click="flower_click")),
                column(width=6, align="right",
                       uiOutput("networkObjectiveText"),
                       uiOutput("siteObjectiveText"),
-                      uiOutput("objectives", container=pre)))
+                      uiOutput("objectives", container=pre))),
 
     ) #MAIN
   )
@@ -160,7 +162,7 @@ server <- function(input, output, session) {
   })
 
 
-  output$conditionalPlot <- renderUI({ #JAIM
+  output$conditionalPlot <- renderUI({
     req(input$tabs)
     req(state$mpas)
     if (input$tabs == "tab_0") {
@@ -434,12 +436,32 @@ server <- function(input, output, session) {
       } else {
         NAME <- state$mpas
       }
+      # JAIM TEST
       plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
                       grouping = "objective",
                       labels = "bin",
                       score = "ind_value")
     }
 
+  })
+
+  output$cut <- renderText({
+    req(input$flower_click)
+
+    xscale <- 0.5
+    yscale <- 205/2
+
+    x <- (input$flower_click$x-xscale)/xscale
+    y <- (input$flower_click$y+50-yscale)/yscale
+
+    clickangle <- 90-atan2(y,x)*180/pi
+    if(clickangle<0) clickangle <- 360+clickangle
+
+    if(sqrt(x^2+y^2)>0.75){
+      paste(Ecological$grouping[which.min(abs(Ecological$angle-clickangle))])
+    } else {
+      paste(Ecological$labels[which.min(abs(Ecological$angle-clickangle))])
+    }
   })
 
 
