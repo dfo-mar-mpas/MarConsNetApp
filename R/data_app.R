@@ -97,17 +97,6 @@ for (i in seq_along(dataTable$id)) {
 
 names(projectData) <- dataTable$id
 
-# 6. Theme
-my_theme <- bslib::bs_theme(
-  bg = "#ecf0f1",
-  # Light grey text
-  fg = "#2c3e50",
-  # Greyish blue background
-  primary = "#2980b9",
-  # Blue primary color for buttons
-  primary_hover = "#3498db" # Lighter blue on hover for buttons
-)
-
 # 7. Indicators
 indicators <- data_indicators()
 

@@ -1,28 +1,26 @@
-library(shiny)
-library(leaflet)
-library(dplyr)
-library(sf)
-library(shinyjs)
-library(viridis)
-library(arcpullr)
-library(devtools)
-source("getLatLon.R")
-source("newLine.R")
-install_github("dfo-mar-mpas/MarConsNetAnalysis", ref="main")
-library(MarConsNetAnalysis)
-#install_github("dfo-mar-mpas/MarConsNetData", ref="main")
-#library(MarConsNetData)
-load_all("../../MarConsNetData/")
-install_github("https://github.com/dfo-mar-odis/TBSpayRates")
-library(TBSpayRates)
-install_github("https://github.com/j-harbin/dataSPA")
-library(dataSPA)
-library(readxl)
-#source("data_app.R")
-library(ggplot2)
-library(shinyBS)
-install_github("https://github.com/Maritimes/Mar.datawrangling")
-library(Mar.datawrangling)
+# library(shiny)
+# library(leaflet)
+# library(dplyr)
+# library(sf)
+# library(shinyjs)
+# library(viridis)
+# library(arcpullr)
+# library(devtools)
+# source("getLatLon.R")
+# source("newLine.R")
+# install_github("dfo-mar-mpas/MarConsNetAnalysis", ref="main")
+# library(MarConsNetAnalysis)
+# load_all("../../MarConsNetData/")
+# install_github("https://github.com/dfo-mar-odis/TBSpayRates")
+# library(TBSpayRates)
+# install_github("https://github.com/j-harbin/dataSPA")
+# library(dataSPA)
+# library(readxl)
+# #source("data_app.R")
+# library(ggplot2)
+# library(shinyBS)
+# install_github("https://github.com/Maritimes/Mar.datawrangling", force=TRUE)
+# library(Mar.datawrangling)
 
 
 # Define UI
@@ -40,7 +38,6 @@ ui <- fluidPage(
     column(2, uiOutput("filter_button_ui"))
   ),
   uiOutput("gohome"),
-  #theme = my_theme,
   #Makes the tabs hide
   tags$style(HTML("
     .nav-tabs { display: none; }
@@ -59,14 +56,13 @@ ui <- fluidPage(
     mainPanel(
       uiOutput("indicatorText"),
       uiOutput('mytabs'),
-      leafletOutput("map"),
+      uiOutput("conditionalPlot"),
       fluidRow(column(width=6, align="left",
                       plotOutput("flowerPlot")),
                column(width=6, align="right",
                       uiOutput("networkObjectiveText"),
                       uiOutput("siteObjectiveText"),
-                      uiOutput("objectives", container=pre))),
-      plotOutput("indicatorPlot"),
+                      uiOutput("objectives", container=pre)))
 
     ) #MAIN
   )
@@ -161,6 +157,20 @@ server <- function(input, output, session) {
     if (input$tabs == "tab_0") {
       actionButton("report", "Create Report")
     }
+  })
+
+
+  output$conditionalPlot <- renderUI({ #JAIM
+    req(input$tabs)
+    req(state$mpas)
+    if (input$tabs == "tab_0") {
+      leafletOutput("map")
+    } else if (input$tabs %in% c(binned_indicators$tab, odf$tab[which(grepl("indicator", odf$flower_plot, ignore.case=TRUE))])) {
+      plotOutput("indicatorPlot")
+    } else {
+      NULL
+    }
+
   })
 
 
@@ -353,24 +363,6 @@ server <- function(input, output, session) {
           CO_label <- ifelse(area %in% c("Scotian Shelf"), "Network Level Conservation Objective:", "Site Level Conservation Objective:")
           indicator_bin_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", "Indicators:")
           binned_indicator_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", paste0(binned_ind, collapse="<br>"))
-
-          # if (grepl("indicator", flower, ignore.case=TRUE)) {
-          #   tab_id <- odf$link[which(trimws(gsub("[-\n]", "", odf$objectives)) == trimws(gsub("[-\n]", "", objective)))]
-          #   c_objective <- trimws(gsub("[-\n]", "", objective))
-          #
-          #   # Create the tagList directly
-          #   objective <-
-          #     tags$a(
-          #       href = paste0("#", tab_id),
-          #       objective,
-          #       onclick = sprintf(
-          #         "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
-          #         tab_id,
-          #         objective,
-          #         paste0('tab_', tab_id)  # Map `link_86` to `tab_86`
-          #       )
-          #     )
-          # }
 
           if (!(length(PPTProjects) == 0)) {
             urls <- paste0("https://dmapps/en/ppt/projects/", PPTProjects, "/view/")
