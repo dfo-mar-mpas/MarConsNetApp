@@ -6,11 +6,115 @@ library(arcpullr)
 library(dplyr)
 library(argoFloats)
 
+
 # 1. MPAs
 MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
 subarea_coords <- getLatLon(MPAs)
 
-#tar_load(c("MPAs", "subarea_coords"))
+
+EBM <- data.frame(grouping=rep(c("Ecological",
+                                 "Economic",
+                                 "Governance",
+                                 "Social & Cultural"),
+                               times=c(3,3,3,4)),
+                  labels=c("Habitat",
+                           "Biodiversity",
+                           "Productivity",
+                           "Economic Effiency",
+                           "Economic Equity",
+                           "Economic Sustainability",
+                           "Governance Outcomes",
+                           "Governance Structure & Processes",
+                           "Legal Obligations & Other Commitments",
+                           "Culture",
+                           "Ethical & Just Activities",
+                           "Health & Well-being",
+                           "Sustainable Communities"),
+                  score=runif(13,55,100)) |>
+  group_by(grouping) |>
+  mutate(weight=1/n()) |>
+  ungroup()
+
+grade <- function(percent){
+  cutoffs=c(0, seq(60, 100, by = 10/3))
+  letters=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
+  cut(percent,cutoffs,letters)
+}
+
+Ecological <- data.frame(grouping=rep(c("Biodiversity",
+                                        "Habitat",
+                                        "Productivity"),
+                                      times=c(3,5,3)),
+                         labels=c("Genetic Diversity",
+                                  "Species Diversity",
+                                  "Functional Diversity",
+
+                                  "Environmental (Representativity)",
+                                  "Key Fish Habitat",
+                                  "Connectivity",
+                                  "Uniqueness",
+                                  "Threats to Habitat",
+
+                                  "Biomass Metrics",
+                                  "Structure and Function",
+                                  "Threats to Productivity"),
+                         score=runif(11,55,100)) |>
+  # group_by(grouping) |>
+  # mutate(weight=1/n()) |>
+  mutate(weight=runif(11,1,10)) |>
+  ungroup()|>
+  mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
+
+# flowerTabs
+# Create then filter out (odf, N_Objectives, binned_indicators)
+
+ftabs <- data.frame(flower=unique(c(Ecological$grouping, Ecological$labels)))
+ftabs$place <- tolower("Scotian_Shelf")
+
+MYTABS <- NULL
+
+for (i in seq_along(MPAs$NAME_E)) {
+  df <- ftabs
+  df$place <- MPAs$NAME_E[i]
+  MYTABS[[i]] <- df
+}
+
+MYTABS <- do.call(rbind, MYTABS)
+APPTABS <- rbind(ftabs, MYTABS)
+APPTABS$tab <- paste0("tab_", seq_along(1:length(APPTABS$flower)))
+APPTABS$link <- paste0("link_", seq_along(1:length(APPTABS$flower)))
+home <- data.frame(flower="home", place="home", tab="tab_0", link="link_0")
+APPTABS <- rbind(home, APPTABS)
+APPTABS <- NAME_to_tag(APPTABS)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # 2. Project Titles
 load(file.path(system.file(package="MarConsNetData"),"data", "dataTable.rda"))
@@ -60,8 +164,9 @@ odf <- data.frame(
   objectives = c(0, unlist(Objectives, use.names = FALSE), N_Objectives)
 )
 
-odf$tab <- c("tab_0", paste0("tab_", 1:(length(odf$objectives)-1)))
-odf$link <- c("link_0", paste0("link_", 1:(length(odf$objectives)-1)))
+
+#odf$tab <- c("tab_0", paste0("tab_", 1:(length(odf$objectives)-1)))
+#odf$link <- c("link_0", paste0("link_", 1:(length(odf$objectives)-1)))
 
 
 
@@ -139,12 +244,41 @@ for (i in seq_along(odf$objectives)) {
   }
 }
 
+
+
 # 10. Getting indicator bins
 binned_indicators <- read_excel(file.path(system.file(package="MarConsNetAnalysis"),"data", "indicator_binning.xlsx"))
 
 ## Giving indicator links
-binned_indicators$tab<- paste0("tab_", length(odf$objectives)+(1:length(binned_indicators$indicators)))
-binned_indicators$link <- paste0("link_", length(odf$objectives)+(1:length(binned_indicators$indicators)))
+binned_indicators$tab<- paste0("tab_", length(APPTABS$flower)+(1:length(binned_indicators$indicators)))
+binned_indicators$link <- paste0("link_", length(APPTABS$flower)+(1:length(binned_indicators$indicators)))
+
+
+
+# TABS AND LINKS
+odf$tab <- 0
+odf$link <- 0
+for (i in seq_along(odf$objectives)) {
+  message("i = ", i)
+  if (!(i == 1)) {
+  if (!(grepl("Indicator", odf$flower_plot[i]))) {
+  k1 <- which(APPTABS$place == tolower(sub("_CO$", "", odf$area[i]))) # SAME AREA AND FLOWER
+  k2 <- which(APPTABS$flower == odf$flower_plot[i])
+  keep <- intersect(k1,k2)
+  odf$tab[i] <- APPTABS$tab[keep]
+  odf$link[i] <- APPTABS$link[keep]
+  } else {
+    k <- which(binned_indicators$indicators == trimws(gsub("-", "", gsub("\n", "", odf$objectives[i]))), "right")
+    odf$tab[i] <- binned_indicators$tab[k]
+    odf$link[i] <- binned_indicators$link[k]
+
+  }
+  } else {
+    odf$tab[i] <- "tab_0"
+    odf$link[i] <- "link_0"
+  }
+
+}
 
 
 # 11. Flower Plot
@@ -176,57 +310,4 @@ indicator_to_plot$plot <- 0
 # FIXME: Likely do this elsewhere (manually) this is a placeholder and will need to be changed
 indicator_to_plot$plot[length(indicator_to_plot$indicator)] <- "plot_rv_abundance(RV_ABUNDANCE[[4]][[2]])"
 
-# 13. Clickable flower plot
 
-EBM <- data.frame(grouping=rep(c("Ecological",
-                                 "Economic",
-                                 "Governance",
-                                 "Social & Cultural"),
-                               times=c(3,3,3,4)),
-                  labels=c("Habitat",
-                           "Biodiversity",
-                           "Productivity",
-                           "Economic Effiency",
-                           "Economic Equity",
-                           "Economic Sustainability",
-                           "Governance Outcomes",
-                           "Governance Structure & Processes",
-                           "Legal Obligations & Other Commitments",
-                           "Culture",
-                           "Ethical & Just Activities",
-                           "Health & Well-being",
-                           "Sustainable Communities"),
-                  score=runif(13,55,100)) |>
-  group_by(grouping) |>
-  mutate(weight=1/n()) |>
-  ungroup()
-
-grade <- function(percent){
-  cutoffs=c(0, seq(60, 100, by = 10/3))
-  letters=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
-  cut(percent,cutoffs,letters)
-}
-
-Ecological <- data.frame(grouping=rep(c("Biodiversity",
-                                        "Habitat",
-                                        "Productivity"),
-                                      times=c(3,5,3)),
-                         labels=c("Genetic Diversity",
-                                  "Species Diversity",
-                                  "Functional Diversity",
-
-                                  "Environmental & Representativity",
-                                  "Key Fish Habitat",
-                                  "Connectivity",
-                                  "Uniqueness",
-                                  "Threats to Habitat",
-
-                                  "Biomass Metrics",
-                                  "Structure and Function",
-                                  "Threats to Productivity"),
-                         score=runif(11,55,100)) |>
-  # group_by(grouping) |>
-  # mutate(weight=1/n()) |>
-  mutate(weight=runif(11,1,10)) |>
-  ungroup()|>
-  mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)

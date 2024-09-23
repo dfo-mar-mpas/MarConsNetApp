@@ -39,9 +39,9 @@ ui <- fluidPage(
   ),
   uiOutput("gohome"),
   #Makes the tabs hide
-  # tags$style(HTML("
-  #   .nav-tabs { display: none; }
-  # ")),
+  tags$style(HTML("
+    .nav-tabs { display: none; }
+  ")),
   sidebarLayout(
     sidebarPanel(
       uiOutput("mpas"),
@@ -100,7 +100,7 @@ server <- function(input, output, session) {
     })
   })
   output$mytabs = renderUI({
-    nTabs = length(c(unlist(Objectives, use.names=FALSE),N_Objectives))+length(binned_indicators$indicators)
+    nTabs = length(APPTABS$flower)+length(binned_indicators$indicators) # FIXME
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
@@ -223,12 +223,11 @@ server <- function(input, output, session) {
         string <- state$mpas
       }
       string <- gsub(" ", "_", string)
-
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
         textO <- Objectives[[keepO]]
         links <- lapply(seq_along(textO), function(i) {
-          actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]])
+          actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]]) #JAIM OBJECTIVES
         })
       }
     }
@@ -296,9 +295,6 @@ server <- function(input, output, session) {
     }
     string <- gsub(" ", "_", string)
 
-
-
-    #string <- gsub("\\.", "", gsub(" ", "", input$mpas))
     keepC <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
     textC <- Context[[keepC]]
     textC <- unlist(lapply(textC, function(x) paste(x, "\n\n")))
@@ -309,14 +305,17 @@ server <- function(input, output, session) {
   })
 
   # Dynmaically coding in which actionLink is selected will update the tab
-  for (i in 0:(length(unique(odf$tab))-1+length(binned_indicators$indicators))) {
+  for (i in 0:(length(unique(APPTABS$tab))+length(binned_indicators$indicators))) {
     local({
       link_id <- paste0("link_", i)
       observeEvent(input[[link_id]], {
-        selected_tab <- unique(odf$tab[which(odf$link == link_id)])
+        selected_tab <- unique(APPTABS$tab[which(APPTABS$link == link_id)])
         if (length(selected_tab) == 0) {
           selected_tab <- unique(binned_indicators$tab[which(binned_indicators$link == link_id)])
         }
+        # if (as.numeric(gsub("[^0-9]", "", selected_tab)) > 280) {
+        # browser()
+        # }
         updateTabsetPanel(session, "tabs", selected = selected_tab)
       })
     })
@@ -327,9 +326,12 @@ server <- function(input, output, session) {
   output$indicatorText <- renderUI({
     req(input$tabs)
     req(state$mpas)
-    for (i in 0:(length(odf$objectives)-1)) {
-      link_id <- paste0("link_", i)
-      if (input$tabs == paste0("tab_", i)) {
+    # if (input$tabs == "tab_285") {
+    #   browser()
+    # }
+
+      link_id <- sub("tab", "link", input$tabs)
+      if (input$tabs %in% odf$tab) {
         if (!(input$tabs == "tab_0")) {
           objective <- gsub("\n", "",odf$objectives[which(odf$link == link_id)])
           flower <- odf$flower_plot[which(odf$link == link_id)] # this could be an indicator as well
@@ -365,7 +367,6 @@ server <- function(input, output, session) {
           CO_label <- ifelse(area %in% c("Scotian Shelf"), "Network Level Conservation Objective:", "Site Level Conservation Objective:")
           indicator_bin_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", "Indicators:")
           binned_indicator_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", paste0(binned_ind, collapse="<br>"))
-
           if (!(length(PPTProjects) == 0)) {
             urls <- paste0("https://dmapps/en/ppt/projects/", PPTProjects, "/view/")
             formatted_urls <- sapply(seq_along(PPTProjects), function(i) {
@@ -390,6 +391,7 @@ server <- function(input, output, session) {
             )
             #HTML(paste("The Objective ", objective, " from ",area," is associated with the ", flower, " indicator bin. The following indicators apply: ", paste0(binned_ind, collapse="\n\n"), ". The following projects provide information: ", paste0(PPTProjects, collapse=",")))
           } else {
+            #browser()
             return(HTML(
               paste(
                 "<p><strong>",CO_label,"</strong></p>",
@@ -408,8 +410,7 @@ server <- function(input, output, session) {
 
           }
         }
-      }
-    }
+  }
   })
 
   output$indicatorPlot <- renderPlot({
@@ -436,6 +437,7 @@ server <- function(input, output, session) {
       } else {
         NAME <- state$mpas
       }
+
       # JAIM TEST
       plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
                       grouping = "objective",
@@ -446,6 +448,7 @@ server <- function(input, output, session) {
   })
 
   output$cut <- renderText({
+    req(input$mpas)
     req(input$flower_click)
 
     xscale <- 0.5
@@ -458,10 +461,14 @@ server <- function(input, output, session) {
     if(clickangle<0) clickangle <- 360+clickangle
 
     if(sqrt(x^2+y^2)>0.75){
-      paste(Ecological$grouping[which.min(abs(Ecological$angle-clickangle))])
+      wording <- Ecological$grouping[which.min(abs(Ecological$angle-clickangle))]
+      #paste(Ecological$grouping[which.min(abs(Ecological$angle-clickangle))])
     } else {
-      paste(Ecological$labels[which.min(abs(Ecological$angle-clickangle))])
+      wording <-Ecological$labels[which.min(abs(Ecological$angle-clickangle))]
+      #paste(Ecological$labels[which.min(abs(Ecological$angle-clickangle))])
     }
+    paste(wording)
+
   })
 
 
@@ -484,7 +491,7 @@ server <- function(input, output, session) {
       string <- "Scotian_Shelf_CO"
       textN <- N_Objectives
       links <- lapply(seq_along(textN), function(i) {
-        actionLink(inputId = odf$link[which(odf$objectives == textN[[i]])], label = textN[[i]])
+        actionLink(inputId = odf$link[which(odf$objectives == textN[[i]])], label = textN[[i]]) # NETWORK JAIM
       })
     }
   })
