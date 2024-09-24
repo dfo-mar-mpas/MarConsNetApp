@@ -39,9 +39,9 @@ ui <- fluidPage(
   ),
   uiOutput("gohome"),
   #Makes the tabs hide
-  tags$style(HTML("
-    .nav-tabs { display: none; }
-  ")),
+  # tags$style(HTML("
+  #   .nav-tabs { display: none; }
+  # ")),
   sidebarLayout(
     sidebarPanel(
       uiOutput("mpas"),
@@ -57,7 +57,6 @@ ui <- fluidPage(
       uiOutput("indicatorText"),
       uiOutput('mytabs'),
       uiOutput("conditionalPlot"),
-      textOutput('cut'),
 
       fluidRow(column(width=6, align="left",
                       plotOutput("flowerPlot",click="flower_click")),
@@ -227,7 +226,7 @@ server <- function(input, output, session) {
       if (!(length(keepO) == 0)) {
         textO <- Objectives[[keepO]]
         links <- lapply(seq_along(textO), function(i) {
-          actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]]) #JAIM OBJECTIVES
+          actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]])
         })
       }
     }
@@ -313,9 +312,6 @@ server <- function(input, output, session) {
         if (length(selected_tab) == 0) {
           selected_tab <- unique(binned_indicators$tab[which(binned_indicators$link == link_id)])
         }
-        # if (as.numeric(gsub("[^0-9]", "", selected_tab)) > 280) {
-        # browser()
-        # }
         updateTabsetPanel(session, "tabs", selected = selected_tab)
       })
     })
@@ -326,10 +322,6 @@ server <- function(input, output, session) {
   output$indicatorText <- renderUI({
     req(input$tabs)
     req(state$mpas)
-    # if (input$tabs == "tab_285") {
-    #   browser()
-    # }
-
       link_id <- sub("tab", "link", input$tabs)
       if (input$tabs %in% odf$tab) {
         if (!(input$tabs == "tab_0")) {
@@ -391,7 +383,6 @@ server <- function(input, output, session) {
             )
             #HTML(paste("The Objective ", objective, " from ",area," is associated with the ", flower, " indicator bin. The following indicators apply: ", paste0(binned_ind, collapse="\n\n"), ". The following projects provide information: ", paste0(PPTProjects, collapse=",")))
           } else {
-            #browser()
             return(HTML(
               paste(
                 "<p><strong>",CO_label,"</strong></p>",
@@ -438,7 +429,6 @@ server <- function(input, output, session) {
         NAME <- state$mpas
       }
 
-      # JAIM TEST
       plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
                       grouping = "objective",
                       labels = "bin",
@@ -447,9 +437,10 @@ server <- function(input, output, session) {
 
   })
 
-  output$cut <- renderText({
+  observeEvent(input$flower_click, {
     req(input$mpas)
     req(input$flower_click)
+    req(input$tabs)
 
     xscale <- 0.5
     yscale <- 205/2
@@ -462,13 +453,23 @@ server <- function(input, output, session) {
 
     if(sqrt(x^2+y^2)>0.75){
       wording <- Ecological$grouping[which.min(abs(Ecological$angle-clickangle))]
-      #paste(Ecological$grouping[which.min(abs(Ecological$angle-clickangle))])
     } else {
       wording <-Ecological$labels[which.min(abs(Ecological$angle-clickangle))]
-      #paste(Ecological$labels[which.min(abs(Ecological$angle-clickangle))])
     }
-    paste(wording)
+    if (input$mpas == "All") {
+      string <- tolower("Scotian_Shelf")
+    } else {
+      string <- NAME_to_tag(names=input$mpas)
+    }
+    k1 <- which(APPTABS$place == string)
+    k2 <- which(APPTABS$flower == wording)
 
+    print(k1)
+    print(k2)
+    print(intersect(k1,k2))
+
+    updatedTab <- paste0("tab_",intersect(k1,k2))
+    updateTabsetPanel(session, "tabs", selected=updatedTab)
   })
 
 
@@ -491,7 +492,7 @@ server <- function(input, output, session) {
       string <- "Scotian_Shelf_CO"
       textN <- N_Objectives
       links <- lapply(seq_along(textN), function(i) {
-        actionLink(inputId = odf$link[which(odf$objectives == textN[[i]])], label = textN[[i]]) # NETWORK JAIM
+        actionLink(inputId = odf$link[which(odf$objectives == textN[[i]])], label = textN[[i]])
       })
     }
   })
