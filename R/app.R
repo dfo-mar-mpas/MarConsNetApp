@@ -8,6 +8,7 @@
 # library(devtools)
 # source("getLatLon.R")
 # source("newLine.R")
+# source("NAME_to_tag.R")
 # install_github("dfo-mar-mpas/MarConsNetAnalysis", ref="main")
 # library(MarConsNetAnalysis)
 # load_all("../../MarConsNetData/")
@@ -39,9 +40,9 @@ ui <- fluidPage(
   ),
   uiOutput("gohome"),
   #Makes the tabs hide
-  # tags$style(HTML("
-  #   .nav-tabs { display: none; }
-  # ")),
+  tags$style(HTML("
+    .nav-tabs { display: none; }
+  ")),
   sidebarLayout(
     sidebarPanel(
       uiOutput("mpas"),
@@ -467,8 +468,10 @@ server <- function(input, output, session) {
     print(k1)
     print(k2)
     print(intersect(k1,k2))
+    print(wording)
+    #browser()
 
-    updatedTab <- paste0("tab_",intersect(k1,k2))
+    updatedTab <- APPTABS$tab[intersect(k1,k2)]
     updateTabsetPanel(session, "tabs", selected=updatedTab)
   })
 

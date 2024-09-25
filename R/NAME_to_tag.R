@@ -18,13 +18,14 @@ NAME_to_tag <- function(df=NULL, names=NULL) {
   }
 
   # 1. Dealing with MPAs first
+  #browser()
 
   if (any(grepl("Marine Protected Area", NAMES))) {
     mpa <- which(grepl("Marine Protected Area", NAMES))
     if (!(is.null(df))) {
-    df$place[mpa] <- gsub("Marine Protected Area", "MPA", NAMES[mpa])
+    df$place[mpa] <- gsub("\\.","", gsub("Marine Protected Area", "MPA", NAMES[mpa]))
     } else {
-      NAMES[mpa] <- gsub("Marine Protected Area", "MPA", NAMES[mpa])
+      NAMES[mpa] <- gsub("\\.","", gsub("Marine Protected Area", "MPA", NAMES[mpa]))
 
     }
   }
@@ -33,7 +34,7 @@ NAME_to_tag <- function(df=NULL, names=NULL) {
   mpa2 <- which(grepl("Estuary", NAMES))
   mpaKeep <- intersect(mpa, mpa2)
   if (!(is.null(df))) {
-  df$place[mpaKeep] <- gsub("Estuary ", "", NAMES[mpaKeep])
+  df$place[mpaKeep] <- gsub("Marine Protected Area", "MPA", gsub("Estuary ", "", NAMES[mpaKeep]))
   } else {
     NAMES[mpaKeep] <- gsub("Estuary ", "", NAMES[mpaKeep])
   }
@@ -50,8 +51,8 @@ if (any(grepl("Western", NAMES))) {
 
   if (exists("mpa")) {
     if (!(is.null(df))) {
-  df$place[mpa] <- gsub("\\.", "", NAMES[mpa])
-  df$place[mpa] <- tolower(gsub(" ", "_", NAMES[mpa]))
+  df$place[mpa] <- gsub("\\.", "", df$place[mpa])
+  df$place[mpa] <- tolower(gsub(" ", "_", df$place[mpa]))
     } else {
       NAMES[mpa] <- gsub("\\.", "", NAMES[mpa])
       NAMES[mpa] <- tolower(gsub(" ", "_", NAMES[mpa]))
@@ -59,12 +60,13 @@ if (any(grepl("Western", NAMES))) {
   }
 
   if (!(is.null(df))) {
-   df$place[mpa] <- gsub("\\.", "", NAMES[mpa])
-  df$place[mpa] <- tolower(gsub(" ", "_", NAMES[mpa]))
+   df$place[mpa] <- gsub("\\.", "", df$place[mpa])
+  df$place[mpa] <- tolower(gsub(" ", "_", df$place[mpa]))
   } else {
     NAMES <- gsub("\\.", "", NAMES[mpa])
     NAMES <- tolower(gsub(" ", "_", NAMES[mpa]))
   }
+
 
   if (!(is.null(df))) {
   return(df)

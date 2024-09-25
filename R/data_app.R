@@ -5,6 +5,8 @@ library(dataSPA)
 library(arcpullr)
 library(dplyr)
 library(argoFloats)
+source("../../MarConsNetAnalysis/R/ind_rv_abundance.R")
+source("../../MarConsNetAnalysis/R/plot_rv_abundance.R")
 
 
 # 1. MPAs
@@ -247,7 +249,8 @@ for (i in seq_along(odf$objectives)) {
 
 
 # 10. Getting indicator bins
-binned_indicators <- read_excel(file.path(system.file(package="MarConsNetAnalysis"),"data", "indicator_binning.xlsx"))
+binned_indicators <- read_excel("../../MarConsNetAnalysis/data/indicator_binning.xlsx")
+#binned_indicators <- read_excel(file.path(system.file(package="MarConsNetAnalysis"),"data", "indicator_binning.xlsx"))
 
 ## Giving indicator links
 binned_indicators$tab<- paste0("tab_", length(APPTABS$flower)+(1:length(binned_indicators$indicators)))
@@ -262,7 +265,7 @@ for (i in seq_along(odf$objectives)) {
   message("i = ", i)
   if (!(i == 1)) {
   if (!(grepl("Indicator", odf$flower_plot[i]))) {
-  k1 <- which(APPTABS$place == tolower(sub("_CO$", "", odf$area[i]))) # SAME AREA AND FLOWER
+  k1 <- which(gsub("\\.","", APPTABS$place) == tolower(sub("_CO$", "", odf$area[i]))) # SAME AREA AND FLOWER
   k2 <- which(APPTABS$flower == odf$flower_plot[i])
   keep <- intersect(k1,k2)
   odf$tab[i] <- APPTABS$tab[keep]
