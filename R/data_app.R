@@ -7,6 +7,8 @@ library(dplyr)
 library(argoFloats)
 source("../../MarConsNetAnalysis/R/ind_rv_abundance.R")
 source("../../MarConsNetAnalysis/R/plot_rv_abundance.R")
+library(raster)
+source("../MarConsNetAnalysis/r/plot_fishing_abundance.R")
 
 
 # 1. MPAs
@@ -307,10 +309,19 @@ for (i in seq_along(RV_ABUNDANCE)) {
   names(RV_ABUNDANCE[[i]]) <- species
 }
 
-# Linking indicators to plots
-indicator_to_plot <- data.frame(indicator=c(unique(binned_indicators$indicators), odf$objective[which(grepl("indicator", odf$flower_plot, ignore.case=TRUE))]))
-indicator_to_plot$plot <- 0
-# FIXME: Likely do this elsewhere (manually) this is a placeholder and will need to be changed
-indicator_to_plot$plot[length(indicator_to_plot$indicator)] <- "plot_rv_abundance(RV_ABUNDANCE[[4]][[2]])"
 
+
+# BOTTOM ASSIGNING PLOTTING (FIXME)
+# Linking indicators to plots
+plotindy <- c(binned_indicators$indicators, odf$objectives)
+
+indicator_to_plot <- data.frame(indicator=unique(plotindy), plot=rep(0), type="plot")
+indicator_to_plot$plot[which(indicator_to_plot$indicator == "-Support productivity objectives for\n groundfish species of Aboriginal,\n commercial, and/or recreational\n importance, particularly NAFO Division\n 4VW haddock \n" )] <- "plot_rv_abundance(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]])"
+
+
+planning_area <- data_planning_areas()
+fishing <- data_commercial_fishing(planning_area)
+
+indicator_to_plot$plot[which(indicator_to_plot$indicator == "Fishing effort")] <- "plot_fishing_abundance(area='WEBCA', CPCAD=MPAs)"
+indicator_to_plot$type[which(indicator_to_plot$indicator == "Fishing effort")] <- "leaflet"
 

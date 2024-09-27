@@ -81,8 +81,8 @@ server <- function(input, output, session) {
     functionalGroup = NULL,
     section = NULL,
     division = NULL,
-    report = NULL,
-  )
+    report = NULL
+    )
 
   rv <- reactiveValues(button_label = "See All Project Data")
 
@@ -160,21 +160,6 @@ server <- function(input, output, session) {
       actionButton("report", "Create Report")
     }
   })
-
-
-  output$conditionalPlot <- renderUI({
-    req(input$tabs)
-    req(state$mpas)
-    if (input$tabs == "tab_0") {
-      leafletOutput("map")
-    } else if (input$tabs %in% c(binned_indicators$tab, odf$tab[which(grepl("indicator", odf$flower_plot, ignore.case=TRUE))])) {
-      plotOutput("indicatorPlot")
-    } else {
-      NULL
-    }
-
-  })
-
 
   output$networkObjectiveText <- renderUI({
     req(input$tabs)
@@ -405,15 +390,61 @@ server <- function(input, output, session) {
   }
   })
 
+
+  output$conditionalPlot <- renderUI({
+    req(input$tabs)
+    req(state$mpas)
+    if (input$tabs == "tab_0") {
+      leafletOutput("map")
+    } else if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
+      # FIXME: THIS COULD BE BETTER. BUT ISN'T TOO BAD
+        currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
+        if (!(length(currentInd) == 0)) {
+        if (indicator_to_plot$type[which(indicator_to_plot$indicator == currentInd)] == "leaflet") {
+          #browser()
+          leafletOutput("indicatorLeaflet")
+        } else {
+          plotOutput("indicatorPlot")
+        }
+        }
+
+    } else {
+      NULL
+    }
+
+  })
+
+
   output$indicatorPlot <- renderPlot({
     req(input$tabs)
-    if (input$tabs %in% c(binned_indicators$tab, odf$tab[which(grepl("indicator", odf$flower_plot, ignore.case=TRUE))])) {
+    currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
+
+    if (!(length(currentInd) == 0)) {
       indy <- odf$objectives[which(odf$tab == input$tabs)]
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
       }
       plot <- indicator_to_plot$plot[which(indicator_to_plot$indicator == indy)]
-      eval(parse(text = plot))
+      if (indicator_to_plot$type[which(indicator_to_plot$indicator == currentInd)] == "plot") {
+        eval(parse(text = plot))
+      }
+    }
+
+  })
+
+  output$indicatorLeaflet <- renderLeaflet({
+    req(input$tabs)
+    currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
+
+    if (!(length(currentInd) == 0)) {
+      indy <- odf$objectives[which(odf$tab == input$tabs)]
+      if (length(indy) == 0) {
+        indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
+      }
+      plot <- indicator_to_plot$plot[which(indicator_to_plot$indicator == indy)]
+      if (indicator_to_plot$type[which(indicator_to_plot$indicator == currentInd)] == "leaflet") {
+        plot2 <- eval(parse(text = plot))
+      }
     }
 
   })
@@ -465,10 +496,10 @@ server <- function(input, output, session) {
     k1 <- which(APPTABS$place == string)
     k2 <- which(APPTABS$flower == wording)
 
-    print(k1)
-    print(k2)
-    print(intersect(k1,k2))
-    print(wording)
+    #print(k1)
+    #print(k2)
+    #print(intersect(k1,k2))
+    #print(wording)
     #browser()
 
     updatedTab <- APPTABS$tab[intersect(k1,k2)]
