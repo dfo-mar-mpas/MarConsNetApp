@@ -60,15 +60,6 @@ if (any(grepl("Western", NAMES))) {
   }
 
   if (!(is.null(df))) {
-   df$place[mpa] <- gsub("\\.", "", df$place[mpa])
-  df$place[mpa] <- tolower(gsub(" ", "_", df$place[mpa]))
-  } else {
-    NAMES <- gsub("\\.", "", NAMES[mpa])
-    NAMES <- tolower(gsub(" ", "_", NAMES[mpa]))
-  }
-
-
-  if (!(is.null(df))) {
   return(df)
   } else {
     return(unlist(unname(NAMES)))

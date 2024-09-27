@@ -491,6 +491,7 @@ server <- function(input, output, session) {
     if (input$mpas == "All") {
       string <- tolower("Scotian_Shelf")
     } else {
+      #browser()
       string <- NAME_to_tag(names=input$mpas)
     }
     k1 <- which(APPTABS$place == string)
