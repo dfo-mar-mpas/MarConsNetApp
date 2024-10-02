@@ -56,6 +56,7 @@ ui <- fluidPage(
     ),
     mainPanel(
       uiOutput("indicatorText"),
+      DTOutput("DT"),
       uiOutput('mytabs'),
       uiOutput("conditionalPlot"),
 
@@ -304,91 +305,120 @@ server <- function(input, output, session) {
   }
 
   # Dynmaically coding in which actionLink is will paste indicators
+  calculated_info <- reactive({
+    req(input$tabs)
+
+    link_id <- sub("tab", "link", input$tabs)
+    if (input$tabs %in% odf$tab) {
+      if (!(input$tabs == "tab_0")) {
+        objective <- gsub("\n", "", odf$objectives[which(odf$link == link_id)])
+        flower <- odf$flower_plot[which(odf$link == link_id)]
+        area <- gsub("_", " ", gsub("_CO$", "", odf$area[which(odf$link == link_id)]))
+        ki1 <- which(grepl(flower, binned_indicators$indicator_bin, ignore.case = TRUE))
+        ki2 <- which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
+        keepind <- intersect(ki1, ki2)
+        binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind]))
+
+        ind_links <- tagList(lapply(seq_along(binned_indicators$indicators[keepind]), function(i) {
+          tab_id <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$link[keepind][i]))
+          tags$a(
+            href = paste0("#", tab_id),
+            gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
+            onclick = sprintf(
+              "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
+              tab_id,
+              gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
+              paste0('tab_', tab_id)
+            )
+          )
+        }))
+
+        PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case = TRUE) & grepl(flower, om$tags, ignore.case = TRUE))]))
+        PPTtitles <- unlist(lapply(PPTProjects, function(x) unique(om$project_title[which(om$project_id == x)])))
+
+        indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"),
+                                  "Ecosystem Based Management Objective:",
+                                  "Indicator Bin:")
+        CO_label <- ifelse(area %in% c("Scotian Shelf"),
+                           "Network Level Conservation Objective:",
+                           "Site Level Conservation Objective:")
+        indicator_bin_label <- ifelse(grepl("Indicator", flower, ignore.case = TRUE), "\n\n", "Indicators:")
+        binned_indicator_label <- ifelse(grepl("Indicator", flower, ignore.case = TRUE), "\n\n",
+                                         paste0(binned_ind, collapse = "<br>"))
+
+        if (!(length(PPTProjects) == 0)) {
+          urls <- paste0("https://dmapps/en/ppt/projects/", PPTProjects, "/view/")
+          formatted_urls <- sapply(seq_along(PPTProjects), function(i) {
+            paste0('<strong><a href="', urls[i], '" target="_blank">Project ', PPTProjects[i], '</a></strong>')
+          })
+          formatted_projects <- paste0(formatted_urls, " - ", PPTtitles)
+
+          return(list(
+            CO_label = CO_label,
+            objective = objective,
+            area = area,
+            indicator_label = indicator_label,
+            flower = flower,
+            indicator_bin_label = indicator_bin_label,
+            ind_links = ind_links,
+            formatted_projects = formatted_projects
+          ))
+        } else {
+          return(list(
+            CO_label = CO_label,
+            objective = objective,
+            area = area,
+            indicator_label = indicator_label,
+            flower = flower,
+            indicator_bin_label = indicator_bin_label,
+            ind_links = ind_links,
+            formatted_projects = "There are no projects for this area in this indicator bin."
+          ))
+        }
+      }
+    }
+  })
 
   output$indicatorText <- renderUI({
-    req(input$tabs)
-    req(state$mpas)
-      link_id <- sub("tab", "link", input$tabs)
-      if (input$tabs %in% odf$tab) {
-        if (!(input$tabs == "tab_0")) {
-          objective <- gsub("\n", "",odf$objectives[which(odf$link == link_id)])
-          flower <- odf$flower_plot[which(odf$link == link_id)] # this could be an indicator as well
-          area <- gsub("_", " ", gsub("_CO$", "",odf$area[which(odf$link == link_id)]))
-          ki1 <- which(grepl(flower, binned_indicators$indicator_bin, ignore.case=TRUE)) # find matching flower plot
-          ki2 <-  which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all"))) # Find matching area
-          keepind <-intersect(ki1,ki2)
-          binned_ind <-  gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind]))
-          # which projects have that flower tag and are in the correct area
+    info <- calculated_info()
+    req(info)  # Ensure the info is available
 
-          ind_links <- tagList(lapply(seq_along(binned_indicators$indicators[keepind]), function(i) {
-            tab_id <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "",binned_indicators$link[keepind][i]))
-            tagList(
-              tags$a(
-                href = paste0("#", tab_id),
-                gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
-                onclick = sprintf(
-                  "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
-                  tab_id,
-                  gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
-                  paste0('tab_', tab_id)  # Map `link_86` to `tab_86`
-                )
-              ),
-              tags$br()  # Add line break after each link
-            )
-          }))
-
-
-          PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case=TRUE) & grepl(flower, om$tags, ignore.case=TRUE))]))
-          PPTtitles <- unlist(lapply(PPTProjects, function(x) unique(om$project_title[which(om$project_id == x)])))
-          #formatted_projects <- paste0("<strong>", PPTProjects, "</strong> (", PPTtitles, ")")
-          indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"), "Ecosystem Based Management Objective:", "Indicator Bin:")
-          CO_label <- ifelse(area %in% c("Scotian Shelf"), "Network Level Conservation Objective:", "Site Level Conservation Objective:")
-          indicator_bin_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", "Indicators:")
-          binned_indicator_label <- ifelse(grepl("Indicator", flower, ignore.case=TRUE), "\n\n", paste0(binned_ind, collapse="<br>"))
-          if (!(length(PPTProjects) == 0)) {
-            urls <- paste0("https://dmapps/en/ppt/projects/", PPTProjects, "/view/")
-            formatted_urls <- sapply(seq_along(PPTProjects), function(i) {
-              paste0('<strong><a href="', urls[i], '" target="_blank">Project ', PPTProjects[i], '</a></strong>')
-            })
-            formatted_projects <- paste0(formatted_urls, " - ", PPTtitles)
-
-            return(HTML(
-              paste(
-                "<p><strong>",CO_label,"</strong></p>",
-                "<p>", objective, "</p>",
-                "<p><strong>Area:</strong></p>",
-                "<p>", area, "</p>",
-                "<p><strong>",indicator_label,"</strong></p>",
-                "<p>", flower, "</p>",
-                "<p><strong>",indicator_bin_label,"</strong></p>",
-                "<p>", paste0(ind_links, collapse="<br>"), "</p>",
-                "<p><strong>Projects:</strong></p>",
-                "<p>", paste0(formatted_projects, collapse="<br>"), "</p>"
-              )
-            )
-            )
-            #HTML(paste("The Objective ", objective, " from ",area," is associated with the ", flower, " indicator bin. The following indicators apply: ", paste0(binned_ind, collapse="\n\n"), ". The following projects provide information: ", paste0(PPTProjects, collapse=",")))
-          } else {
-            return(HTML(
-              paste(
-                "<p><strong>",CO_label,"</strong></p>",
-                "<p>", objective, "</p>",
-                "<p><strong>Area:</strong></p>",
-                "<p>", area, "</p>",
-                "<p><strong>",indicator_label,"</strong></p>",
-                "<p>", flower, "</p>",
-                "<p><strong>",indicator_bin_label,"</strong></p>",
-                "<p>", ind_links, "</p>",
-                "<p><strong>Projects:</strong></p>",
-                "<p>", paste0("There are no projects for this area in this indicator bin."), "</p>"
-              )
-            )
-            )
-
-          }
-        }
-  }
+    HTML(
+      paste(
+        "<p><strong>", info$CO_label, "</strong></p>",
+        "<p>", info$objective, "</p>",
+        "<p><strong>Area:</strong></p>",
+        "<p>", info$area, "</p>",
+        "<p><strong>", info$indicator_label, "</strong></p>",
+        "<p>", info$flower, "</p>",
+        #"<p><strong>", info$indicator_bin_label, "</strong></p>",
+        #"<p>", paste0(info$ind_links, collapse = "<br>"), "</p>",
+        "<p><strong>Projects:</strong></p>",
+        "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>"
+      )
+    )
   })
+
+  output$DT <- renderDT({
+    req(input$tabs)
+    info <- calculated_info()
+    req(info)  # Ensure the info is available
+    if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
+    indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
+    dfdt <- data.frame(
+      Indicator = indj,
+      Status = rep(NA),
+      Trend = rep(NA),
+      stringsAsFactors = FALSE
+    )
+    if (input$tabs %in% odf$tab) {
+      datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
+    } else {
+      NULL
+    }
+    }
+  })
+
 
 
   output$conditionalPlot <- renderUI({
@@ -401,7 +431,6 @@ server <- function(input, output, session) {
         currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
         if (indicator_to_plot$type[which(indicator_to_plot$indicator == currentInd)] == "leaflet") {
-          #browser()
           leafletOutput("indicatorLeaflet")
         } else {
           plotOutput("indicatorPlot")
@@ -491,17 +520,11 @@ server <- function(input, output, session) {
     if (input$mpas == "All") {
       string <- tolower("Scotian_Shelf")
     } else {
-      #browser()
       string <- NAME_to_tag(names=input$mpas)
     }
     k1 <- which(APPTABS$place == string)
     k2 <- which(APPTABS$flower == wording)
 
-    #print(k1)
-    #print(k2)
-    #print(intersect(k1,k2))
-    #print(wording)
-    #browser()
 
     updatedTab <- APPTABS$tab[intersect(k1,k2)]
     updateTabsetPanel(session, "tabs", selected=updatedTab)
