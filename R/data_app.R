@@ -45,29 +45,29 @@ grade <- function(percent){
   cut(percent,cutoffs,letters)
 }
 
-Ecological <- data.frame(grouping=rep(c("Biodiversity",
-                                        "Habitat",
-                                        "Productivity"),
-                                      times=c(3,5,3)),
-                         labels=c("Genetic Diversity",
-                                  "Species Diversity",
-                                  "Functional Diversity",
-
-                                  "Environmental (Representativity)",
-                                  "Key Fish Habitat",
-                                  "Connectivity",
-                                  "Uniqueness",
-                                  "Threats to Habitat",
-
-                                  "Biomass Metrics",
-                                  "Structure and Function",
-                                  "Threats to Productivity"),
-                         score=runif(11,55,100)) |>
-  # group_by(grouping) |>
-  # mutate(weight=1/n()) |>
-  mutate(weight=runif(11,1,10)) |>
-  ungroup()|>
-  mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
+# Ecological <- data.frame(grouping=rep(c("Biodiversity",
+#                                         "Habitat",
+#                                         "Productivity"),
+#                                       times=c(3,5,3)),
+#                          labels=c("Genetic Diversity",
+#                                   "Species Diversity",
+#                                   "Functional Diversity",
+#
+#                                   "Environmental (Representativity)",
+#                                   "Key Fish Habitat",
+#                                   "Connectivity",
+#                                   "Uniqueness",
+#                                   "Threats to Habitat",
+#
+#                                   "Biomass Metrics",
+#                                   "Structure and Function",
+#                                   "Threats to Productivity"),
+#                          score=runif(11,55,100)) |>
+#   # group_by(grouping) |>
+#   # mutate(weight=1/n()) |>
+#   mutate(weight=runif(11,1,10)) |>
+#   ungroup()|>
+#   mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
 
 # flowerTabs
 # Create then filter out (odf, N_Objectives, binned_indicators)
@@ -257,6 +257,8 @@ for (i in seq_along(odf$objectives)) {
 
 # 11. Flower Plot
 tar_load(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","pipeline_targets"),"pillar_ecol_df")
+pillar_ecol_df <- pillar_ecol_df %>%
+  mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
 
 
 # 12. Calculating indicators

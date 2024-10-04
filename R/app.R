@@ -511,7 +511,7 @@ server <- function(input, output, session) {
       plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
                       grouping = "objective",
                       labels = "bin",
-                      score = "ind_value")
+                      score = "ind_status")
     }
 
   })
@@ -531,9 +531,9 @@ server <- function(input, output, session) {
     if(clickangle<0) clickangle <- 360+clickangle
 
     if(sqrt(x^2+y^2)>0.75){
-      wording <- Ecological$grouping[which.min(abs(Ecological$angle-clickangle))]
+      wording <- pillar_ecol_df$objectives[which.min(abs(pillar_ecol_df$angle-clickangle))]
     } else {
-      wording <-Ecological$labels[which.min(abs(Ecological$angle-clickangle))]
+      wording <-pillar_ecol_df$bin[which.min(abs(pillar_ecol_df$angle-clickangle))]
     }
     if (input$mpas == "All") {
       string <- tolower("Scotian_Shelf")
@@ -542,6 +542,7 @@ server <- function(input, output, session) {
     }
     k1 <- which(APPTABS$place == string)
     k2 <- which(APPTABS$flower == wording)
+    #browser()
 
 
     updatedTab <- APPTABS$tab[intersect(k1,k2)]
