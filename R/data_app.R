@@ -8,7 +8,7 @@ library(argoFloats)
 source("../../MarConsNetAnalysis/R/ind_rv_abundance.R")
 source("../../MarConsNetAnalysis/R/plot_rv_abundance.R")
 library(raster)
-source("../MarConsNetAnalysis/r/plot_fishing_abundance.R")
+source("../../MarConsNetAnalysis/r/plot_fishing_abundance.R")
 
 
 # 1. MPAs
@@ -92,34 +92,6 @@ APPTABS <- rbind(home, APPTABS)
 APPTABS <- NAME_to_tag(APPTABS)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # 2. Project Titles
 load(file.path(system.file(package="MarConsNetData"),"data", "dataTable.rda"))
 
@@ -128,7 +100,7 @@ load(file.path(system.file(package="MarConsNetData"),"data", "dataTable.rda"))
 if (exists("om")) {
   om <- om
 } else {
-  om <- getData(type="om", age=3000, cookie="cookie")
+  om <- dataSPA::getData(type="om", age=3000, cookie="cookie")
 }
 
 om <- om[-(which(om$activity_type == "Other")),]
@@ -152,7 +124,6 @@ names(Objectives) <- areas
 
 
 # Obtaining network objectives
-
 Nobjectives <- data_objectives(type="network")
 N_Objectives <- vector(mode="list", length(Nobjectives))
 for (i in seq_along(Nobjectives)) {
@@ -171,8 +142,6 @@ odf <- data.frame(
 
 #odf$tab <- c("tab_0", paste0("tab_", 1:(length(odf$objectives)-1)))
 #odf$link <- c("link_0", paste0("link_", 1:(length(odf$objectives)-1)))
-
-
 
 # 5. Project Data
 # COMMENT

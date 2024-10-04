@@ -22,6 +22,7 @@
 # library(shinyBS)
 # install_github("https://github.com/Maritimes/Mar.datawrangling", force=TRUE)
 # library(Mar.datawrangling)
+# library(DT)
 
 
 # Define UI
@@ -56,7 +57,7 @@ ui <- fluidPage(
     ),
     mainPanel(
       uiOutput("indicatorText"),
-      DTOutput("DT"),
+      uiOutput("DT_ui"),
       uiOutput('mytabs'),
       uiOutput("conditionalPlot"),
 
@@ -412,10 +413,27 @@ server <- function(input, output, session) {
       stringsAsFactors = FALSE
     )
     if (input$tabs %in% odf$tab) {
+      if (!(input$tabs == "tab_0")) { #JAIM HERE
       datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
+      } else {
+        NULL
+      }
     } else {
       NULL
     }
+    }
+  })
+
+  output$DT_ui <- renderUI({
+    req(input$tabs)
+    if (!(input$tabs == "tab_0")) {
+      if (input$tabs %in% odf$tab) {
+      dataTableOutput("DT")
+      } else {
+        NULL
+      }
+    } else {
+      NULL
     }
   })
 
