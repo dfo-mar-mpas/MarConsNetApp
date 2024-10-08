@@ -1,7 +1,7 @@
 # THIS SCRIPT IS USED TO FILL IN THE STATUS AND TREND STATEMENTS
 
 for (i in seq_along(indicator_to_plot$indicator)) {
-  TREND <- "A linear regression has shown a XX  of YY UU over the last ZZ years. The regression for the last 5 years was LR UU."
+  TREND <- "A linear regression has shown a XX  of YY UU over the last ZZ years. The linear trend for the last 5 years was a TID of LR UU."
   STATUS <- "The most recent year (RR) shows NN UU. The most recent 5 year mean was MM UU."
   itp <- indicator_to_plot$indicator[i]
   if (itp == "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock") {
@@ -14,6 +14,7 @@ for (i in seq_along(indicator_to_plot$indicator)) {
     n <- df$abundance[which(df$year == r)]
     m <- mean(df$abundance[which(df$year %in% tail(sort(df$year),5))], na.rm=TRUE)
     lr <- round(unname(coef(lm(df$abundance[which(df$year %in% tail(sort(df$year),5))] ~ df$year[which(df$year %in% tail(sort(df$year),5))]))[2]),2)
+    tid <- ifelse(lr > 0, "increase", "decrease")
   } else {
     t <- "BLANK"
     y <- "BLANK"
@@ -22,6 +23,7 @@ for (i in seq_along(indicator_to_plot$indicator)) {
     n <- "BLANK"
     m <- "BLANK"
     lr <- "BLANK"
+    tid <- "BLANK"
   }
 
   if (!(t == "BLANK")) {
@@ -38,6 +40,8 @@ for (i in seq_along(indicator_to_plot$indicator)) {
   TREND <- gsub("ZZ", y, TREND)
   TREND <- gsub("UU", u, TREND)
   TREND <- gsub("LR", lr, TREND)
+  TREND <- gsub("TID", tid, TREND)
+
 
 
   indicator_to_plot$trend[i] <- TREND
