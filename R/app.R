@@ -406,10 +406,19 @@ server <- function(input, output, session) {
     req(info)  # Ensure the info is available
     if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
     indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
+    #browser()
+    indicatorStatus <- indicator_to_plot$status[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% gsub(".*>(.*)<.*", "\\1", indj))]
+    indicatorTrend <- indicator_to_plot$trend[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% gsub(".*>(.*)<.*", "\\1", indj))]
+
+
+    gsub(".*>(.*)<.*", "\\1", indj)[which(gsub(".*>(.*)<.*", "\\1", indj)
+                                            %in% gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))))]
+
+
     dfdt <- data.frame(
       Indicator = indj,
-      Status = rep(NA),
-      Trend = rep(NA),
+      Status = indicatorStatus,
+      Trend = indicatorTrend,
       stringsAsFactors = FALSE
     )
     if (input$tabs %in% odf$tab) {

@@ -286,7 +286,7 @@ for (i in seq_along(RV_ABUNDANCE)) {
 # Linking indicators to plots
 plotindy <- c(binned_indicators$indicators, odf$objectives)
 
-indicator_to_plot <- data.frame(indicator=unique(plotindy), plot=rep(0), type="plot")
+indicator_to_plot <- data.frame(indicator=unique(plotindy), plot=rep(0), type="plot", status=rep(0), trend=rep(0))
 indicator_to_plot$plot[which(indicator_to_plot$indicator == "-Support productivity objectives for\n groundfish species of Aboriginal,\n commercial, and/or recreational\n importance, particularly NAFO Division\n 4VW haddock \n" )] <- "plot_rv_abundance(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]])"
 
 
@@ -295,4 +295,6 @@ fishing <- data_commercial_fishing(planning_area)
 
 indicator_to_plot$plot[which(indicator_to_plot$indicator == "Fishing effort")] <- "plot_fishing_abundance(area='WEBCA', CPCAD=MPAs)"
 indicator_to_plot$type[which(indicator_to_plot$indicator == "Fishing effort")] <- "leaflet"
+
+source("results_app.R")
 
