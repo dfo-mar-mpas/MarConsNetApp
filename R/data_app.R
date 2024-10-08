@@ -45,29 +45,6 @@ grade <- function(percent){
   cut(percent,cutoffs,letters)
 }
 
-# Ecological <- data.frame(grouping=rep(c("Biodiversity",
-#                                         "Habitat",
-#                                         "Productivity"),
-#                                       times=c(3,5,3)),
-#                          labels=c("Genetic Diversity",
-#                                   "Species Diversity",
-#                                   "Functional Diversity",
-#
-#                                   "Environmental (Representativity)",
-#                                   "Key Fish Habitat",
-#                                   "Connectivity",
-#                                   "Uniqueness",
-#                                   "Threats to Habitat",
-#
-#                                   "Biomass Metrics",
-#                                   "Structure and Function",
-#                                   "Threats to Productivity"),
-#                          score=runif(11,55,100)) |>
-#   # group_by(grouping) |>
-#   # mutate(weight=1/n()) |>
-#   mutate(weight=runif(11,1,10)) |>
-#   ungroup()|>
-#   mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
 
 # flowerTabs
 # Create then filter out (odf, N_Objectives, binned_indicators)
@@ -284,10 +261,10 @@ for (i in seq_along(RV_ABUNDANCE)) {
 
 # BOTTOM ASSIGNING PLOTTING (FIXME)
 # Linking indicators to plots
-plotindy <- c(binned_indicators$indicators, odf$objectives)
+plotindy <- c(binned_indicators$indicators)
 
 indicator_to_plot <- data.frame(indicator=unique(plotindy), plot=rep(0), type="plot", status=rep(0), trend=rep(0))
-indicator_to_plot$plot[which(indicator_to_plot$indicator == "-Support productivity objectives for\n groundfish species of Aboriginal,\n commercial, and/or recreational\n importance, particularly NAFO Division\n 4VW haddock \n" )] <- "plot_rv_abundance(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]])"
+indicator_to_plot$plot[which(indicator_to_plot$indicator == "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock")] <- "plot_rv_abundance(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]])"
 
 
 planning_area <- data_planning_areas()

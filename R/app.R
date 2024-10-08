@@ -406,15 +406,16 @@ server <- function(input, output, session) {
     req(info)  # Ensure the info is available
     if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
     indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
-    #browser()
     indicatorStatus <- indicator_to_plot$status[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% gsub(".*>(.*)<.*", "\\1", indj))]
     indicatorTrend <- indicator_to_plot$trend[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% gsub(".*>(.*)<.*", "\\1", indj))]
+    } else {
+      indj <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
+      ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) == indj)
+      indicatorStatus <- indicator_to_plot$status[ki]
+      indicatorTrend <- indicator_to_plot$trend[ki]
 
 
-    gsub(".*>(.*)<.*", "\\1", indj)[which(gsub(".*>(.*)<.*", "\\1", indj)
-                                            %in% gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))))]
-
-
+    }
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
@@ -422,14 +423,13 @@ server <- function(input, output, session) {
       stringsAsFactors = FALSE
     )
     if (input$tabs %in% odf$tab) {
-      if (!(input$tabs == "tab_0")) { #JAIM HERE
+      if (!(input$tabs == "tab_0")) {
       datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
       } else {
         NULL
       }
     } else {
       NULL
-    }
     }
   })
 
@@ -471,12 +471,12 @@ server <- function(input, output, session) {
   })
 
 
-  output$indicatorPlot <- renderPlot({
+  output$indicatorPlot <- renderPlot({ #JAIM
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
 
     if (!(length(currentInd) == 0)) {
-      indy <- odf$objectives[which(odf$tab == input$tabs)]
+      indy <- odf$objectives[which(odf$objectives == currentInd)]
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
       }
@@ -551,9 +551,6 @@ server <- function(input, output, session) {
     }
     k1 <- which(APPTABS$place == string)
     k2 <- which(APPTABS$flower == wording)
-    #browser()
-
-
     updatedTab <- APPTABS$tab[intersect(k1,k2)]
     updateTabsetPanel(session, "tabs", selected=updatedTab)
   })

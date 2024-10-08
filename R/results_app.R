@@ -4,7 +4,7 @@ for (i in seq_along(indicator_to_plot$indicator)) {
   TREND <- "A linear regression has shown a XX  of YY UU over the last ZZ years"
   STATUS <- "The most recent year (RR) shows NN UU."
   itp <- indicator_to_plot$indicator[i]
-  if (itp == "-Support productivity objectives for\n groundfish species of Aboriginal,\n commercial, and/or recreational\n importance, particularly NAFO Division\n 4VW haddock \n") {
+  if (itp == "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock") {
     t <- round(unname(coef(lm(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$abundance ~ RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$year))[2]),2)
     y <- length(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$year)
     u <- "average # of haddock per tow"
