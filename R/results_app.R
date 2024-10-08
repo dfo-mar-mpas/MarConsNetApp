@@ -1,21 +1,27 @@
 # THIS SCRIPT IS USED TO FILL IN THE STATUS AND TREND STATEMENTS
 
 for (i in seq_along(indicator_to_plot$indicator)) {
-  TREND <- "A linear regression has shown a XX  of YY UU over the last ZZ years"
-  STATUS <- "The most recent year (RR) shows NN UU."
+  TREND <- "A linear regression has shown a XX  of YY UU over the last ZZ years. The regression for the last 5 years was LR UU."
+  STATUS <- "The most recent year (RR) shows NN UU. The most recent 5 year mean was MM UU."
   itp <- indicator_to_plot$indicator[i]
   if (itp == "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock") {
-    t <- round(unname(coef(lm(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$abundance ~ RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$year))[2]),2)
-    y <- length(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$year)
+    df <- RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]
+
+    t <- round(unname(coef(lm(df$abundance ~ df$year))[2]),2)
+    y <- length(df$year)
     u <- "average # of haddock per tow"
-    r <- sort(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$year)[length(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$year)]
-    n <- RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$abundance[which(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]$year == r)]
+    r <- sort(df$year)[length(df$year)]
+    n <- df$abundance[which(df$year == r)]
+    m <- mean(df$abundance[which(df$year %in% tail(sort(df$year),5))], na.rm=TRUE)
+    lr <- round(unname(coef(lm(df$abundance[which(df$year %in% tail(sort(df$year),5))] ~ df$year[which(df$year %in% tail(sort(df$year),5))]))[2]),2)
   } else {
     t <- "BLANK"
     y <- "BLANK"
     u <- "BLANK"
     r <- "BLANK"
     n <- "BLANK"
+    m <- "BLANK"
+    lr <- "BLANK"
   }
 
   if (!(t == "BLANK")) {
@@ -31,6 +37,8 @@ for (i in seq_along(indicator_to_plot$indicator)) {
   TREND <- gsub("YY", t, TREND)
   TREND <- gsub("ZZ", y, TREND)
   TREND <- gsub("UU", u, TREND)
+  TREND <- gsub("LR", lr, TREND)
+
 
   indicator_to_plot$trend[i] <- TREND
 
@@ -38,6 +46,8 @@ for (i in seq_along(indicator_to_plot$indicator)) {
   STATUS <- gsub("RR", r, STATUS)
   STATUS <- gsub("UU", u, STATUS)
   STATUS <- gsub("NN", n, STATUS)
+  STATUS <- gsub("MM", m, STATUS)
+
 
   indicator_to_plot$status[i] <- STATUS
 }

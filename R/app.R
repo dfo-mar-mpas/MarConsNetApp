@@ -373,7 +373,7 @@ server <- function(input, output, session) {
             flower = flower,
             indicator_bin_label = indicator_bin_label,
             ind_links = ind_links,
-            formatted_projects = "There are no projects for this area in this indicator bin."
+            formatted_projects = "There are no projects for this selection."
           ))
         }
       }
