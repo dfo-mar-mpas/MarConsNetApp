@@ -177,12 +177,17 @@ server <- function(input, output, session) {
   output$siteObjectiveText <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+      # if (!(state$mpas == "All")) {
+      # browser()
+      # }
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
         if (grepl("Estuary", state$mpas)) {
           string <- gsub("Estuary ", "", string)
         }
         string <- gsub("\\.", "", string)
+      } else if (state$mpas == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)") {
+        string <- "WEBCA"
       } else {
         string <- state$mpas
       }
@@ -314,6 +319,7 @@ server <- function(input, output, session) {
       if (!(input$tabs == "tab_0")) {
         objective <- gsub("\n", "", odf$objectives[which(odf$link == link_id)])
         flower <- odf$flower_plot[which(odf$link == link_id)]
+        #browser()
         area <- gsub("_", " ", gsub("_CO$", "", odf$area[which(odf$link == link_id)]))
         ki1 <- which(grepl(flower, binned_indicators$indicator_bin, ignore.case = TRUE))
         ki2 <- which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
