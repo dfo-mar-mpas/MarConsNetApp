@@ -39,6 +39,30 @@ EBM <- data.frame(grouping=rep(c("Ecological",
   mutate(weight=1/n()) |>
   ungroup()
 
+Ecological <- data.frame(grouping=rep(c("Biodiversity",
+                                        "Habitat",
+                                        "Productivity"),
+                                      times=c(3,5,3)),
+                         labels=c("Genetic Diversity",
+                                  "Species Diversity",
+                                  "Functional Diversity",
+
+                                  "Environmental (Representativity)",
+                                  "Key Fish Habitat",
+                                  "Connectivity",
+                                  "Uniqueness",
+                                  "Threats to Habitat",
+
+                                  "Biomass Metrics",
+                                  "Structure and Function",
+                                  "Threats to Productivity"),
+                         score=runif(11,55,100)) |>
+  # group_by(grouping) |>
+  # mutate(weight=1/n()) |>
+  mutate(weight=runif(11,1,10)) |>
+  ungroup()|>
+  mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
+
 grade <- function(percent){
   cutoffs=c(0, seq(60, 100, by = 10/3))
   letters=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))

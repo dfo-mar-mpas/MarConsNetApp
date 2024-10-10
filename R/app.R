@@ -342,6 +342,7 @@ server <- function(input, output, session) {
 
         PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case = TRUE) & grepl(flower, om$tags, ignore.case = TRUE))]))
         PPTtitles <- unlist(lapply(PPTProjects, function(x) unique(om$project_title[which(om$project_id == x)])))
+        #browser()
 
         indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"),
                                   "Ecosystem Based Management Objective:",
@@ -360,6 +361,21 @@ server <- function(input, output, session) {
           })
           formatted_projects <- paste0(formatted_urls, " - ", PPTtitles)
 
+
+
+          # TEST JAIM
+          activityType <- unlist(lapply(PPTProjects, function(x) unique(om$activity_type[which(om$project_id == x)])))
+          activityData <- split(formatted_projects, activityType)
+
+          formatted_projects_grouped <- tagList(lapply(names(activityData), function(activity) {
+            tags$div(
+              tags$h4(activity),  # Activity Type Header
+              tags$ul(lapply(activityData[[activity]], function(proj) {
+                tags$li(HTML(proj))  # Each project as a list item
+              }))
+            )
+          }))
+
           return(list(
             CO_label = CO_label,
             objective = objective,
@@ -368,7 +384,7 @@ server <- function(input, output, session) {
             flower = flower,
             indicator_bin_label = indicator_bin_label,
             ind_links = ind_links,
-            formatted_projects = formatted_projects
+            formatted_projects = formatted_projects_grouped
           ))
         } else {
           return(list(
@@ -385,6 +401,7 @@ server <- function(input, output, session) {
       }
     }
   })
+
 
   output$indicatorText <- renderUI({
     info <- calculated_info()
