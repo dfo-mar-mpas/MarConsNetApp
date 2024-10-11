@@ -166,13 +166,55 @@ server <- function(input, output, session) {
   output$networkObjectiveText <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      bsCollapse(id="networkObjectiveText", open=NULL,
-                 bsCollapsePanel("Click to see Network Objectives",
-                                 uiOutput("network", container=pre),
+      #browser()
+      filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
+      # Create a div for filtered objectives and bar charts
+      objectiveDivs <- lapply(seq_along(filtered_odf$objectives), function(i) {
+        # Objective Container
+        tags$div(
+          style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
+
+          # Bar chart
+          tags$div(
+            plotOutput(paste0("bar", i), height = "100px", width = "400px"),
+            style = "position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.7;"
+          ),
+
+          # Action link (Objective with new lines handled by HTML)
+          tags$div(
+            actionLink(
+              inputId = filtered_odf$link[i],
+              label = HTML(gsub("\n", "<br>", N_Objectives[i])) # HERE JAIM
+            ),
+            style = "position: absolute; top: 30px; left: 10px; z-index: 2; font-weight: bold; color: white;"
+          )
+        )
+      })
+
+      # Return the collapse panel with objective divs
+      bsCollapse(id="networkObjectivesCollapse", open=NULL,
+                 bsCollapsePanel("Click to view Network Objectives",
+                                 do.call(tagList, objectiveDivs),
                                  style="primary"))
     }
   })
 
+  # Render bar charts only for filtered objectives
+  filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
+
+  for (i in seq_along(filtered_odf$objectives)) {
+    local({
+      id <- i
+      output[[paste0("bar", id)]] <- renderPlot({
+        data <- data.frame(x = paste0("Objective ", id), y = runif(1, 0, 1))  # Random value between 0 and 1
+        ggplot(data, aes(x = x, y = y)) +
+          geom_bar(stat = "identity", fill = "lightcoral") +  # Light red color
+          ylim(0, 1) +
+          theme_void() +
+          coord_flip()
+      })
+    })
+  }
 
   output$siteObjectiveText <- renderUI({
     req(input$tabs)
