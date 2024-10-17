@@ -47,7 +47,7 @@ Ecological <- data.frame(grouping=rep(c("Biodiversity",
                                   "Species Diversity",
                                   "Functional Diversity",
 
-                                  "Environmental (Representativity)",
+                                  "Environmental Representativity",
                                   "Key Fish Habitat",
                                   "Connectivity",
                                   "Uniqueness",

@@ -163,58 +163,7 @@ server <- function(input, output, session) {
     }
   })
 
-  output$networkObjectiveText <- renderUI({
-    req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      #browser()
-      filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
-      # Create a div for filtered objectives and bar charts
-      objectiveDivs <- lapply(seq_along(filtered_odf$objectives), function(i) {
-        # Objective Container
-        tags$div(
-          style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
 
-          # Bar chart
-          tags$div(
-            plotOutput(paste0("bar", i), height = "100px", width = "400px"),
-            style = "position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.7;"
-          ),
-
-          # Action link (Objective with new lines handled by HTML)
-          tags$div(
-            actionLink(
-              inputId = filtered_odf$link[i],
-              label = HTML(gsub("\n", "<br>", N_Objectives[i])) # HERE JAIM
-            ),
-            style = "position: absolute; top: 30px; left: 10px; z-index: 2; font-weight: bold; color: white;"
-          )
-        )
-      })
-
-      # Return the collapse panel with objective divs
-      bsCollapse(id="networkObjectivesCollapse", open=NULL,
-                 bsCollapsePanel("Click to view Network Objectives",
-                                 do.call(tagList, objectiveDivs),
-                                 style="primary"))
-    }
-  })
-
-  # Render bar charts only for filtered objectives
-  filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
-
-  for (i in seq_along(filtered_odf$objectives)) {
-    local({
-      id <- i
-      output[[paste0("bar", id)]] <- renderPlot({
-        data <- data.frame(x = paste0("Objective ", id), y = runif(1, 0, 1))  # Random value between 0 and 1
-        ggplot(data, aes(x = x, y = y)) +
-          geom_bar(stat = "identity", fill = "lightcoral") +  # Light red color
-          ylim(0, 1) +
-          theme_void() +
-          coord_flip()
-      })
-    })
-  }
 
   output$siteObjectiveText <- renderUI({
     req(input$tabs)
@@ -384,7 +333,6 @@ server <- function(input, output, session) {
 
         PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case = TRUE) & grepl(flower, om$tags, ignore.case = TRUE))]))
         PPTtitles <- unlist(lapply(PPTProjects, function(x) unique(om$project_title[which(om$project_id == x)])))
-        #browser()
 
         indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"),
                                   "Ecosystem Based Management Objective:",
@@ -403,9 +351,6 @@ server <- function(input, output, session) {
           })
           formatted_projects <- paste0(formatted_urls, " - ", PPTtitles)
 
-
-
-          # TEST JAIM
           activityType <- unlist(lapply(PPTProjects, function(x) unique(om$activity_type[which(om$project_id == x)])))
           activityData <- split(formatted_projects, activityType)
 
@@ -478,8 +423,6 @@ server <- function(input, output, session) {
       ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) == indj)
       indicatorStatus <- indicator_to_plot$status[ki]
       indicatorTrend <- indicator_to_plot$trend[ki]
-
-
     }
     dfdt <- data.frame(
       Indicator = indj,
@@ -536,7 +479,7 @@ server <- function(input, output, session) {
   })
 
 
-  output$indicatorPlot <- renderPlot({ #JAIM
+  output$indicatorPlot <- renderPlot({
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
 
@@ -618,6 +561,91 @@ server <- function(input, output, session) {
     k2 <- which(APPTABS$flower == wording)
     updatedTab <- APPTABS$tab[intersect(k1,k2)]
     updateTabsetPanel(session, "tabs", selected=updatedTab)
+  })
+
+  output$networkObjectiveText <- renderUI({ #JAIM
+    req(input$tabs)
+    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+      filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
+      # Create a div for filtered objectives and bar charts
+      objectiveDivs <- lapply(seq_along(filtered_odf$objectives), function(i) {
+        # Objective Container
+        tags$div(
+          style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
+
+          # Bar chart
+          tags$div(
+            plotOutput(paste0("bar", i), height = "100px", width = "400px"),
+            style = "position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.7;"
+          ),
+
+          # Action link (Objective with new lines handled by HTML)
+          tags$div(
+            actionLink(
+              inputId = filtered_odf$link[i],
+              label = HTML(gsub("\n", "<br>", N_Objectives[i]))
+            ),
+            style = "position: absolute; top: 30px; left: 10px; z-index: 2; font-weight: bold; color: white;"
+          )
+        )
+      })
+
+      # Return the collapse panel with objective divs
+      bsCollapse(id="networkObjectivesCollapse", open=NULL,
+                 bsCollapsePanel("Click to view Network Objectives",
+                                 do.call(tagList, objectiveDivs),
+                                 style="primary"))
+    }
+  })
+
+  observeEvent(input$tabs, {
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      # Ensure filtered_odf is created inside this condition
+      filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
+
+      for (fo in seq_along(filtered_odf$objectives)) {
+        local({
+          id <- fo
+          output[[paste0("bar", id)]] <- renderPlot({
+            # Ensure bar chart is rendered only when tab_0 is active
+            if (input$tabs == "tab_0") {
+              # Ensure ymax is properly filtered and has a single value
+              ymax <- pillar_ecol_df[which(
+                pillar_ecol_df$area_name == ifelse(state$mpas == "All", "Scotian Shelf", state$mpas) &
+                  pillar_ecol_df$bin == odf$flower_plot[which(odf$objectives %in% N_Objectives[id])]
+              ),]$ind_status
+
+              # Handling empty or multiple ymax cases
+              if (length(ymax) == 0) {
+                # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
+                ek1 <- which(pillar_ecol_df$area_name == ifelse(state$mpas == "All", "Scotian Shelf", state$mpas))
+                ecol_labels <- Ecological$labels[which(Ecological$grouping %in% odf$flower_plot[which(odf$objectives %in% N_Objectives[id])])]
+                ek2 <- which(pillar_ecol_df$bin %in% ecol_labels)
+                ymax <- mean(pillar_ecol_df$ind_status[intersect(ek1,ek2)])
+              } else if (length(ymax) > 1) {
+                ymax <- ymax[1]  # Take the first value if multiple are returned
+              }
+
+              #message("y max = ", ymax, " for id = ", id)
+
+              # Create data frame for plotting
+              data <- data.frame(
+                x = paste0("Objective ", id),
+                y = ymax
+              )
+
+              # Plot the bar chart
+              ggplot(data, aes(x = x, y = y)) +
+                geom_bar(stat = "identity", fill = "lightcoral") +  # Light red color
+                ylim(0, 100) +
+                theme_void() +
+                coord_flip()
+            }
+          })
+        })
+      }
+    }
   })
 
 
