@@ -218,6 +218,10 @@ for (i in seq_along(odf$objectives)) {
   }
 }
 
+grades <- c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
+flowerPalette <- colorRampPalette(brewer.pal(11,"RdBu"))(length(grades))
+names(flowerPalette) <- grades
+
 
 
 # 10. Getting indicator bins
@@ -260,6 +264,14 @@ for (i in seq_along(odf$objectives)) {
 tar_load(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","pipeline_targets"),"pillar_ecol_df")
 pillar_ecol_df <- pillar_ecol_df %>%
   mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
+
+
+calc_letter_grade <- function(percent, min_score=0, max_score=100){
+  scalerange <- max_score-min_score
+  cutoffs=c(min_score, seq(max_score-scalerange*.4, max_score, by = 10/3/100*scalerange))
+  grades=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
+  cut(percent,cutoffs,grades)
+}
 
 
 # 12. Calculating indicators

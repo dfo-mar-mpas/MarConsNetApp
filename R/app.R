@@ -622,25 +622,34 @@ server <- function(input, output, session) {
                 ek1 <- which(pillar_ecol_df$area_name == ifelse(state$mpas == "All", "Scotian Shelf", state$mpas))
                 ecol_labels <- Ecological$labels[which(Ecological$grouping %in% odf$flower_plot[which(odf$objectives %in% N_Objectives[id])])]
                 ek2 <- which(pillar_ecol_df$bin %in% ecol_labels)
-                ymax <- mean(pillar_ecol_df$ind_status[intersect(ek1,ek2)])
+                ymax <- mean(pillar_ecol_df$ind_status[intersect(ek1,ek2)],na.rm=TRUE)
               } else if (length(ymax) > 1) {
                 ymax <- ymax[1]  # Take the first value if multiple are returned
               }
 
-              #message("y max = ", ymax, " for id = ", id)
 
               # Create data frame for plotting
               data <- data.frame(
                 x = paste0("Objective ", id),
                 y = ymax
               )
+              message("data$y = ", data$y, " for id = ", id)
+              # START
+              calc_letter_grade <- function(percent){
+                cutoffs=c(min_score, seq(max_score-scalerange*.4, max_score, by = 10/3/100*scalerange))
+                grades=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
+                cut(percent,cutoffs,grades)
+              }
 
-              # Plot the bar chart
-              ggplot(data, aes(x = x, y = y)) +
-                geom_bar(stat = "identity", fill = "lightcoral") +  # Light red color
+              clc <- as.character(calc_letter_grade(data$y))
+              finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+
+              ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
+                geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
                 ylim(0, 100) +
                 theme_void() +
-                coord_flip()
+                coord_flip()+
+                guides(fill = "none")
             }
           })
         })
