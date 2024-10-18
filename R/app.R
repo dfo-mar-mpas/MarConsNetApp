@@ -633,7 +633,7 @@ server <- function(input, output, session) {
                 x = paste0("Objective ", id),
                 y = ymax
               )
-              message("data$y = ", data$y, " for id = ", id)
+              #message("data$y = ", data$y, " for id = ", id)
               # START
               calc_letter_grade <- function(percent){
                 cutoffs=c(min_score, seq(max_score-scalerange*.4, max_score, by = 10/3/100*scalerange))
