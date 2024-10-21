@@ -168,9 +168,6 @@ server <- function(input, output, session) {
   output$siteObjectiveText <- renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      # if (!(state$mpas == "All")) {
-      # browser()
-      # }
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
         if (grepl("Estuary", state$mpas)) {
@@ -301,19 +298,34 @@ server <- function(input, output, session) {
     })
   }
 
-  # Dynmaically coding in which actionLink is will paste indicators
+  # Dynmaically coding in which actionLink is will paste indicators jaim
   calculated_info <- reactive({
     req(input$tabs)
 
     link_id <- sub("tab", "link", input$tabs)
-    if (input$tabs %in% odf$tab) {
+    if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
+        if (input$tabs %in% odf$tab) {
         objective <- gsub("\n", "", odf$objectives[which(odf$link == link_id)])
         flower <- odf$flower_plot[which(odf$link == link_id)]
-        #browser()
         area <- gsub("_", " ", gsub("_CO$", "", odf$area[which(odf$link == link_id)]))
+
+        } else if (input$tabs %in% binned_indicators$tab) {
+          objective <- "This flower plot subset is not associated with any network or site level objectives for this location subset."
+          flower <- binned_indicators$indicator_bin[which(binned_indicators$link == link_id)]
+          area <- gsub("_", " ", gsub("_CO$", "", binned_indicators$area[which(binned_indicators$link == link_id)]))
+
+        } else {
+          objective <- "This flower plot subset is not associated with any network or site level objectives for this location subset."
+          flower <- APPTABS$flower[which(APPTABS$link == link_id)]
+          area <- gsub("_", " ", gsub("_CO$", "", APPTABS$place[which(APPTABS$link == link_id)]))
+        }
         ki1 <- which(grepl(flower, binned_indicators$indicator_bin, ignore.case = TRUE))
+        if (!(input$mpas == "All")) {
         ki2 <- which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
+        } else {
+          ki2 <- ki1
+        }
         keepind <- intersect(ki1, ki2)
         binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind]))
 
@@ -393,7 +405,6 @@ server <- function(input, output, session) {
   output$indicatorText <- renderUI({
     info <- calculated_info()
     req(info)  # Ensure the info is available
-
     HTML(
       paste(
         "<p><strong>", info$CO_label, "</strong></p>",
@@ -415,9 +426,17 @@ server <- function(input, output, session) {
     info <- calculated_info()
     req(info)  # Ensure the info is available
     if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
-    indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
-    indicatorStatus <- indicator_to_plot$status[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% gsub(".*>(.*)<.*", "\\1", indj))]
-    indicatorTrend <- indicator_to_plot$trend[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% gsub(".*>(.*)<.*", "\\1", indj))]
+    #indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
+    indj <- strsplit(as.character(info$ind_links), "<a href=")[[1]]
+    indj <- indj[nzchar(indj)]
+    indj <- paste0("<a href=", indj)
+    indj <- trimws(gsub("\n", "", indj), "both")
+    # test
+    INDY <- gsub(".*>(.*)<.*", "\\1", indj)
+    INDY <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", INDY))))
+    # end test
+    indicatorStatus <- indicator_to_plot$status[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% INDY)]
+    indicatorTrend <- indicator_to_plot$trend[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% INDY)]
     } else {
       indj <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
       ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) == indj)
@@ -430,7 +449,7 @@ server <- function(input, output, session) {
       Trend = indicatorTrend,
       stringsAsFactors = FALSE
     )
-    if (input$tabs %in% odf$tab) {
+    if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
       datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
       } else {
@@ -444,7 +463,7 @@ server <- function(input, output, session) {
   output$DT_ui <- renderUI({
     req(input$tabs)
     if (!(input$tabs == "tab_0")) {
-      if (input$tabs %in% odf$tab) {
+      if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       dataTableOutput("DT")
       } else {
         NULL
