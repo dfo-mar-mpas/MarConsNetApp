@@ -5,6 +5,7 @@
 #'
 #'  @param sf argument of class 'sf', 'tbl_df', 'tbl', or 'data.frame'. Object must contain spatial data with
 #'  a geometry column and either a 'NAME_E' or 'SiteName_E' column.
+#'  @importFrom sf st_sfc st_coordinates
 #'
 #'  @export
 #'
@@ -39,7 +40,7 @@ getLatLon <- function(sf=NULL) {
   }
 
   # Convert to sfc object
-  sfc_multipolygon <- lapply(multipolygon, function(x) st_sfc(x, crs = 4326))
+  sfc_multipolygon <- lapply(multipolygon, function(x) sf::st_sfc(x, crs = 4326))
 
   if ("NAME_E" %in% names(sf)) {
   polygons <- vector("list", length(sf$NAME_E))
@@ -52,8 +53,8 @@ getLatLon <- function(sf=NULL) {
 
   for (i in seq_along(sfc_multipolygon)) {
     polygons[[i]] <- list(lat = NULL, lng = NULL, color=NULL)
-    lng <- st_coordinates(sfc_multipolygon[i][[1]])[, "X"]
-    lat <- st_coordinates(sfc_multipolygon[i][[1]])[, "Y"]
+    lng <- sf::st_coordinates(sfc_multipolygon[i][[1]])[, "X"]
+    lat <- sf::st_coordinates(sfc_multipolygon[i][[1]])[, "Y"]
     polygons[[i]]$lat <- lat
     polygons[[i]]$lng <- lng
     polygons[[i]]$color <- "hotpink"

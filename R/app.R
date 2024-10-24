@@ -1,72 +1,80 @@
-# library(shiny)
-# library(leaflet)
-# library(dplyr)
-# library(sf)
-# library(shinyjs)
-# library(viridis)
-# library(arcpullr)
-# library(devtools)
-# source("getLatLon.R")
-# source("newLine.R")
-# source("NAME_to_tag.R")
-# install_github("dfo-mar-mpas/MarConsNetAnalysis", ref="main")
-# library(MarConsNetAnalysis)
-# load_all("../../MarConsNetData/")
-# install_github("https://github.com/dfo-mar-odis/TBSpayRates")
-# library(TBSpayRates)
-# install_github("https://github.com/j-harbin/dataSPA")
-# library(dataSPA)
-# library(readxl)
-# #source("data_app.R")
-# library(ggplot2)
-# library(shinyBS)
-# install_github("https://github.com/Maritimes/Mar.datawrangling", force=TRUE)
-# library(Mar.datawrangling)
-# library(DT)
-
+#' MarConsNetApp Conserved and Protected Area App
+#'
+#' This function creates a shiny app for the Maritimes region.
+#' It addressed the following goals:
+#' Site-Level Goals
+#' - Report on what scientific work is occurring, and resources
+#' allocated for this
+#' - Report on how the scientific work being done is contributing to
+#' indicators and therefore conservation objectives (CO)
+#' - Report on the status of the sites, based on existing data
+#' Network-level Goals
+#' - How are individual sites contributing to network objectives
+#' - How are science projects contributing to network objectives
+#' - Provide scientific data to support status claims
+#' @importFrom shiny fluidRow tags titlePanel uiOuput sidebarLayout
+#'  sidebarPanel mainPanel plotOutput column reactiveValues reactive
+#'   observeEvent renderUI selectInput actionButton actionLink showModal
+#'    modalDialog HTML updateTabsetPanel tagList addPolygons addCircleMarkers
+#'     showNotification addLegend shinyA[[
+#' @importFrom shinyjs useShinyjs
+#' @importFrom DT renderDT dataTableOutput datatable
+#' @importFrom leaflet leafletOutput renderLeaflet leaflet addTiles addPolygons
+#' @importFrom MarConsNetAnalysis plot_flowerplot
+#' @importFrom shinyBS bsCollapse bsCollapsePanel
+#' @importFrom ggplot2 ggplot geom_bar ylim theme_void coord_flip guides
+#' @importFrom viridis viridis
+#' @importFrom sf st_as_sf st_within points_sf st_coordinates
+#' @export
+#' @examples
+#' \dontrun{
+#' app()
+#' }
 
 # Define UI
-ui <- fluidPage(
-  useShinyjs(),
-  tags$head(
-    tags$style(HTML("
+
+app <- function() {
+ui <- shiny::fluidPage(
+  shinyjs::useShinyjs(),
+  shiny::tags$head(
+    shiny::tags$style(HTML("
       .shiny-notification {
         background-color: yellow;
       }
     "))),
-  titlePanel("Maritimes Conservation Network App"),
-  fluidRow(
-    column(2, uiOutput("contextButton")),
-    column(2, uiOutput("filter_button_ui"))
+  shiny::titlePanel("Maritimes Conservation Network App"),
+  shiny::fluidRow(
+    column(2, shiny::uiOutput("contextButton")),
+    column(2, shiny::uiOutput("filter_button_ui"))
   ),
-  uiOutput("gohome"),
+  shiny::uiOutput("gohome"),
   #Makes the tabs hide
-  tags$style(HTML("
+  shiny::tags$style(HTML("
     .nav-tabs { display: none; }
   ")),
-  sidebarLayout(
-    sidebarPanel(
-      uiOutput("mpas"),
-      uiOutput("projects"),
-      uiOutput("fundingSource"),
-      uiOutput("theme"),
-      uiOutput("functionalGroup"),
-      uiOutput("section"),
-      uiOutput("division"),
-      uiOutput("report")
+  shiny::sidebarLayout(
+    shiny::sidebarPanel(
+      shiny::uiOutput("mpas"),
+      shiny::uiOutput("projects"),
+      shiny::uiOutput("fundingSource"),
+      shiny::uiOutput("theme"),
+      shiny::uiOutput("functionalGroup"),
+      shiny::uiOutput("section"),
+      shiny::uiOutput("division"),
+      shiny::uiOutput("report")
     ),
-    mainPanel(
-      uiOutput("indicatorText"),
-      uiOutput("DT_ui"),
-      uiOutput('mytabs'),
-      uiOutput("conditionalPlot"),
+    shiny::mainPanel(
+      shiny::uiOutput("indicatorText"),
+      shiny::uiOutput("DT_ui"),
+      shiny::uiOutput('mytabs'),
+      shiny::uiOutput("conditionalPlot"),
 
-      fluidRow(column(width=6, align="left",
-                      plotOutput("flowerPlot",click="flower_click")),
-               column(width=6, align="right",
-                      uiOutput("networkObjectiveText"),
-                      uiOutput("siteObjectiveText"),
-                      uiOutput("objectives", container=pre))),
+      shiny::fluidRow(column(width=6, align="left",
+                             shiny::plotOutput("flowerPlot",click="flower_click")),
+                      shiny::column(width=6, align="right",
+                                    shiny::uiOutput("networkObjectiveText"),
+                                    shiny::uiOutput("siteObjectiveText"),
+                                    shiny::uiOutput("objectives", container=pre))),
 
     ) #MAIN
   )
@@ -75,7 +83,7 @@ ui <- fluidPage(
 # Define server logic
 server <- function(input, output, session) {
 
-  state <- reactiveValues(
+  state <- shiny::reactiveValues(
     mpas = NULL,
     projects = NULL,
     fundingSource = NULL,
@@ -86,9 +94,9 @@ server <- function(input, output, session) {
     report = NULL
     )
 
-  rv <- reactiveValues(button_label = "See All Project Data")
+  rv <- shiny::reactiveValues(button_label = "See All Project Data")
 
-  is_button_visible <- reactive({
+  is_button_visible <- shiny::reactive({
     req(input$mpas)
     req(input$projects)
     length(input$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(input$mpas == "All")
@@ -97,75 +105,75 @@ server <- function(input, output, session) {
   input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report") # THE SAME AS STATE
 
   lapply(input_ids, function(id) {
-    observeEvent(input[[id]], {
+    shiny::observeEvent(input[[id]], {
       state[[id]] <- input[[id]]
     })
   })
-  output$mytabs = renderUI({
+  output$mytabs = shiny::renderUI({
     nTabs = length(APPTABS$flower)+length(binned_indicators$indicators) # FIXME
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
 
-  output$mpas <- renderUI({
+  output$mpas <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      selectInput("mpas","Select Protected/Conserved Area:",choices = c("All", MPAs$NAME_E), selected=state$mpas)
+      shiny::selectInput("mpas","Select Protected/Conserved Area:",choices = c("All", MPAs$NAME_E), selected=state$mpas)
     }
   })
 
-  output$projects <- renderUI({
+  output$projects <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE, selected=state$projects)
+      shiny::selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE, selected=state$projects)
     }
   })
 
-  output$fundingSource <- renderUI({
+  output$fundingSource <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      selectInput("fundingSource", "Select Funding Source(s):", choices=unique(om$funding_source_display), multiple=TRUE, selected=state$fundingSource)
+      shiny::selectInput("fundingSource", "Select Funding Source(s):", choices=unique(om$funding_source_display), multiple=TRUE, selected=state$fundingSource)
     }
   })
 
-  output$theme <- renderUI({
+  output$theme <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      selectInput("theme", "Select Theme(s):", choices=unique(om$theme), multiple=TRUE, selected=state$theme)
+      shiny::selectInput("theme", "Select Theme(s):", choices=unique(om$theme), multiple=TRUE, selected=state$theme)
     }
   })
 
-  output$functionalGroup <- renderUI({
+  output$functionalGroup <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      selectInput("functionalGroup", "Select Functional Group(s):", choices=unique(om$functional_group), multiple=TRUE, selected=state$functionalGroup)
+      shiny::selectInput("functionalGroup", "Select Functional Group(s):", choices=unique(om$functional_group), multiple=TRUE, selected=state$functionalGroup)
     }
   })
 
-  output$section <- renderUI({
+  output$section <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      selectInput("section", "Select Section(s):", choices=subsetSPA(om=om, section="return"), multiple=TRUE, selected=state$section)
+      shiny::selectInput("section", "Select Section(s):", choices=subsetSPA(om=om, section="return"), multiple=TRUE, selected=state$section)
     }
   })
 
-  output$division <- renderUI({
+  output$division <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      selectInput("division", "Select Division(s):", choices=subsetSPA(om=om, division="return"), multiple=TRUE, selected=state$division)
+      shiny::selectInput("division", "Select Division(s):", choices=subsetSPA(om=om, division="return"), multiple=TRUE, selected=state$division)
     }
   })
 
-  output$report <- renderUI({
+  output$report <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      actionButton("report", "Create Report")
+      shiny::actionButton("report", "Create Report")
     }
   })
 
 
 
-  output$siteObjectiveText <- renderUI({
+  output$siteObjectiveText <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       if (grepl("Marine Protected Area", state$mpas)) {
@@ -183,12 +191,12 @@ server <- function(input, output, session) {
       string <- gsub(" ", "_", string)
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
-        tags$b("Site Level Objectives")
+        shiny::tags$b("Site Level Objectives")
       }
     }
   })
 
-  output$objectives <- renderUI({
+  output$objectives <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       if (grepl("Marine Protected Area", state$mpas)) {
@@ -207,7 +215,7 @@ server <- function(input, output, session) {
       if (!(length(keepO) == 0)) {
         textO <- Objectives[[keepO]]
         links <- lapply(seq_along(textO), function(i) {
-          actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]])
+          shiny::actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]])
         })
       }
     }
@@ -215,29 +223,29 @@ server <- function(input, output, session) {
 
 
   # Update the button label when clicked
-  observeEvent(input$filter_button, {
+  shiny::observeEvent(input$filter_button, {
     rv$button_label <- ifelse(rv$button_label == "See All Project Data", "Filter Project Data", "See All Project Data")
   })
 
   # Render the action button UI
-  output$filter_button_ui <- renderUI({
+  output$filter_button_ui <- shiny::renderUI({
     if (is_button_visible()) {
-      actionButton("filter_button", rv$button_label)
+      shiny::actionButton("filter_button", rv$button_label)
     }
   })
 
   # Ensure the button is correctly displayed when navigating tabs
   observe({
-    output$filter_button_ui <- renderUI({
+    output$filter_button_ui <- shiny::renderUI({
       if (is_button_visible()) {
-        actionButton("filter_button", rv$button_label)
+        shiny::actionButton("filter_button", rv$button_label)
       }
     })
   })
 
 
 
-  output$contextButton <- renderUI({
+  output$contextButton <- shiny::renderUI({
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
@@ -255,12 +263,12 @@ server <- function(input, output, session) {
       #string <- gsub("\\.", "", gsub(" ", "", state$mpas))
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
-        actionButton(inputId="contextButton", label="Context")
+        shiny::actionButton(inputId="contextButton", label="Context")
       }
     } # conditions
   })
 
-  observeEvent(input$contextButton, {
+  shiny::observeEvent(input$contextButton, {
 
     if (grepl("Marine Protected Area", state$mpas)) {
       string <- gsub("Marine Protected Area", "MPA", state$mpas)
@@ -278,9 +286,9 @@ server <- function(input, output, session) {
     keepC <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
     textC <- Context[[keepC]]
     textC <- unlist(lapply(textC, function(x) paste(x, "\n\n")))
-    showModal(modalDialog(
+    shiny::showModal(shiny::modalDialog(
       title = "Marine Protected Area Context",
-      HTML(textC)
+      shiny::HTML(textC)
     ))
   })
 
@@ -288,18 +296,18 @@ server <- function(input, output, session) {
   for (i in 0:(length(unique(APPTABS$tab))+length(binned_indicators$indicators))) {
     local({
       link_id <- paste0("link_", i)
-      observeEvent(input[[link_id]], {
+      shiny::observeEvent(input[[link_id]], {
         selected_tab <- unique(APPTABS$tab[which(APPTABS$link == link_id)])
         if (length(selected_tab) == 0) {
           selected_tab <- unique(binned_indicators$tab[which(binned_indicators$link == link_id)])
         }
-        updateTabsetPanel(session, "tabs", selected = selected_tab)
+        shiny::updateTabsetPanel(session, "tabs", selected = selected_tab)
       })
     })
   }
 
   # Dynmaically coding in which actionLink is will paste indicators jaim
-  calculated_info <- reactive({
+  calculated_info <- shiny::reactive({
     req(input$tabs)
 
     link_id <- sub("tab", "link", input$tabs)
@@ -329,9 +337,9 @@ server <- function(input, output, session) {
         keepind <- intersect(ki1, ki2)
         binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind]))
 
-        ind_links <- tagList(lapply(seq_along(binned_indicators$indicators[keepind]), function(i) {
+        ind_links <- shiny::tagList(lapply(seq_along(binned_indicators$indicators[keepind]), function(i) {
           tab_id <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$link[keepind][i]))
-          tags$a(
+          shiny::tags$a(
             href = paste0("#", tab_id),
             gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
             onclick = sprintf(
@@ -366,11 +374,11 @@ server <- function(input, output, session) {
           activityType <- unlist(lapply(PPTProjects, function(x) unique(om$activity_type[which(om$project_id == x)])))
           activityData <- split(formatted_projects, activityType)
 
-          formatted_projects_grouped <- tagList(lapply(names(activityData), function(activity) {
-            tags$div(
-              tags$h4(activity),  # Activity Type Header
-              tags$ul(lapply(activityData[[activity]], function(proj) {
-                tags$li(HTML(proj))  # Each project as a list item
+          formatted_projects_grouped <- shiny::tagList(lapply(names(activityData), function(activity) {
+            shiny::tags$div(
+              shiny::tags$h4(activity),  # Activity Type Header
+              shiny::tags$ul(lapply(activityData[[activity]], function(proj) {
+                shiny::tags$li(HTML(proj))  # Each project as a list item
               }))
             )
           }))
@@ -402,10 +410,10 @@ server <- function(input, output, session) {
   })
 
 
-  output$indicatorText <- renderUI({
+  output$indicatorText <- shiny::renderUI({
     info <- calculated_info()
     req(info)  # Ensure the info is available
-    HTML(
+    shiny::HTML(
       paste(
         "<p><strong>", info$CO_label, "</strong></p>",
         "<p>", info$objective, "</p>",
@@ -421,7 +429,7 @@ server <- function(input, output, session) {
     )
   })
 
-  output$DT <- renderDT({
+  output$DT <- DT::renderDT({
     req(input$tabs)
     info <- calculated_info()
     req(info)  # Ensure the info is available
@@ -451,7 +459,7 @@ server <- function(input, output, session) {
     )
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
-      datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
+        DT::datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
       } else {
         NULL
       }
@@ -460,11 +468,11 @@ server <- function(input, output, session) {
     }
   })
 
-  output$DT_ui <- renderUI({
+  output$DT_ui <- shiny::renderUI({
     req(input$tabs)
     if (!(input$tabs == "tab_0")) {
       if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
-      dataTableOutput("DT")
+      DT::dataTableOutput("DT")
       } else {
         NULL
       }
@@ -475,11 +483,11 @@ server <- function(input, output, session) {
 
 
 
-  output$conditionalPlot <- renderUI({
+  output$conditionalPlot <- shiny::renderUI({
     req(input$tabs)
     req(state$mpas)
     if (input$tabs == "tab_0") {
-      leafletOutput("map")
+      leaflet::leafletOutput("map")
     } else if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       # FIXME: THIS COULD BE BETTER. BUT ISN'T TOO BAD
         currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
@@ -487,7 +495,7 @@ server <- function(input, output, session) {
         if (indicator_to_plot$type[which(indicator_to_plot$indicator == currentInd)] == "leaflet") {
           leafletOutput("indicatorLeaflet")
         } else {
-          plotOutput("indicatorPlot")
+          shiny::plotOutput("indicatorPlot")
         }
         }
 
@@ -498,7 +506,7 @@ server <- function(input, output, session) {
   })
 
 
-  output$indicatorPlot <- renderPlot({
+  output$indicatorPlot <- shiny::renderPlot({
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
 
@@ -515,7 +523,7 @@ server <- function(input, output, session) {
 
   })
 
-  output$indicatorLeaflet <- renderLeaflet({
+  output$indicatorLeaflet <- leaflet::renderLeaflet({
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
 
@@ -534,7 +542,7 @@ server <- function(input, output, session) {
 
 
 
-  output$flowerPlot <- renderPlot({
+  output$flowerPlot <- shiny::renderPlot({
     req(input$mpas)
     req(input$tabs)
     if (input$tabs == "tab_0") {
@@ -544,7 +552,7 @@ server <- function(input, output, session) {
         NAME <- state$mpas
       }
 
-      plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
+      MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
                       grouping = "objective",
                       labels = "bin",
                       score = "ind_status")
@@ -552,7 +560,7 @@ server <- function(input, output, session) {
 
   })
 
-  observeEvent(input$flower_click, {
+  shiny::observeEvent(input$flower_click, {
     req(input$mpas)
     req(input$flower_click)
     req(input$tabs)
@@ -579,27 +587,27 @@ server <- function(input, output, session) {
     k1 <- which(APPTABS$place == string)
     k2 <- which(APPTABS$flower == wording)
     updatedTab <- APPTABS$tab[intersect(k1,k2)]
-    updateTabsetPanel(session, "tabs", selected=updatedTab)
+    shiny::updateTabsetPanel(session, "tabs", selected=updatedTab)
   })
 
-  output$networkObjectiveText <- renderUI({ #JAIM
+  output$networkObjectiveText <- shiny::renderUI({ #JAIM
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
       # Create a div for filtered objectives and bar charts
       objectiveDivs <- lapply(seq_along(filtered_odf$objectives), function(i) {
         # Objective Container
-        tags$div(
+        shiny::tags$div(
           style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
 
           # Bar chart
-          tags$div(
+          shiny::tags$div(
             plotOutput(paste0("bar", i), height = "100px", width = "400px"),
             style = "position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.7;"
           ),
 
           # Action link (Objective with new lines handled by HTML)
-          tags$div(
+          shiny::tags$div(
             actionLink(
               inputId = filtered_odf$link[i],
               label = HTML(gsub("\n", "<br>", N_Objectives[i]))
@@ -610,14 +618,14 @@ server <- function(input, output, session) {
       })
 
       # Return the collapse panel with objective divs
-      bsCollapse(id="networkObjectivesCollapse", open=NULL,
-                 bsCollapsePanel("Click to view Network Objectives",
+      shinyBS::bsCollapse(id="networkObjectivesCollapse", open=NULL,
+                          shinyBS::bsCollapsePanel("Click to view Network Objectives",
                                  do.call(tagList, objectiveDivs),
                                  style="primary"))
     }
   })
 
-  observeEvent(input$tabs, {
+  shiny::observeEvent(input$tabs, {
     req(input$tabs)
     if (input$tabs == "tab_0") {
       # Ensure filtered_odf is created inside this condition
@@ -654,21 +662,21 @@ server <- function(input, output, session) {
               )
               #message("data$y = ", data$y, " for id = ", id)
               # START
-              calc_letter_grade <- function(percent){
-                cutoffs=c(min_score, seq(max_score-scalerange*.4, max_score, by = 10/3/100*scalerange))
-                grades=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
-                cut(percent,cutoffs,grades)
-              }
+              # calc_letter_scpre <- function(percent){
+              #   cutoffs=c(min_score, seq(max_score-scalerange*.4, max_score, by = 10/3/100*scalerange))
+              #   grades=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
+              #   cut(percent,cutoffs,grades)
+              # }
 
               clc <- as.character(calc_letter_grade(data$y))
               finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
 
-              ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
-                geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
-                ylim(0, 100) +
-                theme_void() +
-                coord_flip()+
-                guides(fill = "none")
+              ggplot2::ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
+                ggplot2::geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
+                ggplot2::ylim(0, 100) +
+                ggplot2::theme_void() +
+                ggplot2::coord_flip()+
+                ggplot2::guides(fill = "none")
             }
           })
         })
@@ -677,43 +685,43 @@ server <- function(input, output, session) {
   })
 
 
-  output$gohome <- renderUI({
+  output$gohome <- shiny::renderUI({
     req(input$tabs)
     req(state$mpas)
     if (!(input$tabs == "tab_0")) {
-      actionButton(inputId = "gohome", "Go Home")
+      shiny::actionButton(inputId = "gohome", "Go Home")
     }
   })
 
-  observeEvent(input$gohome, {
-    updateTabsetPanel(session, "tabs", selected = "tab_0")
+  shiny::observeEvent(input$gohome, {
+    shiny::updateTabsetPanel(session, "tabs", selected = "tab_0")
   })
 
 
-  output$network <- renderUI({
+  output$network <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       string <- "Scotian_Shelf_CO"
       textN <- N_Objectives
       links <- lapply(seq_along(textN), function(i) {
-        actionLink(inputId = odf$link[which(odf$objectives == textN[[i]])], label = textN[[i]])
+        shiny::actionLink(inputId = odf$link[which(odf$objectives == textN[[i]])], label = textN[[i]])
       })
     }
   })
 
   # Render the map with selected coordinates
-  output$map <- renderLeaflet({
+  output$map <- leaflet::renderLeaflet({
     req(input$tabs)
     req(state$mpas)
-    palette <- viridis(length(input$projects))
+    palette <- viridis::viridis(length(input$projects))
     if (input$tabs == "tab_0") {
       if (!(is.null(state$mpas))) {
         coords <- subarea_coords[[state$mpas]]
-        map <- leaflet() %>%
-          addTiles()
+        map <- leaflet::leaflet() %>%
+          leaflet::addTiles()
 
         if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
-          map <- map %>% addPolygons(
+          map <- map %>% leaflet::addPolygons(
             lng = coords$lng,
             lat = coords$lat,
             fillColor = coords$color,
@@ -724,7 +732,7 @@ server <- function(input, output, session) {
           for (c in seq_along(subarea_coords)) {
             coord <- subarea_coords[[c]]
             map <- map %>%
-              addPolygons(lat = coord$lat, lng = coord$lng, fillColor = coord$color, fillOpacity = 0.5, weight = 2)
+              leaflet::addPolygons(lat = coord$lat, lng = coord$lng, fillColor = coord$color, fillOpacity = 0.5, weight = 2)
           }
         }
 
@@ -767,11 +775,11 @@ server <- function(input, output, session) {
             if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) { # We want it filtered
               m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
               coords <- cbind(longitude, latitude)
-              points_sf <- st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
-              points_within <- st_within(points_sf, m, sparse = FALSE)
-              within_points <- points_sf[apply(points_within, 1, any), ]
-              longitude <- st_coordinates(within_points)[, 1]
-              latitude <- st_coordinates(within_points)[, 2]
+              points_sf <- sf::st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
+              points_within <- sf::st_within(points_sf, m, sparse = FALSE)
+              within_points <- sf::points_sf[apply(points_within, 1, any), ]
+              longitude <- sf::st_coordinates(within_points)[, 1]
+              latitude <- sf::st_coordinates(within_points)[, 2]
             }
 
             LAT[[i]] <- latitude
@@ -779,17 +787,17 @@ server <- function(input, output, session) {
 
             if (!(length(latitude) == 0)) {
               map <- map %>%
-                addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
+                shiny::addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
             }
 
             if (i == length(projectIds) && any(unlist(lapply(LAT, length))) == 0) {
-              showNotification("Not all of the selected projects exist in this area. Unfilter the data to see where this project takes place.", duration = 5)
+              shiny::showNotification("Not all of the selected projects exist in this area. Unfilter the data to see where this project takes place.", duration = 5)
             }
           }
           # END COMMENT
 
           map <- map %>%
-            addLegend(
+            shiny::addLegend(
               "bottomright",
               colors = palette,
               labels = input$projects,
@@ -804,4 +812,5 @@ server <- function(input, output, session) {
 }
 
 # Run the application
-shinyApp(ui = ui, server = server)
+shiny::shinyApp(ui = ui, server = server)
+}

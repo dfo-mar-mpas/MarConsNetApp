@@ -1,11 +1,14 @@
 Package: MarConsNetApp
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Maritimes Conservation/Protected Area App
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Jaimie Harbin and Remi Daigle
+Maintainer: Jaimie Harbin <jaimie.harbin@dfo-mpo.gc.ca>
+Description: This package creates an app.
+License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
+Imports: sf, targets, viridis, dataSPA, arcpullr, argoFloats, raster,
+               shiny, leaflet, dplyr, shinyjs, devtools, MarConsNetAnalysis, MarConsNetData,
+               TBSpayRates, readxl, ggplot2, shinyBS, Mar.datawrangling, DT
+RoxygenNote: 7.3.2

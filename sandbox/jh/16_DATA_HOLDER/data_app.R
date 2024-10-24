@@ -1,14 +1,35 @@
-library(sf)
 library(targets)
-library(viridis)
-library(dataSPA)
-library(arcpullr)
 library(dplyr)
 library(argoFloats)
 source("../../MarConsNetAnalysis/R/ind_rv_abundance.R")
 source("../../MarConsNetAnalysis/R/plot_rv_abundance.R")
 library(raster)
 source("../../MarConsNetAnalysis/r/plot_fishing_abundance.R")
+library(shiny)
+library(leaflet)
+library(dplyr)
+library(sf)
+library(shinyjs)
+library(viridis)
+library(arcpullr)
+library(devtools)
+source("getLatLon.R")
+source("newLine.R")
+source("NAME_to_tag.R")
+install_github("dfo-mar-mpas/MarConsNetAnalysis", ref="main")
+library(MarConsNetAnalysis)
+load_all("../../MarConsNetData/")
+install_github("https://github.com/dfo-mar-odis/TBSpayRates")
+library(TBSpayRates)
+install_github("https://github.com/j-harbin/dataSPA")
+library(dataSPA)
+library(readxl)
+#source("data_app.R")
+library(ggplot2)
+library(shinyBS)
+install_github("https://github.com/Maritimes/Mar.datawrangling", force=TRUE)
+library(Mar.datawrangling)
+library(DT)
 
 
 # 1. MPAs
@@ -118,7 +139,6 @@ for (i in seq_along(objectives)) {
   for (j in seq_along(O)) {
     Objectives[[i]][[j]] <- newLine(O[j])
   }
-
 }
 Objectives <- lapply(Objectives, unlist)
 names(Objectives) <- areas
@@ -147,7 +167,7 @@ odf <- data.frame(
 # 5. Project Data
 # COMMENT
 # FIXME TEMPORARY:
-dataTable <- dataTable[-which(dataTable$id == 579),]
+dataTable <- dataTable[-which(dataTable$id == 579),] #JAIM
 
 projectData <- NULL
 for (i in seq_along(dataTable$id)) {
@@ -275,7 +295,7 @@ calc_letter_grade <- function(percent, min_score=0, max_score=100){
 
 
 # 12. Calculating indicators
-get_data('rv', data.dir="C:/Users/HarbinJ/Documents/data/rv")
+get_data('rv', data.dir="C:/Users/HarbinJ/Documents/data/rv") #JAIM
 species <- c("COD(ATLANTIC)", "HADDOCK")
 
 RV_ABUNDANCE <- vector(mode="list", length(areas))
