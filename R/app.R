@@ -37,7 +37,7 @@ app <- function() {
 ui <- shiny::fluidPage(
   shinyjs::useShinyjs(),
   shiny::tags$head(
-    shiny::tags$style(HTML("
+    shiny::tags$style(shiny::HTML("
       .shiny-notification {
         background-color: yellow;
       }
@@ -49,7 +49,7 @@ ui <- shiny::fluidPage(
   ),
   shiny::uiOutput("gohome"),
   #Makes the tabs hide
-  shiny::tags$style(HTML("
+  shiny::tags$style(shiny::HTML("
     .nav-tabs { display: none; }
   ")),
   shiny::sidebarLayout(
@@ -378,7 +378,7 @@ server <- function(input, output, session) {
             shiny::tags$div(
               shiny::tags$h4(activity),  # Activity Type Header
               shiny::tags$ul(lapply(activityData[[activity]], function(proj) {
-                shiny::tags$li(HTML(proj))  # Each project as a list item
+                shiny::tags$li(shiny::HTML(proj))  # Each project as a list item
               }))
             )
           }))
@@ -610,7 +610,7 @@ server <- function(input, output, session) {
           shiny::tags$div(
             actionLink(
               inputId = filtered_odf$link[i],
-              label = HTML(gsub("\n", "<br>", N_Objectives[i]))
+              label = shiny::HTML(gsub("\n", "<br>", N_Objectives[i]))
             ),
             style = "position: absolute; top: 30px; left: 10px; z-index: 2; font-weight: bold; color: white;"
           )
@@ -787,7 +787,7 @@ server <- function(input, output, session) {
 
             if (!(length(latitude) == 0)) {
               map <- map %>%
-                shiny::addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
+                leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
             }
 
             if (i == length(projectIds) && any(unlist(lapply(LAT, length))) == 0) {
@@ -797,7 +797,7 @@ server <- function(input, output, session) {
           # END COMMENT
 
           map <- map %>%
-            shiny::addLegend(
+            leaflet::addLegend(
               "bottomright",
               colors = palette,
               labels = input$projects,
