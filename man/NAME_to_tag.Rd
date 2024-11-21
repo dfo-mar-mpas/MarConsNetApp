@@ -6,14 +6,21 @@
 \usage{
 NAME_to_tag(df = NULL, names = NULL)
 }
+\arguments{
+\item{df}{a data frame with names "flower", "place", "tab", "link"}
+
+\item{names}{a character string to clean up}
+}
 \description{
 This function extracts the names of the protected and conserved areas
  from `data_CPCAD_areas` and converts them to tags used in the
- Project Planning Tool
+Project Planning Tool
 }
 \details{
-@param df a data frame with names "flower", "place", "tab", "link"
- @param names a chacter string to clean up
-
- @export
+Place holder
+}
+\examples{
+\dontrun{
+# FIXME
+}
 }

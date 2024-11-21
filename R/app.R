@@ -12,19 +12,23 @@
 #' - How are individual sites contributing to network objectives
 #' - How are science projects contributing to network objectives
 #' - Provide scientific data to support status claims
-#' @importFrom shiny fluidRow tags titlePanel uiOuput sidebarLayout
+#' @importFrom shiny fluidRow tags titlePanel uiOutput sidebarLayout
 #'  sidebarPanel mainPanel plotOutput column reactiveValues reactive
 #'   observeEvent renderUI selectInput actionButton actionLink showModal
-#'    modalDialog HTML updateTabsetPanel tagList addPolygons addCircleMarkers
-#'     showNotification addLegend shinyA[[
+#'    modalDialog HTML updateTabsetPanel tagList
+#'     showNotification shinyApp
 #' @importFrom shinyjs useShinyjs
 #' @importFrom DT renderDT dataTableOutput datatable
 #' @importFrom leaflet leafletOutput renderLeaflet leaflet addTiles addPolygons
+#'  addCircleMarkers  addLegend
 #' @importFrom MarConsNetAnalysis plot_flowerplot
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom ggplot2 ggplot geom_bar ylim theme_void coord_flip guides
 #' @importFrom viridis viridis
-#' @importFrom sf st_as_sf st_within points_sf st_coordinates
+#' @importFrom sf st_as_sf st_within st_coordinates
+#' @importFrom dataSPA subsetSPA
+#' @importFrom magrittr %>%
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -44,8 +48,8 @@ ui <- shiny::fluidPage(
     "))),
   shiny::titlePanel("Maritimes Conservation Network App"),
   shiny::fluidRow(
-    column(2, shiny::uiOutput("contextButton")),
-    column(2, shiny::uiOutput("filter_button_ui"))
+    shiny::column(2, shiny::uiOutput("contextButton")),
+    shiny::column(2, shiny::uiOutput("filter_button_ui"))
   ),
   shiny::uiOutput("gohome"),
   #Makes the tabs hide
@@ -68,13 +72,12 @@ ui <- shiny::fluidPage(
       shiny::uiOutput("DT_ui"),
       shiny::uiOutput('mytabs'),
       shiny::uiOutput("conditionalPlot"),
-
-      shiny::fluidRow(column(width=6, align="left",
+      shiny::fluidRow(shiny::column(width=6, align="left",
                              shiny::plotOutput("flowerPlot",click="flower_click")),
                       shiny::column(width=6, align="right",
                                     shiny::uiOutput("networkObjectiveText"),
                                     shiny::uiOutput("siteObjectiveText"),
-                                    shiny::uiOutput("objectives", container=pre))),
+                                    shiny::tags$pre(shiny::uiOutput("objectives")))),
 
     ) #MAIN
   )
@@ -153,14 +156,14 @@ server <- function(input, output, session) {
   output$section <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      shiny::selectInput("section", "Select Section(s):", choices=subsetSPA(om=om, section="return"), multiple=TRUE, selected=state$section)
+      shiny::selectInput("section", "Select Section(s):", choices=dataSPA::subsetSPA(om=om, section="return"), multiple=TRUE, selected=state$section)
     }
   })
 
   output$division <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      shiny::selectInput("division", "Select Division(s):", choices=subsetSPA(om=om, division="return"), multiple=TRUE, selected=state$division)
+      shiny::selectInput("division", "Select Division(s):", choices=dataSPA::subsetSPA(om=om, division="return"), multiple=TRUE, selected=state$division)
     }
   })
 
@@ -596,7 +599,7 @@ server <- function(input, output, session) {
       filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
       # Create a div for filtered objectives and bar charts
       objectiveDivs <- lapply(seq_along(filtered_odf$objectives), function(i) {
-        # Objective Container
+        # Objective
         shiny::tags$div(
           style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
 
@@ -777,7 +780,7 @@ server <- function(input, output, session) {
               coords <- cbind(longitude, latitude)
               points_sf <- sf::st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
               points_within <- sf::st_within(points_sf, m, sparse = FALSE)
-              within_points <- sf::points_sf[apply(points_within, 1, any), ]
+              within_points <- points_sf[apply(points_within, 1, any), ]
               longitude <- sf::st_coordinates(within_points)[, 1]
               latitude <- sf::st_coordinates(within_points)[, 2]
             }

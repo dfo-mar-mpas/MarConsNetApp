@@ -2,12 +2,18 @@
 #'
 #'  This function extracts the names of the protected and conserved areas
 #'  from `data_CPCAD_areas` and converts them to tags used in the
-#'  Project Planning Tool
+#'Project Planning Tool
 #'
-#'  @param df a data frame with names "flower", "place", "tab", "link"
-#'  @param names a chacter string to clean up
+#'Place holder
 #'
-#'  @export
+#'@param df a data frame with names "flower", "place", "tab", "link"
+#'@param names a character string to clean up
+#'
+#'@export
+#'@examples
+#'\dontrun{
+#'# FIXME
+#'}
 
 NAME_to_tag <- function(df=NULL, names=NULL) {
 

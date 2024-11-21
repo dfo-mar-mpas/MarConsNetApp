@@ -8,7 +8,7 @@ tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTar
 tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "shiny", "leaflet", "dplyr", "shinyjs", "devtools", "MarConsNetAnalysis", "MarConsNetData",
-               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer"),
+               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr"),
   #controller = crew::crew_controller_local(workers = 2),
   imports = c("civi"),
   format = "qs"

@@ -10,5 +10,5 @@ Encoding: UTF-8
 LazyData: true
 Imports: sf, targets, viridis, dataSPA, arcpullr, argoFloats, raster,
                shiny, leaflet, dplyr, shinyjs, devtools, MarConsNetAnalysis, MarConsNetData,
-               TBSpayRates, readxl, ggplot2, shinyBS, Mar.datawrangling, DT
+               TBSpayRates, readxl, ggplot2, shinyBS, Mar.datawrangling, DT, magrittr, RColorBrewer
 RoxygenNote: 7.3.2

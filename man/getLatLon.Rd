@@ -11,7 +11,16 @@ getLatLon(sf = NULL)
 Object must contain spatial data with a geometry column and either a
 'NAME_E' or 'SiteName_E' column.}
 }
+\value{
+A list
+}
 \description{
 This function extracts the latitude and longitude coordinates from a spatial
 data frame to display protected area polygons on the map in the app.
+}
+\examples{
+\dontrun{
+polygons <- getLatLon(sf_data)
+print(polygons)
+}
 }

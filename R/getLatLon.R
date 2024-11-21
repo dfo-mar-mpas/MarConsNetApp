@@ -8,14 +8,15 @@
 #' 'NAME_E' or 'SiteName_E' column.
 #' @importFrom sf st_sfc st_coordinates
 #'
-#'  @export
+#' @export
 #'
-#'  @examples
-#'    \dontrun{
-#'    polygons <- getLatLon(sf_data)
-#'    print(polygons)
-#'    }
-#'  @return A list
+#'@examples
+#'\dontrun{
+#'polygons <- getLatLon(sf_data)
+#'print(polygons)
+#'}
+#'@return A list
+
 getLatLon <- function(sf=NULL) {
 
   if (is.null(sf)) {
