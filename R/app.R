@@ -295,13 +295,14 @@ server <- function(input, output, session) {
     ))
   })
 
-  # Dynmaically coding in which actionLink is selected will update the tab
+  # Dynmaically coding in which actionLink is selected will update the tab #JAIM
   for (i in 0:(length(unique(APPTABS$tab))+length(binned_indicators$indicators))) {
     local({
       link_id <- paste0("link_", i)
       shiny::observeEvent(input[[link_id]], {
         selected_tab <- unique(APPTABS$tab[which(APPTABS$link == link_id)])
         if (length(selected_tab) == 0) {
+          #browser()
           selected_tab <- unique(binned_indicators$tab[which(binned_indicators$link == link_id)])
         }
         shiny::updateTabsetPanel(session, "tabs", selected = selected_tab)
@@ -309,15 +310,15 @@ server <- function(input, output, session) {
     })
   }
 
-  # Dynmaically coding in which actionLink is will paste indicators jaim
+  # Dynmaically coding in which actionLink is will paste indicators
   calculated_info <- shiny::reactive({
     req(input$tabs)
-    # if (!(input$tabs == "tab_0")) {
-    # browser()
-    # }
     link_id <- sub("tab", "link", input$tabs)
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
+        # if (!(input$tabs == "tab_2")) {
+        #   browser()
+        # }
           if (input$tabs %in% odf$tab) {
         objective <- gsub("\n", "", odf$objectives[which(odf$link == link_id)])
         flower <- odf$flower_plot[which(odf$link == link_id)]
@@ -326,7 +327,7 @@ server <- function(input, output, session) {
         } else if (input$tabs %in% binned_indicators$tab) {
           objective <- "This flower plot subset is not associated with any network or site level objectives for this location subset."
           flower <- binned_indicators$indicator_bin[which(binned_indicators$link == link_id)]
-          area <- gsub("_", " ", gsub("_CO$", "", binned_indicators$area[which(binned_indicators$link == link_id)]))
+          area <- gsub("_", " ", gsub("_CO$", "", binned_indicators$applicability[which(binned_indicators$link == link_id)]))
 
         } else {
           objective <- "This flower plot subset is not associated with any network or site level objectives for this location subset."
@@ -340,6 +341,9 @@ server <- function(input, output, session) {
           ki2 <- ki1
         }
         keepind <- intersect(ki1, ki2)
+        if (input$tabs %in% binned_indicators$tab) {
+          keepind <- which(binned_indicators$tab == input$tabs)
+        }
         binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind]))
 
         ind_links <- shiny::tagList(lapply(seq_along(binned_indicators$indicators[keepind]), function(i) {
@@ -464,6 +468,9 @@ server <- function(input, output, session) {
     )
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
+        # if (!(input$tabs == "tab_2")) {
+        #   browser()
+        # }
         DT::datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
       } else {
         NULL
@@ -488,12 +495,16 @@ server <- function(input, output, session) {
 
 
 
-  output$conditionalPlot <- shiny::renderUI({
+  output$conditionalPlot <- shiny::renderUI({ #JAIM
     req(input$tabs)
     req(state$mpas)
     if (input$tabs == "tab_0") {
       leaflet::leafletOutput("map")
     } else if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
+      # if (!(input$tabs == "tab_2")) {
+      # browser()
+      # }
+
       # FIXME: THIS COULD BE BETTER. BUT ISN'T TOO BAD
         currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
@@ -595,7 +606,7 @@ server <- function(input, output, session) {
     shiny::updateTabsetPanel(session, "tabs", selected=updatedTab)
   })
 
-  output$networkObjectiveText <- shiny::renderUI({ #JAIM
+  output$networkObjectiveText <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
