@@ -312,11 +312,13 @@ server <- function(input, output, session) {
   # Dynmaically coding in which actionLink is will paste indicators jaim
   calculated_info <- shiny::reactive({
     req(input$tabs)
-
+    # if (!(input$tabs == "tab_0")) {
+    # browser()
+    # }
     link_id <- sub("tab", "link", input$tabs)
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
-        if (input$tabs %in% odf$tab) {
+          if (input$tabs %in% odf$tab) {
         objective <- gsub("\n", "", odf$objectives[which(odf$link == link_id)])
         flower <- odf$flower_plot[which(odf$link == link_id)]
         area <- gsub("_", " ", gsub("_CO$", "", odf$area[which(odf$link == link_id)]))
@@ -331,7 +333,7 @@ server <- function(input, output, session) {
           flower <- APPTABS$flower[which(APPTABS$link == link_id)]
           area <- gsub("_", " ", gsub("_CO$", "", APPTABS$place[which(APPTABS$link == link_id)]))
         }
-        ki1 <- which(grepl(flower, binned_indicators$indicator_bin, ignore.case = TRUE))
+        ki1 <- which(grepl(flower, gsub("\\(|\\)", "", binned_indicators$indicator_bin), ignore.case = TRUE))
         if (!(input$mpas == "All")) {
         ki2 <- which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
         } else {
@@ -567,7 +569,6 @@ server <- function(input, output, session) {
     req(input$mpas)
     req(input$flower_click)
     req(input$tabs)
-
     xscale <- 0.5
     yscale <- 205/2
 

@@ -370,6 +370,8 @@ list(
 
                ITP <- data.frame(indicator=unique(plotindy), plot=rep(0), type="plot", status=rep(0), trend=rep(0))
                ITP$plot[which(ITP$indicator == "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock")] <- "plot_rv_abundance(RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]])"
+               ITP$plot[which(ITP$indicator == "Physical conditions (e.g. temperature, salinity, light levels, wind, sea-surface height) within the MR (surface and bottom) and both upstream and downstream, as measured on the AZMP’s line.")] <- "plot_azmp_physical()"
+
 
                for (i in seq_along(ITP$indicator)) {
                  TREND <- "A linear regression has shown a XX  of YY UU over the last ZZ years. The linear trend for the last 5 years was a TID of LR UU."
@@ -377,7 +379,6 @@ list(
                  itp <- ITP$indicator[i]
                  if (itp == "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock") {
                    df <- RV_ABUNDANCE[[which(names(RV_ABUNDANCE) == 'WEBCA')]][[which(species == 'HADDOCK')]]
-
                    t <- round(unname(coef(lm(df$abundance ~ df$year))[2]),2)
                    y <- length(df$year)
                    u <- "average # of haddock per tow"
@@ -386,7 +387,18 @@ list(
                    m <- mean(df$abundance[which(df$year %in% tail(sort(df$year),5))], na.rm=TRUE)
                    lr <- round(unname(coef(lm(df$abundance[which(df$year %in% tail(sort(df$year),5))] ~ df$year[which(df$year %in% tail(sort(df$year),5))]))[2]),2)
                    tid <- ifelse(lr > 0, "increase", "decrease")
-                 } else {
+                 } else if (itp == "Physical conditions (e.g. temperature, salinity, light levels, wind, sea-surface height) within the MR (surface and bottom) and both upstream and downstream, as measured on the AZMP’s line.") {
+                   df <- plot_azmp_physical(parameter="temperature", type="surface", dataframe=TRUE)
+                   t <- round(unname(coef(lm(df$avg_parameter ~ df$year))[2]),2)
+                   y <- length(df$year)
+                   u <- "average surface temperature"
+                   r <- sort(df$year)[length(df$year)]
+                   n <- df$avg_parameter[which(df$year == r)]
+                   m <- mean(df$avg_parameter[which(df$year %in% tail(sort(df$year),5))], na.rm=TRUE)
+                   lr <- round(unname(coef(lm(df$avg_parameter[which(df$year %in% tail(sort(df$year),5))] ~ df$year[which(df$year %in% tail(sort(df$year),5))]))[2]),2)
+                   tid <- ifelse(lr > 0, "increase", "decrease")
+
+                   } else {
                    t <- "BLANK"
                    y <- "BLANK"
                    u <- "BLANK"
