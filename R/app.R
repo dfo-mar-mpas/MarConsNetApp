@@ -577,9 +577,10 @@ server <- function(input, output, session) {
 
     clickangle <- 90-atan2(y,x)*180/pi
     if(clickangle<0) clickangle <- 360+clickangle
+    #browser()
 
     if(sqrt(x^2+y^2)>0.75){
-      wording <- pillar_ecol_df$objectives[which.min(abs(pillar_ecol_df$angle-clickangle))]
+      wording <- pillar_ecol_df$objective[which.min(abs(pillar_ecol_df$angle-clickangle))]
     } else {
       wording <-pillar_ecol_df$bin[which.min(abs(pillar_ecol_df$angle-clickangle))]
     }
