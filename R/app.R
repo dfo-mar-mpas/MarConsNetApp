@@ -295,7 +295,7 @@ server <- function(input, output, session) {
     ))
   })
 
-  # Dynmaically coding in which actionLink is selected will update the tab #JAIM
+  # Dynmaically coding in which actionLink is selected will update the tab
   for (i in 0:(length(unique(APPTABS$tab))+length(binned_indicators$indicators))) {
     local({
       link_id <- paste0("link_", i)
@@ -460,6 +460,7 @@ server <- function(input, output, session) {
       indicatorStatus <- indicator_to_plot$status[ki]
       indicatorTrend <- indicator_to_plot$trend[ki]
     }
+    #browser()
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
@@ -495,7 +496,7 @@ server <- function(input, output, session) {
 
 
 
-  output$conditionalPlot <- shiny::renderUI({ #JAIM
+  output$conditionalPlot <- shiny::renderUI({
     req(input$tabs)
     req(state$mpas)
     if (input$tabs == "tab_0") {
