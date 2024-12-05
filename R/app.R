@@ -452,11 +452,11 @@ server <- function(input, output, session) {
     INDY <- gsub(".*>(.*)<.*", "\\1", indj)
     INDY <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", INDY))))
     # end test
-    indicatorStatus <- indicator_to_plot$status[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% INDY)]
-    indicatorTrend <- indicator_to_plot$trend[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) %in% INDY)]
+    indicatorStatus <- indicator_to_plot$status[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicators)))) %in% INDY)]
+    indicatorTrend <- indicator_to_plot$trend[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicators)))) %in% INDY)]
     } else {
       indj <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
-      ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicator)))) == indj)
+      ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicators)))) == indj)
       indicatorStatus <- indicator_to_plot$status[ki]
       indicatorTrend <- indicator_to_plot$trend[ki]
     }
@@ -509,7 +509,7 @@ server <- function(input, output, session) {
       # FIXME: THIS COULD BE BETTER. BUT ISN'T TOO BAD
         currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
-        if (indicator_to_plot$type[which(indicator_to_plot$indicator == currentInd)] == "leaflet") {
+        if (indicator_to_plot$type[which(indicator_to_plot$indicators == currentInd)] == "leaflet") {
           leafletOutput("indicatorLeaflet")
         } else {
           shiny::plotOutput("indicatorPlot")
@@ -532,8 +532,12 @@ server <- function(input, output, session) {
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
       }
-      plot <- indicator_to_plot$plot[which(indicator_to_plot$indicator == indy)]
-      if (indicator_to_plot$type[which(indicator_to_plot$indicator == currentInd)] == "plot") {
+      #browser()
+      plot <- indicator_to_plot$plot[which(indicator_to_plot$indicators == indy)]
+      if (indicator_to_plot$type[which(indicator_to_plot$indicators == currentInd)] == "plot") {
+        if (grepl("dataframe=TRUE", plot)) {
+          plot <- gsub("dataframe=TRUE", "dataframe=FALSE", plot)
+        }
         eval(parse(text = plot))
       }
     }
@@ -549,8 +553,8 @@ server <- function(input, output, session) {
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
       }
-      plot <- indicator_to_plot$plot[which(indicator_to_plot$indicator == indy)]
-      if (indicator_to_plot$type[which(indicator_to_plot$indicator == currentInd)] == "leaflet") {
+      plot <- indicator_to_plot$plot[which(indicator_to_plot$indicators == indy)]
+      if (indicator_to_plot$type[which(indicator_to_plot$indicators == currentInd)] == "leaflet") {
         plot2 <- eval(parse(text = plot))
       }
     }
