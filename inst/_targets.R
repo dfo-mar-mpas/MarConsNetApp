@@ -248,7 +248,7 @@ list(
 
   tar_target(name = binned_indicators,
              command = {
-               bi <- read_excel("../MarConsNetAnalysis/data/indicator_binning.xlsx") #FIXME
+               bi <- read_excel(system.file("data", "indicator_binning.xlsx", package = "MarConsNetAnalysis"))
                ## Giving indicator links
                bi$tab<- paste0("tab_", length(APPTABS$flower)+(1:length(bi$indicators)))
                bi$link <- paste0("link_", length(APPTABS$flower)+(1:length(bi$indicators)))
@@ -260,8 +260,6 @@ list(
                O <- data.frame(
                  objectives = c(0, unlist(Objectives, use.names = FALSE), N_Objectives)
                )
-
-
                O$flower_plot <- 0
                O$area <- 0
                get_first_four_words <- function(texts) {
@@ -365,7 +363,7 @@ list(
  tar_target(name = indicator_to_plot,
             command = {
 
-              ITP <- analysis(bi=binned_indicators, rv_abundance=ABUNDANCE_RV, species=c("COD(ATLANTIC)", "HADDOCK"))
+              ITP <- analysis(bi=binned_indicators, rv_abundance=ABUNDANCE_RV, species=c("COD(ATLANTIC)", "HADDOCK"), GSDET=gsdet, ah=all_haddock, bd=bloom_df)
               ITP
             }
 
@@ -501,6 +499,63 @@ list(
                              bin_productivity_BiomassMetrics_df,
                              bin_productivity_StructureandFunction_df,
                              bin_productivity_ThreatstoProductivity_df)),
+
+ tar_target(gsdet,
+            command = {
+              GSDET$latitude <- 0
+              GSDET$longitude <- 0
+              GSDET$year <- 0
+              missions <- unique(GSDET$MISSION)
+
+              GSINF <-GSINF[-which(is.na(GSINF$SDATE)),]
+              for (i in seq_along(missions)) {
+                GSDET$latitude[which(GSDET$MISSION == missions[i])] <- GSINF$LATITUDE[which(GSINF$MISSION == missions[i])][1]
+                GSDET$longitude[which(GSDET$MISSION == missions[i])]  <- GSINF$LONGITUDE[which(GSINF$MISSION == missions[i])][1]
+                GSDET$year[which(GSDET$MISSION == missions[i])]  <- unique(as.numeric(substr(GSINF$SDATE[which(GSINF$MISSION == missions[i])],1,4)))
+              }
+
+              GSDET
+
+            }
+
+ ),
+
+ tar_target(all_haddock,
+            command={
+              get_data('rv', data.dir = "C:/Users/HarbinJ/Documents/data/rv")
+
+              # All haddock
+              GSSPECIES = GSSPECIES[GSSPECIES$CODE %in% c(11),]
+              Mar.datawrangling::self_filter(keep_nullsets = F)
+              ah = Mar.datawrangling::summarize_catches()
+              names(ah)[which(names(ah) == "LATITUDE")] <- "latitude"
+              names(ah)[which(names(ah) == "LONGITUDE")] <- "longitude"
+              names(ah)[which(names(ah) == "SDATE")] <- "date"
+              ah
+            }),
+
+ tar_target(bloom_df,
+            command={
+              script_lines <- readLines("https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_01a_define_polygons.R")
+
+              k1 <- which(grepl("poly\\$atlantic = list", script_lines))
+              k2 <- which(grepl("-61.1957, -61.1957, -59.54983, -59.54983, -61.1957", script_lines))
+              script <- script_lines[k1:k2]
+              poly <- list()
+              eval(parse(text=script))
+              DF <- poly$atlantic$AZMP$CSS_V02
+
+              coords <- matrix(c(DF$lon, DF$lat), ncol = 2, byrow = FALSE)
+              coords <- rbind(coords, coords[1,])
+              polygon_sf <- st_sfc(st_polygon(list(coords)))
+
+
+              df <- azmpdata::RemoteSensing_Annual_Broadscale
+              df <- df[which(df$area == "CSS_remote_sensing"),]
+              df$geom <- rep(polygon_sf)
+              df
+            }
+            ),
 
 
 

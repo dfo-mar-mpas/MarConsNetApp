@@ -60,11 +60,11 @@ ui <- shiny::fluidPage(
     shiny::sidebarPanel(
       shiny::uiOutput("mpas"),
       shiny::uiOutput("projects"),
-      shiny::uiOutput("fundingSource"),
-      shiny::uiOutput("theme"),
-      shiny::uiOutput("functionalGroup"),
-      shiny::uiOutput("section"),
-      shiny::uiOutput("division"),
+      #shiny::uiOutput("fundingSource"),
+      #shiny::uiOutput("theme"),
+      #shiny::uiOutput("functionalGroup"),
+      #shiny::uiOutput("section"),
+      #shiny::uiOutput("division"),
       shiny::uiOutput("report")
     ),
     shiny::mainPanel(
@@ -77,7 +77,7 @@ ui <- shiny::fluidPage(
                       shiny::column(width=6, align="right",
                                     shiny::uiOutput("networkObjectiveText"),
                                     shiny::uiOutput("siteObjectiveText"),
-                                    shiny::tags$pre(shiny::uiOutput("objectives")))),
+                                    shiny::uiOutput("objectives"))),
 
     ) #MAIN
   )
@@ -201,7 +201,9 @@ server <- function(input, output, session) {
 
   output$objectives <- shiny::renderUI({
     req(input$tabs)
+
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+      # Process your logic as before
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
         if (grepl("Estuary", state$mpas)) {
@@ -214,14 +216,27 @@ server <- function(input, output, session) {
         string <- state$mpas
       }
       string <- gsub(" ", "_", string)
-      keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
+
+      # Find matching objectives
+      keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
       if (!(length(keepO) == 0)) {
         textO <- Objectives[[keepO]]
         links <- lapply(seq_along(textO), function(i) {
-          shiny::actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])], label = textO[[i]])
+          shiny::tags$div(
+            shiny::actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])],
+                              label = textO[[i]]),
+            shiny::tags$br(), # Add a line break after each link
+            shiny::tags$br()   # Add second line break
+
+          )
         })
+        # Combine all the div elements and return
+        return(shiny::tagList(links))
       }
     }
+
+    # Return NULL to avoid rendering anything
+    return(NULL)
   })
 
 
