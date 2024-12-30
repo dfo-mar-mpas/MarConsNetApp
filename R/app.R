@@ -804,7 +804,6 @@ server <- function(input, output, session) {
               unique_coords <- unique(coord)
               latitude <- unique_coords$latitude
               longitude <- unique_coords$longitude
-
             }
 
 
@@ -818,16 +817,28 @@ server <- function(input, output, session) {
               latitude <- sf::st_coordinates(within_points)[, 2]
             }
 
+
             LAT[[i]] <- latitude
             LON[[i]] <- longitude
-
             if (!(length(latitude) == 0)) {
-              if (exists("geometry")) {
-                map <- map %>%
-                  addPolygons(data=geometry, popup=type, color="yellow", weight=0.5, opacity=0)
+              if ("geometry" %in% names(pd)) {
+                #browser()
+                if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) {
+                  st_crs(geometry) <- 4326
+                  geometry <- st_transform(geometry, st_crs(m))
+                  geometry <- st_make_valid(geometry)
+                  overlaps_poly <- st_intersects(geometry, m, sparse = FALSE)
+                  map <- map %>%
+                    addPolygons(data=geometry[which(overlaps_poly[,1])], popup=type[which(overlaps_poly[,1])], color="yellow", weight=0.5, opacity=0)
+                } else {
+                  map <- map %>%
+                    addPolygons(data=geometry, popup=type, color="yellow", weight=0.5, opacity=0)
+
+                }
+
               }
               map <- map %>%
-                leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i], popup=ifelse("data.frame" %in% class(pd),type, NULL))
+                leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i], popup=ifelse("data.frame" %in% class(pd),type, "Type Unknown"))
             }
 
             if (i == length(projectIds) && any(unlist(lapply(LAT, length))) == 0) {
