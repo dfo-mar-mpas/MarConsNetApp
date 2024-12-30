@@ -207,7 +207,11 @@ list(
                    })
 
                    # Use do.call to call the function with filled arguments
+                   if (!(is.null(arguments))) {
                    pd <- do.call(func, filled_args)
+                   } else {
+                     pd <- eval(parse(text=paste0(dataTable$get_function[i], "()")))
+                   }
                  }
 
                  dataProject[[i]] <- pd

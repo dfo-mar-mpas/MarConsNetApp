@@ -317,7 +317,6 @@ server <- function(input, output, session) {
       shiny::observeEvent(input[[link_id]], {
         selected_tab <- unique(APPTABS$tab[which(APPTABS$link == link_id)])
         if (length(selected_tab) == 0) {
-          #browser()
           selected_tab <- unique(binned_indicators$tab[which(binned_indicators$link == link_id)])
         }
         shiny::updateTabsetPanel(session, "tabs", selected = selected_tab)
@@ -331,9 +330,6 @@ server <- function(input, output, session) {
     link_id <- sub("tab", "link", input$tabs)
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
-        # if (!(input$tabs == "tab_2")) {
-        #   browser()
-        # }
           if (input$tabs %in% odf$tab) {
         objective <- gsub("\n", "", odf$objectives[which(odf$link == link_id)])
         flower <- odf$flower_plot[which(odf$link == link_id)]
@@ -475,7 +471,6 @@ server <- function(input, output, session) {
       indicatorStatus <- indicator_to_plot$status[ki]
       indicatorTrend <- indicator_to_plot$trend[ki]
     }
-    #browser()
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
@@ -484,9 +479,6 @@ server <- function(input, output, session) {
     )
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
-        # if (!(input$tabs == "tab_2")) {
-        #   browser()
-        # }
         DT::datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
       } else {
         NULL
@@ -517,11 +509,6 @@ server <- function(input, output, session) {
     if (input$tabs == "tab_0") {
       leaflet::leafletOutput("map")
     } else if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
-      # if (!(input$tabs == "tab_2")) {
-      # browser()
-      # }
-
-      # FIXME: THIS COULD BE BETTER. BUT ISN'T TOO BAD
         currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
         if (indicator_to_plot$type[which(indicator_to_plot$indicators == currentInd)] == "leaflet") {
@@ -547,7 +534,6 @@ server <- function(input, output, session) {
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
       }
-      #browser()
       plot <- indicator_to_plot$plot[which(indicator_to_plot$indicators == indy)]
       if (indicator_to_plot$type[which(indicator_to_plot$indicators == currentInd)] == "plot") {
         if (grepl("dataframe=TRUE", plot)) {
@@ -608,7 +594,6 @@ server <- function(input, output, session) {
 
     clickangle <- 90-atan2(y,x)*180/pi
     if(clickangle<0) clickangle <- 360+clickangle
-    #browser()
 
     if(sqrt(x^2+y^2)>0.75){
       wording <- pillar_ecol_df$objective[which.min(abs(pillar_ecol_df$angle-clickangle))]
@@ -782,13 +767,20 @@ server <- function(input, output, session) {
           LON <- NULL
           for (i in seq_along(projectIds)) {
             pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
-            if (!(class(pd) == "argoFloats")) {
+            if (!("argoFloats" %in% class(pd))) {
+            if ("list" %in% class(pd)) {
             longitude <- pd[[1]]$lon
             latitude <- pd[[1]]$lat
+            } else {
+              longitude <- pd$longitude
+              latitude <- pd$latitude
+
+            }
             } else {
               longitude <- pd[['longitude']]
               latitude <- pd[['latitude']]
             }
+
             bad <- unique(c(which(is.na(longitude)), which(is.na(latitude))))
             if (length(bad) > 0) {
               latitude <- latitude[-bad]
