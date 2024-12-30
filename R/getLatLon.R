@@ -51,7 +51,7 @@ getLatLon <- function(sf=NULL) {
     lat <- sf::st_coordinates(sfc_multipolygon[i][[1]])[, "Y"]
     polygons[[i]]$lat <- lat
     polygons[[i]]$lng <- lng
-    polygons[[i]]$color <- "hotpink"
+    polygons[[i]]$color <- "gray"
   }
 
   return(polygons)

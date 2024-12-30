@@ -745,6 +745,7 @@ server <- function(input, output, session) {
           map <- map %>% leaflet::addPolygons(
             lng = coords$lng,
             lat = coords$lat,
+            color="black",
             fillColor = coords$color,
             fillOpacity = 0.5,
             weight = 2
@@ -753,7 +754,7 @@ server <- function(input, output, session) {
           for (c in seq_along(subarea_coords)) {
             coord <- subarea_coords[[c]]
             map <- map %>%
-              leaflet::addPolygons(lat = coord$lat, lng = coord$lng, fillColor = coord$color, fillOpacity = 0.5, weight = 2)
+              leaflet::addPolygons(lat = coord$lat, lng = coord$lng, fillColor = coord$color, fillOpacity = 0.5, weight = 2, color="black")
           }
         }
 
@@ -774,7 +775,10 @@ server <- function(input, output, session) {
             } else {
               longitude <- pd$longitude
               latitude <- pd$latitude
-
+              type <- pd$type
+              if ("geometry" %in% names(pd)) {
+                geometry <- pd$geometry
+              }
             }
             } else {
               longitude <- pd[['longitude']]
@@ -785,6 +789,10 @@ server <- function(input, output, session) {
             if (length(bad) > 0) {
               latitude <- latitude[-bad]
               longitude <- longitude[-bad]
+              type <- type[-bad]
+              if ("geometry" %in% names(pd)) {
+                geometry <- geometry[-bad]
+              }
             }
 
             if (length(latitude) > 1000) { # issue 21
@@ -814,8 +822,12 @@ server <- function(input, output, session) {
             LON[[i]] <- longitude
 
             if (!(length(latitude) == 0)) {
+              if (exists("geometry")) {
+                map <- map %>%
+                  addPolygons(data=geometry, popup=type, color="yellow", weight=0.5, opacity=0)
+              }
               map <- map %>%
-                leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i])
+                leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i], popup=ifelse("data.frame" %in% class(pd),type, NULL))
             }
 
             if (i == length(projectIds) && any(unlist(lapply(LAT, length))) == 0) {
