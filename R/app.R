@@ -261,8 +261,6 @@ server <- function(input, output, session) {
     })
   })
 
-
-
   output$contextButton <- shiny::renderUI({
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       if (grepl("Marine Protected Area", state$mpas)) {
@@ -347,7 +345,10 @@ server <- function(input, output, session) {
         }
         ki1 <- which(grepl(flower, gsub("\\(|\\)", "", binned_indicators$indicator_bin), ignore.case = TRUE))
         if (!(input$mpas == "All")) {
-        ki2 <- which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
+          #2024/12/31 Issue 7
+        #ki2 <- which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
+          ki2 <- which(tolower(binned_indicators$area) == tolower(NAME_to_tag(names=input$mpas)))
+
         } else {
           ki2 <- ki1
         }
@@ -450,6 +451,7 @@ server <- function(input, output, session) {
   })
 
   output$DT <- DT::renderDT({
+    #browser()
     req(input$tabs)
     info <- calculated_info()
     req(info)  # Ensure the info is available
@@ -459,12 +461,15 @@ server <- function(input, output, session) {
     indj <- indj[nzchar(indj)]
     indj <- paste0("<a href=", indj)
     indj <- trimws(gsub("\n", "", indj), "both")
-    # test
     INDY <- gsub(".*>(.*)<.*", "\\1", indj)
     INDY <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", INDY))))
-    # end test
-    indicatorStatus <- indicator_to_plot$status[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicators)))) %in% INDY)]
-    indicatorTrend <- indicator_to_plot$trend[which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicators)))) %in% INDY)]
+    # HERE JAIM
+    if (any(grepl("&amp;", INDY))) {
+      INDY <- gsub("&amp;", "&", INDY)
+    }
+
+    indicatorStatus <- indicator_to_plot$status[which(indicator_to_plot$indicators %in% INDY)]
+    indicatorTrend <- indicator_to_plot$trend[which(indicator_to_plot$indicators %in% INDY)]
     } else {
       indj <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
       ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicators)))) == indj)
@@ -822,7 +827,6 @@ server <- function(input, output, session) {
             LON[[i]] <- longitude
             if (!(length(latitude) == 0)) {
               if ("geometry" %in% names(pd)) {
-                #browser()
                 if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) {
                   st_crs(geometry) <- 4326
                   geometry <- st_transform(geometry, st_crs(m))
@@ -859,6 +863,25 @@ server <- function(input, output, session) {
       }
     }
   })
+
+
+  observeEvent(input$report, {
+    if (!(state$mpas == "All")) {
+    # Define the Rmd file to render
+    rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
+    params <- list(mpas = input$mpas,
+                   coords = subarea_coords[which(names(subarea_coords) == input$mpas)])
+    output_dir <- getwd()  # current directory
+    output_file <- file.path(output_dir, "report.html")
+    render(rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
+    output$report_ui <- renderUI({
+      tags$iframe(src = "report.html", width = "100%", height = "600px")
+    })
+    }
+  })
+
+
+
 
 }
 

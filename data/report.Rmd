@@ -1,0 +1,42 @@
+---
+title: "Generated Report"
+output: html_document
+---
+
+## Conservation Area
+
+`r params$mpas`
+
+## Objectives
+
+```{r, echo=FALSE,comment=NA, results="asis"}
+cat(Objectives[[which(tolower(areas) == tolower(NAME_to_tag(names=input$mpas)))]])
+```
+
+
+## Context
+
+```{r, echo=FALSE,comment=NA, results="asis"}
+cat(Context[[which(tolower(areas) == tolower(NAME_to_tag(names=input$mpas)))]])
+```
+
+## Map
+
+```{r, echo=FALSE}
+#cat(paste0("The area is ", params$coords[[input$mpas]]))
+map <- leaflet() %>%
+  addTiles() %>%
+  addPolygons(lat = params$coords[[input$mpas]]$lat, lng = params$coords[[input$mpas]]$lng, fillColor = params$coords[[input$mpas]]$color, fillOpacity = 0.5, weight = 2, color="black")
+
+map
+```
+
+
+## Indicators
+
+```{r, echo=FALSE}
+
+
+
+```
+
