@@ -2,8 +2,8 @@ library(targets); library(dplyr); library(argoFloats); library(azmpdata); librar
 library(dplyr); library(sf); library(shinyjs); library(viridis); library(arcpullr); library(devtools)
 library(MarConsNetAnalysis);library(MarConsNetData);
 library(TBSpayRates); library(dataSPA); library(readxl)
-library(ggplot2); library(shinyBS); library(Mar.datawrangling); library(DT)
-
+library(ggplot2); library(shinyBS); library(Mar.datawrangling); library(DT); library(rmarkdown)
+library(stringr)
 
 # 1. MPAs
 MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)

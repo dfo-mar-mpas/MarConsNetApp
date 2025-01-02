@@ -21,7 +21,6 @@ NAME_to_tag <- function(df=NULL, names=NULL) {
     NAMES <- df$place
   } else {
     NAMES <- names
-    NAMES <- names
   }
 
   # 1. Dealing with MPAs first

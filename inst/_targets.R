@@ -127,7 +127,7 @@ list(
                NAME_to_tag(apptabs)
              }),
 
-  tar_target(name = om,
+  tar_target(name = om, # FIXME: need to get the saved om (or add a real cookie)
              command = {
                OM <- dataSPA::getData(type="om", age=3000, cookie="cookie")
                OM[-(which(OM$activity_type == "Other")),]
@@ -368,6 +368,10 @@ list(
             command = {
 
               ITP <- analysis(bi=binned_indicators, rv_abundance=ABUNDANCE_RV, species=c("COD(ATLANTIC)", "HADDOCK"), GSDET=gsdet, ah=all_haddock, bd=bloom_df)
+
+              ITP$plot[which(grepl("GS=GSDET", ITP$plot))] <- gsub("GS=GSDET", "GS=gsdet", ITP$plot[which(grepl("GS=GSDET", ITP$plot))])
+
+
               ITP
             }
 
@@ -397,17 +401,18 @@ list(
             packages = c("dplyr","sf","arcpullr")),
 
  ##### Indicators #####
- tar_target(ind_placeholder_1_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_2_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_3_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_4_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_5_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_6_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_7_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_8_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_9_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_10_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_11_df,ind_placeholder(areas = all_areas)),
+
+  tar_target(ind_placeholder_1_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_2_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_3_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_4_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_5_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_6_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_7_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_8_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_9_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_10_df,ind_placeholder(areas = all_areas)),
+  tar_target(ind_placeholder_11_df,ind_placeholder(areas = all_areas)),
 
  ##### Indicator Bins #####
  tar_target(bin_biodiversity_FunctionalDiversity_df,
@@ -518,7 +523,8 @@ list(
                 GSDET$year[which(GSDET$MISSION == missions[i])]  <- unique(as.numeric(substr(GSINF$SDATE[which(GSINF$MISSION == missions[i])],1,4)))
               }
 
-              GSDET
+              GDD <- GSDET
+              GDD
 
             }
 

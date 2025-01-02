@@ -3,24 +3,25 @@ title: "Generated Report"
 output: html_document
 ---
 
-## Conservation Area
+# Introduction
+
+### Conservation Area
 
 `r params$mpas`
 
-## Objectives
+### Objectives
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
 cat(Objectives[[which(tolower(areas) == tolower(NAME_to_tag(names=input$mpas)))]])
 ```
 
 
-## Context
+### Context
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
 cat(Context[[which(tolower(areas) == tolower(NAME_to_tag(names=input$mpas)))]])
 ```
 
-## Map
 
 ```{r, echo=FALSE}
 #cat(paste0("The area is ", params$coords[[input$mpas]]))
@@ -32,9 +33,54 @@ map
 ```
 
 
-## Indicators
+# Results
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, comment=NA, results="asis"}
+keeper <- indicator_to_plot[which(tolower(indicator_to_plot$area) == tolower(NAME_to_tag(names=input$mpas))),]
+
+BINS <- unique(trimws(tolower(unlist(strsplit(keeper$indicator_bin, ";"))), "both"))
+
+keeper2 <- NULL
+
+for (i in seq_along(BINS)) {
+  KK <- keeper[which(grepl(BINS[i],trimws(tolower(keeper$indicator_bin),"both"))),]
+  
+  keeper2[[i]] <- data.frame(
+      Indicator = KK$indicators,
+      Status = KK$status,
+      Trend = KK$trend,
+      Plot=KK$plot,
+      stringsAsFactors = FALSE
+    )
+
+}
+
+names(keeper2) <- BINS
+
+for (i in seq_along(keeper2)) {
+  cat(sprintf("### Indicator Bin: %s\n\n", BINS[i]))
+  for (j in seq_along(keeper2[[i]]$Indicator)) {
+    cat(sprintf("Indicator: %s.\n\n", keeper2[[i]]$Indicator[j]))
+    if (!(keeper2[[i]]$Plot[j] == "0")) {
+      plotty <- keeper2[[i]]$Plot[j]
+      if (grepl("ah=ah", plotty)) {
+        ah <- all_haddock
+      }
+      
+      if (grepl("bd=bd", plotty)) {
+        bd <- bloom_df
+      }
+      eval(parse(text=keeper2[[i]]$Plot[j]))
+      cat(sprintf("%s.\n\n", " "))
+      cat(sprintf("%s.\n\n", keeper2[[i]]$Status[j]))
+      cat(sprintf("%s.\n\n", keeper2[[i]]$Trend[j]))
+      cat(sprintf("%s.\n\n", " "))
+      
+    }
+    
+  }
+}
+
 
 
 

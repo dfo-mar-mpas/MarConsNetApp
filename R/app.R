@@ -27,6 +27,7 @@
 #' @importFrom viridis viridis
 #' @importFrom sf st_as_sf st_within st_coordinates
 #' @importFrom dataSPA subsetSPA
+#' @importFrom stringr str_extract_all
 #' @importFrom magrittr %>%
 #'
 #' @export
@@ -60,6 +61,7 @@ ui <- shiny::fluidPage(
     shiny::sidebarPanel(
       shiny::uiOutput("mpas"),
       shiny::uiOutput("projects"),
+      shiny::uiOutput("projectFinancial"),
       #shiny::uiOutput("fundingSource"),
       #shiny::uiOutput("theme"),
       #shiny::uiOutput("functionalGroup"),
@@ -89,6 +91,7 @@ server <- function(input, output, session) {
   state <- shiny::reactiveValues(
     mpas = NULL,
     projects = NULL,
+    projectFinancial = NULL,
     fundingSource = NULL,
     theme = NULL,
     functionalGroup = NULL,
@@ -105,7 +108,7 @@ server <- function(input, output, session) {
     length(input$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(input$mpas == "All")
   })
 
-  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report") # THE SAME AS STATE
+  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report", "projectFinancial") # THE SAME AS STATE
 
   lapply(input_ids, function(id) {
     shiny::observeEvent(input[[id]], {
@@ -131,6 +134,25 @@ server <- function(input, output, session) {
       shiny::selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE, selected=state$projects)
     }
   })
+
+  output$projectFinancial <- shiny::renderUI({
+    req(input$tabs)
+    req(input$projects)
+    if (!(is.null(input$projects))) {
+      #browser()
+
+      pptp <- unlist(stringr::str_extract_all(state$projects, "\\(([^)]+)\\)"))
+      pptp <- gsub("[()]", "", pptp)
+      urls <- paste0("https://dmapps/en/ppt/projects/", pptp, "/view/")
+      formatted_urls <- sapply(seq_along(pptp), function(i) {
+        paste0('<strong><a href="', urls[i], '" target="_blank">View Financial: ', pptp[i], '</a></strong>')
+      })
+
+      HTML(paste(formatted_urls, collapse = "<br>"))
+
+    }
+  })
+
 
   output$fundingSource <- shiny::renderUI({
     req(input$tabs)
@@ -451,7 +473,6 @@ server <- function(input, output, session) {
   })
 
   output$DT <- DT::renderDT({
-    #browser()
     req(input$tabs)
     info <- calculated_info()
     req(info)  # Ensure the info is available
