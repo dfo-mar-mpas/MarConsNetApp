@@ -491,12 +491,18 @@ server <- function(input, output, session) {
 
     indicatorStatus <- indicator_to_plot$status[which(indicator_to_plot$indicators %in% INDY)]
     indicatorTrend <- indicator_to_plot$trend[which(indicator_to_plot$indicators %in% INDY)]
+    indicatorGrade <- indicator_to_plot$status_grade[which(indicator_to_plot$indicators %in% INDY)]
+
     } else {
       indj <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
       ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicators)))) == indj)
       indicatorStatus <- indicator_to_plot$status[ki]
       indicatorTrend <- indicator_to_plot$trend[ki]
+      indicatorGrade <- indicator_to_plot$status_grade[ki]
+
     }
+
+    #browser()
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
@@ -505,7 +511,33 @@ server <- function(input, output, session) {
     )
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
-        DT::datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
+
+        DT::datatable(
+          dfdt,
+          escape = FALSE,
+          options = list(pageLength = 100)
+        ) %>%
+          formatStyle(
+            'Status', # Style the Status column
+            backgroundColor = styleEqual(
+              dfdt$Status, # Map based on Status values
+              ifelse(indicatorGrade == "A", "lightgreen",
+                     ifelse(indicatorGrade == "B", "orange",
+                            ifelse(indicatorGrade == "C", "red", "white")
+                     )
+              )
+            )
+          )
+
+        # DT::datatable(dfdt,escape = FALSE, options=list(pageLength=100)) %>%
+        #   formatStyle(
+        #     'Grade',
+        #     backgroundColor = styleEqual(
+        #       c(0, "A", "B", "C"),
+        #       c('white', 'lightgreen', 'orange', 'red')
+        #     )
+        #   )
+        #DT::datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
       } else {
         NULL
       }
