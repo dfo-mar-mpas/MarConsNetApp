@@ -180,6 +180,8 @@ list(
   tar_target(dataTable,
              {
                load(dataTable_file)  # This will load the object in the .rda file into the environment
+               dataTable <- dataTable[-which(dataTable$title == "argoProgram"),]
+
                dataTable  # Return the loaded object explicitly
              }),
 

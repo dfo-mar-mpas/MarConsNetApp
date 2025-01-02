@@ -138,14 +138,14 @@ server <- function(input, output, session) {
   output$projectFinancial <- shiny::renderUI({
     req(input$tabs)
     req(input$projects)
-    if (!(is.null(input$projects))) {
+    if (!(is.null(input$projects)) && input$tabs == "tab_0") {
       #browser()
 
       pptp <- unlist(stringr::str_extract_all(state$projects, "\\(([^)]+)\\)"))
       pptp <- gsub("[()]", "", pptp)
       urls <- paste0("https://dmapps/en/ppt/projects/", pptp, "/view/")
       formatted_urls <- sapply(seq_along(pptp), function(i) {
-        paste0('<strong><a href="', urls[i], '" target="_blank">View Financial: ', pptp[i], '</a></strong>')
+        paste0('<strong><a href="', urls[i], '" target="_blank">View Investment: ', pptp[i], '</a></strong>')
       })
 
       HTML(paste(formatted_urls, collapse = "<br>"))
@@ -809,6 +809,7 @@ server <- function(input, output, session) {
             } else {
               longitude <- pd[['longitude']]
               latitude <- pd[['latitude']]
+              type <- "Argo Floats"
             }
 
             bad <- unique(c(which(is.na(longitude)), which(is.na(latitude))))
