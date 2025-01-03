@@ -139,8 +139,6 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(input$projects)
     if (!(is.null(input$projects)) && input$tabs == "tab_0") {
-      #browser()
-
       pptp <- unlist(stringr::str_extract_all(state$projects, "\\(([^)]+)\\)"))
       pptp <- gsub("[()]", "", pptp)
       urls <- paste0("https://dmapps/en/ppt/projects/", pptp, "/view/")
@@ -484,10 +482,13 @@ server <- function(input, output, session) {
     indj <- trimws(gsub("\n", "", indj), "both")
     INDY <- gsub(".*>(.*)<.*", "\\1", indj)
     INDY <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", INDY))))
-    # HERE JAIM
     if (any(grepl("&amp;", INDY))) {
       INDY <- gsub("&amp;", "&", INDY)
     }
+
+    #browser()
+    indicator_to_plot$indicators <- gsub("\r\n", "", indicator_to_plot$indicators)
+    INDY <- gsub("\r", " ", INDY)
 
     indicatorStatus <- indicator_to_plot$status[which(indicator_to_plot$indicators %in% INDY)]
     indicatorTrend <- indicator_to_plot$trend[which(indicator_to_plot$indicators %in% INDY)]
@@ -820,6 +821,7 @@ server <- function(input, output, session) {
         if (!(is.null(input$projects))) {
           #COMMENT
           projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+
           projectPackages <- dataTable$package[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
 
           LAT <- NULL

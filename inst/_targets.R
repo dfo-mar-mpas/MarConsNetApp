@@ -189,7 +189,6 @@ list(
 
   tar_target(name = projectData,
              command = {
-
                dataProject <- NULL
                for (i in seq_along(dataTable$id)) {
                  message("i = ", i)
@@ -369,10 +368,9 @@ list(
  tar_target(name = indicator_to_plot,
             command = {
 
-              ITP <- analysis(bi=binned_indicators, rv_abundance=ABUNDANCE_RV, species=c("COD(ATLANTIC)", "HADDOCK"), GSDET=gsdet, ah=all_haddock, bd=bloom_df)
+              DF <- list(bloom_df=bloom_df, all_haddock=all_haddock, gsdet=gsdet, zooplankton=zooplankton, surface_height=surface_height,Discrete_Occupations_Sections=azmpdata::Discrete_Occupations_Sections)
 
-              ITP$plot[which(grepl("GS=GSDET", ITP$plot))] <- gsub("GS=GSDET", "GS=gsdet", ITP$plot[which(grepl("GS=GSDET", ITP$plot))])
-
+              ITP <- analysis(DF=DF, bi=binned_indicators)
 
               ITP
             }
@@ -524,6 +522,7 @@ list(
                 GSDET$longitude[which(GSDET$MISSION == missions[i])]  <- GSINF$LONGITUDE[which(GSINF$MISSION == missions[i])][1]
                 GSDET$year[which(GSDET$MISSION == missions[i])]  <- unique(as.numeric(substr(GSINF$SDATE[which(GSINF$MISSION == missions[i])],1,4)))
               }
+              GSDET$type <- "RV Survey"
 
               GDD <- GSDET
               GDD
@@ -545,6 +544,46 @@ list(
               names(ah)[which(names(ah) == "SDATE")] <- "date"
               ah
             }),
+
+ tar_target(zooplankton,
+            command={
+
+              df <- azmpdata::Zooplankton_Annual_Stations
+              sdf <- azmpdata::Derived_Occupations_Stations
+              df$latitude <- 0
+              df$longitude <- 0
+              for (i in seq_along(unique(df$station))) {
+                df$latitude[which(df$station == unique(df$station)[i])] <- sdf$latitude[which(sdf$station == unique(df$station)[i])][1]
+                df$longitude[which(df$station == unique(df$station)[i])] <- sdf$longitude[which(sdf$station == unique(df$station)[i])][1]
+              }
+
+              df$type <- "Zooplankton AZMP"
+              df
+
+            }),
+
+
+
+
+ tar_target(surface_height,
+            command={
+              df <- azmpdata::Derived_Monthly_Stations
+              # Add latitude and longitude
+              df$latitude <- 0
+              df$longitude <- 0
+              type <- NULL
+              df$latitude[which(df$station == "Halifax")] <- 43.5475
+              df$longitude[which(df$station == "Halifax")] <- 63.5714
+
+              df$latitude[which(df$station == "Yarmouth")] <- 43.8377
+              df$longitude[which(df$station == "Yarmouth")] <- 66.1150
+
+              df$latitude[which(df$station == "North Sydney")] <- 46.2051
+              df$longitude[which(df$station == "North Sydney")] <- 60.2563
+              df
+
+            }),
+
 
  tar_target(bloom_df,
             command={
