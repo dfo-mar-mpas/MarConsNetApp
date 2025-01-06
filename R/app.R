@@ -487,7 +487,7 @@ server <- function(input, output, session) {
     }
 
     indicator_to_plot$indicators <- gsub("\r\n", "", indicator_to_plot$indicators)
-    INDY <- gsub("\r", " ", INDY)
+    INDY <- gsub("\r", "", INDY)
 
     indicatorStatus <- indicator_to_plot$status[which(indicator_to_plot$indicators %in% INDY)]
     indicatorTrend <- indicator_to_plot$trend[which(indicator_to_plot$indicators %in% INDY)]
