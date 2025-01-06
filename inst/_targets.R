@@ -186,14 +186,39 @@ list(
              }),
 
 
+  tar_target(name=rv_rounded_location,
+             command= {
+
+               df <- data.frame(latitude=gsdet$latitude, longitude=gsdet$longitude)
+               df2 <- data.frame(latitude=all_haddock$latitude, longitude=all_haddock$longitude)
+               df <- rbind(df,df2)
+               latitude <- round(df$latitude,1)
+               longitude <- round(df$longitude,1)
+               coord <- data.frame(latitude, longitude)
+
+               # Get unique pairs
+               unique_coords <- unique(coord)
+               latitude <- unique_coords$latitude
+               longitude <- unique_coords$longitude
+               df <- data.frame(latitude=latitude, longitude=longitude, type="RV Survey")
+               df
+             }
+
+
+
+  ),
+
+
 
   tar_target(name = projectData,
              command = {
+               message("Class of rv_rounded_location: ", class(rv_rounded_location))
                dataProject <- NULL
                for (i in seq_along(dataTable$id)) {
                  message("i = ", i)
                  func_name <- dataTable$get_function[i]
-                 func <- get(func_name)  # Get the function object
+                 if (!(grepl("TARGET", func_name))) {
+                  func <- get(func_name)  # Get the function object
                  arguments <- names(formals(func))
                  if (dataTable$package[i] == "MarConsNetData" && "taxize" %in% arguments) {
                    pd <- get_project_data(ids=dataTable$id[i], taxize=FALSE)
@@ -213,6 +238,10 @@ list(
                    } else {
                      pd <- eval(parse(text=paste0(dataTable$get_function[i], "()")))
                    }
+                 }
+                 } else {
+                   n <- sub(".*::", "", func_name)
+                   pd <- eval(parse(text=n))
                  }
 
                  dataProject[[i]] <- pd
@@ -607,7 +636,6 @@ list(
               df
             }
             ),
-
 
 
  ##### Pillar #####

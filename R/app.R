@@ -826,6 +826,7 @@ server <- function(input, output, session) {
 
           LAT <- NULL
           LON <- NULL
+
           for (i in seq_along(projectIds)) {
             pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
             if (!("argoFloats" %in% class(pd))) {
