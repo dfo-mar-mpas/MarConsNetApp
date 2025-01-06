@@ -486,13 +486,13 @@ server <- function(input, output, session) {
       INDY <- gsub("&amp;", "&", INDY)
     }
 
-    #browser()
     indicator_to_plot$indicators <- gsub("\r\n", "", indicator_to_plot$indicators)
     INDY <- gsub("\r", " ", INDY)
 
     indicatorStatus <- indicator_to_plot$status[which(indicator_to_plot$indicators %in% INDY)]
     indicatorTrend <- indicator_to_plot$trend[which(indicator_to_plot$indicators %in% INDY)]
     indicatorGrade <- indicator_to_plot$status_grade[which(indicator_to_plot$indicators %in% INDY)]
+    indicatorProject <- indicator_to_plot$project[which(indicator_to_plot$indicators %in% INDY)]
 
     } else {
       indj <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
@@ -500,14 +500,26 @@ server <- function(input, output, session) {
       indicatorStatus <- indicator_to_plot$status[ki]
       indicatorTrend <- indicator_to_plot$trend[ki]
       indicatorGrade <- indicator_to_plot$status_grade[ki]
+      indicatorProject <- indicator_to_plot$project[ki]
 
     }
+
+    indicatorTitle <- NULL
+    for (i in seq_along(indicatorProject)) {
+      if (indicatorProject[i] == "project") {
+        indicatorTitle[[i]] <- "project"
+      } else {
+        indicatorTitle[[i]] <- paste0(dataTable$title[which(dataTable$id == as.numeric(indicatorProject[i]))], " : ", indicatorProject[i])
+      }
+    }
+
 
     #browser()
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
       Trend = indicatorTrend,
+      Projects = unlist(indicatorTitle),
       stringsAsFactors = FALSE
     )
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
@@ -530,15 +542,6 @@ server <- function(input, output, session) {
             )
           )
 
-        # DT::datatable(dfdt,escape = FALSE, options=list(pageLength=100)) %>%
-        #   formatStyle(
-        #     'Grade',
-        #     backgroundColor = styleEqual(
-        #       c(0, "A", "B", "C"),
-        #       c('white', 'lightgreen', 'orange', 'red')
-        #     )
-        #   )
-        #DT::datatable(dfdt, escape = FALSE, options=list(pageLength=100))  # Set escape = FALSE to allow HTML rendering
       } else {
         NULL
       }
