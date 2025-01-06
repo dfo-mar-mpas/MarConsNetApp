@@ -189,8 +189,11 @@ server <- function(input, output, session) {
 
   output$report <- shiny::renderUI({
     req(input$tabs)
+    req(input$mpas)
     if (input$tabs == "tab_0") {
+      if (!(state$mpas == "All")) { # This will change eventually with project reporting
       shiny::actionButton("report", "Create Report")
+      }
     }
   })
 
