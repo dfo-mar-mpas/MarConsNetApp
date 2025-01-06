@@ -509,7 +509,7 @@ server <- function(input, output, session) {
       if (indicatorProject[i] == "project") {
         indicatorTitle[[i]] <- "project"
       } else {
-        indicatorTitle[[i]] <- paste0(dataTable$title[which(dataTable$id == as.numeric(indicatorProject[i]))], " : ", indicatorProject[i])
+        indicatorTitle[[i]] <- paste0(unique(om$project_title[which(dataTable$id == as.numeric(indicatorProject[i]))]), " : ", indicatorProject[i])
       }
     }
 
