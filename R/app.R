@@ -431,8 +431,8 @@ server <- function(input, output, session) {
             indicator_label = indicator_label,
             flower = flower,
             indicator_bin_label = indicator_bin_label,
-            ind_links = ind_links,
-            formatted_projects = formatted_projects_grouped
+            ind_links = ind_links
+            #formatted_projects = formatted_projects_grouped
           ))
         } else {
           return(list(
@@ -442,8 +442,8 @@ server <- function(input, output, session) {
             indicator_label = indicator_label,
             flower = flower,
             indicator_bin_label = indicator_bin_label,
-            ind_links = ind_links,
-            formatted_projects = "There are no projects for this selection."
+            ind_links = ind_links
+            #formatted_projects = "There are no projects for this selection."
           ))
         }
       }
@@ -464,7 +464,7 @@ server <- function(input, output, session) {
         "<p>", info$flower, "</p>",
         #"<p><strong>", info$indicator_bin_label, "</strong></p>",
         #"<p>", paste0(info$ind_links, collapse = "<br>"), "</p>",
-        "<p><strong>Projects:</strong></p>",
+        #"<p><strong>Projects:</strong></p>",
         "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>"
       )
     )
