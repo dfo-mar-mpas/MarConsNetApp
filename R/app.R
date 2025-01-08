@@ -141,7 +141,7 @@ server <- function(input, output, session) {
     if (!(is.null(input$projects)) && input$tabs == "tab_0") {
       pptp <- unlist(stringr::str_extract_all(state$projects, "\\(([^)]+)\\)"))
       pptp <- gsub("[()]", "", pptp)
-      urls <- paste0("https://dmapps/en/ppt/projects/", pptp, "/view/")
+      urls <- paste0("http://glf-proxy:8018/mar-spa/reports/", pptp, ".html")
       formatted_urls <- sapply(seq_along(pptp), function(i) {
         paste0('<strong><a href="', urls[i], '" target="_blank">View Investment: ', pptp[i], '</a></strong>')
       })
