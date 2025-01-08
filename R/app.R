@@ -59,6 +59,7 @@ ui <- shiny::fluidPage(
   ")),
   shiny::sidebarLayout(
     shiny::sidebarPanel(
+      shiny::actionButton(inputId="about", label="About the App"),
       shiny::uiOutput("mpas"),
       shiny::uiOutput("projects"),
       shiny::uiOutput("projectFinancial"),
@@ -120,6 +121,32 @@ server <- function(input, output, session) {
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
+
+
+  observeEvent(input$about, {
+    req(input$about)
+    showModal(modalDialog(
+      title = "Things to consider when using the app",
+      div(
+        p("The score of a area of network is calculated in the following way: When a trend is"),
+        p("A) s statistically significant AND matches the desired direction for the
+indicator, a score of A is assigned."),
+        p("B) is not statistically significant but matches the desired direction for
+the indicator, a B is assigned"),
+        p("C) has no change a C is assigned"),
+        p("D) is not statistically significant and going is the opposite direction
+of the desired direction a D is assigned"),
+        p("E) is statistically significant and going in the opposite direction,
+a F is assigned."),
+        p(" "),
+        p(" ")
+      ),
+      p("When projects have a lot of points (e.g. RV, Argo, etc.) the latitude and longitudes are rounded to the nearest decimal when plotting on the map"),
+      easyClose = TRUE,  # Allow closing modal by clicking outside or using the 'x'
+      footer = modalButton("Close")  # Footer button to close the modal
+    ))
+  })
+
 
   output$mpas <- shiny::renderUI({
     req(input$tabs)
