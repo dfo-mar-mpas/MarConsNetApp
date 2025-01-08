@@ -275,9 +275,23 @@ list(
 
   tar_target(name = flowerPalette,
              command = {
-               palette <- colorRampPalette(brewer.pal(11,"RdBu"))(length(grades))
-               names(palette) <- grades
-               palette
+               FP <- c(
+                 "F" = "#FF0000",    # Bright Red
+                 "D-" = "#FF3300",   # Slightly lighter red
+                 "D" = "#FF6600",    # Red-Orange
+                 "D+" = "#FF9900",   # Orange
+                 "C-" = "#FFCC00",   # Yellow-Orange
+                 "C" = "#FFFF00",    # Yellow
+                 "C+" = "#CCFF33",   # Yellow-Green
+                 "B-" = "#99FF66",   # Light Green
+                 "B" = "#66FF66",    # Medium Green
+                 "B+" = "#33CC33",   # Bright Green
+                 "A-" = "#009900",   # Dark Green
+                 "A" = "#006600",    # Very Dark Green
+                 "A+" = "#003300"    # Almost Black-Green
+               )
+
+               FP
 
                }),
 

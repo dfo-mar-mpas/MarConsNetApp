@@ -543,8 +543,6 @@ a F is assigned."),
       }
     }
 
-
-    #browser()
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
@@ -776,21 +774,31 @@ a F is assigned."),
           output[[paste0("bar", id)]] <- renderPlot({
             # Ensure bar chart is rendered only when tab_0 is active
             if (input$tabs == "tab_0") {
+              req(input$mpas %in% c("All", unique(pillar_ecol_df$area_name)))
               # Ensure ymax is properly filtered and has a single value
-              ymax <- pillar_ecol_df[which(
-                pillar_ecol_df$area_name == ifelse(state$mpas == "All", "Scotian Shelf", state$mpas) &
-                  pillar_ecol_df$bin == odf$flower_plot[which(odf$objectives %in% N_Objectives[id])]
-              ),]$ind_status
+
+
+              if (state$mpas == "All") {
+                c1 <- 1:length(pillar_ecol_df$area_name)
+              } else {
+                c1 <- which(pillar_ecol_df$area_name == state$mpas)
+              }
+
+              c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
+              KEEP <- intersect(c1,c2)
+              ymax <- pillar_ecol_df$ind_status[KEEP]
 
               # Handling empty or multiple ymax cases
               if (length(ymax) == 0) {
                 # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
-                ek1 <- which(pillar_ecol_df$area_name == ifelse(state$mpas == "All", "Scotian Shelf", state$mpas))
-                ecol_labels <- Ecological$labels[which(Ecological$grouping %in% odf$flower_plot[which(odf$objectives %in% N_Objectives[id])])]
-                ek2 <- which(pillar_ecol_df$bin %in% ecol_labels)
-                ymax <- mean(pillar_ecol_df$ind_status[intersect(ek1,ek2)],na.rm=TRUE)
+                c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
+                KEEP <- intersect(c1,c2)
+                ymax <- pillar_ecol_df$ind_status[KEEP]
+                ymax <- weighted.mean(ymax, na.rm=TRUE)
+
               } else if (length(ymax) > 1) {
-                ymax <- ymax[1]  # Take the first value if multiple are returned
+                #ymax <- ymax[1]  # Take the first value if multiple are returned
+                ymax <- weighted.mean(ymax, na.rm=TRUE)
               }
 
 
@@ -799,13 +807,36 @@ a F is assigned."),
                 x = paste0("Objective ", id),
                 y = ymax
               )
-              #message("data$y = ", data$y, " for id = ", id)
-              # START
-              # calc_letter_scpre <- function(percent){
-              #   cutoffs=c(min_score, seq(max_score-scalerange*.4, max_score, by = 10/3/100*scalerange))
-              #   grades=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
-              #   cut(percent,cutoffs,grades)
-              # }
+
+              calc_letter_grade <- function(scores) {
+                sapply(scores, function(score) {
+                  if (score >= 4.5) {
+                    return("A")  # 4.5 to 4.9
+                  } else if (score >= 4) {
+                    return("A-")  # 4.0 to 4.4
+                  } else if (score >= 3.5) {
+                    return("B+")  # 3.5 to 3.9
+                  } else if (score >= 3) {
+                    return("B")  # 3.0 to 3.4
+                  } else if (score >= 2.5) {
+                    return("B-")  # 2.5 to 2.9
+                  } else if (score >= 2) {
+                    return("C+")  # 2.0 to 2.4
+                  } else if (score >= 1.5) {
+                    return("C")  # 1.5 to 1.9
+                  } else if (score >= 1) {
+                    return("C-")  # 1.0 to 1.4
+                  } else if (score >= 0.5) {
+                    return("D+")  # 0.5 to 0.9
+                  } else if (score >= 0) {
+                    return("D")  # 0 to 0.4
+                  } else if (score >= -0.1) {
+                    return("D-")  # -0.1 to -0.9
+                  } else {
+                    return("F")  # Below -1
+                  }
+                })
+              }
 
               clc <- as.character(calc_letter_grade(data$y))
               finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
