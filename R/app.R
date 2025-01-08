@@ -528,6 +528,23 @@ server <- function(input, output, session) {
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
 
+        flowerPalette <- c(
+          "F" = "#FF0000",    # Bright Red
+          "D-" = "#FF3300",   # Slightly lighter red
+          "D" = "#FF6600",    # Red-Orange
+          "D+" = "#FF9900",   # Orange
+          "C-" = "#FFCC00",   # Yellow-Orange
+          "C" = "#FFFF00",    # Yellow
+          "C+" = "#CCFF33",   # Yellow-Green
+          "B-" = "#99FF66",   # Light Green
+          "B" = "#66FF66",    # Medium Green
+          "B+" = "#33CC33",   # Bright Green
+          "A-" = "#009900",   # Dark Green
+          "A" = "#006600",    # Very Dark Green
+          "A+" = "#003300"    # Almost Black-Green
+        )
+
+        # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
         DT::datatable(
           dfdt,
           escape = FALSE,
@@ -536,12 +553,8 @@ server <- function(input, output, session) {
           formatStyle(
             'Status', # Style the Status column
             backgroundColor = styleEqual(
-              dfdt$Status, # Map based on Status values
-              ifelse(indicatorGrade == "A", "lightgreen",
-                     ifelse(indicatorGrade == "B", "orange",
-                            ifelse(indicatorGrade == "C", "red", "white")
-                     )
-              )
+              names(flowerPalette), # Map based on Status values
+              flowerPalette[names(flowerPalette)] # Apply corresponding colors
             )
           )
 
@@ -635,15 +648,28 @@ server <- function(input, output, session) {
     if (input$tabs == "tab_0") {
       if (state$mpas == "All") {
         NAME <- "Scotian Shelf"
+        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df,
+                                            grouping = "objective",
+                                            labels = "bin",
+                                            score = "ind_status",
+                                            max_score=5,
+                                            min_score=0,
+                                            title=NAME)
       } else {
+        if (state$mpas %in% pillar_ecol_df$area_name) {
         NAME <- state$mpas
+        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
+                                            grouping = "objective",
+                                            labels = "bin",
+                                            score = "ind_status",
+                                            max_score=5,
+                                            min_score=0,
+                                            title=NAME
+                                            )
       }
-
-      MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
-                      grouping = "objective",
-                      labels = "bin",
-                      score = "ind_status")
     }
+  }
+
 
   })
 

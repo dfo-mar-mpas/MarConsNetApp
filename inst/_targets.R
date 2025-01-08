@@ -8,7 +8,7 @@ tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTar
 tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "shiny", "leaflet", "dplyr", "shinyjs", "devtools", "MarConsNetAnalysis", "MarConsNetData",
-               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr"),
+               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr"),
   #controller = crew::crew_controller_local(workers = 2),
   imports = c("civi"),
   format = "qs"
@@ -65,7 +65,7 @@ list(
 
   tar_target(name = Ecological,
              command = {
-               Ecological <- data.frame(grouping=rep(c("Biodiversity",
+               ee <- data.frame(grouping=rep(c("Biodiversity",
                                                        "Habitat",
                                                        "Productivity"),
                                                      times=c(3,5,3)),
@@ -88,6 +88,7 @@ list(
                  mutate(weight=runif(11,1,10)) |>
                  ungroup()|>
                  mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
+               ee
 
              }),
 
@@ -643,16 +644,143 @@ list(
 
  tar_target(name = pillar_ecol_df,
             command = {
-              pdf <- aggregate_groups("pillar",
-                                       "Ecological",
-                                       weights = NA,
-                                       ecol_obj_biodiversity_df,
-                                       ecol_obj_habitat_df,
-                                       ecol_obj_productivity_df)
 
-              pdf <- pdf %>%
-                mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
-              pdf
+              Ecological <- data.frame(grouping=rep(c("Biodiversity",
+                                              "Habitat",
+                                              "Productivity"),
+                                            times=c(3,5,3)),
+                               labels=c("Genetic Diversity",
+                                        "Species Diversity",
+                                        "Functional Diversity",
+
+                                        "Environmental Representativity",
+                                        "Key Fish Habitat",
+                                        "Connectivity",
+                                        "Uniqueness",
+                                        "Threats to Habitat",
+
+                                        "Biomass Metrics",
+                                        "Structure and Function",
+                                        "Threats to Productivity"),
+                               score=runif(11,55,100))
+
+              # REMOVING HYPOTHETICAL DATA
+              area_name <- binned_indicators$mpa_name
+
+              ind_name <- indicator_to_plot$indicators
+
+              ind_status <- NULL
+              for (i in seq_along(indicator_to_plot$status_grade)) {
+                if (indicator_to_plot$status_grade[i] == "A") {
+                  ind_status[[i]] <- 5
+                } else if (indicator_to_plot$status_grade[i] == "B") {
+                  ind_status[[i]] <- 4
+                } else if (indicator_to_plot$status_grade[i] == "C") {
+                  ind_status[[i]] <- 3
+                } else if (indicator_to_plot$status_grade[i] == "D") {
+                  ind_status[[i]] <- 2
+                } else if (indicator_to_plot$status_grade[i] == "F") {
+                  ind_status[[i]] <- 1
+                } else {
+                  ind_status[[i]] <- 0
+                }
+              }
+              ind_status <- unlist(ind_status)
+
+
+              extract_first_number <- function(sentence) {
+                match <- regexpr("-?\\d+\\.?\\d*", sentence)
+                if (match != -1) {
+                  as.numeric(regmatches(sentence, match))
+                } else {
+                  NA
+                }
+              }
+
+              ind_trend <- NULL
+              for (i in seq_along(indicator_to_plot$trend)) {
+                if (grepl("BLANK", indicator_to_plot$trend[i])) {
+                  ind_trend[i] <- NA
+                } else {
+                  ind_trend[i] <- extract_first_number(indicator_to_plot$trend[i])
+
+                }
+              }
+              ind_trend <- unlist(lapply(indicator_to_plot$trend, function(x) extract_first_number(x)))
+
+              ind_projects <- indicator_to_plot$project
+
+              ind_rawdata_type <- "Expert opinion"
+
+              ind_certainty <- "certain"
+
+              bin <- binned_indicators$indicator_bin #FIXME
+
+              weight <- NULL
+
+              Ecological$labels[which(Ecological$labels == "Environmental Representativity")] <- "Environmental (Representativity)"
+
+              objectives <- list()  # Initialize as a list
+              for (i in seq_along(indicator_to_plot$indicator_bin)) {
+                II <- indicator_to_plot$indicator_bin[i]
+                sp <- trimws(strsplit(II, ";")[[1]], "both")
+                weight[i] <- 1/length(sp)
+                objectives[[i]] <- vector("list", length(sp))  # Initialize objectives[[i]] as a list with the correct length
+                for (j in seq_along(sp)) {
+                  message("i =", i, " j = ", j)
+                  objectives[[i]][[j]] <- Ecological$grouping[which(tolower(Ecological$labels) == tolower(sp[j]))]
+                }
+              }
+
+              objectives <- lapply(objectives, function(x) unlist(x))
+              objectives <- lapply(objectives, unique)
+              objective <- unlist(lapply(objectives, function(x) paste0(x, collapse=" ; ")))
+
+
+              pillar <- "Ecological"
+
+
+
+              df <- data.frame(area_name=area_name, ind_name=ind_name, ind_status=ind_status, ind_trend=ind_trend, ind_projects=ind_projects,
+                               ind_rawdata_type=ind_rawdata_type, ind_certainty=ind_certainty, bin=bin, weight=weight, objective=objective,
+                               pillar=pillar)
+              df$bin <- trimws(toupper(df$bin), "both")
+              df$objective <- trimws(toupper(df$objective), "both")
+              df <- df[- which(grepl(";", df$objective)),] #FIXME: This will need to be fixed
+
+
+              df<- df %>%
+                mutate(
+                  bin = strsplit(as.character(bin), ";"),
+                  objective = strsplit(as.character(objective), ";")
+                ) %>%
+                unnest(bin) %>%  # Expand `bin` into rows
+                unnest(objective) %>%  # Expand `objective` into rows
+                mutate(
+                  bin = trimws(bin),  # Remove leading/trailing whitespace
+                  objective = trimws(objective)
+                )
+              df
+
+
+
+
+
+
+
+
+
+
+              # pdf <- aggregate_groups("pillar",
+              #                          "Ecological",
+              #                          weights = NA,
+              #                          ecol_obj_biodiversity_df,
+              #                          ecol_obj_habitat_df,
+              #                          ecol_obj_productivity_df)
+              #
+              # pdf <- pdf %>%
+              #   mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
+              # pdf
 
             })
 

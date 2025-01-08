@@ -3,7 +3,7 @@ library(dplyr); library(sf); library(shinyjs); library(viridis); library(arcpull
 library(MarConsNetAnalysis);library(MarConsNetData);
 library(TBSpayRates); library(dataSPA); library(readxl)
 library(ggplot2); library(shinyBS); library(Mar.datawrangling); library(DT); library(rmarkdown)
-library(stringr)
+library(stringr); library(tidyr)
 
 # 1. MPAs
 MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
