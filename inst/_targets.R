@@ -275,32 +275,14 @@ list(
 
   tar_target(name = flowerPalette,
              command = {
-               # FP <- c(
-               #   "F" = "#FF0000",    # Bright Red
-               #   "D-" = "#FF3300",   # Slightly lighter red
-               #   "D" = "#FF6600",    # Red-Orange
-               #   "D+" = "#FF9900",   # Orange
-               #   "C-" = "#FFCC00",   # Yellow-Orange
-               #   "C" = "#FFFF00",    # Yellow
-               #   "C+" = "#CCFF33",   # Yellow-Green
-               #   "B-" = "#99FF66",   # Light Green
-               #   "B" = "#66FF66",    # Medium Green
-               #   "B+" = "#33CC33",   # Bright Green
-               #   "A-" = "#009900",   # Dark Green
-               #   "A" = "#006600",    # Very Dark Green
-               #   "A+" = "#003300"    # Almost Black-Green
-               # )
                FP <- c(
                  "F" = "#FF0000",    # Bright Red
                  "D" = "#FF6600",    # Red-Orange
                  "C" = "#FFFF00",    # Yellow
                  "B" = "#66FF66",    # Medium Green
                  "A" = "#006600"    # Very Dark Green
-
                )
-
                FP
-
                }),
 
   tar_target(name = binned_indicators,
@@ -791,16 +773,25 @@ list(
                 df$objective[i] <- Ecological$grouping[which(tolower(Ecological$labels) == trimws(tolower(df$bin[i]), "both"))]
               }
 
-              target_weight <- sum(df$weight)/length(Ecological$labels)
+              target_bin_weight <- 1
 
+              for (j in unique(df$area_name)) {
 
-              W <- NULL
-              # after expansion
               for (i in seq_along(Ecological$labels)) {
-                keep <-which(tolower(df$bin) == tolower(Ecological$labels[i]))
-                bl <- target_weight/sum(df$weight[keep])
+                keep <-which(tolower(df$bin) == tolower(Ecological$labels[i]) & df$area_name == j)
+                bl <- target_bin_weight/sum(df$weight[keep])
                 df$weight[keep] <- df$weight[keep]*bl
               }
+              }
+
+              # target_weight <- sum(df$weight)/length(Ecological$labels)
+              #
+              #
+              # for (i in seq_along(Ecological$labels)) {
+              #   keep <-which(tolower(df$bin) == tolower(Ecological$labels[i]))
+              #   bl <- target_weight/sum(df$weight[keep])
+              #   df$weight[keep] <- df$weight[keep]*bl
+              # }
 
               df <-  df %>%
                 arrange(objective, bin)
