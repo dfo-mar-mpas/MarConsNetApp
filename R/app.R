@@ -567,10 +567,6 @@ a F is assigned."),
           "A" = "#006600"    # Very Dark Green
 
         )
-
-
-        #browser()
-
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
 
         DT::datatable(
@@ -677,7 +673,6 @@ a F is assigned."),
     if (input$tabs == "tab_0") {
       if (state$mpas == "All") {
         NAME <- "Scotian Shelf"
-        #browser()
         MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df,
                                             grouping = "objective",
                                             labels = "bin",
@@ -807,12 +802,13 @@ a F is assigned."),
                 c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
                 KEEP <- intersect(c1,c2)
                 ymax <- pillar_ecol_df$ind_status[KEEP]
-                ymax <- weighted.mean(ymax, na.rm=TRUE)
 
-              } else if (length(ymax) > 1) {
-                #ymax <- ymax[1]  # Take the first value if multiple are returned
-                ymax <- weighted.mean(ymax, na.rm=TRUE)
               }
+
+
+              ymax <- ymax[-which(ymax == 0)]
+              ymax <- weighted.mean(ymax, na.rm=TRUE)
+
 
               # Create data frame for plotting
               data <- data.frame(
@@ -820,9 +816,12 @@ a F is assigned."),
                 y = ymax
               )
 
+              #browser()
 
-              clc <- as.character(calc_letter_grade(percent=data$y, max_score=100, scalerange=(100), min_score=0))
+              clc <- as.character(calc_letter_grade(data$y))
               finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+
+              if (!(length(finalCol) == 0)) {
 
               ggplot2::ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
                 ggplot2::geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
@@ -830,6 +829,7 @@ a F is assigned."),
                 ggplot2::theme_void() +
                 ggplot2::coord_flip()+
                 ggplot2::guides(fill = "none")
+              }
             }
           })
         })
