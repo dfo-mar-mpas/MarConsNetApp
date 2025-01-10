@@ -519,6 +519,8 @@ a F is assigned."),
     indicator_to_plot$indicators <- gsub("\r\n", "", indicator_to_plot$indicators)
     INDY <- gsub("\r", "", INDY)
 
+    # END TEST
+
     indicatorStatus <- indicator_to_plot$status[which(indicator_to_plot$indicators %in% INDY)]
     indicatorTrend <- indicator_to_plot$trend[which(indicator_to_plot$indicators %in% INDY)]
     indicatorGrade <- indicator_to_plot$status_grade[which(indicator_to_plot$indicators %in% INDY)]
@@ -527,8 +529,11 @@ a F is assigned."),
     } else {
       indj <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
       ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicators)))) == indj)
+
       indicatorStatus <- indicator_to_plot$status[ki]
       indicatorTrend <- indicator_to_plot$trend[ki]
+      indicatorGrade <- as.vector(calc_letter_grade(df_unique$ind_status[ki]))
+
       indicatorGrade <- indicator_to_plot$status_grade[ki]
       indicatorProject <- indicator_to_plot$project[ki]
 
@@ -548,6 +553,7 @@ a F is assigned."),
       Status = indicatorStatus,
       Trend = indicatorTrend,
       Projects = unlist(indicatorTitle),
+      Grade=indicatorGrade,
       stringsAsFactors = FALSE
     )
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
@@ -555,31 +561,29 @@ a F is assigned."),
 
         flowerPalette <- c(
           "F" = "#FF0000",    # Bright Red
-          "D-" = "#FF3300",   # Slightly lighter red
           "D" = "#FF6600",    # Red-Orange
-          "D+" = "#FF9900",   # Orange
-          "C-" = "#FFCC00",   # Yellow-Orange
           "C" = "#FFFF00",    # Yellow
-          "C+" = "#CCFF33",   # Yellow-Green
-          "B-" = "#99FF66",   # Light Green
           "B" = "#66FF66",    # Medium Green
-          "B+" = "#33CC33",   # Bright Green
-          "A-" = "#009900",   # Dark Green
-          "A" = "#006600",    # Very Dark Green
-          "A+" = "#003300"    # Almost Black-Green
+          "A" = "#006600"    # Very Dark Green
+
         )
 
+
+        #browser()
+
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
+
         DT::datatable(
           dfdt,
           escape = FALSE,
           options = list(pageLength = 100)
         ) %>%
           formatStyle(
-            'Status', # Style the Status column
+            columns = colnames(dfdt), # Apply styling to all columns in each row
+            target = 'row',            # Target the entire row
             backgroundColor = styleEqual(
-              names(flowerPalette), # Map based on Status values
-              flowerPalette[names(flowerPalette)] # Apply corresponding colors
+              names(flowerPalette),    # Map based on Grade values
+              flowerPalette[names(flowerPalette)] # Apply corresponding colors from the flowerPalette
             )
           )
 
@@ -673,11 +677,12 @@ a F is assigned."),
     if (input$tabs == "tab_0") {
       if (state$mpas == "All") {
         NAME <- "Scotian Shelf"
+        #browser()
         MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df,
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "ind_status",
-                                            max_score=5,
+                                            max_score=100,
                                             min_score=0,
                                             title=NAME)
       } else {
@@ -687,7 +692,7 @@ a F is assigned."),
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "ind_status",
-                                            max_score=5,
+                                            max_score=100,
                                             min_score=0,
                                             title=NAME
                                             )
@@ -705,16 +710,24 @@ a F is assigned."),
     xscale <- 0.5
     yscale <- 205/2
 
+
+    # FURTHER EXPLORE SCALE
+
     x <- (input$flower_click$x-xscale)/xscale
     y <- (input$flower_click$y+50-yscale)/yscale
 
     clickangle <- 90-atan2(y,x)*180/pi
     if(clickangle<0) clickangle <- 360+clickangle
+    pillar_ecol_df$angle <- (cumsum(pillar_ecol_df$weight)-pillar_ecol_df$weight/2)/sum(pillar_ecol_df$weight)*360
 
     if(sqrt(x^2+y^2)>0.75){
-      wording <- pillar_ecol_df$objective[which.min(abs(pillar_ecol_df$angle-clickangle))]
+      wording <- tolower(pillar_ecol_df$objective[which.min(abs(pillar_ecol_df$angle-clickangle))])
     } else {
-      wording <-pillar_ecol_df$bin[which.min(abs(pillar_ecol_df$angle-clickangle))]
+      wording <-tolower(pillar_ecol_df$bin[which.min(abs(pillar_ecol_df$angle-clickangle))])
+    }
+
+    if (wording == "environmental (representativity)") {
+      wording <- "environmental representativity"
     }
     if (input$mpas == "All") {
       string <- tolower("Scotian_Shelf")
@@ -722,7 +735,7 @@ a F is assigned."),
       string <- NAME_to_tag(names=input$mpas)
     }
     k1 <- which(APPTABS$place == string)
-    k2 <- which(APPTABS$flower == wording)
+    k2 <- which(tolower(APPTABS$flower) == wording)
     updatedTab <- APPTABS$tab[intersect(k1,k2)]
     shiny::updateTabsetPanel(session, "tabs", selected=updatedTab)
   })
@@ -801,44 +814,14 @@ a F is assigned."),
                 ymax <- weighted.mean(ymax, na.rm=TRUE)
               }
 
-
               # Create data frame for plotting
               data <- data.frame(
                 x = paste0("Objective ", id),
                 y = ymax
               )
 
-              calc_letter_grade <- function(scores) {
-                sapply(scores, function(score) {
-                  if (score >= 4.5) {
-                    return("A")  # 4.5 to 4.9
-                  } else if (score >= 4) {
-                    return("A-")  # 4.0 to 4.4
-                  } else if (score >= 3.5) {
-                    return("B+")  # 3.5 to 3.9
-                  } else if (score >= 3) {
-                    return("B")  # 3.0 to 3.4
-                  } else if (score >= 2.5) {
-                    return("B-")  # 2.5 to 2.9
-                  } else if (score >= 2) {
-                    return("C+")  # 2.0 to 2.4
-                  } else if (score >= 1.5) {
-                    return("C")  # 1.5 to 1.9
-                  } else if (score >= 1) {
-                    return("C-")  # 1.0 to 1.4
-                  } else if (score >= 0.5) {
-                    return("D+")  # 0.5 to 0.9
-                  } else if (score >= 0) {
-                    return("D")  # 0 to 0.4
-                  } else if (score >= -0.1) {
-                    return("D-")  # -0.1 to -0.9
-                  } else {
-                    return("F")  # Below -1
-                  }
-                })
-              }
 
-              clc <- as.character(calc_letter_grade(data$y))
+              clc <- as.character(calc_letter_grade(percent=data$y, max_score=100, scalerange=(100), min_score=0))
               finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
 
               ggplot2::ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values

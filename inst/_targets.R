@@ -275,20 +275,28 @@ list(
 
   tar_target(name = flowerPalette,
              command = {
+               # FP <- c(
+               #   "F" = "#FF0000",    # Bright Red
+               #   "D-" = "#FF3300",   # Slightly lighter red
+               #   "D" = "#FF6600",    # Red-Orange
+               #   "D+" = "#FF9900",   # Orange
+               #   "C-" = "#FFCC00",   # Yellow-Orange
+               #   "C" = "#FFFF00",    # Yellow
+               #   "C+" = "#CCFF33",   # Yellow-Green
+               #   "B-" = "#99FF66",   # Light Green
+               #   "B" = "#66FF66",    # Medium Green
+               #   "B+" = "#33CC33",   # Bright Green
+               #   "A-" = "#009900",   # Dark Green
+               #   "A" = "#006600",    # Very Dark Green
+               #   "A+" = "#003300"    # Almost Black-Green
+               # )
                FP <- c(
                  "F" = "#FF0000",    # Bright Red
-                 "D-" = "#FF3300",   # Slightly lighter red
                  "D" = "#FF6600",    # Red-Orange
-                 "D+" = "#FF9900",   # Orange
-                 "C-" = "#FFCC00",   # Yellow-Orange
                  "C" = "#FFFF00",    # Yellow
-                 "C+" = "#CCFF33",   # Yellow-Green
-                 "B-" = "#99FF66",   # Light Green
                  "B" = "#66FF66",    # Medium Green
-                 "B+" = "#33CC33",   # Bright Green
-                 "A-" = "#009900",   # Dark Green
-                 "A" = "#006600",    # Very Dark Green
-                 "A+" = "#003300"    # Almost Black-Green
+                 "A" = "#006600"    # Very Dark Green
+
                )
 
                FP
@@ -370,12 +378,25 @@ list(
 
   tar_target(name = calc_letter_grade,
              command = {
-               function(percent, min_score=0, max_score=100){
-                 scalerange <- max_score-min_score
-                 cutoffs=c(min_score, seq(max_score-scalerange*.4, max_score, by = 10/3/100*scalerange))
-                 grades=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
-                 cut(percent,cutoffs,grades)
+               cg <- function(scores) {
+                 # Vectorized assignment of grades based on fixed criteria
+                 sapply(scores, function(score) {
+                   if (is.na(score)) {
+                     return(NA)  # Return NA if the input is NA
+                   } else if (score >= 100) {
+                     return("A")
+                   } else if (score >= 80) {
+                     return("B")
+                   } else if (score >= 60) {
+                     return("C")
+                   } else if (score >= 40) {
+                     return("D")
+                   } else {
+                     return("F")
+                   }
+                 })
                }
+               cg
              }),
 
  tar_target(name = species,
@@ -652,7 +673,6 @@ list(
             }
             ),
 
-
  ##### Pillar #####
 
 
@@ -760,20 +780,33 @@ list(
                                pillar=pillar)
               df$bin <- trimws(toupper(df$bin), "both")
               df$objective <- trimws(toupper(df$objective), "both")
-              df <- df[- which(grepl(";", df$objective)),] #FIXME: This will need to be fixed
 
 
-              df<- df %>%
-                mutate(
-                  bin = strsplit(as.character(bin), ";"),
-                  objective = strsplit(as.character(objective), ";")
-                ) %>%
-                unnest(bin) %>%  # Expand `bin` into rows
-                unnest(objective) %>%  # Expand `objective` into rows
-                mutate(
-                  bin = trimws(bin),  # Remove leading/trailing whitespace
-                  objective = trimws(objective)
-                )
+              df <- df %>%
+                mutate(bin = strsplit(as.character(bin), "; ")) %>%
+                unnest(bin)
+
+              for (i in seq_along(df$objective)) {
+                message(i)
+                df$objective[i] <- Ecological$grouping[which(tolower(Ecological$labels) == trimws(tolower(df$bin[i]), "both"))]
+              }
+
+              target_weight <- sum(df$weight)/length(Ecological$labels)
+
+
+              W <- NULL
+              # after expansion
+              for (i in seq_along(Ecological$labels)) {
+                keep <-which(tolower(df$bin) == tolower(Ecological$labels[i]))
+                bl <- target_weight/sum(df$weight[keep])
+                df$weight[keep] <- df$weight[keep]*bl
+              }
+
+              df <-  df %>%
+                arrange(objective, bin)
+
+              df$ind_status <- df$ind_status*20
+
               df
 
 
