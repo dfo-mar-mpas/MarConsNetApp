@@ -75,6 +75,7 @@ ui <- shiny::fluidPage(
       shiny::uiOutput("DT_ui"),
       shiny::uiOutput('mytabs'),
       shiny::uiOutput("conditionalPlot"),
+      shiny::uiOutput("conditionalIndicatorMap"),
       shiny::fluidRow(shiny::column(width=6, align="left",
                              shiny::plotOutput("flowerPlot",click="flower_click")),
                       shiny::column(width=6, align="right",
@@ -627,26 +628,77 @@ a F is assigned."),
 
   })
 
+  output$conditionalIndicatorMap <- shiny::renderUI({
+    req(input$tabs)
+    req(state$mpas)
+    if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
+      currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
+      if (!(length(currentInd) == 0)) {
+          leafletOutput("indicatorMap")
+      }
+
+    } else {
+      NULL
+    }
+
+  })
+
 
   output$indicatorPlot <- shiny::renderPlot({
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
-
     if (!(length(currentInd) == 0)) {
       indy <- odf$objectives[which(odf$objectives == currentInd)]
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
       }
       plot <- indicator_to_plot$plot[which(indicator_to_plot$indicators == indy)]
+
       if (indicator_to_plot$type[which(indicator_to_plot$indicators == currentInd)] == "plot") {
+
         if (grepl("dataframe=TRUE", plot)) {
           plot <- gsub("dataframe=TRUE", "dataframe=FALSE", plot)
+        } else if (!(grepl("dataframe", plot))) {
+          plot <- paste0(substr(plot, 1, nchar(plot) - 1), ", dataframe=FALSE)")
         }
+
         eval(parse(text = plot))
       }
     }
-
   })
+
+
+  output$indicatorMap <- leaflet::renderLeaflet({ #jaim
+    req(input$tabs)
+    currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
+    if (!(length(currentInd) == 0)) {
+      indy <- odf$objectives[which(odf$objectives == currentInd)]
+      if (length(indy) == 0) {
+        indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
+      }
+      plot <- indicator_to_plot$plot[which(indicator_to_plot$indicators == indy)]
+      #browser()
+      mapk <- mapData[[which(names(mapData) == plot)]]
+
+      map <- leaflet() %>%
+        addTiles() %>%
+        addPolygons(data=mapk$area, color="gray") %>%
+        addPolygons(data=mapk$outside, color="red") %>%
+        addCircleMarkers(lat=mapk$latitude, lng=mapk$longitude, color="black")
+
+      if ("notIncluded" %in% names(mapk)) {
+        map <- map %>%
+          addControl(
+          html = "<h2 style='text-align: center;'>Disclaimer: No sample station found within protected area of outside boundary</h2>",
+          position = "topleft"
+        )
+      }
+      map
+    } else {
+        NULL
+      }
+  })
+
 
   output$indicatorLeaflet <- leaflet::renderLeaflet({
     req(input$tabs)

@@ -33,7 +33,62 @@ map
 ```
 
 
+# Methods
+
+The status of `r params$mpas` is reported using the flower plot frame work, shown below in Figure 1. This approach provides a mechanism to bin indicators into bins: Genetic Diversity, Species Diversity, Functional Diversity, Environmental Representativity, Key Fish Habitat,               Connectivity, Uniqueness, Threats to Habitat, Biomass Metrics, Structure and Function, and Threats to Productivity. It then provides a means to report on the status of each bin in different protected/conserved areas even though we do not have measurements of the same indicators in all areas.
+
+The score is calculated by determining the desired trend of the indicator, then
+looking at the actual trend of the indicator. If the trend
+
+- is statistically significant AND matches the desired direction for the
+indicator, a score of A is assigned.
+- is not statistically significant but matches the desired direction for
+the indicator, a B is assigned
+- Has no change a C is assigned
+- is not statistically significant and going is the opposite direction
+of the desired direction a D is assigned
+- is statistically significant and going in the opposite direction,
+a F is assigned.
+
+For each bin (and area of interest), the weighted mean is taken to determine the overall score.
+
+
 # Results
+
+### Flower plot
+
+```{r, echo=FALSE, comment=NA, results="asis", warn=FALSE}
+plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == params$mpas),],
+                                            grouping = "objective",
+                                            labels = "bin",
+                                            score = "ind_status",
+                                            max_score=100,
+                                            min_score=0,
+                                            title="Flower plot frame work")
+```
+
+
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+p <- pillar_ecol_df[which(pillar_ecol_df$area_name == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)"),]
+p$ind_status[which(p$ind_status == 0)] <- NA
+area_grade <- calc_letter_grade(weighted.mean(p$ind_status, p$weight, na.rm=TRUE))
+
+```
+
+As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+pillar_ecol_df$ind_status[which(pillar_ecol_df$ind_status == 0)] <- NA
+for (i in seq_along(unique(pillar_ecol_df$bin))) {
+  keep <- which(pillar_ecol_df$bin == unique(pillar_ecol_df$bin)[i])
+  df <- pillar_ecol_df[keep,]
+  cat(sprintf("Indicator bin: %s (%s).\n\n", unique(pillar_ecol_df$bin)[i], calc_letter_grade(weighted.mean(df$ind_status, df$weight,na.rm=TRUE))))
+  #cat(sprintf("%s.\n\n", " "))
+      }
+```
+
+
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
 keeper <- indicator_to_plot[which(tolower(indicator_to_plot$area) == tolower(NAME_to_tag(names=input$mpas))),]
@@ -88,8 +143,22 @@ for (i in seq_along(keeper2)) {
   }
 }
 
-
-
-
 ```
+
+# Discussion
+
+### Climate Change
+
+The following indicators have been identified as direct measure of climate change and are measured in `r params$mpas`:
+
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+climateKeep <- which(binned_indicators$climate == "direct" & binned_indicators$mpa_name == params$mpas)
+DF <- indicator_to_plot[climateKeep,]
+cat(paste0(DF$indicators), collapse="\n\n")
+```
+
+
+
+
 

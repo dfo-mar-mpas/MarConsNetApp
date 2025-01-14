@@ -8,7 +8,7 @@ tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTar
 tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "shiny", "leaflet", "dplyr", "shinyjs", "devtools", "MarConsNetAnalysis", "MarConsNetData",
-               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr"),
+               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr"),
   #controller = crew::crew_controller_local(workers = 2),
   imports = c("civi"),
   format = "qs"
@@ -424,6 +424,65 @@ list(
 
               ),
 
+ tar_target(name = mapData, # JAIM HERE
+            command = {
+
+              # BANDAID FIX (ISSUE 54 APP)
+
+              mpa <- eval(MPAs)
+              GS <- eval(gsdet)
+              zoo <- eval(zooplankton)
+              ah <- eval(all_haddock)
+              bd <- eval(bloom_df)
+              sh <- eval(surface_height)
+
+              maps <- indicator_to_plot$plot[which(!(indicator_to_plot$plot == 0))]
+
+              map <- NULL
+              for (i in seq_along(maps)) {
+                message(i)
+                m <- maps[i]
+                if (grepl("MPAs", m)) {
+                  m <- gsub("MPAs", "mpa", m)
+                }
+                if (grepl("gsdet", m)) {
+                  m <- gsub("gsdet", "GS", m)
+                }
+                if (grepl("df=zooplankton", m)) {
+                  m <- gsub("df=zooplankton","df=zoo", m)
+                }
+                if (grepl("df=all_haddock", m)) {
+                  m <- gsub("df=all_haddock","df=ah", m)
+                }
+                if (grepl("df=bloom_df", m)) {
+                  m <- gsub("df=bloom_df","df=bd", m)
+                }
+                if (grepl("df=surface_height", m)) {
+                  m <- gsub("df=sh","df=zoo", m)
+                }
+
+                m <- paste0(substr(m, 1, nchar(m) - 1), ", map=TRUE)")
+                map[[i]] <- eval(parse(text=m))
+              }
+              names(map) <- maps
+
+              for (i in seq_along(map)) {
+                if (length(map[[i]]$latitude) == 0 & length(map[[i]]$geom) == 0) {
+                  message(i)
+                  # There is nothing inside or outside (e.g. sea surface)
+                  string <- str_match(maps[i], "df=([a-zA-Z_]+)")[, 2]
+                  map[[i]]$latitude <- eval(parse(text=paste0(string, "$latitude")))
+                  map[[i]]$longitude <- eval(parse(text=paste0(string, "$longitude")))
+                  map[[i]]$notIncluded <- TRUE
+                }
+              }
+
+              map
+            }
+
+ ),
+
+
 
 
 
@@ -600,8 +659,13 @@ list(
               df$latitude <- 0
               df$longitude <- 0
               for (i in seq_along(unique(df$station))) {
-                df$latitude[which(df$station == unique(df$station)[i])] <- sdf$latitude[which(sdf$station == unique(df$station)[i])][1]
-                df$longitude[which(df$station == unique(df$station)[i])] <- sdf$longitude[which(sdf$station == unique(df$station)[i])][1]
+                if (unique(df$station)[i] == "HL2") { # ISSUE 53
+                  k <- 274
+                } else {
+                  k <- 1
+                }
+                df$latitude[which(df$station == unique(df$station)[i])] <- sdf$latitude[which(sdf$station == unique(df$station)[i])][k]
+                df$longitude[which(df$station == unique(df$station)[i])] <- sdf$longitude[which(sdf$station == unique(df$station)[i])][k]
               }
 
               df$type <- "Zooplankton AZMP"
