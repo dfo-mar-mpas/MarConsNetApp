@@ -8,7 +8,7 @@ tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTar
 tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "shiny", "leaflet", "dplyr", "shinyjs", "devtools", "MarConsNetAnalysis", "MarConsNetData",
-               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr"),
+               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer"),
   #controller = crew::crew_controller_local(workers = 2),
   imports = c("civi"),
   format = "qs"
@@ -696,6 +696,28 @@ list(
             }),
 
 
+
+ tar_target(climate_change,
+            command= {
+              doc <- read_docx(file.path(system.file(package = "MarConsNetAnalysis"), "data", "climate.docx"))
+              doc_text <- docx_summary(doc)
+              keep <- which(grepl("CC:", doc_text$text))
+              keep <- c(keep, which(grepl("References", doc_text$text, ignore.case=TRUE)))
+              indicators <- gsub("CC: ","", doc_text$text[keep])
+              indicators <- indicators[-length(indicators)]
+
+              split_text <- list()
+              for (i in seq_along(keep)) {
+                start_index <- keep[i]
+                end_index <- ifelse(i == length(keep), length(lines), keep[i + 1] - 1)
+                split_text[[i]] <- doc_text$text[start_index:end_index]
+              }
+              split_text <- split_text[-length(split_text)]
+              summary <- unlist(lapply(split_text, function(x) x[2]))
+              cc <- data.frame(indicators=indicators, summary=summary)
+            }),
+
+
  tar_target(bloom_df,
             command={
               script_lines <- readLines("https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_01a_define_polygons.R")
@@ -863,15 +885,6 @@ list(
               df$ind_status <- df$ind_status*20
 
               df
-
-
-
-
-
-
-
-
-
 
               # pdf <- aggregate_groups("pillar",
               #                          "Ecological",
