@@ -927,18 +927,14 @@ a F is assigned."),
 
         if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
           map <- map %>% leaflet::addPolygons(
-            lng = coords$lng,
-            lat = coords$lat,
-            color="black",
-            fillColor = coords$color,
-            fillOpacity = 0.5,
-            weight = 2
+            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms
           )
+
         } else if (state$mpas == "All") {
           for (c in seq_along(subarea_coords)) {
             coord <- subarea_coords[[c]]
             map <- map %>%
-              leaflet::addPolygons(lat = coord$lat, lng = coord$lng, fillColor = coord$color, fillOpacity = 0.5, weight = 2, color="black")
+              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = coord$color, fillOpacity = 0.5, weight = 2, color="black")
           }
         }
 
