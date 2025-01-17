@@ -1,0 +1,6 @@
+```{r}
+library(leaflet)
+leaflet() %>% 
+  addTiles()
+
+```

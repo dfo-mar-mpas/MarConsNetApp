@@ -267,9 +267,6 @@ a F is assigned."),
         string <- state$mpas
       }
       string <- gsub(" ", "_", string)
-      if (!(state$mpas == "All")) {
-      #browser()
-      }
 
       # Find matching objectives
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))

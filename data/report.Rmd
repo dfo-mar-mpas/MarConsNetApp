@@ -90,6 +90,7 @@ for (i in seq_along(unique(pillar_ecol_df$bin))) {
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
+library(leaflet)
 keeper <- indicator_to_plot[which(tolower(indicator_to_plot$area) == tolower(NAME_to_tag(names=input$mpas))),]
 
 BINS <- unique(trimws(tolower(unlist(strsplit(keeper$indicator_bin, ";"))), "both"))
@@ -126,19 +127,32 @@ for (i in seq_along(keeper2)) {
       if (grepl("bd=bd", plotty)) {
         bd <- bloom_df
       }
-      eval(parse(text="par(mfrow=c(1,2))"))
+      par(mfrow=c(1,2))
       eval(parse(text=keeper2[[i]]$Plot[j]))
       
       #JAIM
       
-       mapk <- mapData[[which(names(mapData) == plotty)]]
+        mapk <- mapData[[which(names(mapData) == plotty)]]
+       # 
+       # leaflet() %>%
+       #    addTiles() %>%
+       #    addPolygons(data=mapk$area, color="gray") %>%
+       #    addPolygons(data=mapk$outside, color="red") %>%
+       #    addCircleMarkers(lat=mapk$latitude, lng=mapk$longitude, color="black")
       
-       leaflet() %>%
-          addTiles() %>%
-          addPolygons(data=mapk$area, color="gray") %>%
-          addPolygons(data=mapk$outside, color="red") %>%
-          addCircleMarkers(lat=mapk$latitude, lng=mapk$longitude, color="black")
-      
+      plot(st_geometry(mapk$area), col = "gray", main = "Spatial Visualization", 
+     xlab = "Longitude", ylab = "Latitude", border = NA)
+
+# Add the "outside" polygons
+plot(st_geometry(mapk$outside), col = "red", add = TRUE, border = NA)
+
+# Add circle markers for points
+points(mapk$longitude, mapk$latitude, col = "black", pch = 20)
+
+
+       
+      par(mfrow=c(1,1))
+
       # end JAIM
       
       
