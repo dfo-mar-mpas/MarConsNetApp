@@ -267,6 +267,9 @@ a F is assigned."),
         string <- state$mpas
       }
       string <- gsub(" ", "_", string)
+      if (!(state$mpas == "All")) {
+      #browser()
+      }
 
       # Find matching objectives
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
@@ -274,7 +277,7 @@ a F is assigned."),
         textO <- Objectives[[keepO]]
         links <- lapply(seq_along(textO), function(i) {
           shiny::tags$div(
-            shiny::actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])],
+            shiny::actionLink(inputId = odf$link[which(paste0(gsub("\n", "", odf$objectives), "\n") == textO[[i]])],
                               label = textO[[i]]),
             shiny::tags$br(), # Add a line break after each link
             shiny::tags$br()   # Add second line break
@@ -934,13 +937,14 @@ a F is assigned."),
           for (c in seq_along(subarea_coords)) {
             coord <- subarea_coords[[c]]
             map <- map %>%
-              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = coord$color, fillOpacity = 0.5, weight = 2, color="black")
+              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = "gray", fillOpacity = 0.5, weight = 2, color="black")
           }
         }
 
 
         if (!(is.null(input$projects))) {
           #COMMENT
+          #browser()
           projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
 
           projectPackages <- dataTable$package[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)

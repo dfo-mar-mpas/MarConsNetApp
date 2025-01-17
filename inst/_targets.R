@@ -412,10 +412,16 @@ list(
                c(binned_indicators$indicators)
              }),
 
+ tar_target(name=whale_sighting,
+            command= {
+              ws <- project_whale_sighting()
+              ws
+            }),
+
  tar_target(name = indicator_to_plot,
             command = {
 
-              DF <- list(bloom_df=bloom_df, all_haddock=all_haddock, gsdet=gsdet, zooplankton=zooplankton, surface_height=surface_height,Discrete_Occupations_Sections=azmpdata::Discrete_Occupations_Sections)
+              DF <- list(bloom_df=bloom_df, all_haddock=all_haddock, gsdet=gsdet, zooplankton=zooplankton, surface_height=surface_height,Discrete_Occupations_Sections=azmpdata::Discrete_Occupations_Sections,whale_sighting=whale_sighting)
 
               ITP <- analysis(DF=DF, bi=binned_indicators)
 
@@ -435,6 +441,7 @@ list(
               ah <- eval(all_haddock)
               bd <- eval(bloom_df)
               sh <- eval(surface_height)
+              ws <- eval(whale_sighting)
 
               maps <- indicator_to_plot$plot[which(!(indicator_to_plot$plot == 0))]
 
@@ -458,7 +465,11 @@ list(
                   m <- gsub("df=bloom_df","df=bd", m)
                 }
                 if (grepl("df=surface_height", m)) {
-                  m <- gsub("df=sh","df=zoo", m)
+                  m <- gsub("df=sh","df=surface_height", m)
+                }
+
+                if (grepl("df=whale_sighting", m)) {
+                  m <- gsub("df=ws","df=whale_sighting", m)
                 }
 
                 m <- paste0(substr(m, 1, nchar(m) - 1), ", map=TRUE)")
