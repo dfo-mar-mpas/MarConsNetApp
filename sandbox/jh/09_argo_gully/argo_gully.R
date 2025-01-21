@@ -8,7 +8,7 @@ latitude <- ai[['latitude']]
 
 bad <- unique(c(which(is.na(longitude)), which(is.na(latitude))))
 MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
-mpa <- MPAs$geoms[which(MPAs$NAME_E == "Gully Marine Protected Area"),]
+mpa <- MPAs$geoms[19,]
 
 longitude <- longitude[-bad]
 latitude <- latitude[-bad]

@@ -177,12 +177,24 @@ The following indicators have been identified as direct measure of climate chang
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
+trends <- indicator_to_plot$trend[which(tolower(indicator_to_plot$indicators) %in% tolower(climate_change$indicators))]
+analysis <- NULL
+for (i in seq_along(trends)) {
+  if (!(grepl("BLANK", trends[i]))) {
+  analysis[[i]] <- climate_analysis(trend=trends[i], itp=indicator_to_plot)
+  } else {
+  analysis[[i]] <- "There is no data for this indicator yet."
+  }
+}
+
+
 for (i in seq_along(climate_change$indicators)) {
       cat(sprintf("<b>Indicator: %s.</b>\n\n", climate_change$indicators[i]))
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("%s.\n\n", climate_change$summary[i]))
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("Actual results showed:\n\n"))
+      cat(sprintf("%s.\n\n", analysis[[i]]))
 }
 ```
 

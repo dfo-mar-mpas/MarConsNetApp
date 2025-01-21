@@ -143,6 +143,8 @@ a F is assigned."),
         p(" ")
       ),
       p("When projects have a lot of points (e.g. RV, Argo, etc.) the latitude and longitudes are rounded to the nearest decimal when plotting on the map"),
+      p(" "),
+      p("Whale data has a caveat that it’s difficult to make spatial or temporal comparisons in cetacean species presence based on the sightings data due to variable observer effort, which is not quantified in the database."),
       easyClose = TRUE,  # Allow closing modal by clicking outside or using the 'x'
       footer = modalButton("Close")  # Footer button to close the modal
     ))
