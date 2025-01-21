@@ -890,6 +890,26 @@ list(
               #   df$weight[keep] <- df$weight[keep]*bl
               # }
 
+              ### calculate network status
+              df <- df |>
+                mutate(ind_status = if_else(ind_status < 0.00000001,
+                                            NA,
+                                            ind_status)) |>
+                group_by(objective, bin, area_name) |>
+                reframe(ind_name = unique(area_name),
+                        area_name = "Scotian Shelf",
+                        ind_status = weighted.mean(ind_status,weight,na.rm = TRUE),
+                        ind_trend = weighted.mean(ind_trend,weight,na.rm = TRUE),
+                        ind_projects = paste(ind_projects, collapse = "; "),
+                        ind_rawdata_type = paste(ind_rawdata_type, collapse = "; "),
+                        ind_certainty = paste(ind_certainty, collapse = "; ")
+                        )|>
+                group_by(bin) |>
+                mutate(weight=target_bin_weight/n()) |>
+                ungroup() |>
+                bind_rows(df)
+
+
               df <-  df %>%
                 arrange(objective, bin)
 

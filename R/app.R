@@ -727,7 +727,7 @@ a F is assigned."),
     if (input$tabs == "tab_0") {
       if (state$mpas == "All") {
         NAME <- "Scotian Shelf"
-        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df,
+        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "ind_status",
