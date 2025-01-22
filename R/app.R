@@ -396,7 +396,20 @@ a F is assigned."),
           flower <- APPTABS$flower[which(APPTABS$link == link_id)]
           area <- gsub("_", " ", gsub("_CO$", "", APPTABS$place[which(APPTABS$link == link_id)]))
         }
+
+        if (flower %in% c("Productivity", "Habitat", "Biodiversity")) {
+          labels <- Ecological$labels[which(Ecological$grouping == flower)]
+
+          flowerBins <- NULL
+          for (i in seq_along(labels)) {
+            flowerBins[[i]] <- which(grepl(labels[i], gsub("\\(|\\)", "", binned_indicators$indicator_bin), ignore.case = TRUE))
+          }
+
+          ki1 <- sort(unique(unlist(flowerBins)))
+
+        } else {
         ki1 <- which(grepl(flower, gsub("\\(|\\)", "", binned_indicators$indicator_bin), ignore.case = TRUE))
+        }
         if (!(input$mpas == "All")) {
           #2024/12/31 Issue 7
         #ki2 <- which(tolower(binned_indicators$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
@@ -504,6 +517,7 @@ a F is assigned."),
   })
 
   output$DT <- DT::renderDT({
+    #browser()
     req(input$tabs)
     info <- calculated_info()
     req(info)  # Ensure the info is available
@@ -561,15 +575,6 @@ a F is assigned."),
     )
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
-
-        flowerPalette <- c(
-          "F" = "#FF0000",    # Bright Red
-          "D" = "#FF6600",    # Red-Orange
-          "C" = "#FFFF00",    # Yellow
-          "B" = "#66FF66",    # Medium Green
-          "A" = "#006600"    # Very Dark Green
-
-        )
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
 
         DT::datatable(
@@ -679,7 +684,6 @@ a F is assigned."),
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
       }
       plot <- indicator_to_plot$plot[which(indicator_to_plot$indicators == indy)]
-      #browser()
       mapk <- mapData[[which(names(mapData) == plot)]]
 
       map <- leaflet() %>%
@@ -941,7 +945,6 @@ a F is assigned."),
 
         if (!(is.null(input$projects))) {
           #COMMENT
-          #browser()
           projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
 
           projectPackages <- dataTable$package[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
