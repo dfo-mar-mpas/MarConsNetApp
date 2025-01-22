@@ -61,16 +61,16 @@ ui <- shiny::fluidPage(
     shiny::sidebarPanel(
       shiny::actionButton(inputId="about", label="About the App"),
       shiny::uiOutput("legendUI"),
-      #shiny::actionButton(inputId="about", label="About the App"),
       shiny::uiOutput("mpas"),
       shiny::uiOutput("projects"),
       shiny::uiOutput("projectFinancial"),
-      #shiny::uiOutput("fundingSource"),
-      #shiny::uiOutput("theme"),
-      #shiny::uiOutput("functionalGroup"),
-      #shiny::uiOutput("section"),
-      #shiny::uiOutput("division"),
-      shiny::uiOutput("report")
+      # Conditional button to open the HTML file
+      shiny::conditionalPanel(
+        condition = "!(input.mpas === 'All') && input.tabs === 'tab_0'",
+        uiOutput("report_button_ui")
+      ),
+      # Space to display the generated report
+      uiOutput("report_ui")
     ),
     shiny::mainPanel(
       shiny::uiOutput("indicatorText"),
@@ -100,8 +100,8 @@ server <- function(input, output, session) {
     theme = NULL,
     functionalGroup = NULL,
     section = NULL,
-    division = NULL,
-    report = NULL
+    division = NULL
+    #report = NULL
     )
 
   rv <- shiny::reactiveValues(button_label = "See All Project Data")
@@ -112,7 +112,7 @@ server <- function(input, output, session) {
     length(input$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(input$mpas == "All")
   })
 
-  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "report", "projectFinancial") # THE SAME AS STATE
+  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "projectFinancial") # THE SAME AS STATE
 
   lapply(input_ids, function(id) {
     shiny::observeEvent(input[[id]], {
@@ -208,51 +208,94 @@ a F is assigned."),
     }
   })
 
+  # output$report <- shiny::renderUI({
+  #   req(input$tabs)
+  #   req(input$mpas)
+  #   if (input$tabs == "tab_0") {
+  #     if (!(state$mpas == "All")) { # This will change eventually with project reporting
+  #     shiny::actionButton("report", "Create Report")
+  #     }
+  #   }
+  # })
 
-  output$fundingSource <- shiny::renderUI({
-    req(input$tabs)
-    if (input$tabs == "tab_0") {
-      shiny::selectInput("fundingSource", "Select Funding Source(s):", choices=unique(om$funding_source_display), multiple=TRUE, selected=state$fundingSource)
-    }
-  })
 
-  output$theme <- shiny::renderUI({
-    req(input$tabs)
-    if (input$tabs == "tab_0") {
-      shiny::selectInput("theme", "Select Theme(s):", choices=unique(om$theme), multiple=TRUE, selected=state$theme)
-    }
-  })
 
-  output$functionalGroup <- shiny::renderUI({
-    req(input$tabs)
-    if (input$tabs == "tab_0") {
-      shiny::selectInput("functionalGroup", "Select Functional Group(s):", choices=unique(om$functional_group), multiple=TRUE, selected=state$functionalGroup)
-    }
-  })
+  shiny::addResourcePath("htmlfiles", file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports"))
 
-  output$section <- shiny::renderUI({
-    req(input$tabs)
-    if (input$tabs == "tab_0") {
-      shiny::selectInput("section", "Select Section(s):", choices=dataSPA::subsetSPA(om=om, section="return"), multiple=TRUE, selected=state$section)
-    }
-  })
-
-  output$division <- shiny::renderUI({
-    req(input$tabs)
-    if (input$tabs == "tab_0") {
-      shiny::selectInput("division", "Select Division(s):", choices=dataSPA::subsetSPA(om=om, division="return"), multiple=TRUE, selected=state$division)
-    }
-  })
-
-  output$report <- shiny::renderUI({
-    req(input$tabs)
+  # Check if the static HTML file exists
+  observe({
     req(input$mpas)
-    if (input$tabs == "tab_0") {
-      if (!(state$mpas == "All")) { # This will change eventually with project reporting
-      shiny::actionButton("report", "Create Report")
+    static_file_path <- paste0(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports"), "/", NAME_to_tag(names=input$mpas), ".html")
+    if (file.exists(static_file_path)) {
+      # Show a link to the existing file
+      output$report_button_ui <- renderUI({
+        tags$a(
+          href = paste0("/htmlfiles/",NAME_to_tag(names=input$mpas), ".html"),
+          target = "_blank",
+          class = "btn btn-primary",
+          "Report"
+        )
+      })
+    } else {
+      # Show a button to generate a new report
+      output$report_button_ui <- renderUI({
+        actionButton("report", "Report", class = "btn btn-primary")
+      })
+    }
+  })
+
+  # Logic to generate the report
+  observeEvent(input$report, {
+    req(input$mpas)
+    if (!(state$mpas == "All")) {
+      # Define the Rmd file to render
+      rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
+      if (file.exists(rmd_file)) {
+        params <- list(
+          mpas = input$mpas,
+          coords = subarea_coords[which(names(subarea_coords) == input$mpas)]
+        )
+        output_dir <- getwd()  # current directory
+        output_file <- file.path(output_dir, "report.html")
+        render(rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
+        output$report_ui <- renderUI({
+          tags$iframe(src = "report.html", width = "100%", height = "600px")
+        })
+      } else {
+        showNotification("The required Rmd file does not exist.", type = "error")
       }
     }
   })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1072,24 +1115,6 @@ a F is assigned."),
       }
     }
   })
-
-
-  observeEvent(input$report, {
-    if (!(state$mpas == "All")) {
-    # Define the Rmd file to render
-    rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
-    params <- list(mpas = input$mpas,
-                   coords = subarea_coords[which(names(subarea_coords) == input$mpas)])
-    output_dir <- getwd()  # current directory
-    output_file <- file.path(output_dir, "report.html")
-    render(rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
-    output$report_ui <- renderUI({
-      tags$iframe(src = "report.html", width = "100%", height = "600px")
-    })
-    }
-  })
-
-
 
 
 }
