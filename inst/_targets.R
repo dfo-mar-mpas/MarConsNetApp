@@ -8,7 +8,8 @@ tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTar
 tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "shiny", "leaflet", "dplyr", "shinyjs", "devtools", "MarConsNetAnalysis", "MarConsNetData",
-               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer"),
+               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
+               "RColorBrewer"),
   #controller = crew::crew_controller_local(workers = 2),
   imports = c("civi"),
   format = "qs"
@@ -275,14 +276,10 @@ list(
 
   tar_target(name = flowerPalette,
              command = {
-               FP <- c(
-                 "F" = "#FF0000",    # Bright Red
-                 "D" = "#FF6600",    # Red-Orange
-                 "C" = "#FFFF00",    # Yellow
-                 "B" = "#66FF66",    # Medium Green
-                 "A" = "#006600"    # Very Dark Green
-               )
-               FP
+               grades <- c("A", "B", "C", "D", "F")
+               palette <- colorRampPalette(brewer.pal(11,"RdBu"))(length(grades))
+               names(palette) <- grades
+               palette
                }),
 
   tar_target(name = binned_indicators,

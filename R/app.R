@@ -870,8 +870,6 @@ a F is assigned."),
                 y = ymax
               )
 
-              #browser()
-
               clc <- as.character(calc_letter_grade(data$y))
               finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
 
