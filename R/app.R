@@ -78,6 +78,7 @@ ui <- shiny::fluidPage(
       shiny::uiOutput('mytabs'),
       shiny::uiOutput("conditionalPlot"),
       shiny::uiOutput("conditionalIndicatorMap"),
+      shiny::uiOutput("whaleDisclaimer"),
       shiny::fluidRow(shiny::column(width=6, align="left",
                              shiny::plotOutput("flowerPlot",click="flower_click")),
                       shiny::column(width=6, align="right",
@@ -156,22 +157,20 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       title = "Things to consider when using the app",
       div(
+        p("There are two ways the score is calculated. If the desired direction of the indicator is increase or decrease:"),
         p("The score of a area of network is calculated in the following way: When a trend is"),
-        p("A) s statistically significant AND matches the desired direction for the
+        p("1) s statistically significant AND matches the desired direction for the
 indicator, a score of A is assigned."),
-        p("B) is not statistically significant but matches the desired direction for
-the indicator, a B is assigned"),
-        p("C) has no change a C is assigned"),
-        p("D) is not statistically significant and going is the opposite direction
-of the desired direction a D is assigned"),
-        p("E) is statistically significant and going in the opposite direction,
+        p("2) has no significant change a C is assigned"),
+        p("3) is statistically significant and going in the opposite direction,
 a F is assigned."),
+        p("If the desired direction of the indicator is stable:"),
+        p("1) If the trend of the indicator has no significant change an A is assigned"),
+        p("2) If there is a significant change, a F in assigned"),
         p(" "),
         p(" ")
       ),
       p("When projects have a lot of points (e.g. RV, Argo, etc.) the latitude and longitudes are rounded to the nearest decimal when plotting on the map"),
-      p(" "),
-      p("Whale data has a caveat that it’s difficult to make spatial or temporal comparisons in cetacean species presence based on the sightings data due to variable observer effort, which is not quantified in the database."),
       easyClose = TRUE,  # Allow closing modal by clicking outside or using the 'x'
       footer = modalButton("Close")  # Footer button to close the modal
     ))
@@ -721,6 +720,41 @@ a F is assigned."),
   })
 
 
+  output$whaleDisclaimer <- shiny::renderUI({
+    req(input$tabs)
+
+    currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
+
+    if (length(currentInd) > 0 && currentInd == "presence of species that \"use\" productivity, e.g. whales") {
+      # Show the modal dialog with a Close button
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Disclaimer",
+          tags$ul(
+            tags$li("The data may contain some erroneous or duplicate records."),
+            tags$li("The certainty of species identification and number of animals is sometimes unknown. Until May 2022, best count could have been interpreted using count ranges specified in the archival field ‘confidence level’. Many sightings could not be identified to species but are listed to the smallest taxonomic group possible. Many sightings were collected on an opportunistic basis and may come from contributors with different levels of experience. Accuracy will vary with visibility, sea state, weather conditions, and interpretation."),
+            tags$li("Sighting coordinates most often refer to the location of the observer and not the animal. There are observations from shore, but these should not be interpreted as sightings on land."),
+            tags$li("Most sightings have been gathered from vessel-based platforms. The inherent problems with negative or positive reactions by cetaceans to the approach of such platforms have not been factored into the data."),
+            tags$li("Effort associated with collection of sightings has not been quantified in this database and cannot be used to estimate true species density or abundance for an area. Effort is not consistent among months, years, and areas. Lack of sightings within a particular area/time does not necessarily represent lack of species present but could reflect lack of or limited effort. Seasonal and distribution information should not be considered definitive."),
+            tags$li("Comments originally submitted in French were translated using Google Translate, and so may not be accurate."),
+            tags$li("Animal Condition is recorded in WSDB as provided. If sighter’s comments do not indicate the animal is ‘alive’ or ‘dead’ this field will be left blank.")
+          ),
+          easyClose = TRUE, # Allow the user to close the modal by clicking outside it
+          footer = tagList(
+            shiny::modalButton("Close") # Adds a Close button to the footer
+          )
+        )
+      )
+    }
+    NULL
+  })
+
+
+
+
+
+
+
   output$indicatorPlot <- shiny::renderPlot({
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
@@ -738,7 +772,6 @@ a F is assigned."),
         } else if (!(grepl("dataframe", plot))) {
           plot <- paste0(substr(plot, 1, nchar(plot) - 1), ", dataframe=FALSE)")
         }
-
         eval(parse(text = plot))
       }
     }
