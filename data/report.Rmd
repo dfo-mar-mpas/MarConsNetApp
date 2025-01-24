@@ -27,7 +27,7 @@ cat(Context[[which(tolower(areas) == tolower(NAME_to_tag(names=input$mpas)))]])
 #cat(paste0("The area is ", params$coords[[input$mpas]]))
 map <- leaflet() %>%
   addTiles() %>%
-  addPolygons(lat = params$coords[[input$mpas]]$lat, lng = params$coords[[input$mpas]]$lng, fillColor = params$coords[[input$mpas]]$color, fillOpacity = 0.5, weight = 2, color="black")
+  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == input$mpas)], fillOpacity = 0.5, weight = 2, color="black")
 
 map
 ```
@@ -58,7 +58,7 @@ For each bin (and area of interest), the weighted mean is taken to determine the
 ### Flower plot
 
 ```{r, echo=FALSE, comment=NA, results="asis", warn=FALSE}
-plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == params$mpas),],
+plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == input$mpas),],
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "ind_status",
@@ -71,7 +71,6 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == params$mpas),],
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
 p <- pillar_ecol_df[which(pillar_ecol_df$area_name == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)"),]
-p$ind_status[which(p$ind_status == 0)] <- NA
 area_grade <- calc_letter_grade(weighted.mean(p$ind_status, p$weight, na.rm=TRUE))
 
 ```
@@ -79,7 +78,6 @@ area_grade <- calc_letter_grade(weighted.mean(p$ind_status, p$weight, na.rm=TRUE
 As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
-pillar_ecol_df$ind_status[which(pillar_ecol_df$ind_status == 0)] <- NA
 for (i in seq_along(unique(pillar_ecol_df$bin))) {
   keep <- which(pillar_ecol_df$bin == unique(pillar_ecol_df$bin)[i])
   df <- pillar_ecol_df[keep,]
@@ -91,25 +89,30 @@ for (i in seq_along(unique(pillar_ecol_df$bin))) {
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
 library(leaflet)
-keeper <- indicator_to_plot[which(tolower(indicator_to_plot$area) == tolower(NAME_to_tag(names=input$mpas))),]
+keeper <- indicator_to_plot[which(tolower(indicator_to_plot$area) == tolower(NAME_to_tag(names =
+                                                                                           input$mpas))), ]
 
-BINS <- unique(trimws(tolower(unlist(strsplit(keeper$indicator_bin, ";"))), "both"))
+BINS <- unique(trimws(tolower(unlist(
+  strsplit(keeper$indicator_bin, ";")
+)), "both"))
 
 keeper2 <- NULL
 
 for (i in seq_along(BINS)) {
-  KK <- keeper[which(grepl(BINS[i],trimws(tolower(keeper$indicator_bin),"both"))),]
+  KK <- keeper[which(grepl(BINS[i], trimws(tolower(
+    keeper$indicator_bin
+  ), "both"))), ]
   
   keeper2[[i]] <- data.frame(
-      Indicator = KK$indicators,
-      Status = KK$status,
-      Trend = KK$trend,
-      Plot=KK$plot,
-      Grade=KK$status_grade,
-      Project=KK$project,
-      stringsAsFactors = FALSE
-    )
-
+    Indicator = KK$indicators,
+    Status = KK$status,
+    Trend = KK$trend,
+    Plot = KK$plot,
+    Grade = KK$status_grade,
+    Project = KK$project,
+    stringsAsFactors = FALSE
+  )
+  
 }
 
 names(keeper2) <- BINS
@@ -127,34 +130,35 @@ for (i in seq_along(keeper2)) {
       if (grepl("bd=bd", plotty)) {
         bd <- bloom_df
       }
-      par(mfrow=c(1,2))
-      eval(parse(text=keeper2[[i]]$Plot[j]))
+      par(mfrow = c(1, 2))
+      eval(parse(text = keeper2[[i]]$Plot[j]))
       
-      #JAIM
+      mapk <- mapData[[which(names(mapData) == plotty)]]
       
-        mapk <- mapData[[which(names(mapData) == plotty)]]
-       # 
-       # leaflet() %>%
-       #    addTiles() %>%
-       #    addPolygons(data=mapk$area, color="gray") %>%
-       #    addPolygons(data=mapk$outside, color="red") %>%
-       #    addCircleMarkers(lat=mapk$latitude, lng=mapk$longitude, color="black")
+      plot(
+        st_geometry(mapk$area),
+        col = "gray",
+        main = "Spatial Visualization",
+        xlab = "Longitude",
+        ylab = "Latitude",
+        border = NA
+      )
       
-      plot(st_geometry(mapk$area), col = "gray", main = "Spatial Visualization", 
-     xlab = "Longitude", ylab = "Latitude", border = NA)
-
-# Add the "outside" polygons
-plot(st_geometry(mapk$outside), col = "red", add = TRUE, border = NA)
-
-# Add circle markers for points
-points(mapk$longitude, mapk$latitude, col = "black", pch = 20)
-
-
-       
-      par(mfrow=c(1,1))
-
-      # end JAIM
+      # Add the "outside" polygons
+      plot(
+        st_geometry(mapk$outside),
+        col = "red",
+        add = TRUE,
+        border = NA
+      )
       
+      # Add circle markers for points
+      points(mapk$longitude,
+             mapk$latitude,
+             col = "black",
+             pch = 20)
+      
+      par(mfrow = c(1, 1))
       
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("%s.\n\n", keeper2[[i]]$Status[j]))
@@ -162,7 +166,10 @@ points(mapk$longitude, mapk$latitude, col = "black", pch = 20)
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("This indicator has a grade of: %s.\n\n", keeper2[[i]]$Grade[j]))
       cat(sprintf("%s.\n\n", " "))
-      cat(sprintf("Data was provided from project %s.\n\n", keeper2[[i]]$Project[j]))
+      cat(sprintf(
+        "Data was provided from project %s.\n\n",
+        keeper2[[i]]$Project[j]
+      ))
     }
   }
 }

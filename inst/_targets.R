@@ -277,7 +277,7 @@ list(
   tar_target(name = flowerPalette,
              command = {
                grades <- c("A", "B", "C", "D", "F")
-               palette <- colorRampPalette(brewer.pal(11,"RdBu"))(length(grades))
+               palette <- rev(colorRampPalette(brewer.pal(5,"RdYlBu"))(length(grades)))
                names(palette) <- grades
                palette
                }),
@@ -357,24 +357,28 @@ list(
 
   tar_target(name = calc_letter_grade,
              command = {
+
                cg <- function(scores) {
-                 # Vectorized assignment of grades based on fixed criteria
                  sapply(scores, function(score) {
-                   if (is.na(score)) {
-                     return(NA)  # Return NA if the input is NA
-                   } else if (score >= 100) {
-                     return("A")
-                   } else if (score >= 80) {
-                     return("B")
-                   } else if (score >= 60) {
-                     return("C")
-                   } else if (score >= 40) {
-                     return("D")
+                   if (!(is.na(score)) && !(is.nan(score))) {
+                     if (score >= 0 && score <= 20) {
+                       grade <- "F"
+                     } else if (score >= 20 && score < 40) {
+                       grade <- "D"
+                     } else if (score >= 40 && score < 60) {
+                       grade <- "C"
+                     } else if (score >= 60 && score < 80) {
+                       grade <- "B"
+                     } else if (score >= 80 && score <= 100) {
+                       grade <- "A"
+                     }
                    } else {
-                     return("F")
+                     grade <- "NA"
                    }
+                   return(grade)
                  })
                }
+
                cg
              }),
 
@@ -751,7 +755,6 @@ list(
 
  ##### Pillar #####
 
-
  tar_target(name = pillar_ecol_df,
             command = {
 
@@ -781,22 +784,21 @@ list(
 
               ind_status <- NULL
               for (i in seq_along(indicator_to_plot$status_grade)) {
+                message(i)
+                if (!(is.na(indicator_to_plot$status_grade[i]))) {
                 if (indicator_to_plot$status_grade[i] == "A") {
-                  ind_status[[i]] <- 5
-                } else if (indicator_to_plot$status_grade[i] == "B") {
-                  ind_status[[i]] <- 4
+                  ind_status[[i]] <- 100
                 } else if (indicator_to_plot$status_grade[i] == "C") {
-                  ind_status[[i]] <- 3
-                } else if (indicator_to_plot$status_grade[i] == "D") {
-                  ind_status[[i]] <- 2
+                  ind_status[[i]] <- 50
                 } else if (indicator_to_plot$status_grade[i] == "F") {
-                  ind_status[[i]] <- 1
-                } else {
                   ind_status[[i]] <- 0
                 }
+                } else {
+                  ind_status[[i]] <- NA
+                }
               }
-              ind_status <- unlist(ind_status)
 
+              ind_status <- unlist(ind_status)
 
               extract_first_number <- function(sentence) {
                 match <- regexpr("-?\\d+\\.?\\d*", sentence)
@@ -849,8 +851,6 @@ list(
 
               pillar <- "Ecological"
 
-
-
               df <- data.frame(area_name=area_name, ind_name=ind_name, ind_status=ind_status, ind_trend=ind_trend, ind_projects=ind_projects,
                                ind_rawdata_type=ind_rawdata_type, ind_certainty=ind_certainty, bin=bin, weight=weight, objective=objective,
                                pillar=pillar)
@@ -878,15 +878,6 @@ list(
               }
               }
 
-              # target_weight <- sum(df$weight)/length(Ecological$labels)
-              #
-              #
-              # for (i in seq_along(Ecological$labels)) {
-              #   keep <-which(tolower(df$bin) == tolower(Ecological$labels[i]))
-              #   bl <- target_weight/sum(df$weight[keep])
-              #   df$weight[keep] <- df$weight[keep]*bl
-              # }
-
               ### calculate network status
               df <- df |>
                 mutate(ind_status = if_else(ind_status < 0.00000001,
@@ -910,20 +901,9 @@ list(
               df <-  df %>%
                 arrange(objective, bin)
 
-              df$ind_status <- df$ind_status*20
+              df$ind_status[which(is.nan(df$ind_status))] <- NA
 
               df
-
-              # pdf <- aggregate_groups("pillar",
-              #                          "Ecological",
-              #                          weights = NA,
-              #                          ecol_obj_biodiversity_df,
-              #                          ecol_obj_habitat_df,
-              #                          ecol_obj_productivity_df)
-              #
-              # pdf <- pdf %>%
-              #   mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
-              # pdf
 
             })
 
