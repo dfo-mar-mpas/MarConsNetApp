@@ -388,6 +388,49 @@ list(
 
             }),
 
+ tar_target(ds_all,
+            # because this is loaded with the Mar.datawrangling package and not mentioned in the arguments to many of it's functions
+            # mention ds_all whenever using e.g. self_filter() or summarize_catches()
+            ds_all),
+
+ tar_target(Outside,
+            st_transform(read_sf(system.file("data","WEBCA_10k_85k.shp", package = "MarConsNetAnalysis"))$geometry, crs=4326)
+ ),
+
+ tar_target('rv_rawdata_env',{
+   temp <- new.env()
+
+   get_data(db = 'rv',
+            data.dir = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data","rv"),
+            env = temp
+   )
+
+   temp
+ }
+ ),
+
+ tar_target(rv_data,{
+   tar_load('MPAs',store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))
+   temp <- rv_rawdata_env
+   ds_all # mentioned here because otherwise it won't be available for self_filter
+
+   temp$GSINF <- rv_rawdata_env$GSINF |>
+     filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
+     st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
+              crs = 4326,
+              remove = FALSE) |>
+     st_filter(Outside) |>
+     st_join(MPAs |> select(NAME_E), left=TRUE) |>
+     as.data.frame() |>
+     select(-geometry)
+
+
+   self_filter(env = temp)
+
+   summarize_catches('rv',morph_dets=TRUE,env = temp)
+ }
+ ),
+
 
   tar_target(name = ABUNDANCE_RV,
              command = {
