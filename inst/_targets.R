@@ -9,7 +9,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "shiny", "leaflet", "dplyr", "shinyjs", "devtools", "MarConsNetAnalysis", "MarConsNetData",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
-               "RColorBrewer"),
+               "RColorBrewer", "car"),
   #controller = crew::crew_controller_local(workers = 2),
   imports = c("civi"),
   format = "qs"
@@ -131,7 +131,7 @@ list(
 
   tar_target(name = om, # FIXME: need to get the saved om (or add a real cookie)
              command = {
-               OM <- dataSPA::getData(type="om", age=3000, cookie="cookie")
+               OM <- dataSPA::getData(type="om", age=3000, cookie="hi")
                OM[-(which(OM$activity_type == "Other")),]
 
              }),
@@ -397,7 +397,7 @@ list(
             st_transform(read_sf(system.file("data","WEBCA_10k_85k.shp", package = "MarConsNetAnalysis"))$geometry, crs=4326)
  ),
 
- tar_target('rv_rawdata_env',{
+ tar_target(rv_rawdata_env,{
    temp <- new.env()
 
    get_data(db = 'rv',
@@ -410,24 +410,24 @@ list(
  ),
 
  tar_target(rv_data,{
-   tar_load('MPAs',store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))
-   temp <- rv_rawdata_env
-   ds_all # mentioned here because otherwise it won't be available for self_filter
-
-   temp$GSINF <- rv_rawdata_env$GSINF |>
-     filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
-     st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
-              crs = 4326,
-              remove = FALSE) |>
-     st_filter(Outside) |>
-     st_join(MPAs |> select(NAME_E), left=TRUE) |>
-     as.data.frame() |>
-     select(-geometry)
-
-
-   self_filter(env = temp)
-
-   summarize_catches('rv',morph_dets=TRUE,env = temp)
+   1
+   # temp <- rv_rawdata_env
+   # ds_all # mentioned here because otherwise it won't be available for self_filter
+   #
+   # temp$GSINF <- rv_rawdata_env$GSINF |>
+   #   filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
+   #   st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
+   #            crs = 4326,
+   #            remove = FALSE) |>
+   #   st_filter(Outside) |>
+   #   st_join(MPAs |> select(NAME_E), left=TRUE) |>
+   #   as.data.frame() |>
+   #   select(-geometry)
+   #
+   #
+   # self_filter(env = temp)
+   #
+   # summarize_catches('rv',morph_dets=TRUE,env = temp)
  }
  ),
 
@@ -465,8 +465,18 @@ list(
  tar_target(name = indicator_to_plot,
             command = {
 
-              DF <- list(bloom_df=bloom_df, all_haddock=all_haddock, gsdet=gsdet, zooplankton=zooplankton, surface_height=surface_height,Discrete_Occupations_Sections=azmpdata::Discrete_Occupations_Sections,whale_biodiversity=whale_biodiversity)
-
+              DF <- list(fish_weight=fish_weight,
+                         fish_length=fish_length,
+                         zooplankton=zooplankton,
+                         haddock_biomass=haddock_biomass,
+                         all_haddock=all_haddock,
+                         nitrate=nitrate,
+                         salinity=salinity,
+                         chlorophyll=chlorophyll,
+                         bloom_df=bloom_df,
+                         temperature=temperature,
+                         whale_biodiversity=whale_biodiversity,
+                         surface_height=surface_height)
               ITP <- analysis(DF=DF, bi=binned_indicators)
 
               ITP
@@ -474,18 +484,22 @@ list(
 
               ),
 
- tar_target(name = mapData, # JAIM HERE
+ tar_target(name = mapData,
             command = {
-
               # BANDAID FIX (ISSUE 54 APP)
-
               mpa <- eval(MPAs)
-              GS <- eval(gsdet)
+              fw <- eval(fish_weight)
+              fl <- eval(fish_length)
               zoo <- eval(zooplankton)
+              hb <- eval(haddock_biomass)
               ah <- eval(all_haddock)
+              nn <- eval(nitrate)
+              ss <- eval(salinity)
+              cc <- eval(chlorophyll)
               bd <- eval(bloom_df)
-              sh <- eval(surface_height)
+              tt <- eval(temperature)
               ws <- eval(whale_biodiversity)
+              sh <- eval(surface_height)
 
               maps <- indicator_to_plot$plot[which(!(indicator_to_plot$plot == 0))]
 
@@ -496,9 +510,49 @@ list(
                 if (grepl("MPAs", m)) {
                   m <- gsub("MPAs", "mpa", m)
                 }
-                if (grepl("gsdet", m)) {
-                  m <- gsub("gsdet", "GS", m)
+
+
+                if (grepl("MPAs", m)) {
+                  m <- gsub("MPAs", "mpa", m)
                 }
+                if (grepl("fish_weight", m)) {
+                  m <- gsub("fish_weight", "fw", m)
+                }
+                if (grepl("fish_length", m)) {
+                  m <- gsub("fish_length", "fl", m)
+                }
+                if (grepl("zooplankton", m)) {
+                  m <- gsub("zooplankton", "zoo", m)
+                }
+                if (grepl("haddock_biomass", m)) {
+                  m <- gsub("haddock_biomass", "hb", m)
+                }
+                if (grepl("df=all_haddock", m)) {
+                  m <- gsub("df=all_haddock","df=ah", m)
+                }
+                if (grepl("df=nitrate", m)) {
+                  m <- gsub("df=nitrate","df=nn", m)
+                }
+                if (grepl("df=salinity", m)) {
+                  m <- gsub("df=salinity","df=ss", m)
+                }
+                if (grepl("df=chlorophyll", m)) {
+                  m <- gsub("df=chlorophyll","df=cc", m)
+                }
+                if (grepl("df=bloom_df", m)) {
+                  m <- gsub("df=bloom_df","df=bd", m)
+                }
+                if (grepl("df=temperature", m)) {
+                  m <- gsub("df=temperature","df=tt", m)
+                }
+                if (grepl("df=surface_height", m)) {
+                  m <- gsub("df=sh","df=surface_height", m)
+                }
+
+                if (grepl("df=whale_biodiversity", m)) {
+                  m <- gsub("df=ws","df=whale_biodiversity", m)
+                }
+
                 if (grepl("df=zooplankton", m)) {
                   m <- gsub("df=zooplankton","df=zoo", m)
                 }
@@ -537,9 +591,111 @@ list(
 
  ),
 
-
-
-
+ # tar_target(name = indicatorPlotData, #JAIM
+ #            {
+ #              # This is to avoid determiniing what is in a projected area and what isn't
+ #
+ #              # BANDAID FIX (ISSUE 54 APP)
+ #              mpa <- eval(MPAs)
+ #              fw <- eval(fish_weight)
+ #              fl <- eval(fish_length)
+ #              zoo <- eval(zooplankton)
+ #              hb <- eval(haddock_biomass)
+ #              ah <- eval(all_haddock)
+ #              nn <- eval(nitrate)
+ #              ss <- eval(salinity)
+ #              cc <- eval(chlorophyll)
+ #              bd <- eval(bloom_df)
+ #              tt <- eval(temperature)
+ #              ws <- eval(whale_biodiversity)
+ #              sh <- eval(surface_height)
+ #
+ #              maps <- indicator_to_plot$plot[which(!(indicator_to_plot$plot == 0))]
+ #
+ #              map <- NULL
+ #              for (i in seq_along(maps)) {
+ #                message(i)
+ #                m <- maps[i]
+ #                if (grepl("MPAs", m)) {
+ #                  m <- gsub("MPAs", "mpa", m)
+ #                }
+ #
+ #
+ #                if (grepl("MPAs", m)) {
+ #                  m <- gsub("MPAs", "mpa", m)
+ #                }
+ #                if (grepl("fish_weight", m)) {
+ #                  m <- gsub("fish_weight", "fw", m)
+ #                }
+ #                if (grepl("fish_length", m)) {
+ #                  m <- gsub("fish_length", "fl", m)
+ #                }
+ #                if (grepl("zooplankton", m)) {
+ #                  m <- gsub("zooplankton", "zoo", m)
+ #                }
+ #                if (grepl("haddock_biomass", m)) {
+ #                  m <- gsub("haddock_biomass", "hb", m)
+ #                }
+ #                if (grepl("df=all_haddock", m)) {
+ #                  m <- gsub("df=all_haddock","df=ah", m)
+ #                }
+ #                if (grepl("df=nitrate", m)) {
+ #                  m <- gsub("df=nitrate","df=nn", m)
+ #                }
+ #                if (grepl("df=salinity", m)) {
+ #                  m <- gsub("df=salinity","df=ss", m)
+ #                }
+ #                if (grepl("df=chlorophyll", m)) {
+ #                  m <- gsub("df=chlorophyll","df=cc", m)
+ #                }
+ #                if (grepl("df=bloom_df", m)) {
+ #                  m <- gsub("df=bloom_df","df=bd", m)
+ #                }
+ #                if (grepl("df=temperature", m)) {
+ #                  m <- gsub("df=temperature","df=tt", m)
+ #                }
+ #                if (grepl("df=surface_height", m)) {
+ #                  m <- gsub("df=sh","df=surface_height", m)
+ #                }
+ #
+ #                if (grepl("df=whale_biodiversity", m)) {
+ #                  m <- gsub("df=ws","df=whale_biodiversity", m)
+ #                }
+ #
+ #                if (grepl("df=zooplankton", m)) {
+ #                  m <- gsub("df=zooplankton","df=zoo", m)
+ #                }
+ #                if (grepl("df=all_haddock", m)) {
+ #                  m <- gsub("df=all_haddock","df=ah", m)
+ #                }
+ #                if (grepl("df=bloom_df", m)) {
+ #                  m <- gsub("df=bloom_df","df=bd", m)
+ #                }
+ #                if (grepl("df=surface_height", m)) {
+ #                  m <- gsub("df=sh","df=surface_height", m)
+ #                }
+ #
+ #                if (grepl("df=whale_biodiversity", m)) {
+ #                  m <- gsub("df=ws","df=whale_biodiversity", m)
+ #                }
+ #
+ #
+ #                if (!(grepl("dataframe=TRUE", m))) {
+ #                  m <- substr(m, 1, nchar(m) - 1)
+ #                  m<- paste0(m, ", dataframe=TRUE)")
+ #                  m <- gsub("dataframe=FALSE", "", m)
+ #                }
+ #
+ #                map[[i]] <- eval(parse(text=m))
+ #              }
+ #              names(map) <- maps
+ #
+ #              map
+ #
+ #
+ #
+ #
+ #            }),
 
  ####### FLOWER PLOT ######
 
@@ -670,8 +826,10 @@ list(
                              bin_productivity_StructureandFunction_df,
                              bin_productivity_ThreatstoProductivity_df)),
 
- tar_target(gsdet,
+ tar_target(fish_length,
             command = {
+              get_data('rv', data.dir = "C:/Users/HarbinJ/Documents/data/rv")
+
               GSDET$latitude <- 0
               GSDET$longitude <- 0
               GSDET$year <- 0
@@ -684,10 +842,35 @@ list(
                 GSDET$year[which(GSDET$MISSION == missions[i])]  <- unique(as.numeric(substr(GSINF$SDATE[which(GSINF$MISSION == missions[i])],1,4)))
               }
               GSDET$type <- "RV Survey"
+              names(GSDET)[which(names(GSDET) == "FLEN")] <- "fish_length"
+              GS <- GSDET[,c("longitude", "latitude", "year", "fish_length", "type")]
+              GS$units <- "cm"
+              GS
+            }
 
-              GDD <- GSDET
-              GDD
+ ),
 
+ tar_target(fish_weight,
+            command = {
+              get_data('rv', data.dir = "C:/Users/HarbinJ/Documents/data/rv")
+
+              GSDET$latitude <- 0
+              GSDET$longitude <- 0
+              GSDET$year <- 0
+              missions <- unique(GSDET$MISSION)
+
+              GSINF <-GSINF[-which(is.na(GSINF$SDATE)),]
+              for (i in seq_along(missions)) {
+                GSDET$latitude[which(GSDET$MISSION == missions[i])] <- GSINF$LATITUDE[which(GSINF$MISSION == missions[i])][1]
+                GSDET$longitude[which(GSDET$MISSION == missions[i])]  <- GSINF$LONGITUDE[which(GSINF$MISSION == missions[i])][1]
+                GSDET$year[which(GSDET$MISSION == missions[i])]  <- unique(as.numeric(substr(GSINF$SDATE[which(GSINF$MISSION == missions[i])],1,4)))
+              }
+              GSDET$type <- "RV Survey"
+              names(GSDET)[which(names(GSDET) == "FWT")] <- "fish_weight"
+
+              GS <- GSDET[,c("longitude", "latitude", "year", "fish_weight", "type")]
+              GS$units <- "g"
+              GS
             }
 
  ),
@@ -703,7 +886,36 @@ list(
               names(ah)[which(names(ah) == "LATITUDE")] <- "latitude"
               names(ah)[which(names(ah) == "LONGITUDE")] <- "longitude"
               names(ah)[which(names(ah) == "SDATE")] <- "date"
-              ah
+              names(ah)[which(names(ah) == "TOTNO")] <- "haddock_abundance"
+              ah$type <- "RV"
+              ah$units <- "(counts)"
+              names(ah)[which(names(ah) == "TOTWGT")] <- "haddock_biomass"
+              ah$year <- as.numeric(format(ah$date, "%Y"))
+
+              AH <- ah[,c("longitude", "latitude","year", "haddock_abundance", "type", "units"),]
+
+              AH
+            }),
+
+ tar_target(haddock_biomass,
+            command={
+              get_data('rv', data.dir = "C:/Users/HarbinJ/Documents/data/rv")
+
+              # All haddock
+              GSSPECIES = GSSPECIES[GSSPECIES$CODE %in% c(11),]
+              Mar.datawrangling::self_filter(keep_nullsets = F)
+              ah = Mar.datawrangling::summarize_catches()
+              names(ah)[which(names(ah) == "LATITUDE")] <- "latitude"
+              names(ah)[which(names(ah) == "LONGITUDE")] <- "longitude"
+              names(ah)[which(names(ah) == "SDATE")] <- "date"
+              names(ah)[which(names(ah) == "TOTNO")] <- "haddock_abundance"
+              ah$type <- "RV"
+              ah$units <- "(counts)"
+              names(ah)[which(names(ah) == "TOTWGT")] <- "haddock_biomass"
+              ah$year <- as.numeric(format(ah$date, "%Y"))
+              AH <- ah[,c("longitude", "latitude","year", "haddock_biomass", "type"),]
+              AH$units <- "kg"
+              AH
             }),
 
  tar_target(zooplankton,
@@ -724,7 +936,11 @@ list(
               }
 
               df$type <- "Zooplankton AZMP"
-              df
+              df$Calanus_finmarchicus_biomass <- df$Calanus_finmarchicus_log10
+
+              DF <- df[c("latitude", "longitude", "type", "Calanus_finmarchicus_biomass", "year")]
+              DF$units <- "log_10"
+              DF
 
             }),
 
@@ -746,9 +962,60 @@ list(
 
               df$latitude[which(df$station == "North Sydney")] <- 46.2051
               df$longitude[which(df$station == "North Sydney")] <- 60.2563
+              df$units <- "m"
+              df$type <- "derived (AZMP)"
+              df <- df[,c("latitude", "longitude", "year", "units", "type", "sea_surface_height")]
               df
-
             }),
+
+ tar_target(nitrate,
+            command={
+              df <- azmpdata::Discrete_Occupations_Sections
+              df$year <- as.numeric(format(df$date, "%Y"))
+              df$type <- "AZMP"
+
+              DF <- df[,c("latitude", "longitude", "year", "nitrate", "type", "depth")]
+              DF$units <- "mmol/m3"
+              DF
+            }),
+
+ tar_target(salinity,
+            command={
+              df <- azmpdata::Discrete_Occupations_Sections
+              df$year <- as.numeric(format(df$date, "%Y"))
+              df$type <- "AZMP"
+
+              DF <- df[,c("latitude", "longitude", "year", "salinity", "type", "depth")]
+              DF$units <- "psu"
+              DF
+            }),
+
+ tar_target(temperature,
+            command={
+              df <- azmpdata::Discrete_Occupations_Sections
+              df$year <- as.numeric(format(df$date, "%Y"))
+              df$type <- "AZMP"
+
+              DF <- df[,c("latitude", "longitude", "year", "temperature", "type", "depth")]
+              DF$units <- "C"
+              DF
+            }),
+
+ tar_target(chlorophyll,
+            command={
+              df <- azmpdata::Discrete_Occupations_Sections
+              df$year <- as.numeric(format(df$date, "%Y"))
+              df$type <- "In situ AZMP"
+
+              DF <- df[,c("latitude", "longitude", "year", "chlorophyll", "type", "depth")]
+              DF$units <- "ug/L"
+              DF
+            }),
+
+
+
+
+
 
 
 
@@ -787,14 +1054,20 @@ list(
               coords <- matrix(c(DF$lon, DF$lat), ncol = 2, byrow = FALSE)
               coords <- rbind(coords, coords[1,])
               polygon_sf <- st_sfc(st_polygon(list(coords)))
+              st_crs(polygon_sf) <- 4326
 
 
               df <- azmpdata::RemoteSensing_Annual_Broadscale
               df <- df[which(df$area == "CSS_remote_sensing"),]
               df$geom <- rep(polygon_sf)
-              df
+
+              DF <- df[,c("area", "year", "bloom_amplitude", "geom"),]
+              DF$type <- "Remote Sensing"
+              DF$units <- "(unit unknown)"
+              DF
             }
             ),
+
 
  ##### Pillar #####
 
@@ -949,7 +1222,6 @@ list(
               df
 
             })
-
 
 
 ) |>

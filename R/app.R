@@ -224,7 +224,7 @@ a F is assigned."),
   # Check if the static HTML file exists
   observe({
     req(input$mpas)
-    static_file_path <- paste0(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports"), "/", NAME_to_tag(names=input$mpas), ".html") #KYLO
+    static_file_path <- paste0(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports"), "/", NAME_to_tag(names=input$mpas), ".html")
     if (file.exists(static_file_path)) {
       # Show a link to the existing file
       output$report_button_ui <- renderUI({
@@ -345,7 +345,7 @@ a F is assigned."),
         textO <- Objectives[[keepO]]
         links <- lapply(seq_along(textO), function(i) {
           shiny::tags$div(
-            shiny::actionLink(inputId = odf$link[which(paste0(gsub("\n", "", odf$objectives), "\n") == textO[[i]])],
+            shiny::actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])],
                               label = textO[[i]]),
             shiny::tags$br(), # Add a line break after each link
             shiny::tags$br()   # Add second line break
@@ -586,10 +586,10 @@ a F is assigned."),
   })
 
   output$DT <- DT::renderDT({
-    #browser()
     req(input$tabs)
     info <- calculated_info()
     req(info)  # Ensure the info is available
+    #browser()
     if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
     #indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
     indj <- strsplit(as.character(info$ind_links), "<a href=")[[1]]
@@ -604,21 +604,18 @@ a F is assigned."),
 
     indicator_to_plot$indicators <- gsub("\r\n", "", indicator_to_plot$indicators)
     INDY <- gsub("\r", "", INDY)
-
-    # END TEST
-
     indicatorStatus <- indicator_to_plot$status[which(indicator_to_plot$indicators %in% INDY)]
     indicatorTrend <- indicator_to_plot$trend[which(indicator_to_plot$indicators %in% INDY)]
     indicatorGrade <- indicator_to_plot$status_grade[which(indicator_to_plot$indicators %in% INDY)]
     indicatorProject <- indicator_to_plot$project[which(indicator_to_plot$indicators %in% INDY)]
 
     } else {
-      indj <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
+      indj <- gsub("^(\\dbr+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
       ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", indicator_to_plot$indicators)))) == indj)
 
       indicatorStatus <- indicator_to_plot$status[ki]
       indicatorTrend <- indicator_to_plot$trend[ki]
-      indicatorGrade <- as.vector(calc_letter_grade(df_unique$ind_status[ki]))
+      indicatorGrade <- indicator_to_plot$status_grade[ki]
 
       indicatorGrade <- indicator_to_plot$status_grade[ki]
       indicatorProject <- indicator_to_plot$project[ki]
@@ -759,14 +756,15 @@ a F is assigned."),
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
     if (!(length(currentInd) == 0)) {
-      indy <- odf$objectives[which(odf$objectives == currentInd)]
+      #browser()
+      indy <- currentInd
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
       }
       plot <- indicator_to_plot$plot[which(indicator_to_plot$indicators == indy)]
 
       if (indicator_to_plot$type[which(indicator_to_plot$indicators == currentInd)] == "plot") {
-
+        if (!(indicator_to_plot$plot[which(indicator_to_plot$indicators == currentInd)] == 0)) {
         if (grepl("dataframe=TRUE", plot)) {
           plot <- gsub("dataframe=TRUE", "dataframe=FALSE", plot)
         } else if (!(grepl("dataframe", plot))) {
@@ -774,19 +772,25 @@ a F is assigned."),
         }
         eval(parse(text = plot))
       }
+      }
     }
   })
 
 
-  output$indicatorMap <- leaflet::renderLeaflet({ #jaim
+  output$indicatorMap <- leaflet::renderLeaflet({
     req(input$tabs)
+    #browser()
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
     if (!(length(currentInd) == 0)) {
-      indy <- odf$objectives[which(odf$objectives == currentInd)]
+      indy <- currentInd
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
       }
       plot <- indicator_to_plot$plot[which(indicator_to_plot$indicators == indy)]
+
+      if (!(plot %in% names(mapData))) {
+        return(NULL)
+      }
       mapk <- mapData[[which(names(mapData) == plot)]]
 
       map <- leaflet() %>%
