@@ -1034,7 +1034,7 @@ a F is assigned."),
 
         if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
           map <- map %>% leaflet::addPolygons(
-            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms
+            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms, fillColor=ifelse(input$mpas == MPAs$NAME_E[19], "#FFFFBF", "gray"),fillOpacity = 0.5, weight = 2, color="black"
           )
 
         } else if (state$mpas == "All") {
