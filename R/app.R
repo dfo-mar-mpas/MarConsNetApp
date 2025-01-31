@@ -48,10 +48,6 @@ ui <- shiny::fluidPage(
       }
     "))),
   shiny::titlePanel("Maritimes Conservation Network App"),
-  # shiny::fluidRow(
-  #   shiny::column(2, shiny::uiOutput("contextButton")),
-  #   shiny::column(2, shiny::uiOutput("filter_button_ui"))
-  # ),
   shiny::uiOutput("gohome"),
   #Makes the tabs hide
   shiny::tags$style(shiny::HTML("
@@ -76,8 +72,9 @@ ui <- shiny::fluidPage(
         uiOutput("report_button_ui")),
       # Space to display the generated report
       uiOutput("report_ui"),
+      br(),
       tags$hr(style = "border-top: 2px solid #000; margin-top: 10px; margin-bottom: 10px;"),
-      br(), br(),
+      br(),
       shiny::uiOutput("networkObjectiveText")
     ),
     shiny::mainPanel(
@@ -91,14 +88,9 @@ ui <- shiny::fluidPage(
                                     br(),
                                     shiny::uiOutput("siteObjectiveText"),
                                     shiny::uiOutput("objectives")),
-                             #shiny::plotOutput("flowerPlot",click="flower_click")),
                       shiny::column(width=6, align="right",
                                     br(),
-                                    shiny::plotOutput("flowerPlot",click="flower_click")),
-
-                                    #shiny::uiOutput("networkObjectiveText"),
-                                    #shiny::uiOutput("siteObjectiveText"),
-                                    #shiny::uiOutput("objectives"))
+                                    shiny::plotOutput("flowerPlot",click="flower_click"))
                       ),
 
     ) #MAIN
