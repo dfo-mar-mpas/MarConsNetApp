@@ -48,10 +48,10 @@ ui <- shiny::fluidPage(
       }
     "))),
   shiny::titlePanel("Maritimes Conservation Network App"),
-  shiny::fluidRow(
-    shiny::column(2, shiny::uiOutput("contextButton")),
-    shiny::column(2, shiny::uiOutput("filter_button_ui"))
-  ),
+  # shiny::fluidRow(
+  #   shiny::column(2, shiny::uiOutput("contextButton")),
+  #   shiny::column(2, shiny::uiOutput("filter_button_ui"))
+  # ),
   shiny::uiOutput("gohome"),
   #Makes the tabs hide
   shiny::tags$style(shiny::HTML("
@@ -59,7 +59,11 @@ ui <- shiny::fluidPage(
   ")),
   shiny::sidebarLayout(
     shiny::sidebarPanel(
-      shiny::actionButton(inputId="about", label="About the App"),
+      shiny::fluidRow(
+      shiny::column(2, actionButton(inputId="about", label="About the App")),
+      shiny::column(2, offset = 1, shiny::uiOutput("contextButton")),
+      shiny::column(2, shiny::uiOutput("filter_button_ui"))
+      ),
       br(), br(),
       shiny::uiOutput("legendUI"),
       br(),
@@ -72,7 +76,9 @@ ui <- shiny::fluidPage(
         uiOutput("report_button_ui")),
       # Space to display the generated report
       uiOutput("report_ui"),
-      tags$hr(style = "border-top: 2px solid #000; margin-top: 10px; margin-bottom: 10px;")
+      tags$hr(style = "border-top: 2px solid #000; margin-top: 10px; margin-bottom: 10px;"),
+      br(), br(),
+      shiny::uiOutput("networkObjectiveText")
     ),
     shiny::mainPanel(
       shiny::uiOutput("indicatorText"),
@@ -83,12 +89,17 @@ ui <- shiny::fluidPage(
       shiny::uiOutput("whaleDisclaimer"),
       shiny::fluidRow(shiny::column(width=6, align="left",
                                     br(),
-                             shiny::plotOutput("flowerPlot",click="flower_click")),
+                                    shiny::uiOutput("siteObjectiveText"),
+                                    shiny::uiOutput("objectives")),
+                             #shiny::plotOutput("flowerPlot",click="flower_click")),
                       shiny::column(width=6, align="right",
                                     br(),
-                                    shiny::uiOutput("networkObjectiveText"),
-                                    shiny::uiOutput("siteObjectiveText"),
-                                    shiny::uiOutput("objectives"))),
+                                    shiny::plotOutput("flowerPlot",click="flower_click")),
+
+                                    #shiny::uiOutput("networkObjectiveText"),
+                                    #shiny::uiOutput("siteObjectiveText"),
+                                    #shiny::uiOutput("objectives"))
+                      ),
 
     ) #MAIN
   )
