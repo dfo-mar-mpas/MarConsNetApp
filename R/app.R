@@ -60,17 +60,19 @@ ui <- shiny::fluidPage(
   shiny::sidebarLayout(
     shiny::sidebarPanel(
       shiny::actionButton(inputId="about", label="About the App"),
+      br(), br(),
       shiny::uiOutput("legendUI"),
+      br(),
       shiny::uiOutput("mpas"),
       shiny::uiOutput("projects"),
       shiny::uiOutput("projectFinancial"),
       # Conditional button to open the HTML file
       shiny::conditionalPanel(
         condition = "!(input.mpas === 'All') && input.tabs === 'tab_0'",
-        uiOutput("report_button_ui")
-      ),
+        uiOutput("report_button_ui")),
       # Space to display the generated report
-      uiOutput("report_ui")
+      uiOutput("report_ui"),
+      tags$hr(style = "border-top: 2px solid #000; margin-top: 10px; margin-bottom: 10px;")
     ),
     shiny::mainPanel(
       shiny::uiOutput("indicatorText"),
@@ -80,8 +82,10 @@ ui <- shiny::fluidPage(
       shiny::uiOutput("conditionalIndicatorMap"),
       shiny::uiOutput("whaleDisclaimer"),
       shiny::fluidRow(shiny::column(width=6, align="left",
+                                    br(),
                              shiny::plotOutput("flowerPlot",click="flower_click")),
                       shiny::column(width=6, align="right",
+                                    br(),
                                     shiny::uiOutput("networkObjectiveText"),
                                     shiny::uiOutput("siteObjectiveText"),
                                     shiny::uiOutput("objectives"))),
@@ -206,17 +210,6 @@ a F is assigned."),
 
     }
   })
-
-  # output$report <- shiny::renderUI({
-  #   req(input$tabs)
-  #   req(input$mpas)
-  #   if (input$tabs == "tab_0") {
-  #     if (!(state$mpas == "All")) { # This will change eventually with project reporting
-  #     shiny::actionButton("report", "Create Report")
-  #     }
-  #   }
-  # })
-
 
 
   shiny::addResourcePath("htmlfiles", file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports"))
