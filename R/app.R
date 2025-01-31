@@ -1041,7 +1041,7 @@ a F is assigned."),
           for (c in seq_along(subarea_coords)) {
             coord <- subarea_coords[[c]]
             map <- map %>%
-              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = "gray", fillOpacity = 0.5, weight = 2, color="black")
+              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = ifelse(names(subarea_coords)[c] == MPAs$NAME_E[19], "#FFFFBF", "gray"), fillOpacity = 0.5, weight = 2, color="black")
           }
         }
 
