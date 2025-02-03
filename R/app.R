@@ -29,6 +29,7 @@
 #' @importFrom dataSPA subsetSPA
 #' @importFrom stringr str_extract_all
 #' @importFrom magrittr %>%
+#' @importFrom dplyr arrange
 #'
 #' @export
 #' @examples
@@ -494,6 +495,7 @@ a F is assigned."),
           shiny::tags$a(
             href = paste0("#", tab_id),
             gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
+            style = "color: black; font-weight: bold;",
             onclick = sprintf(
               "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
               tab_id,
@@ -585,8 +587,8 @@ a F is assigned."),
     req(input$tabs)
     info <- calculated_info()
     req(info)  # Ensure the info is available
-    #browser()
     if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
+      #browser()
     #indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
     indj <- strsplit(as.character(info$ind_links), "<a href=")[[1]]
     indj <- indj[nzchar(indj)]
@@ -627,14 +629,24 @@ a F is assigned."),
       }
     }
 
+    indicatorTrend[which(grepl("BLANK", indicatorTrend))] <- NA
+    indicatorStatus[which(grepl("BLANK", indicatorStatus))] <- NA
+
+    Projects <- unlist(indicatorTitle)
+    Projects[which(grepl("project", Projects))] <- NA
+
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
       Trend = indicatorTrend,
-      Projects = unlist(indicatorTitle),
+      Projects = Projects,
       Grade=indicatorGrade,
       stringsAsFactors = FALSE
     )
+
+    dfdt <- dfdt %>%
+      arrange(is.na(indicatorStatus))
+
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
