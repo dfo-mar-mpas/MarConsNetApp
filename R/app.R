@@ -331,11 +331,11 @@ a F is assigned."),
     }
   })
 
-  output$objectives <- shiny::renderUI({
+  output$objectives <- shiny::renderUI({ #JAIM
     req(input$tabs)
 
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      # Process your logic as before
+      # Process site name logic
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
         if (grepl("Estuary", state$mpas)) {
@@ -351,23 +351,37 @@ a F is assigned."),
 
       # Find matching objectives
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
+
       if (!(length(keepO) == 0)) {
         textO <- Objectives_processed[[keepO]]
-        links <- lapply(seq_along(textO), function(i) {
+        #browser()
+        # Create UI elements for objectives with bar charts
+        objectiveDivs <- lapply(seq_along(textO), function(i) {
           shiny::tags$div(
-            shiny::actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])],
-                              label = textO[[i]]),
-            shiny::tags$br(), # Add a line break after each link
-            shiny::tags$br()   # Add second line break
+            style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
 
+            # Bar chart
+            shiny::tags$div(
+              plotOutput(paste0("site_bar", i), height = "100px", width = "400px"),
+              style = "position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.7;"
+            ),
+
+            # Action link for the objective
+            shiny::tags$div(
+              actionLink(
+                inputId = odf$link[which(odf$objectives == textO[[i]])],
+                label = textO[[i]]
+              ),
+              style = "position: absolute; top: 30px; left: 10px; z-index: 2; font-weight: bold; color: white;"
+            )
           )
         })
-        # Combine all the div elements and return
-        return(shiny::tagList(links))
+
+        # Display objectives directly without collapsing
+        return(shiny::tagList(objectiveDivs))
       }
     }
 
-    # Return NULL to avoid rendering anything
     return(NULL)
   })
 
@@ -1021,6 +1035,74 @@ a F is assigned."),
       }
     }
   })
+
+
+  shiny::observeEvent(input$mpas, { #JAIM
+    req(input$tabs)
+    req(input$mpas)
+    if (input$tabs == "tab_0" & !(state$mpas == "All")) {
+      #browser()
+      # Ensure filtered_odf is created inside this condition
+      string <- NAME_to_tag(names=input$mpas)
+      keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
+
+      S_Objectives <- Objectives[[keepO]]
+
+
+      filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
+
+      for (fo in seq_along(filtered_odfS$objectives)) {
+        local({
+          id <- fo
+          output[[paste0("site_bar", id)]] <- renderPlot({
+            # Ensure bar chart is rendered only when tab_0 is active
+            if (input$tabs == "tab_0") {
+              req(input$mpas %in% c("All", unique(pillar_ecol_df$area_name)))
+              # Ensure ymax is properly filtered and has a single value
+              if (state$mpas == "All") {
+                c1 <- 1:length(pillar_ecol_df$area_name)
+              } else {
+                c1 <- which(pillar_ecol_df$area_name == state$mpas)
+              }
+              c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
+              KEEP <- intersect(c1,c2)
+              ymax <- pillar_ecol_df$ind_status[KEEP]
+
+              # Handling empty or multiple ymax cases
+              if (length(ymax) == 0) {
+                # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
+                c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
+                KEEP <- intersect(c1,c2)
+                ymax <- pillar_ecol_df$ind_status[KEEP]
+
+              }
+              ymax <- ymax[-which(ymax == 0)]
+              ymax <- weighted.mean(ymax, na.rm=TRUE)
+              # Create data frame for plotting
+              data <- data.frame(
+                x = paste0("Objective ", id),
+                y = ymax
+              )
+              clc <- as.character(calc_letter_grade(data$y))
+              finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+              print(finalCol)
+
+              if (!(length(finalCol) == 0)) {
+
+                ggplot2::ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
+                  ggplot2::geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
+                  ggplot2::ylim(0, 100) +
+                  ggplot2::theme_void() +
+                  ggplot2::coord_flip()+
+                  ggplot2::guides(fill = "none")
+              }
+            }
+          })
+        })
+      }
+    }
+  })
+
 
 
   output$gohome <- shiny::renderUI({
