@@ -40,6 +40,12 @@
 # Define UI
 
 app <- function() {
+  if(dir.exists(Sys.getenv("OneDriveCommercial"))){
+    onedrive <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets")
+  } else {
+    onedrive <- "MarConsNetTargets"
+  }
+
 ui <- shiny::fluidPage(
   shinyjs::useShinyjs(),
   shiny::tags$head(
@@ -223,12 +229,12 @@ a F is assigned."),
   })
 
 
-  shiny::addResourcePath("htmlfiles", file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports"))
+  shiny::addResourcePath("htmlfiles", file.path(onedrive,"data", "reports"))
 
   # Check if the static HTML file exists
   observe({
     req(input$mpas)
-    static_file_path <- paste0(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports"), "/", NAME_to_tag(names=input$mpas), ".html")
+    static_file_path <- paste0(file.path(onedrive,"data", "reports"), "/", NAME_to_tag(names=input$mpas), ".html")
     if (file.exists(static_file_path)) {
       # Show a link to the existing file
       output$report_button_ui <- renderUI({
@@ -258,7 +264,7 @@ a F is assigned."),
           mpas = input$mpas,
           coords = subarea_coords[which(names(subarea_coords) == input$mpas)]
         )
-        output_dir <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports")
+        output_dir <- file.path(onedrive,"data", "reports")
         output_file <- file.path(paste0(output_dir,"/", NAME_to_tag(names=input$mpas), ".html"))
         render(rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
         output$report_ui <- renderUI({
