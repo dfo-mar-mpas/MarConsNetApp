@@ -44,6 +44,9 @@ app <- function() {
     onedrive <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets")
   } else {
     onedrive <- "MarConsNetTargets"
+    if(!exists("APPTABS")){
+      tar_load_everything(store = "/srv/shiny-server/WEBMR/MarConsNetTargets/app_targets")
+    }
   }
 
 ui <- shiny::fluidPage(
