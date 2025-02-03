@@ -266,7 +266,7 @@ list(
 
   tar_target(name = fp,
              command = {
-               read.csv("../MarConsNetAnalysis/sandbox/JH/02_meta_names/metaframework.csv") #FIXME
+               read_excel(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data","metaframework.xlsx"))
              }),
 
   tar_target(name = grades,
