@@ -29,6 +29,7 @@
 #' @importFrom dataSPA subsetSPA
 #' @importFrom stringr str_extract_all
 #' @importFrom magrittr %>%
+#' @importFrom dplyr arrange
 #'
 #' @export
 #' @examples
@@ -134,8 +135,15 @@ server <- function(input, output, session) {
   })
 
   output$legendUI <- renderUI({
+    req(input$mpas)
+    req(input$tabs)
     # Generate legend items
-    legendItems <- lapply(names(flowerPalette), function(name) {
+    if (input$tabs == "tab_0") {
+      PALETTE <- flowerPalette
+    } else {
+      PALETTE <- indicatorFlower
+    }
+    legendItems <- lapply(names(PALETTE), function(name) {
       div(
         style = paste0(
           "display: flex; align-items: center; margin-right: 20px;"
@@ -143,7 +151,7 @@ server <- function(input, output, session) {
         div(
           style = paste0(
             "width: 20px; height: 20px; background-color: ",
-            flowerPalette[name],
+            PALETTE[name],
             "; margin-right: 5px; border: 1px solid black;"
           )
         ),
@@ -494,6 +502,7 @@ a F is assigned."),
           shiny::tags$a(
             href = paste0("#", tab_id),
             gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
+            style = "color: black; font-weight: bold;",
             onclick = sprintf(
               "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
               tab_id,
@@ -585,7 +594,6 @@ a F is assigned."),
     req(input$tabs)
     info <- calculated_info()
     req(info)  # Ensure the info is available
-    #browser()
     if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
     #indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
     indj <- strsplit(as.character(info$ind_links), "<a href=")[[1]]
@@ -627,14 +635,28 @@ a F is assigned."),
       }
     }
 
+    indicatorTrend[which(grepl("BLANK", indicatorTrend))] <- NA
+    indicatorStatus[which(grepl("BLANK", indicatorStatus))] <- NA
+
+    Projects <- unlist(indicatorTitle)
+    Projects[which(grepl("project", Projects))] <- NA
+
+    indicatorGrade[which(indicatorGrade == "A")] <- 100
+    indicatorGrade[which(indicatorGrade == "C")] <- 50
+    indicatorGrade[which(indicatorGrade == "F")] <- 0
+
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
       Trend = indicatorTrend,
-      Projects = unlist(indicatorTitle),
+      Projects = Projects,
       Grade=indicatorGrade,
       stringsAsFactors = FALSE
     )
+
+    dfdt <- dfdt %>%
+      arrange(is.na(indicatorStatus))
+
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
@@ -648,8 +670,8 @@ a F is assigned."),
             columns = colnames(dfdt), # Apply styling to all columns in each row
             target = 'row',            # Target the entire row
             backgroundColor = styleEqual(
-              names(flowerPalette),    # Map based on Grade values
-              flowerPalette[names(flowerPalette)] # Apply corresponding colors from the flowerPalette
+              names(indicatorFlower),    # Map based on Grade values
+              indicatorFlower[names(indicatorFlower)] # Apply corresponding colors from the flowerPalette
             )
           )
 
@@ -752,7 +774,6 @@ a F is assigned."),
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
     if (!(length(currentInd) == 0)) {
-      #browser()
       indy <- currentInd
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
@@ -775,7 +796,6 @@ a F is assigned."),
 
   output$indicatorMap <- leaflet::renderLeaflet({
     req(input$tabs)
-    #browser()
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
     if (!(length(currentInd) == 0)) {
       indy <- currentInd
@@ -1034,14 +1054,14 @@ a F is assigned."),
 
         if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
           map <- map %>% leaflet::addPolygons(
-            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms
+            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms, fillColor=ifelse(input$mpas == MPAs$NAME_E[19], "#FFFFBF", "gray"),fillOpacity = 0.5, weight = 2, color="black"
           )
 
         } else if (state$mpas == "All") {
           for (c in seq_along(subarea_coords)) {
             coord <- subarea_coords[[c]]
             map <- map %>%
-              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = "gray", fillOpacity = 0.5, weight = 2, color="black")
+              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = ifelse(names(subarea_coords)[c] == MPAs$NAME_E[19], "#FFFFBF", "gray"), fillOpacity = 0.5, weight = 2, color="black")
           }
         }
 
