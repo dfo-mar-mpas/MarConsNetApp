@@ -650,7 +650,7 @@ a F is assigned."),
       Status = indicatorStatus,
       Trend = indicatorTrend,
       Projects = Projects,
-      Grade=indicatorGrade,
+      Score=indicatorGrade,
       stringsAsFactors = FALSE
     )
 
