@@ -352,7 +352,7 @@ a F is assigned."),
       # Find matching objectives
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
       if (!(length(keepO) == 0)) {
-        textO <- Objectives[[keepO]]
+        textO <- Objectives_processed[[keepO]]
         links <- lapply(seq_along(textO), function(i) {
           shiny::tags$div(
             shiny::actionLink(inputId = odf$link[which(odf$objectives == textO[[i]])],

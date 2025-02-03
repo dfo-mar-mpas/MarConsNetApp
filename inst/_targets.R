@@ -146,7 +146,7 @@ list(
                lapply(areas, function(x) data_objectives(type="site", area=x))
                }),
 
-  tar_target(name = Objectives,
+  tar_target(name = Objectives_processed,
              command = {
                OBJECTIVES <- vector(mode="list", length(objectives))
                for (i in seq_along(OBJECTIVES)) {
@@ -304,7 +304,7 @@ list(
   tar_target(name = odf,
              command = {
                O <- data.frame(
-                 objectives = c(0, unlist(Objectives, use.names = FALSE), N_Objectives)
+                 objectives = c(0, unlist(Objectives_processed, use.names = FALSE), N_Objectives)
                )
                O$flower_plot <- 0
                O$area <- 0
