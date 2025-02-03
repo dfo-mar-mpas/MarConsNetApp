@@ -282,6 +282,16 @@ list(
                palette
                }),
 
+  tar_target(name=indicatorFlower,
+             command = {
+               grades <- c(100, 50, 0)
+               palette <- c("#2C7BB6", "#FFFFBF","#D7191C")
+               names(palette) <- grades
+               palette
+
+             }
+             ),
+
   tar_target(name = binned_indicators,
              command = {
                bi <- read_excel(system.file("data", "indicator_binning.xlsx", package = "MarConsNetAnalysis"))

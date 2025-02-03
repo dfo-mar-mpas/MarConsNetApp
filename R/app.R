@@ -135,8 +135,15 @@ server <- function(input, output, session) {
   })
 
   output$legendUI <- renderUI({
+    req(input$mpas)
+    req(input$tabs)
     # Generate legend items
-    legendItems <- lapply(names(flowerPalette), function(name) {
+    if (input$tabs == "tab_0") {
+      PALETTE <- flowerPalette
+    } else {
+      PALETTE <- indicatorFlower
+    }
+    legendItems <- lapply(names(PALETTE), function(name) {
       div(
         style = paste0(
           "display: flex; align-items: center; margin-right: 20px;"
@@ -144,7 +151,7 @@ server <- function(input, output, session) {
         div(
           style = paste0(
             "width: 20px; height: 20px; background-color: ",
-            flowerPalette[name],
+            PALETTE[name],
             "; margin-right: 5px; border: 1px solid black;"
           )
         ),
@@ -588,7 +595,6 @@ a F is assigned."),
     info <- calculated_info()
     req(info)  # Ensure the info is available
     if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
-      #browser()
     #indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
     indj <- strsplit(as.character(info$ind_links), "<a href=")[[1]]
     indj <- indj[nzchar(indj)]
@@ -635,6 +641,10 @@ a F is assigned."),
     Projects <- unlist(indicatorTitle)
     Projects[which(grepl("project", Projects))] <- NA
 
+    indicatorGrade[which(indicatorGrade == "A")] <- 100
+    indicatorGrade[which(indicatorGrade == "C")] <- 50
+    indicatorGrade[which(indicatorGrade == "F")] <- 0
+
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
@@ -660,8 +670,8 @@ a F is assigned."),
             columns = colnames(dfdt), # Apply styling to all columns in each row
             target = 'row',            # Target the entire row
             backgroundColor = styleEqual(
-              names(flowerPalette),    # Map based on Grade values
-              flowerPalette[names(flowerPalette)] # Apply corresponding colors from the flowerPalette
+              names(indicatorFlower),    # Map based on Grade values
+              indicatorFlower[names(indicatorFlower)] # Apply corresponding colors from the flowerPalette
             )
           )
 
@@ -764,7 +774,6 @@ a F is assigned."),
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
     if (!(length(currentInd) == 0)) {
-      #browser()
       indy <- currentInd
       if (length(indy) == 0) {
         indy <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
@@ -787,7 +796,6 @@ a F is assigned."),
 
   output$indicatorMap <- leaflet::renderLeaflet({
     req(input$tabs)
-    #browser()
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
     if (!(length(currentInd) == 0)) {
       indy <- currentInd
