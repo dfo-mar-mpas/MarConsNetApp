@@ -1235,8 +1235,16 @@ list(
 
  tar_target(name = upload_all_data_to_shiny,
             command = {
-              system(paste0('scp -r -i C:/Users/DaigleR/.ssh/id_rsa -P 22018 "C:/Users/DaigleR/OneDrive - DFO-MPO/MarConsNetTargets/app_targets/" rdaigle@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
-              system(paste0('scp -r -i C:/Users/DaigleR/.ssh/id_rsa -P 22018 "C:/Users/DaigleR/OneDrive - DFO-MPO/MarConsNetTargets/data/" rdaigle@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
+              system(paste0('scp -r -i ',
+                            file.path(Sys.getenv("USERPROFILE"),'.ssh','id_rsa'),
+                            ' -P 22018 "',
+              file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','app_targets'),
+              '" rdaigle@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
+              system(paste0('scp -r -i ',
+                            file.path(Sys.getenv("USERPROFILE"),'.ssh','id_rsa'),
+                            ' -P 22018 "',
+                            file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data'),
+                            '" rdaigle@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
 
               TRUE
             },
