@@ -174,8 +174,6 @@ server <- function(input, output, session) {
     )
   })
 
-
-
   observeEvent(input$about, {
     req(input$about)
     showModal(modalDialog(
@@ -233,7 +231,6 @@ a F is assigned."),
 
 
   shiny::addResourcePath("htmlfiles", file.path(onedrive,"data", "reports"))
-
   # Check if the static HTML file exists
   observe({
     req(input$mpas)
@@ -278,38 +275,6 @@ a F is assigned."),
       }
     }
   })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   output$siteObjectiveText <- shiny::renderUI({
     req(input$tabs)
@@ -656,7 +621,6 @@ a F is assigned."),
         indicatorTitle[[i]] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", indicatorProject[i])
       }
     }
-
     indicatorTrend[which(grepl("BLANK", indicatorTrend))] <- NA
     indicatorStatus[which(grepl("BLANK", indicatorStatus))] <- NA
 
@@ -755,13 +719,9 @@ a F is assigned."),
     }
 
   })
-
-
   output$whaleDisclaimer <- shiny::renderUI({
     req(input$tabs)
-
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
-
     if (length(currentInd) > 0 && currentInd == "presence of species that \"use\" productivity, e.g. whales") {
       # Show the modal dialog with a Close button
       shiny::showModal(
@@ -785,12 +745,6 @@ a F is assigned."),
     }
     NULL
   })
-
-
-
-
-
-
 
   output$indicatorPlot <- shiny::renderPlot({
     req(input$tabs)
@@ -850,7 +804,6 @@ a F is assigned."),
       }
   })
 
-
   output$indicatorLeaflet <- leaflet::renderLeaflet({
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
@@ -867,8 +820,6 @@ a F is assigned."),
     }
 
   })
-
-
 
   output$flowerPlot <- shiny::renderPlot({
     req(input$mpas)
@@ -907,9 +858,6 @@ a F is assigned."),
     req(input$tabs)
     xscale <- 0.5
     yscale <- 205/2
-
-
-    # FURTHER EXPLORE SCALE
 
     x <- (input$flower_click$x-xscale)/xscale
     y <- (input$flower_click$y+50-yscale)/yscale
@@ -1039,7 +987,6 @@ a F is assigned."),
     }
   })
 
-
   shiny::observeEvent(input$mpas, {
     req(input$tabs)
     req(input$mpas)
@@ -1108,8 +1055,6 @@ a F is assigned."),
     }
   })
 
-
-
   output$gohome <- shiny::renderUI({
     req(input$tabs)
     req(state$mpas)
@@ -1158,9 +1103,7 @@ a F is assigned."),
           }
         }
 
-
         if (!(is.null(input$projects))) {
-          #COMMENT
           projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
 
           projectPackages <- dataTable$package[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
@@ -1209,7 +1152,6 @@ a F is assigned."),
               longitude <- unique_coords$longitude
             }
 
-
             if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) { # We want it filtered
               m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
               coords <- cbind(longitude, latitude)
@@ -1219,7 +1161,6 @@ a F is assigned."),
               longitude <- sf::st_coordinates(within_points)[, 1]
               latitude <- sf::st_coordinates(within_points)[, 2]
             }
-
 
             LAT[[i]] <- latitude
             LON[[i]] <- longitude
@@ -1247,8 +1188,6 @@ a F is assigned."),
               shiny::showNotification("Not all of the selected projects exist in this area. Unfilter the data to see where this project takes place.", duration = 5)
             }
           }
-          # END COMMENT
-
           map <- map %>%
             leaflet::addLegend(
               "bottomright",
@@ -1261,8 +1200,6 @@ a F is assigned."),
       }
     }
   })
-
-
 }
 
 # Run the application
