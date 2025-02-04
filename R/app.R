@@ -1078,7 +1078,7 @@ a F is assigned."),
                 c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
                 KEEP <- intersect(c1,c2)
                 ymax <- pillar_ecol_df$ind_status[KEEP]
-
+                weight <- pillar_ecol_df$weight[KEEP]
               }
               ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
               #ymax <- weighted.mean(ymax, na.rm=TRUE)

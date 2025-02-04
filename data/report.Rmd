@@ -9,10 +9,106 @@ output: html_document
 
 `r params$mpas`
 
-### Objectives
+```{r, echo=FALSE, comment=NA, results="asis"}
+cat("<div style='display: flex; gap: 10px;'>")
+for (name in names(flowerPalette)) {
+  color <- flowerPalette[name]
+  cat(sprintf("<div style='width: 50px; height: 20px; background-color: %s; text-align: center; 
+               color: black; border: 1px solid #000; line-height: 20px;'>%s</div>", 
+               color, name))
+}
+cat("</div>")
+```
+
+### Network Objectives
+```{r, echo=FALSE, comment=NA, results="asis"}
+string <- NAME_to_tag(names = input$mpas)
+keepO <- which(unlist(lapply(areas, function(x)
+  grepl(x, string, ignore.case = TRUE))))
+
+
+filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
+
+for (fo in seq_along(filtered_odf$objectives)) {
+  id <- fo
+  req(input$mpas %in% c("All", unique(pillar_ecol_df$area_name)))
+  if (state$mpas == "All") {
+    c1 <- 1:length(pillar_ecol_df$area_name)
+  } else {
+    c1 <- which(pillar_ecol_df$area_name == state$mpas)
+  }
+  c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
+  KEEP <- intersect(c1, c2)
+  ymax <- pillar_ecol_df$ind_status[KEEP]
+  weight <- pillar_ecol_df$weight[KEEP]
+  
+  # Handling empty or multiple ymax cases
+  if (length(ymax) == 0) {
+    # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
+    c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
+    KEEP <- intersect(c1, c2)
+    ymax <- pillar_ecol_df$ind_status[KEEP]
+    weight <- pillar_ecol_df$weight[KEEP]
+  }
+  ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
+  # Create data frame for plotting
+  data <- data.frame(x = paste0("Objective ", id), y = ymax)
+  clc <- as.character(calc_letter_grade(data$y))
+  finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+  if (length(finalCol) == 0) {
+    finalCol <- "black"
+  }
+cat(sprintf('<span style="color:%s; background-color:lightgray; padding:3px;"><b>%s</b></span><br>', finalCol, N_Objectives[fo]))
+}
+```
+
+### Site Objectives
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
-cat(Objectives[[which(tolower(areas) == tolower(NAME_to_tag(names=input$mpas)))]])
+string <- NAME_to_tag(names = input$mpas)
+keepO <- which(unlist(lapply(areas, function(x)
+  grepl(x, string, ignore.case = TRUE))))
+
+
+S_Objectives <- Objectives_processed[[keepO]]
+
+
+filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
+
+for (fo in seq_along(filtered_odfS$objectives)) {
+  id <- fo
+  req(input$mpas %in% c("All", unique(pillar_ecol_df$area_name)))
+  if (state$mpas == "All") {
+    c1 <- 1:length(pillar_ecol_df$area_name)
+  } else {
+    c1 <- which(pillar_ecol_df$area_name == state$mpas)
+  }
+  c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
+  KEEP <- intersect(c1, c2)
+  ymax <- pillar_ecol_df$ind_status[KEEP]
+  weight <- pillar_ecol_df$weight[KEEP]
+  
+  # Handling empty or multiple ymax cases
+  if (length(ymax) == 0) {
+    # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
+    c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
+    KEEP <- intersect(c1, c2)
+    ymax <- pillar_ecol_df$ind_status[KEEP]
+    weight <- pillar_ecol_df$weight[KEEP]
+
+    
+  }
+  ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
+  # Create data frame for plotting
+  data <- data.frame(x = paste0("Objective ", id), y = ymax)
+  clc <- as.character(calc_letter_grade(data$y))
+  finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+  if (length(finalCol) == 0) {
+    finalCol <- "black"
+  }
+cat(sprintf('<span style="color:%s; background-color:lightgray; padding:3px;"><b>%s</b></span><br>', finalCol, S_Objectives[fo]))
+}
+#cat(Objectives_processed[[which(tolower(areas) == tolower(NAME_to_tag(names=input$mpas)))]])
 ```
 
 
