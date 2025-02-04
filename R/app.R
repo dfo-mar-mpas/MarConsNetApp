@@ -102,6 +102,7 @@ ui <- shiny::fluidPage(
                                     br(),
                                     shiny::plotOutput("flowerPlot",click="flower_click"))
                       ),
+      shiny::fluidRow(shiny::column(width=6, offset=6, align="right", br(), shiny::uiOutput("flowerType")))
 
     ) #MAIN
   )
@@ -141,6 +142,16 @@ server <- function(input, output, session) {
     nTabs = length(APPTABS$flower)+length(binned_indicators$indicators) # FIXME
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
+  })
+
+  output$flowerType <- renderUI({
+    req(input$mpas)
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      choices <- c("Status","Level of Certainty", "Models", "In Situ Measurements", "Time Since Last in Situ Measurement")
+      selectInput("flowerType", "Select Score Type", choices=choices, selected = "Status")
+    }
+
   })
 
   output$legendUI <- renderUI({
@@ -914,10 +925,15 @@ a F is assigned."),
       })
 
       # Return the collapse panel with objective divs
-      shinyBS::bsCollapse(id="networkObjectivesCollapse", open=NULL,
-                          shinyBS::bsCollapsePanel("Click to view Network Objectives",
-                                 do.call(tagList, objectiveDivs),
-                                 style="primary"))
+      # shinyBS::bsCollapse(id="networkObjectivesCollapse", open=NULL,
+      #                     shinyBS::bsCollapsePanel("Click to view Network Objectives",
+      #                            do.call(tagList, objectiveDivs),
+      #                            style="primary"))
+      shiny::tagList(
+        shiny::h3("Network Objectives"),  # Title added here
+        do.call(tagList, objectiveDivs)  # Display objectives directly
+      )
+
     }
   })
 
