@@ -1235,16 +1235,30 @@ list(
 
  tar_target(name = upload_all_data_to_shiny,
             command = {
+
+              if(Sys.getenv("USERPROFILE")=="C:\\Users\\DaigleR"){
+                serveruser="rdaigle"
+              } else if(Sys.getenv("USERPROFILE")=="C:\\Users\\HarbinJ"){
+                serveruser="jharbin"
+              } else {
+                return(TRUE)
+              }
+
               system(paste0('scp -r -i ',
                             file.path(Sys.getenv("USERPROFILE"),'.ssh','id_rsa'),
                             ' -P 22018 "',
-              file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','app_targets'),
-              '" rdaigle@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
+                            file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','app_targets'),
+                            '" "',
+                            serveruser,
+                            '@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
+
               system(paste0('scp -r -i ',
                             file.path(Sys.getenv("USERPROFILE"),'.ssh','id_rsa'),
                             ' -P 22018 "',
                             file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data'),
-                            '" rdaigle@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
+                            '" "',
+                            serveruser,
+                            '@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
 
               TRUE
             },
