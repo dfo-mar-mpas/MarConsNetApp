@@ -357,7 +357,6 @@ a F is assigned."),
 
       if (!(length(keepO) == 0)) {
         textO <- Objectives_processed[[keepO]]
-        #browser()
         # Create UI elements for objectives with bar charts
         objectiveDivs <- lapply(seq_along(textO), function(i) {
           shiny::tags$div(
@@ -979,7 +978,6 @@ a F is assigned."),
     if (input$tabs == "tab_0") {
       # Ensure filtered_odf is created inside this condition
       filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
-
       for (fo in seq_along(filtered_odf$objectives)) {
         local({
           id <- fo
@@ -999,6 +997,8 @@ a F is assigned."),
               c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
               KEEP <- intersect(c1,c2)
               ymax <- pillar_ecol_df$ind_status[KEEP]
+              weight <- pillar_ecol_df$weight[KEEP]
+
 
               # Handling empty or multiple ymax cases
               if (length(ymax) == 0) {
@@ -1006,12 +1006,11 @@ a F is assigned."),
                 c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
                 KEEP <- intersect(c1,c2)
                 ymax <- pillar_ecol_df$ind_status[KEEP]
-
+                weight <- pillar_ecol_df$weight[KEEP]
               }
 
-
-              ymax <- ymax[-which(ymax == 0)]
-              ymax <- weighted.mean(ymax, na.rm=TRUE)
+              #ymax <- ymax[-which(ymax == 0)]
+              ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
 
 
               # Create data frame for plotting
@@ -1022,6 +1021,7 @@ a F is assigned."),
 
               clc <- as.character(calc_letter_grade(data$y))
               finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+              print(clc)
 
               if (!(length(finalCol) == 0)) {
 
@@ -1040,16 +1040,15 @@ a F is assigned."),
   })
 
 
-  shiny::observeEvent(input$mpas, { #JAIM
+  shiny::observeEvent(input$mpas, {
     req(input$tabs)
     req(input$mpas)
     if (input$tabs == "tab_0" & !(state$mpas == "All")) {
-      #browser()
       # Ensure filtered_odf is created inside this condition
       string <- NAME_to_tag(names=input$mpas)
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
 
-      S_Objectives <- Objectives[[keepO]]
+      S_Objectives <- Objectives_processed[[keepO]]
 
 
       filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
@@ -1070,6 +1069,8 @@ a F is assigned."),
               c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
               KEEP <- intersect(c1,c2)
               ymax <- pillar_ecol_df$ind_status[KEEP]
+              weight <- pillar_ecol_df$weight[KEEP]
+
 
               # Handling empty or multiple ymax cases
               if (length(ymax) == 0) {
@@ -1079,8 +1080,8 @@ a F is assigned."),
                 ymax <- pillar_ecol_df$ind_status[KEEP]
 
               }
-              ymax <- ymax[-which(ymax == 0)]
-              ymax <- weighted.mean(ymax, na.rm=TRUE)
+              ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
+              #ymax <- weighted.mean(ymax, na.rm=TRUE)
               # Create data frame for plotting
               data <- data.frame(
                 x = paste0("Objective ", id),
@@ -1088,7 +1089,8 @@ a F is assigned."),
               )
               clc <- as.character(calc_letter_grade(data$y))
               finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-              print(finalCol)
+              #print(finalCol)
+              #print(clc)
 
               if (!(length(finalCol) == 0)) {
 
