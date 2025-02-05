@@ -66,7 +66,7 @@ ui <- shiny::fluidPage(
   shiny::sidebarLayout(
     shiny::sidebarPanel(
       shiny::fluidRow(
-      shiny::column(2, actionButton(inputId="about", label="About the App")),
+      shiny::column(2, actionButton(inputId="about", label="Scoring Schemes")),
       shiny::column(2, offset = 1, shiny::uiOutput("contextButton")),
       shiny::column(2, shiny::uiOutput("filter_button_ui"))
       ),
@@ -188,22 +188,23 @@ server <- function(input, output, session) {
   observeEvent(input$about, {
     req(input$about)
     showModal(modalDialog(
-      title = "Things to consider when using the app",
+      title = "Scoring Scheme Explanation",
       div(
-        p("There are two ways the score is calculated. If the desired direction of the indicator is increase or decrease:"),
+        p(strong("1. Status")),
+        p(strong("- Trend Method")),
         p("The score of a area of network is calculated in the following way: When a trend is"),
-        p("1) s statistically significant AND matches the desired direction for the
+        p("1) is statistically significant AND matches the desired direction for the
 indicator, a score of A is assigned."),
         p("2) has no significant change a C is assigned"),
         p("3) is statistically significant and going in the opposite direction,
 a F is assigned."),
+        p(strong("- Stable Method")),
         p("If the desired direction of the indicator is stable:"),
         p("1) If the trend of the indicator has no significant change an A is assigned"),
         p("2) If there is a significant change, a F in assigned"),
         p(" "),
         p(" ")
       ),
-      p("When projects have a lot of points (e.g. RV, Argo, etc.) the latitude and longitudes are rounded to the nearest decimal when plotting on the map"),
       easyClose = TRUE,  # Allow closing modal by clicking outside or using the 'x'
       footer = modalButton("Close")  # Footer button to close the modal
     ))
@@ -593,7 +594,6 @@ a F is assigned."),
     info <- calculated_info()
     req(info)  # Ensure the info is available
     if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
-    #indj <- trimws(unlist(strsplit(as.character(info$ind_link), "\n")), "both")
     indj <- strsplit(as.character(info$ind_links), "<a href=")[[1]]
     indj <- indj[nzchar(indj)]
     indj <- paste0("<a href=", indj)
@@ -603,13 +603,14 @@ a F is assigned."),
     if (any(grepl("&amp;", INDY))) {
       INDY <- gsub("&amp;", "&", INDY)
     }
-
     indicator_to_plot$indicators <- gsub("\r\n", "", indicator_to_plot$indicators)
     INDY <- gsub("\r", "", INDY)
     indicatorStatus <- indicator_to_plot$status[which(indicator_to_plot$indicators %in% INDY)]
     indicatorTrend <- indicator_to_plot$trend[which(indicator_to_plot$indicators %in% INDY)]
     indicatorGrade <- indicator_to_plot$status_grade[which(indicator_to_plot$indicators %in% INDY)]
     indicatorProject <- indicator_to_plot$project[which(indicator_to_plot$indicators %in% INDY)]
+
+    indicatorScore <- indicator_to_plot$desired_state[which(indicator_to_plot$indicators %in% INDY)]
 
     } else {
       indj <- gsub("^(\\dbr+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
@@ -621,7 +622,7 @@ a F is assigned."),
 
       indicatorGrade <- indicator_to_plot$status_grade[ki]
       indicatorProject <- indicator_to_plot$project[ki]
-
+      indicatorStatus <- indicator_to_plot$desired_state[ki]
     }
 
     indicatorTitle <- NULL
@@ -642,12 +643,19 @@ a F is assigned."),
     indicatorGrade[which(indicatorGrade == "C")] <- 50
     indicatorGrade[which(indicatorGrade == "F")] <- 0
 
+    indicatorScore[which(indicatorScore == "desired")] <- NA
+    indicatorScore[which(indicatorScore %in% c("increase", "decrease"))] <- "Status: Trend Method"
+    indicatorScore[which(indicatorScore %in% c("stable"))] <- "Status: Stable Method"
+
+
+
     dfdt <- data.frame(
       Indicator = indj,
       Status = indicatorStatus,
       Trend = indicatorTrend,
       Projects = Projects,
       Score=indicatorGrade,
+      Method=indicatorScore,
       stringsAsFactors = FALSE
     )
 
@@ -985,7 +993,6 @@ a F is assigned."),
 
               clc <- as.character(calc_letter_grade(data$y))
               finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-              print(clc)
 
               if (!(length(finalCol) == 0)) {
 

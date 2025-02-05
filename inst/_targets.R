@@ -790,6 +790,7 @@ list(
               ah$units <- "(counts)"
               names(ah)[which(names(ah) == "TOTWGT")] <- "haddock_biomass"
               ah$year <- as.numeric(format(ah$date, "%Y"))
+              ah <- ah[-(which(ah$longitude > -10)),] # remove outlier points
 
               AH <- ah[,c("longitude", "latitude","year", "haddock_abundance", "type", "units"),]
 
@@ -812,6 +813,8 @@ list(
               ah$units <- "(counts)"
               names(ah)[which(names(ah) == "TOTWGT")] <- "haddock_biomass"
               ah$year <- as.numeric(format(ah$date, "%Y"))
+              ah <- ah[-(which(ah$longitude > -10)),] # remove outlier points
+
               AH <- ah[,c("longitude", "latitude","year", "haddock_biomass", "type"),]
               AH$units <- "kg"
               AH
