@@ -191,7 +191,7 @@ list(
   tar_target(name=rv_rounded_location,
              command= {
 
-               df <- data.frame(latitude=gsdet$latitude, longitude=gsdet$longitude)
+               df <- data.frame(latitude=haddock_biomass$latitude, longitude=haddock_biomass$longitude)
                df2 <- data.frame(latitude=all_haddock$latitude, longitude=all_haddock$longitude)
                df <- rbind(df,df2)
                latitude <- round(df$latitude,1)
@@ -205,12 +205,7 @@ list(
                df <- data.frame(latitude=latitude, longitude=longitude, type="RV Survey")
                df
              }
-
-
-
   ),
-
-
 
   tar_target(name = projectData,
              command = {
@@ -601,112 +596,6 @@ list(
 
  ),
 
- # tar_target(name = indicatorPlotData, #JAIM
- #            {
- #              # This is to avoid determiniing what is in a projected area and what isn't
- #
- #              # BANDAID FIX (ISSUE 54 APP)
- #              mpa <- eval(MPAs)
- #              fw <- eval(fish_weight)
- #              fl <- eval(fish_length)
- #              zoo <- eval(zooplankton)
- #              hb <- eval(haddock_biomass)
- #              ah <- eval(all_haddock)
- #              nn <- eval(nitrate)
- #              ss <- eval(salinity)
- #              cc <- eval(chlorophyll)
- #              bd <- eval(bloom_df)
- #              tt <- eval(temperature)
- #              ws <- eval(whale_biodiversity)
- #              sh <- eval(surface_height)
- #
- #              maps <- indicator_to_plot$plot[which(!(indicator_to_plot$plot == 0))]
- #
- #              map <- NULL
- #              for (i in seq_along(maps)) {
- #                message(i)
- #                m <- maps[i]
- #                if (grepl("MPAs", m)) {
- #                  m <- gsub("MPAs", "mpa", m)
- #                }
- #
- #
- #                if (grepl("MPAs", m)) {
- #                  m <- gsub("MPAs", "mpa", m)
- #                }
- #                if (grepl("fish_weight", m)) {
- #                  m <- gsub("fish_weight", "fw", m)
- #                }
- #                if (grepl("fish_length", m)) {
- #                  m <- gsub("fish_length", "fl", m)
- #                }
- #                if (grepl("zooplankton", m)) {
- #                  m <- gsub("zooplankton", "zoo", m)
- #                }
- #                if (grepl("haddock_biomass", m)) {
- #                  m <- gsub("haddock_biomass", "hb", m)
- #                }
- #                if (grepl("df=all_haddock", m)) {
- #                  m <- gsub("df=all_haddock","df=ah", m)
- #                }
- #                if (grepl("df=nitrate", m)) {
- #                  m <- gsub("df=nitrate","df=nn", m)
- #                }
- #                if (grepl("df=salinity", m)) {
- #                  m <- gsub("df=salinity","df=ss", m)
- #                }
- #                if (grepl("df=chlorophyll", m)) {
- #                  m <- gsub("df=chlorophyll","df=cc", m)
- #                }
- #                if (grepl("df=bloom_df", m)) {
- #                  m <- gsub("df=bloom_df","df=bd", m)
- #                }
- #                if (grepl("df=temperature", m)) {
- #                  m <- gsub("df=temperature","df=tt", m)
- #                }
- #                if (grepl("df=surface_height", m)) {
- #                  m <- gsub("df=sh","df=surface_height", m)
- #                }
- #
- #                if (grepl("df=whale_biodiversity", m)) {
- #                  m <- gsub("df=ws","df=whale_biodiversity", m)
- #                }
- #
- #                if (grepl("df=zooplankton", m)) {
- #                  m <- gsub("df=zooplankton","df=zoo", m)
- #                }
- #                if (grepl("df=all_haddock", m)) {
- #                  m <- gsub("df=all_haddock","df=ah", m)
- #                }
- #                if (grepl("df=bloom_df", m)) {
- #                  m <- gsub("df=bloom_df","df=bd", m)
- #                }
- #                if (grepl("df=surface_height", m)) {
- #                  m <- gsub("df=sh","df=surface_height", m)
- #                }
- #
- #                if (grepl("df=whale_biodiversity", m)) {
- #                  m <- gsub("df=ws","df=whale_biodiversity", m)
- #                }
- #
- #
- #                if (!(grepl("dataframe=TRUE", m))) {
- #                  m <- substr(m, 1, nchar(m) - 1)
- #                  m<- paste0(m, ", dataframe=TRUE)")
- #                  m <- gsub("dataframe=FALSE", "", m)
- #                }
- #
- #                map[[i]] <- eval(parse(text=m))
- #              }
- #              names(map) <- maps
- #
- #              map
- #
- #
- #
- #
- #            }),
-
  ####### FLOWER PLOT ######
 
  ##### Areas #####
@@ -965,13 +854,13 @@ list(
               df$longitude <- 0
               type <- NULL
               df$latitude[which(df$station == "Halifax")] <- 43.5475
-              df$longitude[which(df$station == "Halifax")] <- 63.5714
+              df$longitude[which(df$station == "Halifax")] <- -63.5714
 
               df$latitude[which(df$station == "Yarmouth")] <- 43.8377
-              df$longitude[which(df$station == "Yarmouth")] <- 66.1150
+              df$longitude[which(df$station == "Yarmouth")] <- -66.1150
 
               df$latitude[which(df$station == "North Sydney")] <- 46.2051
-              df$longitude[which(df$station == "North Sydney")] <- 60.2563
+              df$longitude[which(df$station == "North Sydney")] <- -60.2563
               df$units <- "m"
               df$type <- "derived (AZMP)"
               df <- df[,c("latitude", "longitude", "year", "units", "type", "sea_surface_height")]
