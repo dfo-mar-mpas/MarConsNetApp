@@ -415,24 +415,23 @@ list(
  ),
 
  tar_target(rv_data,{
-   1
-   # temp <- rv_rawdata_env
-   # ds_all # mentioned here because otherwise it won't be available for self_filter
-   #
-   # temp$GSINF <- rv_rawdata_env$GSINF |>
-   #   filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
-   #   st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
-   #            crs = 4326,
-   #            remove = FALSE) |>
-   #   st_filter(Outside) |>
-   #   st_join(MPAs |> select(NAME_E), left=TRUE) |>
-   #   as.data.frame() |>
-   #   select(-geometry)
-   #
-   #
-   # self_filter(env = temp)
-   #
-   # summarize_catches('rv',morph_dets=TRUE,env = temp)
+   temp <- rv_rawdata_env
+   ds_all # mentioned here because otherwise it won't be available for self_filter
+
+   temp$GSINF <- rv_rawdata_env$GSINF |>
+     filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
+     st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
+              crs = 4326,
+              remove = FALSE) |>
+     st_filter(Outside) |>
+     st_join(MPAs |> select(NAME_E), left=TRUE) |>
+     as.data.frame() |>
+     select(-geometry)
+
+
+   self_filter(env = temp)
+
+   summarize_catches('rv',morph_dets=TRUE,env = temp)
  }
  ),
 
