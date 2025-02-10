@@ -45,11 +45,12 @@ app <- function() {
   } else {
     onedrive <- "MarConsNetTargets"
     if(!exists("APPTABS")){
-      mani <- tar_manifest(script = system.file("_targets.R", package = "MarConsNetApp"),
-                           fields = "name") |>
-        unlist(use.names = FALSE)
-      tar_load(names=mani[!grepl("rv_data",mani)&!grepl("rv_rawdata",mani)],
-               store = "/srv/shiny-server/WEBMR/MarConsNetTargets/app_targets")
+      tar_load_everything(store = "/srv/shiny-server/WEBMR/MarConsNetTargets/app_targets")
+      # mani <- tar_manifest(script = system.file("_targets.R", package = "MarConsNetApp"),
+      #                      fields = "name") |>
+      #   unlist(use.names = FALSE)
+      # tar_load(names=mani[!grepl("rv_data",mani)&!grepl("rv_rawdata",mani)],
+      #          store = "/srv/shiny-server/WEBMR/MarConsNetTargets/app_targets")
     }
   }
 
