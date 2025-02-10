@@ -11,7 +11,7 @@ tar_option_set(
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car"),
   #controller = crew::crew_controller_local(workers = 2),
-  imports = c("civi"),
+  # imports = c("civi"),
   format = "qs"
 )
 
