@@ -18,7 +18,7 @@
 #'    modalDialog HTML updateTabsetPanel tagList
 #'     showNotification shinyApp
 #' @importFrom shinyjs useShinyjs
-#' @importFrom DT renderDT dataTableOutput datatable
+#' @importFrom DT renderDT dataTableOutput datatable formatStyle
 #' @importFrom leaflet leafletOutput renderLeaflet leaflet addTiles addPolygons
 #'  addCircleMarkers  addLegend
 #' @importFrom MarConsNetAnalysis plot_flowerplot

@@ -415,6 +415,9 @@ list(
  ),
 
  tar_target(rv_data,{
+   # for whatever reason, we need to run:
+   # tar_invalidate(c("ds_all","rv_rawdata_env"))
+   # before re-running this target
    temp <- rv_rawdata_env
    ds_all # mentioned here because otherwise it won't be available for self_filter
 
@@ -423,7 +426,31 @@ list(
      st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
               crs = 4326,
               remove = FALSE) |>
-     st_filter(Outside) |>
+     st_filter(planning_area) |>
+     st_join(MPAs |> select(NAME_E), left=TRUE) |>
+     as.data.frame() |>
+     select(-geometry)
+
+
+   self_filter(env = temp)
+
+   summarize_catches('rv',env = temp)
+ }
+ ),
+
+ tar_target(rv_data_det,{
+   # for whatever reason, we need to run:
+   # tar_invalidate(c("ds_all","rv_rawdata_env"))
+   # before re-running this target
+   temp <- rv_rawdata_env
+   ds_all # mentioned here because otherwise it won't be available for self_filter
+
+   temp$GSINF <- rv_rawdata_env$GSINF |>
+     filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
+     st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
+              crs = 4326,
+              remove = FALSE) |>
+     st_filter(planning_area) |>
      st_join(MPAs |> select(NAME_E), left=TRUE) |>
      as.data.frame() |>
      select(-geometry)
@@ -434,6 +461,31 @@ list(
    summarize_catches('rv',morph_dets=TRUE,env = temp)
  }
  ),
+
+ tar_target(name = fish_weight_per_1.75kn_tow,
+            command = {
+              rv_data |>
+                filter(COMM %in% c("HADDOCK"#,
+                                   # "COD(ATLANTIC)",
+                                   # "AMERICAN PLAICE",
+                                   # "WINTER SKATE"
+                                   ),
+                       NAME_E == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)") |>
+                mutate(latitute = LATITUDE,
+                       longitude = LONGITUDE,
+                       `Total Weight per 1.75kn Tow (kg)` = TOTWGT/DIST*1.75,
+                       units = "kg",
+                       type = "RV Survey",
+                       year = YEAR) |>
+                select(latitute,
+                       longitude,
+                       year,
+                       `Total Weight per 1.75kn Tow (kg)`,
+                       type,
+                       units)
+
+
+            }),
 
 
   tar_target(name = ABUNDANCE_RV,
@@ -471,6 +523,7 @@ list(
 
               DF <- list(fish_weight=fish_weight,
                          fish_length=fish_length,
+                         fish_weight_per_1.75kn_tow=fish_weight_per_1.75kn_tow,
                          zooplankton=zooplankton,
                          haddock_biomass=haddock_biomass,
                          all_haddock=all_haddock,
@@ -494,6 +547,7 @@ list(
               mpa <- eval(MPAs)
               fw <- eval(fish_weight)
               fl <- eval(fish_length)
+              fw175 <- eval(fish_weight_per_1.75kn_tow)
               zoo <- eval(zooplankton)
               hb <- eval(haddock_biomass)
               ah <- eval(all_haddock)
@@ -524,6 +578,9 @@ list(
                 }
                 if (grepl("fish_length", m)) {
                   m <- gsub("fish_length", "fl", m)
+                }
+                if (grepl("fish_weight_per_1.75kn_tow", m)) {
+                  m <- gsub("fish_weight_per_1.75kn_tow", "fw175", m)
                 }
                 if (grepl("zooplankton", m)) {
                   m <- gsub("zooplankton", "zoo", m)
@@ -599,9 +656,10 @@ list(
 
  ##### Areas #####
  tar_target(name=bioregion,
-            data_bioregion(),
-            format = "qs",
-            packages = c("sf","arcpullr")),
+            data_bioregion()),
+
+ tar_target(name=planning_area,
+            data_planning_areas()),
 
  # get the Protected and Conserved areas in the bioregion
  tar_target(name=consAreas,
