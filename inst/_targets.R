@@ -15,11 +15,11 @@ tar_option_set(
   format = "qs"
 )
 
-sapply(c(list.files("../MarConsNetAnalysis/R/","ind_",full.names = TRUE),
-         "../MarConsNetAnalysis/R/aggregate_groups.R",
-         "../MarConsNetAnalysis/R/plot_flowerplot.R",
-         "../MarConsNetData/R/data_bioregion.R",
-         "../MarConsNetData/R/data_CPCAD_areas.R"),source,.GlobalEnv)
+# sapply(c(list.files("../MarConsNetAnalysis/R/","ind_",full.names = TRUE),
+#          "../MarConsNetAnalysis/R/aggregate_groups.R",
+#          "../MarConsNetAnalysis/R/plot_flowerplot.R",
+#          "../MarConsNetData/R/data_bioregion.R",
+#          "../MarConsNetData/R/data_CPCAD_areas.R"),source,.GlobalEnv)
 
 
 #### targets list ####
