@@ -25,7 +25,7 @@
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom ggplot2 ggplot geom_bar ylim theme_void coord_flip guides
 #' @importFrom viridis viridis
-#' @importFrom sf st_as_sf st_within st_coordinates
+#' @importFrom sf st_as_sf st_within st_coordinates st_crs
 #' @importFrom dataSPA subsetSPA
 #' @importFrom stringr str_extract_all
 #' @importFrom magrittr %>%
@@ -1178,7 +1178,7 @@ a F is assigned."),
             if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) { # We want it filtered
               m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
               coords <- cbind(longitude, latitude)
-              points_sf <- sf::st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = st_crs(4326))
+              points_sf <- sf::st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = sf::st_crs(4326))
               points_within <- sf::st_within(points_sf, m, sparse = FALSE)
               within_points <- points_sf[apply(points_within, 1, any), ]
               longitude <- sf::st_coordinates(within_points)[, 1]
@@ -1190,8 +1190,8 @@ a F is assigned."),
             if (!(length(latitude) == 0)) {
               if ("geometry" %in% names(pd)) {
                 if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) {
-                  st_crs(geometry) <- 4326
-                  geometry <- st_transform(geometry, st_crs(m))
+                  sf::st_crs(geometry) <- 4326
+                  geometry <- st_transform(geometry, sf::st_crs(m))
                   geometry <- st_make_valid(geometry)
                   overlaps_poly <- st_intersects(geometry, m, sparse = FALSE)
                   map <- map %>%
