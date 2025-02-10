@@ -242,7 +242,12 @@ a F is assigned."),
   })
 
 
-  shiny::addResourcePath("htmlfiles", file.path(onedrive,"data", "reports"))
+  if(onedrive == "MarConsNetTargets"){
+    shiny::addResourcePath("htmlfiles", "/srv/shiny-server/WEBMR/MarConsNetTargets/data/reports")
+  } else {
+    shiny::addResourcePath("htmlfiles", file.path(onedrive,"data", "reports"))
+  }
+
   # Check if the static HTML file exists
   observe({
     req(input$mpas)
