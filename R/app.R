@@ -49,7 +49,7 @@ app <- function() {
                            fields = "name") |>
         unlist(use.names = FALSE)
       tar_load(names=mani[!grepl("rv_data",mani)&!grepl("rv_rawdata",mani)],
-               store = "/srv/shiny-server/WEBMR/MarConsNetTargets/app_targets")
+               store = "MarConsNetTargets/app_targets")
     }
   }
 
@@ -246,11 +246,13 @@ a F is assigned."),
   })
 
 
-  if(onedrive == "MarConsNetTargets"){
-    shiny::addResourcePath("htmlfiles", "/srv/shiny-server/WEBMR/MarConsNetTargets/data/reports")
+  if(onedrive != "MarConsNetTargets"){
+    reporturl <- "/htmlfiles/"
   } else {
-    shiny::addResourcePath("htmlfiles", file.path(onedrive,"data", "reports"))
+    reporturl <- paste0("/",basename(getwd()),"/htmlfiles/")
   }
+  shiny::addResourcePath("htmlfiles", file.path(onedrive,"data", "reports"))
+
 
   # Check if the static HTML file exists
   observe({
@@ -260,7 +262,7 @@ a F is assigned."),
       # Show a link to the existing file
       output$report_button_ui <- renderUI({
         tags$a(
-          href = paste0("/htmlfiles/",NAME_to_tag(names=input$mpas), ".html"),
+          href = paste0(reporturl,NAME_to_tag(names=input$mpas), ".html"),
           target = "_blank",
           class = "btn btn-primary",
           "Report"
