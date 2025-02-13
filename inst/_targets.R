@@ -134,7 +134,9 @@ list(
 
   tar_target(name = om, # FIXME: need to get the saved om (or add a real cookie)
              command = {
-               OM <- dataSPA::getData(type="om", age=3000, cookie="hi")
+               OM <- dataSPA::getData(type="om", age=3000, cookie="hi",
+                                      path = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"))
+
                OM[-(which(OM$activity_type == "Other")),]
 
              }),
