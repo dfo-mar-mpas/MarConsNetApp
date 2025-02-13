@@ -659,24 +659,25 @@ a F is assigned."),
     indicatorScore[which(indicatorScore %in% c("stable"))] <- "Status: Stable Method"
 
 
+    if (!(length(indj) == 1 && "<a href=" %in% indj)) {
+      dfdt <- data.frame(
+        Indicator = indj,
+        Status = indicatorStatus,
+        Trend = indicatorTrend,
+        Projects = Projects,
+        Score=indicatorGrade,
+        Method=indicatorScore,
+        stringsAsFactors = FALSE
+      )
 
-    dfdt <- data.frame(
-      Indicator = indj,
-      Status = indicatorStatus,
-      Trend = indicatorTrend,
-      Projects = Projects,
-      Score=indicatorGrade,
-      Method=indicatorScore,
-      stringsAsFactors = FALSE
-    )
-
-    dfdt <- dfdt %>%
-      arrange(is.na(indicatorStatus))
+      dfdt <- dfdt %>%
+        arrange(is.na(indicatorStatus))
+    }
 
     if (input$tabs %in% c(APPTABS$tab, binned_indicators$tab)) {
       if (!(input$tabs == "tab_0")) {
+        if (!(length(indj) == 1 && indj == "<a href=")) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
-
         DT::datatable(
           dfdt,
           escape = FALSE,
@@ -690,6 +691,15 @@ a F is assigned."),
               indicatorFlower[names(indicatorFlower)] # Apply corresponding colors from the flowerPalette
             )
           )
+      } else {
+        # MODAL
+        showModal(modalDialog(
+          title = "Indicator Information",
+          paste("There were no indicators for this indicator bin in this region."),
+          easyClose = TRUE,
+          footer = modalButton("Close")
+        ))
+      }
 
       } else {
         NULL
@@ -698,6 +708,7 @@ a F is assigned."),
       NULL
     }
   })
+
 
   output$DT_ui <- shiny::renderUI({
     req(input$tabs)
@@ -837,7 +848,6 @@ a F is assigned."),
   output$indicatorLeaflet <- leaflet::renderLeaflet({
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
-
     if (!(length(currentInd) == 0)) {
       indy <- odf$objectives[which(odf$tab == input$tabs)]
       if (length(indy) == 0) {
@@ -848,7 +858,6 @@ a F is assigned."),
         plot2 <- eval(parse(text = plot))
       }
     }
-
   })
 
   output$flowerPlot <- shiny::renderPlot({

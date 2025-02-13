@@ -1147,6 +1147,28 @@ list(
                 df$objective[i] <- Ecological$grouping[which(tolower(Ecological$labels) == trimws(tolower(df$bin[i]), "both"))]
               }
 
+              AREAS <- unique(df$area_name)
+              BAD <- vector("list", length(AREAS))
+
+              for (i in seq_along(AREAS)) {
+                keep <- which(df$area_name == AREAS[i])
+                ped <- df[keep,]
+                bins <- unique(tolower(trimws(ped$bin, "both")))
+
+                bad <- Ecological$labels[which(!(tolower(Ecological$labels) %in% bins))]
+                if (!(length(bad) == 0)) {
+                  # There are no indicators identified for that bin. (issue 87)
+                  for (j in seq_along(bad)) {
+                  BAD[[i]][[j]] <- data.frame(area_name=AREAS[i], ind_name="Fake Indicator", ind_status=NA, ind_trend=NA,
+                                            ind_projects="project", ind_rawdata_type= "Expert Opinion", ind_certainty="certain",
+                                            bin=toupper(bad[j]), weight=1, objective=Ecological$grouping[which(Ecological$labels == bad[j])], pillar="Ecological")
+                  }
+                }
+              }
+
+
+              df <- rbind(df,do.call(rbind, unlist(lapply(BAD, function(x) Filter(Negate(is.null), x)), recursive = FALSE)))
+
               target_bin_weight <- 1
 
               for (j in unique(df$area_name)) {
