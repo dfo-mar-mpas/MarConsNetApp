@@ -929,7 +929,7 @@ a F is assigned."),
     shiny::updateTabsetPanel(session, "tabs", selected=updatedTab)
   })
 
-  output$networkObjectiveText <- shiny::renderUI({
+  output$networkObjectiveText <- shiny::renderUI({ #JAIM
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
@@ -955,15 +955,9 @@ a F is assigned."),
           )
         )
       })
-
-      # Return the collapse panel with objective divs
-      # shinyBS::bsCollapse(id="networkObjectivesCollapse", open=NULL,
-      #                     shinyBS::bsCollapsePanel("Click to view Network Objectives",
-      #                            do.call(tagList, objectiveDivs),
-      #                            style="primary"))
       shiny::tagList(
-        shiny::h3("Network Objectives"),  # Title added here
-        do.call(tagList, objectiveDivs)  # Display objectives directly
+        shiny::h3("Network Objectives"),
+        do.call(tagList, objectiveDivs)
       )
 
     }
@@ -971,8 +965,9 @@ a F is assigned."),
 
   shiny::observeEvent(input$tabs, {
     req(input$tabs)
-    req(input$mpas)
     if (input$tabs == "tab_0") {
+      #browser()
+
       # Ensure filtered_odf is created inside this condition
       filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
       for (fo in seq_along(filtered_odf$objectives)) {
@@ -982,9 +977,6 @@ a F is assigned."),
             # Ensure bar chart is rendered only when tab_0 is active
             if (input$tabs == "tab_0") {
               req(input$mpas %in% c("All", unique(pillar_ecol_df$area_name)))
-              # Ensure ymax is properly filtered and has a single value
-
-
               if (state$mpas == "All") {
                 c1 <- 1:length(pillar_ecol_df$area_name)
               } else {
@@ -995,9 +987,6 @@ a F is assigned."),
               KEEP <- intersect(c1,c2)
               ymax <- pillar_ecol_df$ind_status[KEEP]
               weight <- pillar_ecol_df$weight[KEEP]
-
-
-              # Handling empty or multiple ymax cases
               if (length(ymax) == 0) {
                 # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
                 c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
