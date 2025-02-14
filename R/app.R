@@ -80,35 +80,33 @@ ui <- shiny::fluidPage(
       shiny::uiOutput("mpas"),
       shiny::uiOutput("projects"),
       shiny::uiOutput("projectFinancial"),
-      # Conditional button to open the HTML file
       shiny::conditionalPanel(
         condition = "!(input.mpas === 'All') && input.tabs === 'tab_0'",
-        uiOutput("report_button_ui")),
-      # Space to display the generated report
+      shiny::uiOutput("report_button_ui")),
       uiOutput("report_ui"),
       br(),
       tags$hr(style = "border-top: 2px solid #000; margin-top: 10px; margin-bottom: 10px;"),
       br(),
       shiny::uiOutput("networkObjectiveText")
     ),
-    shiny::mainPanel(
-      shiny::uiOutput("indicatorText"),
-      shiny::uiOutput("DT_ui"),
-      shiny::uiOutput('mytabs'),
-      shiny::uiOutput("conditionalPlot"),
-      shiny::uiOutput("conditionalIndicatorMap"),
-      shiny::uiOutput("whaleDisclaimer"),
-      shiny::fluidRow(shiny::column(width=6, align="left",
-                                    br(),
-                                    shiny::uiOutput("siteObjectiveText"),
-                                    shiny::uiOutput("objectives")),
-                      shiny::column(width=6, align="right",
-                                    br(),
-                                    shiny::plotOutput("flowerPlot",click="flower_click"))
-                      ),
-      shiny::fluidRow(shiny::column(width=6, offset=6, align="right", br(), shiny::uiOutput("flowerType")))
+     shiny::mainPanel(
+       shiny::uiOutput("indicatorText"),
+       shiny::uiOutput("DT_ui"),
+       shiny::uiOutput('mytabs'),
+       shiny::uiOutput("conditionalPlot"),
+       shiny::uiOutput("conditionalIndicatorMap"),
+       shiny::uiOutput("whaleDisclaimer"),
+       shiny::fluidRow(shiny::column(width=6, align="left",
+                                     br(),
+                                     shiny::uiOutput("siteObjectiveText"),
+                                     shiny::uiOutput("objectives")),
+                       shiny::column(width=6, align="right",
+                                     br(),
+                                     shiny::plotOutput("flowerPlot",click="flower_click"))
+                       ),
+       shiny::fluidRow(shiny::column(width=6, offset=6, align="right", br(), shiny::uiOutput("flowerType")))
 
-    ) #MAIN
+     ) #MAIN
   )
 )
 
@@ -143,7 +141,7 @@ server <- function(input, output, session) {
     })
   })
   output$mytabs = shiny::renderUI({
-    nTabs = length(APPTABS$flower)+length(binned_indicators$indicators) # FIXME
+    nTabs = length(APPTABS$flower)+length(binned_indicators$indicators)
     myTabs = lapply(paste0('tab_', 0: nTabs), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
@@ -152,8 +150,14 @@ server <- function(input, output, session) {
     req(input$mpas)
     req(input$tabs)
     if (input$tabs == "tab_0") {
+      if (input$mpas == "All" || tolower(NAME_to_tag(names = input$mpas)) %in% tolower(areas)) {
       choices <- c("Status","Level of Certainty", "Models", "In Situ Measurements", "Time Since Last in Situ Measurement")
       selectInput("flowerType", "Select Score Type", choices=choices, selected = "Status")
+      } else {
+        shiny::showModal(shiny::modalDialog(
+          title = "No data provided for this area."
+        ))
+      }
     }
 
   })
@@ -301,6 +305,7 @@ a F is assigned."),
 
   output$siteObjectiveText <- shiny::renderUI({
     req(input$tabs)
+    req(input$mpas)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       if (grepl("Marine Protected Area", state$mpas)) {
         string <- gsub("Marine Protected Area", "MPA", state$mpas)
@@ -322,9 +327,8 @@ a F is assigned."),
     }
   })
 
-  output$objectives <- shiny::renderUI({ #JAIM
+  output$objectives <- shiny::renderUI({
     req(input$tabs)
-
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       # Process site name logic
       if (grepl("Marine Protected Area", state$mpas)) {
@@ -967,6 +971,7 @@ a F is assigned."),
 
   shiny::observeEvent(input$tabs, {
     req(input$tabs)
+    req(input$mpas)
     if (input$tabs == "tab_0") {
       # Ensure filtered_odf is created inside this condition
       filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
@@ -1034,10 +1039,11 @@ a F is assigned."),
     req(input$tabs)
     req(input$mpas)
     if (input$tabs == "tab_0" & !(state$mpas == "All")) {
+      #browser()
       # Ensure filtered_odf is created inside this condition
       string <- NAME_to_tag(names=input$mpas)
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
-
+      if (!(length(keepO) == 0)) {
       S_Objectives <- Objectives_processed[[keepO]]
 
 
@@ -1095,6 +1101,7 @@ a F is assigned."),
           })
         })
       }
+    } # HERE
     }
   })
 
