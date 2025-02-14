@@ -18,7 +18,7 @@
 #'    modalDialog HTML updateTabsetPanel tagList
 #'     showNotification shinyApp
 #' @importFrom shinyjs useShinyjs
-#' @importFrom DT renderDT dataTableOutput datatable formatStyle
+#' @importFrom DT renderDT dataTableOutput datatable formatStyle styleEqual
 #' @importFrom leaflet leafletOutput renderLeaflet leaflet addTiles addPolygons
 #'  addCircleMarkers  addLegend
 #' @importFrom MarConsNetAnalysis plot_flowerplot
@@ -690,7 +690,7 @@ a F is assigned."),
           DT::formatStyle(
             columns = colnames(dfdt), # Apply styling to all columns in each row
             target = 'row',            # Target the entire row
-            backgroundColor = styleEqual(
+            backgroundColor = DT::styleEqual(
               names(indicatorFlower),    # Map based on Grade values
               indicatorFlower[names(indicatorFlower)] # Apply corresponding colors from the flowerPalette
             )
