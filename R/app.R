@@ -687,7 +687,7 @@ a F is assigned."),
           escape = FALSE,
           options = list(pageLength = 100)
         ) %>%
-          formatStyle(
+          DT::formatStyle(
             columns = colnames(dfdt), # Apply styling to all columns in each row
             target = 'row',            # Target the entire row
             backgroundColor = styleEqual(
