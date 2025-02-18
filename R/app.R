@@ -498,7 +498,7 @@ a F is assigned."),
           shiny::tags$a(
             href = paste0("#", tab_id),
             gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", binned_indicators$indicators[keepind][i])),
-            style = "color: black; font-weight: bold;",
+            style = "color: black; font-weight: bold; TEXT-DECORATION: underline",
             onclick = sprintf(
               "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
               tab_id,
@@ -627,7 +627,7 @@ a F is assigned."),
       if (indicatorProject[i] == "project") {
         indicatorTitle[[i]] <- "project"
       } else {
-        indicatorTitle[[i]] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", '<a href=\"http://glf-proxy:8018/mar-spa/reports/',indicatorProject[i],'.html" target="_blank" rel="noopener noreferrer">',indicatorProject[i],'</a>')
+        indicatorTitle[[i]] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", '<a href=\"http://glf-proxy:8018/mar-spa/reports/',indicatorProject[i],'.html" target="_blank" rel="noopener noreferrer" style="color: black; font-weight: bold; TEXT-DECORATION: underline">',indicatorProject[i],'</a>')
       }
     }
     indicatorTrend[which(grepl("BLANK", indicatorTrend))] <- NA
