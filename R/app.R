@@ -832,8 +832,8 @@ a F is assigned."),
 
       map <- leaflet() %>%
         addTiles() %>%
-        addPolygons(data=mapk$area, color="gray") %>%
-        addPolygons(data=mapk$outside, color="red") %>%
+        addPolygons(data=mapk$area, color="grey93", opacity=1, fillOpacity = 1) %>%
+        addPolygons(data=mapk$outside, color="red", opacity=1, fillOpacity = 1) %>%
         addCircleMarkers(lat=mapk$latitude, lng=mapk$longitude, color="black")
 
       if ("notIncluded" %in% names(mapk)) {
@@ -1131,14 +1131,14 @@ a F is assigned."),
 
         if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
           map <- map %>% leaflet::addPolygons(
-            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms, fillColor=ifelse(input$mpas == MPAs$NAME_E[19], "#FFFFBF", "gray"),fillOpacity = 0.5, weight = 2, color="black"
+            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms, fillColor=ifelse(input$mpas == MPAs$NAME_E[19], "#FFFFBF", "#EDEDED"), opacity=1, weight = 1, color="black"
           )
 
         } else if (state$mpas == "All") {
           for (c in seq_along(subarea_coords)) {
             coord <- subarea_coords[[c]]
             map <- map %>%
-              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = ifelse(names(subarea_coords)[c] == MPAs$NAME_E[19], "#FFFFBF", "gray"), fillOpacity = 0.5, weight = 2, color="black")
+              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = ifelse(names(subarea_coords)[c] == MPAs$NAME_E[19], "#FFFFBF", "#EDEDED"), opacity=1, fillOpacity = 1, weight = 1, color="black")
           }
         }
 
