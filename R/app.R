@@ -167,7 +167,7 @@ server <- function(input, output, session) {
     req(input$tabs)
     # Generate legend items
     if (input$tabs == "tab_0") {
-      PALETTE <- flowerPalette
+      PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
     } else {
       PALETTE <- indicatorFlower
     }
@@ -1131,14 +1131,24 @@ a F is assigned."),
 
         if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
           map <- map %>% leaflet::addPolygons(
-            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms, fillColor=ifelse(input$mpas == MPAs$NAME_E[19], "#FFFFBF", "#EDEDED"), opacity=1, weight = 1, color="black"
+            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms,
+            fillColor=ifelse(input$mpas == MPAs$NAME_E[19], "#FFFFBF", "#EDEDED"),
+            opacity=1,
+            fillOpacity = 1,
+            weight = 1,
+            color=ifelse(input$mpas == MPAs$NAME_E[19], "black", "lightgrey")
           )
 
         } else if (state$mpas == "All") {
           for (c in seq_along(subarea_coords)) {
             coord <- subarea_coords[[c]]
             map <- map %>%
-              leaflet::addPolygons(data=MPAs[c,]$geoms, fillColor = ifelse(names(subarea_coords)[c] == MPAs$NAME_E[19], "#FFFFBF", "#EDEDED"), opacity=1, fillOpacity = 1, weight = 1, color="black")
+              leaflet::addPolygons(data=MPAs[c,]$geoms,
+                                   fillColor = ifelse(names(subarea_coords)[c] == MPAs$NAME_E[19], "#FFFFBF", "#EDEDED"),
+                                   opacity=1,
+                                   fillOpacity = 1,
+                                   weight = 1,
+                                   color = ifelse(names(subarea_coords)[c] == MPAs$NAME_E[19], "black", "lightgrey"))
           }
         }
 
