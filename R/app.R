@@ -1170,6 +1170,23 @@ a F is assigned."),
               longitude <- pd$longitude
               latitude <- pd$latitude
               type <- pd$type
+
+              popupContent <- mapply(
+                function(type_val, proj_id) {
+                  paste0(
+                    type_val,
+                    "<br>",  # Line break
+                    "<a href='http://glf-proxy:8018/mar-spa/reports/", proj_id, ".html' target='_blank'  rel='noopener noreferrer'>",
+                    "View Investment: ", proj_id,
+                    "</a>"
+                  )
+                },
+                type,  # Your vector of types
+                projectIds[i],  # Your vector of project IDs
+                SIMPLIFY = FALSE
+              ) |>
+                unlist()
+
               if ("geometry" %in% names(pd)) {
                 geometry <- pd$geometry
               }
@@ -1221,16 +1238,19 @@ a F is assigned."),
                   geometry <- st_make_valid(geometry)
                   overlaps_poly <- st_intersects(geometry, m, sparse = FALSE)
                   map <- map %>%
-                    addPolygons(data=geometry[which(overlaps_poly[,1])], popup=type[which(overlaps_poly[,1])], color="yellow", weight=0.5, opacity=0)
+                    addPolygons(data=geometry[which(overlaps_poly[,1])], popup=popupContent[which(overlaps_poly[,1])], color="yellow", weight=0.5, opacity=0)
                 } else {
                   map <- map %>%
-                    addPolygons(data=geometry, popup=type, color="yellow", weight=0.5, opacity=0)
+                    addPolygons(data=geometry, popup=popupContent, color="yellow", weight=0.5, opacity=0)
 
                 }
 
               }
               map <- map %>%
-                leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i], popup=ifelse("data.frame" %in% class(pd),type, "Type Unknown"))
+                leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i],
+                                          popup=ifelse("data.frame" %in% class(pd),
+                                                       popupContent,
+                                                       "Type Unknown"))
             }
 
             if (i == length(projectIds) && any(unlist(lapply(LAT, length))) == 0) {
