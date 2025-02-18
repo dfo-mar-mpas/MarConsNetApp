@@ -79,7 +79,6 @@ ui <- shiny::fluidPage(
       br(),
       shiny::uiOutput("mpas"),
       shiny::uiOutput("projects"),
-      shiny::uiOutput("projectFinancial"),
       shiny::conditionalPanel(
         condition = "!(input.mpas === 'All') && input.tabs === 'tab_0'",
       shiny::uiOutput("report_button_ui")),
@@ -116,7 +115,6 @@ server <- function(input, output, session) {
   state <- shiny::reactiveValues(
     mpas = NULL,
     projects = NULL,
-    projectFinancial = NULL,
     fundingSource = NULL,
     theme = NULL,
     functionalGroup = NULL,
@@ -133,7 +131,7 @@ server <- function(input, output, session) {
     length(input$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(input$mpas == "All")
   })
 
-  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division", "projectFinancial") # THE SAME AS STATE
+  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division") # THE SAME AS STATE
 
   lapply(input_ids, function(id) {
     shiny::observeEvent(input[[id]], {
@@ -230,22 +228,6 @@ a F is assigned."),
     req(input$tabs)
     if (input$tabs == "tab_0") {
       shiny::selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE, selected=state$projects)
-    }
-  })
-
-  output$projectFinancial <- shiny::renderUI({
-    req(input$tabs)
-    req(input$projects)
-    if (!(is.null(input$projects)) && input$tabs == "tab_0") {
-      pptp <- unlist(stringr::str_extract_all(state$projects, "\\(([^)]+)\\)"))
-      pptp <- gsub("[()]", "", pptp)
-      urls <- paste0("http://glf-proxy:8018/mar-spa/reports/", pptp, ".html")
-      formatted_urls <- sapply(seq_along(pptp), function(i) {
-        paste0('<strong><a href="', urls[i], '" target="_blank">View Investment: ', pptp[i], '</a></strong>')
-      })
-
-      HTML(paste(formatted_urls, collapse = "<br>"))
-
     }
   })
 
