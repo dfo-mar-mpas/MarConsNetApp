@@ -645,7 +645,7 @@ a F is assigned."),
       if (indicatorProject[i] == "project") {
         indicatorTitle[[i]] <- "project"
       } else {
-        indicatorTitle[[i]] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", indicatorProject[i])
+        indicatorTitle[[i]] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", '<a href=\"http://glf-proxy:8018/mar-spa/reports/',indicatorProject[i],'.html">',indicatorProject[i],'</a>')
       }
     }
     indicatorTrend[which(grepl("BLANK", indicatorTrend))] <- NA
