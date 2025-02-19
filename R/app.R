@@ -70,7 +70,7 @@ ui <- shiny::fluidPage(
   shiny::sidebarLayout(
     shiny::sidebarPanel(
       shiny::fluidRow(
-      shiny::column(2, actionButton(inputId="about", label="Scoring Schemes")),
+      shiny::column(2, actionButton(inputId="about", label="User Guide")),
       shiny::column(2, offset = 1, shiny::uiOutput("contextButton")),
       shiny::column(2, shiny::uiOutput("filter_button_ui"))
       ),
@@ -194,26 +194,79 @@ server <- function(input, output, session) {
   observeEvent(input$about, {
     req(input$about)
     showModal(modalDialog(
-      title = "Scoring Scheme Explanation",
-      div(
-        p(strong("1. Status")),
-        p(strong("- Trend Method")),
-        p("The score of a area of network is calculated in the following way: When a trend is"),
-        p("1) is statistically significant AND matches the desired direction for the
-indicator, a score of A is assigned."),
-        p("2) has no significant change a C is assigned"),
-        p("3) is statistically significant and going in the opposite direction,
-a F is assigned."),
-        p(strong("- Stable Method")),
-        p("If the desired direction of the indicator is stable:"),
-        p("1) If the trend of the indicator has no significant change an A is assigned"),
-        p("2) If there is a significant change, a F in assigned"),
-        p(" "),
-        p(" ")
-      ),
-      easyClose = TRUE,  # Allow closing modal by clicking outside or using the 'x'
-      footer = modalButton("Close")  # Footer button to close the modal
+      title = "User Guide",
+      size = "l",
+      easyClose = TRUE,
+      footer = modalButton("Close"),
+      fluidRow(
+        column(12,
+               p("This app is designed to support the following goals:"),
+               tags$ul(
+                 tags$li("Site-level Goals"),
+                 tags$ul(
+                   tags$li("1. Report on what scientific work is occurring, and resources allocated for this"),
+                   tags$li("2. Report on how the scientific work being done is contributing to indicators and therefore conservation objectives (CO)"),
+                   tags$li("3. Report on the status of the sites, based on existing data")
+                 ),
+                 tags$li("Network-level Goals"),
+                 tags$ul(
+                   tags$li("1. How are individual sites contributing to network objectives"),
+                   tags$li("2. How are science projects contributing to network objectives"),
+                   tags$li("3. Provide scientific data to support status claims")
+                 )
+               ),
+               p("To navigate the app:"),
+               tags$ol(
+                 tags$li("Choose a Region"),
+                 tags$ul(
+                   tags$li("Focus on the Scotian Shelf network or select an individual protected area to assess its contribution to broader conservation goals.")
+                 ),
+                 tags$li("Select a Project"),
+                 tags$ul(
+                   tags$li("Pick the project(s) you're interested in to view sampling locations."),
+                   tags$li("Click on any point to see sample types and financial details.")
+                 ),
+                 tags$li("Explore the Data (Read Left to Right)"),
+                 tags$ul(
+                   tags$li("Left Panel: Status of network-level objectives"),
+                   tags$li("Center: Site-level objectives, evaluating progress at individual locations."),
+                   tags$li("Right Panel: The flower plot with 'Indicator Bins', summarizing key scientific indicators for the selected region. These bins are clickable.")
+                 ),
+                 tags$li("Drill Down into Indicators"),
+                 tags$ul(
+                   tags$li("Click an Indicator Bin to see the scientific indicators that inform it."),
+                   tags$li("Click an individual indicator to view trends over time and sampling locations on a map.")
+                 ),
+                 tags$li("Generate Reports"),
+                 tags$ul(
+                   tags$li("Click 'Report' to create a reproducible summary of your selected data.")
+                 )
+               ),
+               br(),
+               p("1. Status"),
+               p("Trend Method:"),
+               tags$ul(
+                 tags$li("The score of an area of the network is calculated in the following way:"),
+                 tags$ul(
+                   tags$li("When a trend is statistically significant AND matches the desired direction for the indicator, a score of A is assigned."),
+                   tags$li("If there is no significant change, a score of C is assigned."),
+                   tags$li("If a trend is statistically significant but going in the opposite direction, a score of F is assigned.")
+                 )
+               ),
+               p("Stable Method:"),
+               tags$ul(
+                 tags$li("If the desired direction of the indicator is stable:"),
+                 tags$ul(
+                   tags$li("If the trend of the indicator has no significant change, an A is assigned."),
+                   tags$li("If there is a significant change, an F is assigned.")
+                 )
+               ),
+               p("From: ", a("http://127.0.0.1:3803/", href = "http://127.0.0.1:3803/"))
+        )
+      )
     ))
+
+
   })
 
 
