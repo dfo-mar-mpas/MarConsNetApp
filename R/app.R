@@ -878,7 +878,7 @@ server <- function(input, output, session) {
 
       map <- leaflet() %>%
         addTiles() %>%
-        addPolygons(data=mapk$area, color="grey93", opacity=1, fillOpacity = 1) %>%
+        addPolygons(data=mapk$area, color="#EDEDED", opacity=1, fillOpacity = 1) %>%
         addPolygons(data=mapk$outside, color="red", opacity=1, fillOpacity = 1) %>%
         addCircleMarkers(lat=mapk$latitude, lng=mapk$longitude, color="black")
 
