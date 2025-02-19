@@ -1145,12 +1145,14 @@ a F is assigned."),
           for (i in seq_along(projectIds)) {
             pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
             if (!("argoFloats" %in% class(pd))) {
-            if ("list" %in% class(pd)) {
-            longitude <- pd[[1]]$lon
-            latitude <- pd[[1]]$lat
-            } else {
+              # BANDAID FIX: ISSUE 93
+              if ("lat" %in% names(pd)) {
+                latitude <- pd$lat
+                longitude <- pd$lon
+              } else {
               longitude <- pd$longitude
               latitude <- pd$latitude
+              }
               type <- pd$type
 
               popupContent <- mapply(
@@ -1172,7 +1174,6 @@ a F is assigned."),
               if ("geometry" %in% names(pd)) {
                 geometry <- pd$geometry
               }
-            }
             } else {
               longitude <- pd[['longitude']]
               latitude <- pd[['latitude']]
@@ -1224,7 +1225,6 @@ a F is assigned."),
                 } else {
                   map <- map %>%
                     addPolygons(data=geometry, popup=popupContent, color="yellow", weight=0.5, opacity=0)
-
                 }
 
               }

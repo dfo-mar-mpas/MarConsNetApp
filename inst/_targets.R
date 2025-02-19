@@ -245,11 +245,20 @@ list(
                    n <- sub(".*::", "", func_name)
                    pd <- eval(parse(text=n))
                  }
-
                  dataProject[[i]] <- pd
                }
 
                names(dataProject) <- dataTable$id
+
+               getDF <- function(x) {
+                 if ("list" %in% class(x)) {
+                   x <- x[[1]]
+                 }
+                 return(x)
+               }
+
+               dataProject <- lapply(dataProject, getDF)
+
                dataProject
 
              }),
