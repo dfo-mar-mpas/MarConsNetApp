@@ -826,6 +826,17 @@ server <- function(input, output, session) {
     NULL
   })
 
+  # modal for map link clicking
+  shiny::observeEvent(state$projects, {
+    showModal(modalDialog(
+      title = "Project Investment URL",
+      paste("To see the investment for the selected project(s), please click on a sampling location on the map to display a popup with a hyperlink to a financial report."),
+      easyClose = TRUE,
+      footer = modalButton("Close")
+    ))
+
+  })
+
   output$indicatorPlot <- shiny::renderPlot({
     req(input$tabs)
     currentInd <- binned_indicators$indicators[which(binned_indicators$tab == input$tabs)]
