@@ -210,8 +210,8 @@ server <- function(input, output, session) {
                  ),
                  tags$li("Network-level Goals"),
                  tags$ul(
-                   tags$li("1. How are individual sites contributing to conservation network objectives"),
-                   tags$li("2. How are science projects contributing to conservation network objectives"),
+                   tags$li("1. How are individual sites contributing to network conservation objectives"),
+                   tags$li("2. How are science projects contributing to network conservation objectives"),
                    tags$li("3. Provide scientific data to support status claims")
                  )
                ),
@@ -228,7 +228,7 @@ server <- function(input, output, session) {
                  ),
                  tags$li("Explore the Data (Read Left to Right)"),
                  tags$ul(
-                   tags$li("Left Panel: Status of conservation network-level objectives"),
+                   tags$li("Left Panel: Status of network-level conservation objectives"),
                    tags$li("Center: Site-level objectives, evaluating progress at individual locations."),
                    tags$li("Right Panel: The flower plot with 'Indicator Bins', summarizing key scientific indicators for the selected region. These bins are clickable.")
                  ),
@@ -357,7 +357,7 @@ server <- function(input, output, session) {
       string <- gsub(" ", "_", string)
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
       if (!(length(keepO) == 0)) {
-        shiny::tags$b("Conservation Site Level Objectives")
+        shiny::tags$b("Site Level Conservation Objectives")
       }
     }
   })
@@ -1003,7 +1003,7 @@ server <- function(input, output, session) {
         )
       })
       shiny::tagList(
-        shiny::h3("Conservation Network Objectives"),
+        shiny::h3("Network Conservation Objectives"),
         do.call(tagList, objectiveDivs)
       )
 
