@@ -149,7 +149,7 @@ server <- function(input, output, session) {
     req(input$tabs)
     if (input$tabs == "tab_0") {
       if (input$mpas == "All" || tolower(NAME_to_tag(names = input$mpas)) %in% tolower(areas)) {
-      choices <- c("Status","Level of Certainty", "Models", "In Situ Measurements", "Time Since Last in Situ Measurement")
+      choices <- c("Status","Network Design Targets", "Level of Certainty", "Models", "In Situ Measurements", "Time Since Last in Situ Measurement")
       selectInput("flowerType", "Select Score Type", choices=choices, selected = "Status")
       } else {
         shiny::showModal(shiny::modalDialog(
@@ -248,9 +248,9 @@ server <- function(input, output, session) {
                tags$ul(
                  tags$li("The score of an area of the network is calculated in the following way:"),
                  tags$ul(
-                   tags$li("When a trend is statistically significant AND matches the desired direction for the indicator, a score of A is assigned."),
-                   tags$li("If there is no significant change, a score of C is assigned."),
-                   tags$li("If a trend is statistically significant but going in the opposite direction, a score of F is assigned.")
+                   tags$li("When a trend is statistically significant AND matches the desired direction for the indicator, a score of 100 is assigned."),
+                   tags$li("If there is no significant change, a score of 50 is assigned."),
+                   tags$li("If a trend is statistically significant but going in the opposite direction, a score of 0 is assigned.")
                  )
                ),
                p("Stable Method:"),
