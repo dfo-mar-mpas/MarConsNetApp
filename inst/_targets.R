@@ -28,10 +28,19 @@ tar_option_set(
 #### targets list ####
 
 list(
+  ##### Areas #####
+  tar_target(name=planning_area,
+             data_planning_areas()),
+
+  # get the Protected and Conserved areas in the bioregion
   tar_target(name = MPAs,
              command = {
-               data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
+               data_CPCAD_areas(planning_area,  zones = FALSE)
              }),
+
+  tar_target(Outside, #FIXME: this is only for WEBCA at the moment
+             st_transform(read_sf(system.file("data","WEBCA_10k_85k.shp", package = "MarConsNetAnalysis"))$geometry, crs=4326)
+  ),
 
 
   tar_target(name = subarea_coords,
@@ -39,79 +48,32 @@ list(
                getLatLon(MPAs)
              }),
 
-
-  # Coastal Material
-  tar_target(name = EBM,
-             command =  { data.frame(grouping=rep(c("Ecological",
-                                                 "Economic",
-                                                 "Governance",
-                                                 "Social & Cultural"),
-                                               times=c(3,3,3,4)),
-                                  labels=c("Habitat",
-                                           "Biodiversity",
-                                           "Productivity",
-                                           "Economic Effiency",
-                                           "Economic Equity",
-                                           "Economic Sustainability",
-                                           "Governance Outcomes",
-                                           "Governance Structure & Processes",
-                                           "Legal Obligations & Other Commitments",
-                                           "Culture",
-                                           "Ethical & Just Activities",
-                                           "Health & Well-being",
-                                           "Sustainable Communities"),
-                                  score=runif(13,55,100)) |>
-               group_by(grouping) |>
-               mutate(weight=1/n()) |>
-               ungroup()
-             }
-             ),
-
   tar_target(name = Ecological,
              command = {
-               ee <- data.frame(grouping=rep(c("Biodiversity",
-                                                       "Habitat",
-                                                       "Productivity"),
-                                                     times=c(3,5,3)),
-                                        labels=c("Genetic Diversity",
-                                                 "Species Diversity",
-                                                 "Functional Diversity",
+               data.frame(grouping=rep(c("Biodiversity",
+                                         "Habitat",
+                                         "Productivity"),
+                                       times=c(3,5,3)),
+                          labels=c("Genetic Diversity",
+                                   "Species Diversity",
+                                   "Functional Diversity",
 
-                                                 "Environmental Representativity",
-                                                 "Key Fish Habitat",
-                                                 "Connectivity",
-                                                 "Uniqueness",
-                                                 "Threats to Habitat",
+                                   "Environmental Representativity",
+                                   "Key Fish Habitat",
+                                   "Connectivity",
+                                   "Uniqueness",
+                                   "Threats to Habitat",
 
-                                                 "Biomass Metrics",
-                                                 "Structure and Function",
-                                                 "Threats to Productivity"),
-                                        score=runif(11,55,100)) |>
-                 # group_by(grouping) |>
-                 # mutate(weight=1/n()) |>
-                 mutate(weight=runif(11,1,10)) |>
-                 ungroup()|>
-                 mutate(angle=(cumsum(weight)-weight/2)/sum(weight)*360)
-               ee
-
+                                   "Biomass Metrics",
+                                   "Structure and Function",
+                                   "Threats to Productivity")) |>
+                 mutate(weight=runif(11,1,10),
+                        angle=(cumsum(weight)-weight/2)/sum(weight)*360)
              }),
 
-  tar_target(name = grade,
+  tar_target(name = APPTABS,
              command = {
-               function(percent){
-                 cutoffs=c(0, seq(60, 100, by = 10/3))
-                 letters=c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
-                 cut(percent,cutoffs,letters)
-               }
-               }),
-
-  tar_target(name = ftabs,
-             command = {
-               data.frame(flower=unique(c(Ecological$grouping, Ecological$labels)), place=tolower("Scotian_Shelf"))
-             }),
-
-  tar_target(name = MYTABS,
-             command = {
+               ftabs <- data.frame(flower=unique(c(Ecological$grouping, Ecological$labels)), place=tolower("Scotian_Shelf"))
                mytabs <- NULL
                for (i in seq_along(MPAs$NAME_E)) {
                  df <- ftabs
@@ -119,11 +81,7 @@ list(
                  mytabs[[i]] <- df
                }
 
-               do.call(rbind, mytabs)
-             }),
-
-  tar_target(name = APPTABS,
-             command = {
+               MYTABS <- do.call(rbind, mytabs)
                apptabs <- rbind(ftabs, MYTABS)
                apptabs$tab <- paste0("tab_", seq_along(1:length(apptabs$flower)))
                apptabs$link <- paste0("link_", seq_along(1:length(apptabs$flower)))
@@ -132,7 +90,7 @@ list(
                NAME_to_tag(apptabs)
              }),
 
-  tar_target(name = om, # FIXME: need to get the saved om (or add a real cookie)
+  tar_target(name = om, # FIXME: need use a real cookie or otherwise update the data
              command = {
                OM <- dataSPA::getData(type="om", age=3000, cookie="hi",
                                       path = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"))
@@ -214,7 +172,6 @@ list(
 
   tar_target(name = projectData,
              command = {
-               message("Class of rv_rounded_location: ", class(rv_rounded_location))
                dataProject <- NULL
                for (i in seq_along(dataTable$id)) {
                  message("i = ", i)
@@ -263,11 +220,6 @@ list(
 
              }),
 
-  tar_target(name = indicators,
-             command = {
-               data_indicators()
-               }),
-
   tar_target(name = Context,
              command = {
                lapply(areas, function(x) data_context(type="site", area=x))
@@ -278,10 +230,7 @@ list(
                read_excel(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data","metaframework.xlsx"))
              }),
 
-  tar_target(name = grades,
-             command = {
-               c("F", paste0(toupper(rep(letters[4:1], each = 3)), rep(c("-","","+"),4)))
-               }),
+
 
   tar_target(name = flowerPalette,
              command = {
@@ -374,47 +323,11 @@ list(
 
              }),
 
-  tar_target(name = calc_letter_grade,
-             command = {
-
-               cg <- function(scores) {
-                 sapply(scores, function(score) {
-                   if (!(is.na(score)) && !(is.nan(score))) {
-                     if (score >= 0 && score <= 20) {
-                       grade <- "F"
-                     } else if (score >= 20 && score < 40) {
-                       grade <- "D"
-                     } else if (score >= 40 && score < 60) {
-                       grade <- "C"
-                     } else if (score >= 60 && score < 80) {
-                       grade <- "B"
-                     } else if (score >= 80 && score <= 100) {
-                       grade <- "A"
-                     }
-                   } else {
-                     grade <- "NA"
-                   }
-                   return(grade)
-                 })
-               }
-
-               cg
-             }),
-
- tar_target(name = species,
-            command = {
-              species <- c("COD(ATLANTIC)", "HADDOCK")
-
-            }),
-
  tar_target(ds_all,
             # because this is loaded with the Mar.datawrangling package and not mentioned in the arguments to many of it's functions
             # mention ds_all whenever using e.g. self_filter() or summarize_catches()
             ds_all),
 
- tar_target(Outside,
-            st_transform(read_sf(system.file("data","WEBCA_10k_85k.shp", package = "MarConsNetAnalysis"))$geometry, crs=4326)
- ),
 
  tar_target(rv_rawdata_env,{
    temp <- new.env()
@@ -502,30 +415,6 @@ list(
             }),
 
 
-  tar_target(name = ABUNDANCE_RV,
-             command = {
-               rv <- vector(mode="list", length(areas))
-               get_data('rv', data.dir="C:/Users/HarbinJ/Documents/data/rv") #FIXME
-               for (i in seq_along(areas)) {
-                 for (j in seq_along(species)) { # This has up to
-                   message("i = ", i, " and j = ", j)
-                   rv[[i]][[j]] <- ind_rv_abundance(species = species[j], area=areas[i], MPAs=MPAs, data=GSSPECIES)
-                 }
-               }
-               names(rv) <- areas
-               for (i in seq_along(rv)) {
-                 names(rv[[i]]) <- species
-               }
-
-               rv
-
-             }),
-
-  tar_target(name = plotindy,
-             command = {
-               c(binned_indicators$indicators)
-             }),
-
  tar_target(name=whale_biodiversity,
             command= {
               ws <- project_whale_biodiversity()
@@ -558,20 +447,21 @@ list(
  tar_target(name = mapData,
             command = {
               # BANDAID FIX (ISSUE 54 APP)
-              mpa <- eval(MPAs)
-              fw <- eval(fish_weight)
-              fl <- eval(fish_length)
-              fw175 <- eval(fish_weight_per_1.75kn_tow)
-              zoo <- eval(zooplankton)
-              hb <- eval(haddock_biomass)
-              ah <- eval(all_haddock)
-              nn <- eval(nitrate)
-              ss <- eval(salinity)
-              cc <- eval(chlorophyll)
-              bd <- eval(bloom_df)
-              tt <- eval(temperature)
-              ws <- eval(whale_biodiversity)
-              sh <- eval(surface_height)
+              MPAs
+              fish_weight
+              fish_length
+              fish_weight_per_1.75kn_tow
+              zooplankton
+              haddock_biomass
+              all_haddock
+              nitrate
+              salinity
+              chlorophyll
+              bloom_df
+              temperature
+              whale_biodiversity
+              surface_height
+
 
               maps <- indicator_to_plot$plot[which(!(indicator_to_plot$plot == 0))]
 
@@ -579,72 +469,6 @@ list(
               for (i in seq_along(maps)) {
                 message(i)
                 m <- maps[i]
-                if (grepl("MPAs", m)) {
-                  m <- gsub("MPAs", "mpa", m)
-                }
-
-
-                if (grepl("MPAs", m)) {
-                  m <- gsub("MPAs", "mpa", m)
-                }
-                if (grepl("fish_weight", m)) {
-                  m <- gsub("fish_weight", "fw", m)
-                }
-                if (grepl("fish_length", m)) {
-                  m <- gsub("fish_length", "fl", m)
-                }
-                if (grepl("fish_weight_per_1.75kn_tow", m)) {
-                  m <- gsub("fish_weight_per_1.75kn_tow", "fw175", m)
-                }
-                if (grepl("zooplankton", m)) {
-                  m <- gsub("zooplankton", "zoo", m)
-                }
-                if (grepl("haddock_biomass", m)) {
-                  m <- gsub("haddock_biomass", "hb", m)
-                }
-                if (grepl("df=all_haddock", m)) {
-                  m <- gsub("df=all_haddock","df=ah", m)
-                }
-                if (grepl("df=nitrate", m)) {
-                  m <- gsub("df=nitrate","df=nn", m)
-                }
-                if (grepl("df=salinity", m)) {
-                  m <- gsub("df=salinity","df=ss", m)
-                }
-                if (grepl("df=chlorophyll", m)) {
-                  m <- gsub("df=chlorophyll","df=cc", m)
-                }
-                if (grepl("df=bloom_df", m)) {
-                  m <- gsub("df=bloom_df","df=bd", m)
-                }
-                if (grepl("df=temperature", m)) {
-                  m <- gsub("df=temperature","df=tt", m)
-                }
-                if (grepl("df=surface_height", m)) {
-                  m <- gsub("df=sh","df=surface_height", m)
-                }
-
-                if (grepl("df=whale_biodiversity", m)) {
-                  m <- gsub("df=ws","df=whale_biodiversity", m)
-                }
-
-                if (grepl("df=zooplankton", m)) {
-                  m <- gsub("df=zooplankton","df=zoo", m)
-                }
-                if (grepl("df=all_haddock", m)) {
-                  m <- gsub("df=all_haddock","df=ah", m)
-                }
-                if (grepl("df=bloom_df", m)) {
-                  m <- gsub("df=bloom_df","df=bd", m)
-                }
-                if (grepl("df=surface_height", m)) {
-                  m <- gsub("df=sh","df=surface_height", m)
-                }
-
-                if (grepl("df=whale_biodiversity", m)) {
-                  m <- gsub("df=ws","df=whale_biodiversity", m)
-                }
-
                 m <- paste0(substr(m, 1, nchar(m) - 1), ", map=TRUE)")
                 map[[i]] <- eval(parse(text=m))
               }
@@ -666,26 +490,9 @@ list(
 
  ),
 
- ####### FLOWER PLOT ######
 
- ##### Areas #####
- tar_target(name=bioregion,
-            data_bioregion()),
 
- tar_target(name=planning_area,
-            data_planning_areas()),
 
- # get the Protected and Conserved areas in the bioregion
- tar_target(name=consAreas,
-            data_CPCAD_areas(bioregion,zones=TRUE),
-            format = "qs",
-            packages = c("sf","arcpullr")),
-
- tar_target(name = all_areas,
-            bind_rows(bioregion,
-                      consAreas),
-            format = "qs",
-            packages = c("dplyr","sf","arcpullr")),
 
  ##### Indicators #####
 
@@ -1046,25 +853,7 @@ list(
 
  tar_target(name = pillar_ecol_df,
             command = {
-
-              Ecological <- data.frame(grouping=rep(c("Biodiversity",
-                                              "Habitat",
-                                              "Productivity"),
-                                            times=c(3,5,3)),
-                               labels=c("Genetic Diversity",
-                                        "Species Diversity",
-                                        "Functional Diversity",
-
-                                        "Environmental Representativity",
-                                        "Key Fish Habitat",
-                                        "Connectivity",
-                                        "Uniqueness",
-                                        "Threats to Habitat",
-
-                                        "Biomass Metrics",
-                                        "Structure and Function",
-                                        "Threats to Productivity"),
-                               score=runif(11,55,100))
+              Ecological # mention here for dependency silliness
 
               # REMOVING HYPOTHETICAL DATA
               area_name <- binned_indicators$mpa_name
