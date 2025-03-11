@@ -12,7 +12,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "shiny", "leaflet", "dplyr", "shinyjs", "devtools", "MarConsNetAnalysis", "MarConsNetData",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
-               "RColorBrewer", "car"),
+               "RColorBrewer", "car", "purrr"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -414,6 +414,39 @@ list(
 
             }),
 
+ tar_target(name = data_azmp_fixed_stations,
+            command = {
+
+              DOS  <- azmpdata::Derived_Occupations_Stations
+
+              # Add rows one by one
+              azmpdata::Zooplankton_Annual_Stations |>
+                select(station) |>
+                unique() |>
+                rowwise() |>
+                mutate(longitude = if_else(station=="HL2",
+                                           DOS$longitude[DOS$station==station][274],
+                                           DOS$longitude[DOS$station==station][1]),
+                       latitude = if_else(station=="HL2",
+                                          DOS$latitude[DOS$station==station][274],
+                                          DOS$latitude[DOS$station==station][1])) |>
+                add_row(station = "Halifax", latitude = 43.5475, longitude = -63.5714) |>
+                add_row(station = "Yarmouth", latitude = 43.8377, longitude = -66.1150) |>
+                add_row(station = "North Sydney", latitude = 46.2051, longitude = -60.2563)
+            }),
+
+
+ tar_target(name = data_azmp_zooplankton_annual_stations,
+            command = {
+              azmpdata::Zooplankton_Annual_Stations |>
+                left_join(data_azmp_fixed_stations, by = "station")
+            }),
+
+ tar_target(name = data_azmp_Discrete_Occupations_Sections,
+            command = {
+              df <- azmpdata::Discrete_Occupations_Sections |>
+                mutate(year = as.numeric(format(date, "%Y")))
+            }),
 
  tar_target(name=whale_biodiversity,
             command= {
@@ -496,85 +529,314 @@ list(
 
  ##### Indicators #####
 
-  tar_target(ind_placeholder_1_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_2_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_3_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_4_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_5_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_6_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_7_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_8_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_9_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_10_df,ind_placeholder(areas = all_areas)),
-  tar_target(ind_placeholder_11_df,ind_placeholder(areas = all_areas)),
+ # tar_target(ind_placeholder_df,ind_placeholder(areas = all_areas)),
+ tar_target(ind_placeholder_df,
+            command = {
+              process_indicator(data = NA,
+                               indicator = "placeholder")
+            }),
+
+
+
+ tar_target(ind_fish_length,
+            command = {
+
+              data <- rv_data_det |>
+                mutate(longitude = LONGITUDE,
+                       latitude = LATITUDE,
+                       fish_length = FLEN,
+                       year = YEAR)  |>
+                select(longitude, latitude, year, fish_length)
+
+              process_indicator(data = data,
+                               indicator_var_name = "fish_length",
+                               indicator = "Fish Length",
+                               type = "RV Survey",
+                               units = "cm",
+                               scoring = "desired state: increase",
+                               project = 726,
+                               areas = MPAs)
+            }
+
+ ),
+
+ tar_target(ind_fish_weight,
+            command = {
+
+              data <- rv_data_det |>
+                mutate(longitude = LONGITUDE,
+                       latitude = LATITUDE,
+                       fish_weight = FWT,
+                       year = YEAR)  |>
+                select(longitude, latitude, year, fish_weight)
+
+              process_indicator(data = data,
+                               indicator_var_name = "fish_weight",
+                               indicator = "Fish Weight",
+                               type = "RV Survey",
+                               units = "g",
+                               scoring = "desired state: increase",
+                               project = 726,
+                               areas = MPAs)
+            }
+
+ ),
+
+ tar_target(ind_haddock_counts,
+            command={
+              data = rv_data |>
+                filter(COMM %in% c("HADDOCK")) |>
+                mutate(longitude = LONGITUDE,
+                       latitude = LATITUDE,
+                       haddock_counts = TOTNO,
+                       year = YEAR)  |>
+                select(longitude, latitude, year, haddock_counts)
+
+              process_indicator(data = data,
+                               indicator_var_name = "haddock_counts",
+                               indicator = "Haddock Number per Tow",
+                               type = "RV Survey",
+                               units = "Number per Tow",
+                               scoring = "desired state: increase",
+                               project = 726,
+                               areas = MPAs)
+            }),
+
+ tar_target(ind_haddock_biomass,
+            command={
+              data <- rv_data |>
+                filter(COMM %in% c("HADDOCK")) |>
+                mutate(longitude = LONGITUDE,
+                       latitude = LATITUDE,
+                       haddock_biomass = TOTWGT,
+                       year = YEAR)  |>
+                select(longitude, latitude, year, haddock_biomass)
+
+              process_indicator(data = data,
+                               indicator_var_name = "haddock_biomass",
+                               indicator = "Biomass of Haddock per Tow",
+                               type = "RV Survey",
+                               units = "kg per tow",
+                               scoring = "desired state: increase",
+                               project = 726,
+                               areas = MPAs)
+            }),
+
+
+ tar_target(ind_zooplankton,
+            command={
+              data <- data_azmp_zooplankton_annual_stations |>
+                mutate(Calanus_finmarchicus_biomass = Calanus_finmarchicus_log10)  |>
+                select(longitude, latitude, year, Calanus_finmarchicus_biomass)
+
+              process_indicator(data = data,
+                               indicator = "Biomass of Zooplankton (Calanus finmarchicus)",
+                               indicator_var_name = "Calanus_finmarchicus_biomass",
+                               type = "Zooplankton AZMP",
+                               units = "log10 of abundance",
+                               scoring = "desired state: increase",
+                               project = 579,
+                               areas = MPAs)
+            }),
+
+
+
+
+ tar_target(ind_surface_height,
+            command={
+              data <- azmpdata::Derived_Monthly_Stations |>
+                left_join(data_azmp_fixed_stations, by = "station")  |>
+                select(longitude, latitude, year, sea_surface_height)
+
+              process_indicator(data = data,
+                               indicator_var_name = "sea_surface_height",
+                               indicator = "sea surface height",
+                               type = "derived (AZMP)",
+                               units = "m",
+                               scoring = "desired state: decrease",
+                               project = 579,
+                               climate = TRUE,
+                               areas = MPAs)
+            }),
+
+ tar_target(ind_nitrate,
+            command={
+              data <- data_azmp_Discrete_Occupations_Sections  |>
+                select(longitude, latitude, year, depth, nitrate)
+              process_indicator(data = data,
+                               indicator_var_name = "nitrate",
+                               indicator = "Nutrient Conditions (Nitrate)",
+                               type = "AZMP",
+                               units = "mmol/m3",
+                               scoring = "desired state: decrease",
+                               project = 579,
+                               climate = TRUE,
+                               other_nest_variables="depth",
+                               areas = MPAs)
+            }),
+
+ tar_target(ind_salinity,
+            command={
+
+              data <- data_azmp_Discrete_Occupations_Sections  |>
+                select(longitude, latitude, year, depth, salinity)
+              process_indicator(data = data,
+                               indicator_var_name = "salinity",
+                               indicator = "Salinity",
+                               type = "AZMP",
+                               units = "psu",
+                               scoring = "desired state: stable",
+                               project = 579,
+                               other_nest_variables="depth",
+                               areas = MPAs)
+            }),
+
+ tar_target(ind_temperature,
+            command={
+              data <- data_azmp_Discrete_Occupations_Sections  |>
+                select(longitude, latitude, year, depth, temperature)
+
+              process_indicator(data = data,
+                               indicator_var_name = "temperature",
+                               indicator = "Temperature",
+                               type = "AZMP",
+                               units = "C",
+                               scoring = "desired state: decrease",
+                               project = 579,
+                               climate = TRUE,
+                               other_nest_variables="depth",
+                               areas = MPAs)
+            }),
+
+ tar_target(ind_chlorophyll,
+            command={
+              data <- data_azmp_Discrete_Occupations_Sections  |>
+                select(longitude, latitude, year, depth, chlorophyll)
+
+
+              process_indicator(data = data,
+                               indicator_var_name = "chlorophyll",
+                               indicator = "Chlorophyll",
+                               type = "AZMP",
+                               units = "ug/L",
+                               scoring = "desired state: stable",
+                               project = 579,
+                               other_nest_variables="depth",
+                               areas = MPAs)
+            }),
+
+ tar_target(ind_bloom_amplitude,
+            command={
+              script_lines <- readLines("https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_01a_define_polygons.R")
+
+              k1 <- which(grepl("poly\\$atlantic = list", script_lines))
+              k2 <- which(grepl("-61.1957, -61.1957, -59.54983, -59.54983, -61.1957", script_lines))
+              script <- script_lines[k1:k2]
+              poly <- list()
+              eval(parse(text=script))
+              DF <- poly$atlantic$AZMP$CSS_V02
+
+              coords <- matrix(c(DF$lon, DF$lat), ncol = 2, byrow = FALSE)
+              coords <- rbind(coords, coords[1,])
+              polygon_sf <- st_sfc(st_polygon(list(coords)))
+              st_crs(polygon_sf) <- 4326
+
+
+              data <- azmpdata::RemoteSensing_Annual_Broadscale |>
+                filter(area == "CSS_remote_sensing") |>
+                mutate(geometry = polygon_sf) |>
+                st_as_sf() |>
+                select(area, year, bloom_amplitude, geometry) |>
+                st_make_valid()
+
+
+
+              process_indicator(data = data,
+                               indicator_var_name = "bloom_amplitude",
+                               indicator = "Bloom Amplitude",
+                               type = "Remote Sensing",
+                               units = "(unit unknown)",
+                               scoring = "desired state: stable",
+                               project = 579,
+                               areas = MPAs)
+            }
+ ),
 
  ##### Indicator Bins #####
  tar_target(bin_biodiversity_FunctionalDiversity_df,
             aggregate_groups("bin",
                              "Functional Diversity",
                              weights=1,
-                             ind_placeholder_1_df
+                             ind_placeholder_df
             )),
  tar_target(bin_biodiversity_GeneticDiversity_df,
             aggregate_groups("bin",
                              "Genetic Diversity",
                              weights=1,
-                             ind_placeholder_1_df,
-                             ind_placeholder_2_df
+                             ind_placeholder_df
             )),
  tar_target(bin_biodiversity_SpeciesDiversity_df,
             aggregate_groups("bin",
                              "Species Diversity",
                              weights=1,
-                             ind_placeholder_3_df
+                             ind_placeholder_df
             )),
  tar_target(bin_habitat_Connectivity_df,
             aggregate_groups("bin",
                              "Connectivity",
                              weights=1,
-                             ind_placeholder_4_df
+                             ind_placeholder_df
             )),
  tar_target(bin_habitat_EnvironmentalRepresentativity_df,
             aggregate_groups("bin",
                              "Environmental Representativity",
                              weights=1,
-                             ind_placeholder_5_df
-            )),
+                             ind_nitrate,
+                             ind_salinity,
+                             ind_chlorophyll,
+                             ind_temperature,
+                             ind_surface_height,
+                             ind_bloom_amplitude
+                             )),
  tar_target(bin_habitat_KeyFishHabitat_df,
             aggregate_groups("bin",
                              "Key Fish Habitat",
                              weights=1,
-                             ind_placeholder_6_df
+                             ind_temperature
             )),
  tar_target(bin_habitat_ThreatstoHabitat_df,
             aggregate_groups("bin",
                              "Threats to Habitat",
                              weights=1,
-                             ind_placeholder_7_df
+                             ind_placeholder_df
             )),
  tar_target(bin_habitat_Uniqueness_df,
             aggregate_groups("bin",
                              "Uniqueness",
                              weights=1,
-                             ind_placeholder_8_df
+                             ind_placeholder_df
             )),
  tar_target(bin_productivity_BiomassMetrics_df,
             aggregate_groups("bin",
                              "Biomass Metrics",
                              weights=1,
-                             ind_placeholder_9_df
+                             ind_fish_length,
+                             ind_fish_weight,
+                             ind_haddock_biomass,
+                             ind_haddock_counts,
+                             ind_zooplankton
             )),
  tar_target(bin_productivity_StructureandFunction_df,
             aggregate_groups("bin",
                              "Structure and Function",
                              weights=1,
-                             ind_placeholder_10_df
+                             ind_placeholder_df
             )),
  tar_target(bin_productivity_ThreatstoProductivity_df,
             aggregate_groups("bin",
                              "Threats to Productivity",
                              weights=1,
-                             ind_placeholder_11_df
+                             ind_placeholder_df
             )),
 
 
@@ -602,6 +864,30 @@ list(
                              bin_productivity_BiomassMetrics_df,
                              bin_productivity_StructureandFunction_df,
                              bin_productivity_ThreatstoProductivity_df)),
+
+ ##### Ecological Pillar #####
+
+ tar_target(pillar_ecol_df_new,
+            aggregate_groups("pillar",
+                             "Ecological",
+                             weights = NA,
+                             ecol_obj_biodiversity_df,
+                             ecol_obj_habitat_df,
+                             ecol_obj_productivity_df)),
+
+ tar_target(all_project_geoms,
+             command = {
+
+               pillar_ecol_df_new |>
+                 filter(!map_lgl(data, is.null)) |>
+                 mutate(data = map(data,~.x |> select(year,geometry) |> distinct())) |>
+                 select(data,type,project,areaID) |>
+                 unnest(cols = data) |>
+                 st_as_sf()
+
+             }),
+
+
 
  tar_target(fish_length,
             command = {
