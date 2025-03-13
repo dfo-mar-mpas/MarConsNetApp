@@ -551,10 +551,11 @@ list(
               process_indicator(data = data,
                                indicator_var_name = "fish_length",
                                indicator = "Fish Length",
-                               type = "RV Survey",
+                               type = "Ecosystem Trawl Survey",
                                units = "cm",
                                scoring = "desired state: increase",
-                               project = 726,
+                               PPTID = 726,
+                               project_short_title = "RV Survey",
                                areas = MPAs)
             }
 
@@ -573,10 +574,11 @@ list(
               process_indicator(data = data,
                                indicator_var_name = "fish_weight",
                                indicator = "Fish Weight",
-                               type = "RV Survey",
+                               type = "Ecosystem Trawl Survey",
                                units = "g",
                                scoring = "desired state: increase",
-                               project = 726,
+                               PPTID = 726,
+                               project_short_title = "RV Survey",
                                areas = MPAs)
             }
 
@@ -595,10 +597,11 @@ list(
               process_indicator(data = data,
                                indicator_var_name = "haddock_counts",
                                indicator = "Haddock Number per Tow",
-                               type = "RV Survey",
+                               type = "Ecosystem Trawl Survey",
                                units = "Number per Tow",
                                scoring = "desired state: increase",
-                               project = 726,
+                               PPTID = 726,
+                               project_short_title = "RV Survey",
                                areas = MPAs)
             }),
 
@@ -615,10 +618,11 @@ list(
               process_indicator(data = data,
                                indicator_var_name = "haddock_biomass",
                                indicator = "Biomass of Haddock per Tow",
-                               type = "RV Survey",
+                               type = "Ecosystem Trawl Survey",
                                units = "kg per tow",
                                scoring = "desired state: increase",
-                               project = 726,
+                               PPTID = 726,
+                               project_short_title = "RV Survey",
                                areas = MPAs)
             }),
 
@@ -632,10 +636,11 @@ list(
               process_indicator(data = data,
                                indicator = "Biomass of Zooplankton (Calanus finmarchicus)",
                                indicator_var_name = "Calanus_finmarchicus_biomass",
-                               type = "Zooplankton AZMP",
+                               type = "Zooplankton Net Tows",
                                units = "log10 of abundance",
                                scoring = "desired state: increase",
-                               project = 579,
+                               PPTID = 579,
+                               project_short_title = "AZMP",
                                areas = MPAs)
             }),
 
@@ -654,7 +659,8 @@ list(
                                type = "derived (AZMP)",
                                units = "m",
                                scoring = "desired state: decrease",
-                               project = 579,
+                               PPTID = 579,
+                               project_short_title = "AZMP",
                                climate = TRUE,
                                areas = MPAs)
             }),
@@ -666,10 +672,11 @@ list(
               process_indicator(data = data,
                                indicator_var_name = "nitrate",
                                indicator = "Nutrient Conditions (Nitrate)",
-                               type = "AZMP",
+                               type = "Discrete Occupations Sections",
                                units = "mmol/m3",
                                scoring = "desired state: decrease",
-                               project = 579,
+                               PPTID = 579,
+                               project_short_title = "AZMP",
                                climate = TRUE,
                                other_nest_variables="depth",
                                areas = MPAs)
@@ -683,10 +690,11 @@ list(
               process_indicator(data = data,
                                indicator_var_name = "salinity",
                                indicator = "Salinity",
-                               type = "AZMP",
+                               type = "Discrete Occupations Sections",
                                units = "psu",
                                scoring = "desired state: stable",
-                               project = 579,
+                               PPTID = 579,
+                               project_short_title = "AZMP",
                                other_nest_variables="depth",
                                areas = MPAs)
             }),
@@ -699,10 +707,11 @@ list(
               process_indicator(data = data,
                                indicator_var_name = "temperature",
                                indicator = "Temperature",
-                               type = "AZMP",
+                               type = "Discrete Occupations Sections",
                                units = "C",
                                scoring = "desired state: decrease",
-                               project = 579,
+                               PPTID = 579,
+                               project_short_title = "AZMP",
                                climate = TRUE,
                                other_nest_variables="depth",
                                areas = MPAs)
@@ -717,10 +726,11 @@ list(
               process_indicator(data = data,
                                indicator_var_name = "chlorophyll",
                                indicator = "Chlorophyll",
-                               type = "AZMP",
+                               type = "Discrete Occupations Sections",
                                units = "ug/L",
                                scoring = "desired state: stable",
-                               project = 579,
+                               PPTID = 579,
+                               project_short_title = "AZMP",
                                other_nest_variables="depth",
                                areas = MPAs)
             }),
@@ -757,7 +767,8 @@ list(
                                type = "Remote Sensing",
                                units = "(unit unknown)",
                                scoring = "desired state: stable",
-                               project = 579,
+                               PPTID = 579,
+                               project_short_title = "AZMP",
                                areas = MPAs)
             }
  ),
