@@ -533,7 +533,8 @@ list(
  tar_target(ind_placeholder_df,
             command = {
               process_indicator(data = NA,
-                               indicator = "placeholder")
+                               indicator = "placeholder",
+                               areas = MPAs)
             }),
 
 
@@ -878,21 +879,39 @@ list(
 
  ##### Ecological Pillar #####
 
- tar_target(pillar_ecol_df_new,
-            aggregate_groups("pillar",
+ tar_target(pillar_ecol_df_data,
+
+            {target_bin_weight <- 1
+
+            pedf <- aggregate_groups("pillar",
                              "Ecological",
                              weights = NA,
                              ecol_obj_biodiversity_df,
                              ecol_obj_habitat_df,
-                             ecol_obj_productivity_df)),
+                             ecol_obj_productivity_df)|>
+              mutate(PPTID = as.character(PPTID))
+
+          x <-  pedf |>
+   group_by(objective, bin, areaID) |>
+   reframe(ind_name = unique(areaID),
+           areaID = "Scotian Shelf",
+           score = weighted.mean(score,weight,na.rm = TRUE),
+           score = if_else(is.nan(score),NA,score),
+           PPTID = paste(PPTID, collapse = "; ")) |>
+   group_by(bin) |>
+   mutate(weight=target_bin_weight/n()) |>
+   ungroup() |>
+   bind_rows(pedf)
+
+           }),
 
  tar_target(all_project_geoms,
              command = {
 
-               pillar_ecol_df_new |>
+               pillar_ecol_df_data |>
                  filter(!map_lgl(data, is.null)) |>
                  mutate(data = map(data,~.x |> select(year,geometry) |> distinct())) |>
-                 select(data,type,project,areaID) |>
+                 select(data,type,PPTID,areaID) |>
                  unnest(cols = data) |>
                  st_as_sf()
 

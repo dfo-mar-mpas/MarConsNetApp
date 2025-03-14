@@ -917,20 +917,20 @@ server <- function(input, output, session) {
     if (input$tabs == "tab_0") {
       if (state$mpas == "All") {
         NAME <- "Scotian Shelf"
-        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
+        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),],
                                             grouping = "objective",
                                             labels = "bin",
-                                            score = "ind_status",
+                                            score = "score",
                                             max_score=100,
                                             min_score=0,
                                             title=NAME)
       } else {
-        if (state$mpas %in% pillar_ecol_df$area_name) {
+        if (state$mpas %in% pillar_ecol_df$areaID) {
         NAME <- state$mpas
-        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == NAME),],
+        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),],
                                             grouping = "objective",
                                             labels = "bin",
-                                            score = "ind_status",
+                                            score = "score",
                                             max_score=100,
                                             min_score=0,
                                             title=NAME
@@ -1023,22 +1023,22 @@ server <- function(input, output, session) {
           output[[paste0("bar", id)]] <- renderPlot({
             # Ensure bar chart is rendered only when tab_0 is active
             if (input$tabs == "tab_0") {
-              req(input$mpas %in% c("All", unique(pillar_ecol_df$area_name)))
+              req(input$mpas %in% c("All", unique(pillar_ecol_df$areaID)))
               if (state$mpas == "All") {
-                c1 <- 1:length(pillar_ecol_df$area_name)
+                c1 <- 1:length(pillar_ecol_df$areaID)
               } else {
-                c1 <- which(pillar_ecol_df$area_name == state$mpas)
+                c1 <- which(pillar_ecol_df$areaID == state$mpas)
               }
 
               c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
               KEEP <- intersect(c1,c2)
-              ymax <- pillar_ecol_df$ind_status[KEEP]
+              ymax <- pillar_ecol_df$score[KEEP]
               weight <- pillar_ecol_df$weight[KEEP]
               if (length(ymax) == 0) {
                 # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
                 c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
                 KEEP <- intersect(c1,c2)
-                ymax <- pillar_ecol_df$ind_status[KEEP]
+                ymax <- pillar_ecol_df$score[KEEP]
                 weight <- pillar_ecol_df$weight[KEEP]
               }
 
@@ -1091,16 +1091,16 @@ server <- function(input, output, session) {
           output[[paste0("site_bar", id)]] <- renderPlot({
             # Ensure bar chart is rendered only when tab_0 is active
             if (input$tabs == "tab_0") {
-              req(input$mpas %in% c("All", unique(pillar_ecol_df$area_name)))
+              req(input$mpas %in% c("All", unique(pillar_ecol_df$areaID)))
               # Ensure ymax is properly filtered and has a single value
               if (state$mpas == "All") {
-                c1 <- 1:length(pillar_ecol_df$area_name)
+                c1 <- 1:length(pillar_ecol_df$areaID)
               } else {
-                c1 <- which(pillar_ecol_df$area_name == state$mpas)
+                c1 <- which(pillar_ecol_df$areaID == state$mpas)
               }
               c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
               KEEP <- intersect(c1,c2)
-              ymax <- pillar_ecol_df$ind_status[KEEP]
+              ymax <- pillar_ecol_df$score[KEEP]
               weight <- pillar_ecol_df$weight[KEEP]
 
 
@@ -1109,7 +1109,7 @@ server <- function(input, output, session) {
                 # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
                 c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
                 KEEP <- intersect(c1,c2)
-                ymax <- pillar_ecol_df$ind_status[KEEP]
+                ymax <- pillar_ecol_df$score[KEEP]
                 weight <- pillar_ecol_df$weight[KEEP]
               }
               ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
