@@ -1316,6 +1316,27 @@ server <- function(input, output, session) {
       }
     }
   })
+
+  observeEvent(input$tabs, {
+    updateQueryString(paste0("?tab=", input$tabs), mode = "push")
+  })
+
+  # Set initial tab based on URL
+  observe({
+    query <- parseQueryString(session$clientData$url_search)
+    if (!is.null(query[['tab']])) {
+      updateTabsetPanel(session, "tabs", selected = query[['tab']])
+    }
+  })
+
+  # Display current URL (for demonstration)
+  output$current_url <- renderText({
+    paste0("Current URL: ", session$clientData$url_protocol, "//",
+           session$clientData$url_hostname, ":",
+           session$clientData$url_port,
+           session$clientData$url_pathname,
+           session$clientData$url_search)
+  })
 }
 
 # Run the application
