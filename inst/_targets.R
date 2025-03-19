@@ -917,8 +917,10 @@ list(
    group_by(bin) |>
    mutate(weight=target_bin_weight/n()) |>
    ungroup() |>
-   bind_rows(pedf)
-
+   bind_rows(pedf) |>
+            mutate(tab=make.names(paste0(areaID,
+                                         "_",
+                                         indicator)))
            }),
 
  tar_target(all_project_geoms,
