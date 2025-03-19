@@ -139,9 +139,8 @@ server <- function(input, output, session) {
     })
   })
   output$mytabs = shiny::renderUI({
-    browser()
-    #nTabs = length(APPTABS$flower)+length(pillar_ecol_df$ind_name)
-    myTabs = list(APPTABS$tab, pillar_ecol_df$tab) #lapply(paste0('tab_', 0: nTabs), tabPanel)
+    nTabs = length(APPTABS$flower)+length(pillar_ecol_df$ind_name)
+    myTabs = lapply(c(APPTABS$tab, pillar_ecol_df$tab), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
 
@@ -501,7 +500,7 @@ server <- function(input, output, session) {
   # Dynmaically coding in which actionLink is will paste indicators
   calculated_info <- shiny::reactive({
     req(input$tabs)
-    tab_id <- sub("tab", "tab", input$tabs)
+    tab_id <- input$tabs
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
       if (!(input$tabs == "tab_0")) {
           if (input$tabs %in% odf$tab) {
@@ -547,7 +546,7 @@ server <- function(input, output, session) {
         }
         binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$ind_name[keepind]))
 
-        ind_links <- shiny::tagList(lapply(seq_along(pillar_ecol_df$ind_name[keepind]), function(i) {
+        ind_tabs <- shiny::tagList(lapply(seq_along(pillar_ecol_df$ind_name[keepind]), function(i) {
           tab_id <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$tab[keepind][i]))
           shiny::tags$a(
             href = paste0("#", tab_id),
@@ -601,7 +600,7 @@ server <- function(input, output, session) {
             indicator_label = indicator_label,
             flower = flower,
             indicator_bin_label = indicator_bin_label,
-            ind_links = ind_links
+            ind_tabs = ind_tabs
             #formatted_projects = formatted_projects_grouped
           ))
         } else {
@@ -612,7 +611,7 @@ server <- function(input, output, session) {
             indicator_label = indicator_label,
             flower = flower,
             indicator_bin_label = indicator_bin_label,
-            ind_links = ind_links
+            ind_tabs = ind_tabs
             #formatted_projects = "There are no projects for this selection."
           ))
         }
@@ -645,7 +644,7 @@ server <- function(input, output, session) {
     info <- calculated_info()
     req(info)  # Ensure the info is available
     if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
-    indj <- strsplit(as.character(info$ind_tabss), "<a href=")[[1]]
+    indj <- strsplit(as.character(info$ind_tabs), "<a href=")[[1]]
     indj <- indj[nzchar(indj)]
     indj <- paste0("<a href=", indj)
     indj <- trimws(gsub("\n", "", indj), "both")
