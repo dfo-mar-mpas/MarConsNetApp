@@ -555,9 +555,9 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 726,
                                project_short_title = "RV Survey",
-                               areas = MPAs)
-            }
-
+                               areas = MPAs,
+                               plot_type = "violin")
+              }
  ),
 
  tar_target(ind_fish_weight,
@@ -578,10 +578,10 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 726,
                                project_short_title = "RV Survey",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type = "violin")
             }
-
- ),
+),
 
  tar_target(ind_haddock_counts,
             command={
@@ -601,7 +601,8 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 726,
                                project_short_title = "RV Survey",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type = "violin")
             }),
 
  tar_target(ind_haddock_biomass,
@@ -622,12 +623,14 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 726,
                                project_short_title = "RV Survey",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type = "violin")
             }),
 
 
  tar_target(ind_zooplankton,
             command={
+
               data <- data_azmp_zooplankton_annual_stations |>
                 mutate(Calanus_finmarchicus_biomass = Calanus_finmarchicus_log10)  |>
                 select(longitude, latitude, year, Calanus_finmarchicus_biomass)
@@ -930,6 +933,27 @@ list(
 
              }),
 
+
+tar_target(plot_files,
+            command = {
+              allplotnames <- NULL
+              for(i in 1:nrow(pillar_ecol_df_data)){
+                if(!is.null(pillar_ecol_df_data$plot[[i]])){
+                filename <-  file.path(Sys.getenv("OneDriveCommercial"),
+                                       "MarConsNetTargets",
+                                       "plots",
+                                       make.names(paste0("plot_",
+                                                         pillar_ecol_df_data$areaID[i],
+                                                         "_",
+                                                         pillar_ecol_df_data$indicator[i],
+                                                         ".png")))
+
+                allplotnames <- c(allplotnames,filename)
+                ggsave(filename,pillar_ecol_df_data$plot[[i]])
+                }
+              }
+              allplotnames
+            }),
 
 
  tar_target(fish_length,
