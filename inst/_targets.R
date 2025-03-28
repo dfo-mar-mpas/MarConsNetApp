@@ -274,6 +274,8 @@ list(
                  })
                }
 
+               #2025/03/26 this all works
+
                for (i in seq_along(O$objectives)) {
                  ob <- gsub("[-\n]", "", O$objectives[i])
                  if (!(O$objectives[i] == "0")) {
@@ -289,7 +291,6 @@ list(
                    O$area[i] <= "area_0"
                  }
                }
-
 
                O$tab <- 0
                O$link <- 0
@@ -454,28 +455,28 @@ list(
               ws
             }),
 
- tar_target(name = indicator_to_plot,
-            command = {
-
-              DF <- list(fish_weight=fish_weight,
-                         fish_length=fish_length,
-                         fish_weight_per_1.75kn_tow=fish_weight_per_1.75kn_tow,
-                         zooplankton=zooplankton,
-                         haddock_biomass=haddock_biomass,
-                         all_haddock=all_haddock,
-                         nitrate=nitrate,
-                         salinity=salinity,
-                         chlorophyll=chlorophyll,
-                         bloom_df=bloom_df,
-                         temperature=temperature,
-                         whale_biodiversity=whale_biodiversity,
-                         surface_height=surface_height)
-              ITP <- analysis(DF=DF, bi=binned_indicators)
-
-              ITP
-            }
-
-              ),
+ # tar_target(name = indicator_to_plot,
+ #            command = {
+ #
+ #              DF <- list(fish_weight=fish_weight,
+ #                         fish_length=fish_length,
+ #                         fish_weight_per_1.75kn_tow=fish_weight_per_1.75kn_tow,
+ #                         zooplankton=zooplankton,
+ #                         haddock_biomass=haddock_biomass,
+ #                         all_haddock=all_haddock,
+ #                         nitrate=nitrate,
+ #                         salinity=salinity,
+ #                         chlorophyll=chlorophyll,
+ #                         bloom_df=bloom_df,
+ #                         temperature=temperature,
+ #                         whale_biodiversity=whale_biodiversity,
+ #                         surface_height=surface_height)
+ #              ITP <- analysis(DF=DF, bi=binned_indicators)
+ #
+ #              ITP
+ #            }
+ #
+ #              ),
 
  tar_target(name = mapData,
             command = {
@@ -896,7 +897,9 @@ list(
 
  tar_target(pillar_ecol_df_data,
 
-            {target_bin_weight <- 1
+            {
+            APPTABS
+            target_bin_weight <- 1
 
             pedf <- aggregate_groups("pillar",
                              "Ecological",
@@ -909,7 +912,7 @@ list(
 
           x <-  pedf |>
    group_by(objective, bin, areaID) |>
-   reframe(ind_name = unique(areaID),
+   reframe(indicator = unique(areaID),
            areaID = "Scotian Shelf",
            score = weighted.mean(score,weight,na.rm = TRUE),
            score = if_else(is.nan(score),NA,score),
@@ -918,10 +921,11 @@ list(
    mutate(weight=target_bin_weight/n()) |>
    ungroup() |>
    bind_rows(pedf) |>
-            mutate(tab=make.names(paste0(areaID,
-                                         "_",
-                                         indicator)))
-           }),
+            # mutate(tab=make.names(paste0(areaID,
+            #                              "_",
+            #                              indicator)))
+            mutate(tab=paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))))
+ }),
 
  tar_target(all_project_geoms,
              command = {
@@ -1206,161 +1210,161 @@ tar_target(plot_files,
 
  ##### Pillar #####
 
- tar_target(name = pillar_ecol_df,
-            command = {
-              Ecological # mention here for dependency silliness
-
-              # REMOVING HYPOTHETICAL DATA
-              area_name <- binned_indicators$mpa_name
-
-              ind_name <- indicator_to_plot$indicators
-
-              ind_status <- NULL
-              for (i in seq_along(indicator_to_plot$status_grade)) {
-                message(i)
-                if (!(is.na(indicator_to_plot$status_grade[i]))) {
-                if (indicator_to_plot$status_grade[i] == "A") {
-                  ind_status[[i]] <- 100
-                } else if (indicator_to_plot$status_grade[i] == "C") {
-                  ind_status[[i]] <- 50
-                } else if (indicator_to_plot$status_grade[i] == "F") {
-                  ind_status[[i]] <- 0
-                }
-                } else {
-                  ind_status[[i]] <- NA
-                }
-              }
-
-              ind_status <- unlist(ind_status)
-
-              extract_first_number <- function(sentence) {
-                match <- regexpr("-?\\d+\\.?\\d*", sentence)
-                if (match != -1) {
-                  as.numeric(regmatches(sentence, match))
-                } else {
-                  NA
-                }
-              }
-
-              ind_trend <- NULL
-              for (i in seq_along(indicator_to_plot$trend)) {
-                if (grepl("BLANK", indicator_to_plot$trend[i])) {
-                  ind_trend[i] <- NA
-                } else {
-                  ind_trend[i] <- extract_first_number(indicator_to_plot$trend[i])
-
-                }
-              }
-              ind_trend <- unlist(lapply(indicator_to_plot$trend, function(x) extract_first_number(x)))
-
-              ind_projects <- indicator_to_plot$project
-
-              ind_rawdata_type <- "Expert opinion"
-
-              ind_certainty <- "certain"
-
-              bin <- binned_indicators$indicator_bin #FIXME
-
-              weight <- NULL
-
-              Ecological$labels[which(Ecological$labels == "Environmental Representativity")] <- "Environmental (Representativity)"
-
-              objectives <- list()  # Initialize as a list
-              for (i in seq_along(indicator_to_plot$indicator_bin)) {
-                II <- indicator_to_plot$indicator_bin[i]
-                sp <- trimws(strsplit(II, ";")[[1]], "both")
-                weight[i] <- 1/length(sp)
-                objectives[[i]] <- vector("list", length(sp))  # Initialize objectives[[i]] as a list with the correct length
-                for (j in seq_along(sp)) {
-                  message("i =", i, " j = ", j)
-                  objectives[[i]][[j]] <- Ecological$grouping[which(tolower(Ecological$labels) == tolower(sp[j]))]
-                }
-              }
-
-              objectives <- lapply(objectives, function(x) unlist(x))
-              objectives <- lapply(objectives, unique)
-              objective <- unlist(lapply(objectives, function(x) paste0(x, collapse=" ; ")))
-
-
-              pillar <- "Ecological"
-
-              df <- data.frame(area_name=area_name, ind_name=ind_name, ind_status=ind_status, ind_trend=ind_trend, ind_projects=ind_projects,
-                               ind_rawdata_type=ind_rawdata_type, ind_certainty=ind_certainty, bin=bin, weight=weight, objective=objective,
-                               pillar=pillar)
-              df$bin <- trimws(toupper(df$bin), "both")
-              df$objective <- trimws(toupper(df$objective), "both")
-
-
-              df <- df %>%
-                mutate(bin = strsplit(as.character(bin), "; ")) %>%
-                unnest(bin)
-
-              for (i in seq_along(df$objective)) {
-                message(i)
-                df$objective[i] <- Ecological$grouping[which(tolower(Ecological$labels) == trimws(tolower(df$bin[i]), "both"))]
-              }
-
-              AREAS <- unique(df$area_name)
-              BAD <- vector("list", length(AREAS))
-
-              for (i in seq_along(AREAS)) {
-                keep <- which(df$area_name == AREAS[i])
-                ped <- df[keep,]
-                bins <- unique(tolower(trimws(ped$bin, "both")))
-
-                bad <- Ecological$labels[which(!(tolower(Ecological$labels) %in% bins))]
-                if (!(length(bad) == 0)) {
-                  # There are no indicators identified for that bin. (issue 87)
-                  for (j in seq_along(bad)) {
-                  BAD[[i]][[j]] <- data.frame(area_name=AREAS[i], ind_name="Fake Indicator", ind_status=NA, ind_trend=NA,
-                                            ind_projects="project", ind_rawdata_type= "Expert Opinion", ind_certainty="certain",
-                                            bin=toupper(bad[j]), weight=1, objective=Ecological$grouping[which(Ecological$labels == bad[j])], pillar="Ecological")
-                  }
-                }
-              }
-
-
-              df <- rbind(df,do.call(rbind, unlist(lapply(BAD, function(x) Filter(Negate(is.null), x)), recursive = FALSE)))
-
-              target_bin_weight <- 1
-
-              for (j in unique(df$area_name)) {
-
-              for (i in seq_along(Ecological$labels)) {
-                keep <-which(tolower(df$bin) == tolower(Ecological$labels[i]) & df$area_name == j)
-                bl <- target_bin_weight/sum(df$weight[keep])
-                df$weight[keep] <- df$weight[keep]*bl
-              }
-              }
-
-              ### calculate network status
-              df <- df |>
-                mutate(ind_status = if_else(ind_status < 0.00000001,
-                                            NA,
-                                            ind_status)) |>
-                group_by(objective, bin, area_name) |>
-                reframe(ind_name = unique(area_name),
-                        area_name = "Scotian Shelf",
-                        ind_status = weighted.mean(ind_status,weight,na.rm = TRUE),
-                        ind_trend = weighted.mean(ind_trend,weight,na.rm = TRUE),
-                        ind_projects = paste(ind_projects, collapse = "; "),
-                        ind_rawdata_type = paste(ind_rawdata_type, collapse = "; "),
-                        ind_certainty = paste(ind_certainty, collapse = "; ")
-                        )|>
-                group_by(bin) |>
-                mutate(weight=target_bin_weight/n()) |>
-                ungroup() |>
-                bind_rows(df)
-
-
-              df <-  df %>%
-                arrange(objective, bin)
-
-              df$ind_status[which(is.nan(df$ind_status))] <- NA
-
-              df
-
-            }),
+ # tar_target(name = pillar_ecol_df,
+ #            command = {
+ #              Ecological # mention here for dependency silliness
+ #
+ #              # REMOVING HYPOTHETICAL DATA
+ #              area_name <- binned_indicators$mpa_name
+ #
+ #              ind_name <- indicator_to_plot$indicators
+ #
+ #              ind_status <- NULL
+ #              for (i in seq_along(indicator_to_plot$status_grade)) {
+ #                message(i)
+ #                if (!(is.na(indicator_to_plot$status_grade[i]))) {
+ #                if (indicator_to_plot$status_grade[i] == "A") {
+ #                  ind_status[[i]] <- 100
+ #                } else if (indicator_to_plot$status_grade[i] == "C") {
+ #                  ind_status[[i]] <- 50
+ #                } else if (indicator_to_plot$status_grade[i] == "F") {
+ #                  ind_status[[i]] <- 0
+ #                }
+ #                } else {
+ #                  ind_status[[i]] <- NA
+ #                }
+ #              }
+ #
+ #              ind_status <- unlist(ind_status)
+ #
+ #              extract_first_number <- function(sentence) {
+ #                match <- regexpr("-?\\d+\\.?\\d*", sentence)
+ #                if (match != -1) {
+ #                  as.numeric(regmatches(sentence, match))
+ #                } else {
+ #                  NA
+ #                }
+ #              }
+ #
+ #              ind_trend <- NULL
+ #              for (i in seq_along(indicator_to_plot$trend)) {
+ #                if (grepl("BLANK", indicator_to_plot$trend[i])) {
+ #                  ind_trend[i] <- NA
+ #                } else {
+ #                  ind_trend[i] <- extract_first_number(indicator_to_plot$trend[i])
+ #
+ #                }
+ #              }
+ #              ind_trend <- unlist(lapply(indicator_to_plot$trend, function(x) extract_first_number(x)))
+ #
+ #              ind_projects <- indicator_to_plot$project
+ #
+ #              ind_rawdata_type <- "Expert opinion"
+ #
+ #              ind_certainty <- "certain"
+ #
+ #              bin <- binned_indicators$indicator_bin #FIXME
+ #
+ #              weight <- NULL
+ #
+ #              Ecological$labels[which(Ecological$labels == "Environmental Representativity")] <- "Environmental (Representativity)"
+ #
+ #              objectives <- list()  # Initialize as a list
+ #              for (i in seq_along(indicator_to_plot$indicator_bin)) {
+ #                II <- indicator_to_plot$indicator_bin[i]
+ #                sp <- trimws(strsplit(II, ";")[[1]], "both")
+ #                weight[i] <- 1/length(sp)
+ #                objectives[[i]] <- vector("list", length(sp))  # Initialize objectives[[i]] as a list with the correct length
+ #                for (j in seq_along(sp)) {
+ #                  message("i =", i, " j = ", j)
+ #                  objectives[[i]][[j]] <- Ecological$grouping[which(tolower(Ecological$labels) == tolower(sp[j]))]
+ #                }
+ #              }
+ #
+ #              objectives <- lapply(objectives, function(x) unlist(x))
+ #              objectives <- lapply(objectives, unique)
+ #              objective <- unlist(lapply(objectives, function(x) paste0(x, collapse=" ; ")))
+ #
+ #
+ #              pillar <- "Ecological"
+ #
+ #              df <- data.frame(area_name=area_name, ind_name=ind_name, ind_status=ind_status, ind_trend=ind_trend, ind_projects=ind_projects,
+ #                               ind_rawdata_type=ind_rawdata_type, ind_certainty=ind_certainty, bin=bin, weight=weight, objective=objective,
+ #                               pillar=pillar)
+ #              df$bin <- trimws(toupper(df$bin), "both")
+ #              df$objective <- trimws(toupper(df$objective), "both")
+ #
+ #
+ #              df <- df %>%
+ #                mutate(bin = strsplit(as.character(bin), "; ")) %>%
+ #                unnest(bin)
+ #
+ #              for (i in seq_along(df$objective)) {
+ #                message(i)
+ #                df$objective[i] <- Ecological$grouping[which(tolower(Ecological$labels) == trimws(tolower(df$bin[i]), "both"))]
+ #              }
+ #
+ #              AREAS <- unique(df$area_name)
+ #              BAD <- vector("list", length(AREAS))
+ #
+ #              for (i in seq_along(AREAS)) {
+ #                keep <- which(df$area_name == AREAS[i])
+ #                ped <- df[keep,]
+ #                bins <- unique(tolower(trimws(ped$bin, "both")))
+ #
+ #                bad <- Ecological$labels[which(!(tolower(Ecological$labels) %in% bins))]
+ #                if (!(length(bad) == 0)) {
+ #                  # There are no indicators identified for that bin. (issue 87)
+ #                  for (j in seq_along(bad)) {
+ #                  BAD[[i]][[j]] <- data.frame(area_name=AREAS[i], ind_name="Fake Indicator", ind_status=NA, ind_trend=NA,
+ #                                            ind_projects="project", ind_rawdata_type= "Expert Opinion", ind_certainty="certain",
+ #                                            bin=toupper(bad[j]), weight=1, objective=Ecological$grouping[which(Ecological$labels == bad[j])], pillar="Ecological")
+ #                  }
+ #                }
+ #              }
+ #
+ #
+ #              df <- rbind(df,do.call(rbind, unlist(lapply(BAD, function(x) Filter(Negate(is.null), x)), recursive = FALSE)))
+ #
+ #              target_bin_weight <- 1
+ #
+ #              for (j in unique(df$area_name)) {
+ #
+ #              for (i in seq_along(Ecological$labels)) {
+ #                keep <-which(tolower(df$bin) == tolower(Ecological$labels[i]) & df$area_name == j)
+ #                bl <- target_bin_weight/sum(df$weight[keep])
+ #                df$weight[keep] <- df$weight[keep]*bl
+ #              }
+ #              }
+ #
+ #              ### calculate network status
+ #              df <- df |>
+ #                mutate(ind_status = if_else(ind_status < 0.00000001,
+ #                                            NA,
+ #                                            ind_status)) |>
+ #                group_by(objective, bin, area_name) |>
+ #                reframe(ind_name = unique(area_name),
+ #                        area_name = "Scotian Shelf",
+ #                        ind_status = weighted.mean(ind_status,weight,na.rm = TRUE),
+ #                        ind_trend = weighted.mean(ind_trend,weight,na.rm = TRUE),
+ #                        ind_projects = paste(ind_projects, collapse = "; "),
+ #                        ind_rawdata_type = paste(ind_rawdata_type, collapse = "; "),
+ #                        ind_certainty = paste(ind_certainty, collapse = "; ")
+ #                        )|>
+ #                group_by(bin) |>
+ #                mutate(weight=target_bin_weight/n()) |>
+ #                ungroup() |>
+ #                bind_rows(df)
+ #
+ #
+ #              df <-  df %>%
+ #                arrange(objective, bin)
+ #
+ #              df$ind_status[which(is.nan(df$ind_status))] <- NA
+ #
+ #              df
+ #
+ #            }),
 
  tar_target(name = upload_all_data_to_shiny,
             command = {

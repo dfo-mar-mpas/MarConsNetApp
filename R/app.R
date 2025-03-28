@@ -139,7 +139,7 @@ server <- function(input, output, session) {
     })
   })
   output$mytabs = shiny::renderUI({
-    nTabs = length(APPTABS$flower)+length(pillar_ecol_df$ind_name)
+    nTabs = length(APPTABS$flower)+length(pillar_ecol_df$indicator)
     myTabs = lapply(c(APPTABS$tab, pillar_ecol_df$tab), tabPanel)
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
   })
@@ -484,7 +484,7 @@ server <- function(input, output, session) {
   })
 
   # Dynmaically coding in which actionLink is selected will update the tab
-  for (i in 0:(length(unique(APPTABS$tab))+length(pillar_ecol_df$ind_name))) {
+  for (i in 0:(length(unique(APPTABS$tab))+length(pillar_ecol_df$indicator))) {
     local({
       tab_id <- paste0("tab_", i)
       shiny::observeEvent(input[[tab_id]], {
@@ -503,7 +503,9 @@ server <- function(input, output, session) {
     tab_id <- input$tabs
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
       if (!(input$tabs == "tab_0")) {
-          if (input$tabs %in% odf$tab) {
+        if (input$tabs %in% odf$tab) {
+          #browser()
+
         objective <- gsub("\n", "", odf$objectives[which(odf$tab == tab_id)])
         flower <- odf$flower_plot[which(odf$tab == tab_id)]
         area <- gsub("_", " ", gsub("_CO$", "", odf$area[which(odf$tab == tab_id)]))
@@ -534,9 +536,8 @@ server <- function(input, output, session) {
         }
         if (!(input$mpas == "All")) {
           #2024/12/31 Issue 7
-        #ki2 <- which(tolower(pillar_ecol_df$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
-          ki2 <- which(tolower(pillar_ecol_df$areaID) == tolower(NAME_to_tag(names=input$mpas)))
-
+         #ki2 <- which(tolower(pillar_ecol_df$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
+          ki2 <- which(tolower(NAME_to_tag(name=pillar_ecol_df$areaID)) == tolower(NAME_to_tag(names=input$mpas)))
         } else {
           ki2 <- ki1
         }
@@ -544,18 +545,18 @@ server <- function(input, output, session) {
         if (input$tabs %in% pillar_ecol_df$tab) {
           keepind <- which(pillar_ecol_df$tab == input$tabs)
         }
-        binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$ind_name[keepind]))
+        binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$indicator[keepind]))
 
-        ind_tabs <- shiny::tagList(lapply(seq_along(pillar_ecol_df$ind_name[keepind]), function(i) {
+        ind_tabs <- shiny::tagList(lapply(seq_along(pillar_ecol_df$indicator[keepind]), function(i) {
           tab_id <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$tab[keepind][i]))
           shiny::tags$a(
             href = paste0("#", tab_id),
-            gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$ind_name[keepind][i])),
+            gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$indicator[keepind][i])),
             style = "color: black; font-weight: bold; TEXT-DECORATION: underline",
             onclick = sprintf(
               "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
               tab_id,
-              gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$ind_name[keepind][i])),
+              gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$indicator[keepind][i])),
               paste0('tab_', tab_id)
             )
           )
@@ -600,7 +601,14 @@ server <- function(input, output, session) {
             indicator_label = indicator_label,
             flower = flower,
             indicator_bin_label = indicator_bin_label,
-            ind_tabs = ind_tabs
+            indicator_names = pillar_ecol_df$indicator[keepind],
+            keep = keepind,
+            ind_tabs = ind_tabs,
+            indicatorStatus = pillar_ecol_df$status_statement[keepind],
+            indicatorTrend = pillar_ecol_df$trend_statement[keepind],
+            indicatorGrade = pillar_ecol_df$score[keepind],
+            indicatorProject = pillar_ecol_df$PPTID[keepind],
+            indicatorScore = pillar_ecol_df$scoring[keepind]
             #formatted_projects = formatted_projects_grouped
           ))
         } else {
@@ -611,7 +619,14 @@ server <- function(input, output, session) {
             indicator_label = indicator_label,
             flower = flower,
             indicator_bin_label = indicator_bin_label,
-            ind_tabs = ind_tabs
+            indicator_names = pillar_ecol_df$indicator[keepind],
+            keep = keepind,
+            ind_tabs = ind_tabs,
+            indicatorStatus = pillar_ecol_df$status_statement[keepind],
+            indicatorTrend = pillar_ecol_df$trend_statement[keepind],
+            indicatorGrade = pillar_ecol_df$score[keepind],
+            indicatorProject = pillar_ecol_df$PPTID[keepind],
+            indicatorScore = pillar_ecol_df$scoring[keepind]
             #formatted_projects = "There are no projects for this selection."
           ))
         }
@@ -622,6 +637,7 @@ server <- function(input, output, session) {
 
   output$indicatorText <- shiny::renderUI({
     info <- calculated_info()
+
     req(info)  # Ensure the info is available
     shiny::HTML(
       paste(
@@ -642,79 +658,38 @@ server <- function(input, output, session) {
   output$DT <- DT::renderDT({
     req(input$tabs)
     info <- calculated_info()
+    #browser()
     req(info)  # Ensure the info is available
-    if (!(grepl("Indicator", info$flower, ignore.case=TRUE))) {
-    indj <- strsplit(as.character(info$ind_tabs), "<a href=")[[1]]
-    indj <- indj[nzchar(indj)]
-    indj <- paste0("<a href=", indj)
-    indj <- trimws(gsub("\n", "", indj), "both")
-    INDY <- gsub(".*>(.*)<.*", "\\1", indj)
-    INDY <- gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", INDY))))
-    if (any(grepl("&amp;", INDY))) {
-      INDY <- gsub("&amp;", "&", INDY)
-    }
-    pillar_ecol_df$ind_name <- gsub("\r\n", "", pillar_ecol_df$ind_name)
-    INDY <- gsub("\r", "", INDY)
-    indicatorStatus <- pillar_ecol_df$status_statement[which(pillar_ecol_df$ind_name %in% INDY)]
-    indicatorTrend <- pillar_ecol_df$trend_statement[which(pillar_ecol_df$ind_name %in% INDY)]
-    indicatorGrade <- pillar_ecol_df$score[which(pillar_ecol_df$ind_name %in% INDY)]
-    indicatorProject <- pillar_ecol_df$PPTID[which(pillar_ecol_df$ind_name %in% INDY)]
-
-    indicatorScore <- pillar_ecol_df$scoring[which(pillar_ecol_df$ind_name %in% INDY)]
-
-    } else {
-      indj <- gsub("^(\\dbr+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", info$objective))))
-      ki <- which(gsub("^(\\d+\\.\\s*-?|^#\\.|^\\s*-)|Indicator \\d+:\\s*|Indicators \\d+:\\s*", "", gsub("Indicator [0-9]+ ", "", trimws(gsub("\n", "", pillar_ecol_df$ind_name)))) == indj)
-
-      indicatorStatus <- pillar_ecol_df$status_statement[ki]
-      indicatorTrend <- pillar_ecol_df$trend_statement[ki]
-      indicatorGrade <- pillar_ecol_df$score[ki]
-
-      indicatorProject <- pillar_ecol_df$PPTID[ki]
-      indicatorStatus <- pillar_ecol_df$scoring[ki]
-    }
-
-    indicatorTitle <- NULL
+    indicatorProject <- as.numeric(info$indicatorProject)
+    Projects <- NULL
     for (i in seq_along(indicatorProject)) {
-      if (indicatorProject[i] == "project") {
-        indicatorTitle[[i]] <- "project"
+      if (is.na(indicatorProject[i])) {
+        Projects[i] <- NA
+      } else if (indicatorProject[i] == "project") {
+        Projects[i] <- NA
       } else {
-        indicatorTitle[[i]] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", '<a href=\"http://glf-proxy:8018/mar-spa/reports/',indicatorProject[i],'.html" target="_blank" rel="noopener noreferrer" style="color: black; font-weight: bold; TEXT-DECORATION: underline">',indicatorProject[i],'</a>')
+        Projects[i] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", '<a href=\"http://glf-proxy:8018/mar-spa/reports/',indicatorProject[i],'.html" target="_blank" rel="noopener noreferrer" style="color: black; font-weight: bold; TEXT-DECORATION: underline">',indicatorProject[i],'</a>')
       }
     }
-    indicatorTrend[which(grepl("BLANK", indicatorTrend))] <- NA
-    indicatorStatus[which(grepl("BLANK", indicatorStatus))] <- NA
 
-    Projects <- unlist(indicatorTitle)
-    Projects[which(grepl("project", Projects))] <- NA
-
-    indicatorGrade[which(indicatorGrade == "A")] <- 100
-    indicatorGrade[which(indicatorGrade == "C")] <- 50
-    indicatorGrade[which(indicatorGrade == "F")] <- 0
-
-    indicatorScore[which(indicatorScore == "desired")] <- NA
-    indicatorScore[which(indicatorScore %in% c("increase", "decrease"))] <- "Status: Trend Method"
-    indicatorScore[which(indicatorScore %in% c("stable"))] <- "Status: Stable Method"
-browser()
-
-    if (!(length(indj) == 1 && "<a href=" %in% indj)) {
+    if (!(length(info$indicator_names) == 1 && "<a href=" %in% info$ind_tabs)) {
       dfdt <- data.frame(
-        Indicator = indj,
-        Status = indicatorStatus,
-        Trend = indicatorTrend,
+        Indicator = info$indicator_names,
+        Status = info$indicatorStatus,
+        Trend = info$indicatorTrend,
         Projects = Projects,
-        Score=indicatorGrade,
-        Method=indicatorScore,
+        Score=info$indicatorGrade,
+        Method=info$indicatorScore,
         stringsAsFactors = FALSE
       )
 
       dfdt <- dfdt %>%
-        arrange(is.na(indicatorStatus))
+        arrange(is.na(info$indicatorStatus))
     }
 
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
       if (!(input$tabs == "tab_0")) {
-        if (!(length(indj) == 1 && indj == "<a href=")) {
+        if (!(length(info$indicator_names) == 1 && info$indicator_names == "<a href=")) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
         DT::datatable(
           dfdt,
@@ -769,9 +744,9 @@ browser()
     if (input$tabs == "tab_0") {
       leaflet::leafletOutput("map")
     } else if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
-        currentInd <- pillar_ecol_df$ind_name[which(pillar_ecol_df$tab == input$tabs)]
+        currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
-        if (pillar_ecol_df$type[which(pillar_ecol_df$ind_name == currentInd)] == "leaflet") {
+        if (pillar_ecol_df$type[which(pillar_ecol_df$indicator == currentInd)] == "leaflet") {
           leafletOutput("indicatorLeaflet")
         } else {
           shiny::plotOutput("indicatorPlot")
@@ -788,7 +763,7 @@ browser()
     req(input$tabs)
     req(state$mpas)
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
-      currentInd <- pillar_ecol_df$ind_name[which(pillar_ecol_df$tab == input$tabs)]
+      currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
       if (!(length(currentInd) == 0)) {
           leafletOutput("indicatorMap")
       }
@@ -800,7 +775,7 @@ browser()
   })
   output$whaleDisclaimer <- shiny::renderUI({
     req(input$tabs)
-    currentInd <- pillar_ecol_df$ind_name[which(pillar_ecol_df$tab == input$tabs)]
+    currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
     if (length(currentInd) > 0 && currentInd == "presence of species that \"use\" productivity, e.g. whales") {
       # Show the modal dialog with a Close button
       shiny::showModal(
@@ -839,16 +814,16 @@ browser()
 
   output$indicatorPlot <- shiny::renderPlot({
     req(input$tabs)
-    currentInd <- pillar_ecol_df$ind_name[which(pillar_ecol_df$tab == input$tabs)]
+    currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
     if (!(length(currentInd) == 0)) {
       indy <- currentInd
       if (length(indy) == 0) {
-        indy <- pillar_ecol_df$ind_name[which(pillar_ecol_df$tab == input$tabs)]
+        indy <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
       }
-      plot <- pillar_ecol_df$plot[which(pillar_ecol_df$ind_name == indy)]
+      plot <- pillar_ecol_df$plot[which(pillar_ecol_df$indicator == indy)]
 
-      if (pillar_ecol_df$type[which(pillar_ecol_df$ind_name == currentInd)] == "plot") {
-        if (!(pillar_ecol_df$plot[which(pillar_ecol_df$ind_name == currentInd)] == 0)) {
+      if (pillar_ecol_df$type[which(pillar_ecol_df$indicator == currentInd)] == "plot") {
+        if (!(pillar_ecol_df$plot[which(pillar_ecol_df$indicator == currentInd)] == 0)) {
         if (grepl("dataframe=TRUE", plot)) {
           plot <- gsub("dataframe=TRUE", "dataframe=FALSE", plot)
         } else if (!(grepl("dataframe", plot))) {
@@ -863,13 +838,13 @@ browser()
 
   output$indicatorMap <- leaflet::renderLeaflet({
     req(input$tabs)
-    currentInd <- pillar_ecol_df$ind_name[which(pillar_ecol_df$tab == input$tabs)]
+    currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
     if (!(length(currentInd) == 0)) {
       indy <- currentInd
       if (length(indy) == 0) {
-        indy <- pillar_ecol_df$ind_name[which(pillar_ecol_df$tab == input$tabs)]
+        indy <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
       }
-      plot <- pillar_ecol_df$plot[which(pillar_ecol_df$ind_name == indy)]
+      plot <- pillar_ecol_df$plot[which(pillar_ecol_df$indicator == indy)]
 
       if (!(plot %in% names(mapData))) {
         return(NULL)
@@ -897,14 +872,14 @@ browser()
 
   output$indicatorLeaflet <- leaflet::renderLeaflet({
     req(input$tabs)
-    currentInd <- pillar_ecol_df$ind_name[which(pillar_ecol_df$tab == input$tabs)]
+    currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
     if (!(length(currentInd) == 0)) {
       indy <- odf$objectives[which(odf$tab == input$tabs)]
       if (length(indy) == 0) {
-        indy <- pillar_ecol_df$ind_name[which(pillar_ecol_df$tab == input$tabs)]
+        indy <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
       }
-      plot <- pillar_ecol_df$plot[which(pillar_ecol_df$ind_name == indy)]
-      if (pillar_ecol_df$type[which(pillar_ecol_df$ind_name == currentInd)] == "leaflet") {
+      plot <- pillar_ecol_df$plot[which(pillar_ecol_df$indicator == indy)]
+      if (pillar_ecol_df$type[which(pillar_ecol_df$indicator == currentInd)] == "leaflet") {
         plot2 <- eval(parse(text = plot))
       }
     }
@@ -1012,8 +987,6 @@ browser()
   shiny::observeEvent(input$tabs, {
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      #browser()
-
       # Ensure filtered_odf is created inside this condition
       filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
       for (fo in seq_along(filtered_odf$objectives)) {
@@ -1074,7 +1047,6 @@ browser()
     req(input$tabs)
     req(input$mpas)
     if (input$tabs == "tab_0" & !(state$mpas == "All")) {
-      #browser()
       # Ensure filtered_odf is created inside this condition
       string <- NAME_to_tag(names=input$mpas)
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
@@ -1340,4 +1312,5 @@ browser()
 
 # Run the application
 shiny::shinyApp(ui = ui, server = server)
+
 }
