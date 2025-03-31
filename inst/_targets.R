@@ -947,7 +947,7 @@ tar_target(plot_files,
                 if(!is.null(pillar_ecol_df_data$plot[[i]])){
                 filename <-  file.path(Sys.getenv("OneDriveCommercial"),
                                        "MarConsNetTargets",
-                                       "plots",
+                                       "data", "plots",
                                        make.names(paste0("plot_",
                                                          pillar_ecol_df_data$areaID[i],
                                                          "_",

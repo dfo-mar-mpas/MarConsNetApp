@@ -668,12 +668,9 @@ server <- function(input, output, session) {
         Projects[i] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", '<a href=\"http://glf-proxy:8018/mar-spa/reports/',indicatorProject[i],'.html" target="_blank" rel="noopener noreferrer" style="color: black; font-weight: bold; TEXT-DECORATION: underline">',indicatorProject[i],'</a>')
       }
     }
-#browser()
     if (!(length(info$indicator_names) == 1 && "<a href=" %in% info$ind_tabs)) {
       # The below line puts the links in the proper format to direct us to the relevant tab when it is clicked on.
       formatted_indicators <- trimws(gsub("\n", "", paste0("<a href=", unlist(strsplit(as.character(info$ind_tabs), "<a href="))[nzchar(unlist(strsplit(as.character(info$ind_tabs), "<a href=")))])), "both")
-
-
       dfdt <- data.frame(
         Indicator = formatted_indicators,
         Status = info$indicatorStatus,
@@ -747,33 +744,35 @@ server <- function(input, output, session) {
     } else if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
         currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
-        if (pillar_ecol_df$type[which(pillar_ecol_df$indicator == currentInd)] == "leaflet") {
-          leafletOutput("indicatorLeaflet")
-        } else {
-          shiny::plotOutput("indicatorPlot")
-        }
-        }
 
+          image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
+                                    "MarConsNetTargets","data",
+                                    "plots")
+          image_files <- list.files(image_folder, full.names = TRUE)
+          k1 <- which(grepl(make.names(input$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
+          k2 <- which(grepl(make.names(pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
+          KEEP <- intersect(k1,k2)
+
+          image_files <- image_files[KEEP]
+
+          shiny::uiOutput("indicatorPlot")
+
+          lapply(seq_along(image_files), function(i) {
+            output[[paste0("image_display_", i)]] <- renderImage({
+              list(
+                src = normalizePath(image_files[i], winslash = "/"),
+                contentType = "image/jpeg",
+                width = "50%"
+              )
+            }, deleteFile = FALSE)
+          })
+        }
     } else {
       NULL
     }
 
   })
 
-  output$conditionalIndicatorMap <- shiny::renderUI({
-    req(input$tabs)
-    req(state$mpas)
-    if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
-      currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
-      if (!(length(currentInd) == 0)) {
-          leafletOutput("indicatorMap")
-      }
-
-    } else {
-      NULL
-    }
-
-  })
   output$whaleDisclaimer <- shiny::renderUI({
     req(input$tabs)
     currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
@@ -813,62 +812,15 @@ server <- function(input, output, session) {
     }
   })
 
-  output$indicatorPlot <- shiny::renderPlot({
-    req(input$tabs)
-    currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
-    if (!(length(currentInd) == 0)) {
-      indy <- currentInd
-      if (length(indy) == 0) {
-        indy <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
-      }
-      plot <- pillar_ecol_df$plot[which(pillar_ecol_df$indicator == indy)]
-
-      if (pillar_ecol_df$type[which(pillar_ecol_df$indicator == currentInd)] == "plot") {
-        if (!(pillar_ecol_df$plot[which(pillar_ecol_df$indicator == currentInd)] == 0)) {
-        if (grepl("dataframe=TRUE", plot)) {
-          plot <- gsub("dataframe=TRUE", "dataframe=FALSE", plot)
-        } else if (!(grepl("dataframe", plot))) {
-          plot <- paste0(substr(plot, 1, nchar(plot) - 1), ", dataframe=FALSE)")
-        }
-        eval(parse(text = plot))
-      }
-      }
-    }
-  })
-
-
-  output$indicatorMap <- leaflet::renderLeaflet({
-    req(input$tabs)
-    currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
-    if (!(length(currentInd) == 0)) {
-      indy <- currentInd
-      if (length(indy) == 0) {
-        indy <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
-      }
-      plot <- pillar_ecol_df$plot[which(pillar_ecol_df$indicator == indy)]
-
-      if (!(plot %in% names(mapData))) {
-        return(NULL)
-      }
-      mapk <- mapData[[which(names(mapData) == plot)]]
-
-      map <- leaflet() %>%
-        addTiles() %>%
-        addPolygons(data=mapk$area, color="#EDEDED", opacity=1, fillOpacity = 1) %>%
-        addPolygons(data=mapk$outside, color="red", opacity=1, fillOpacity = 1) %>%
-        addCircleMarkers(lat=mapk$latitude, lng=mapk$longitude, color="black")
-
-      if ("notIncluded" %in% names(mapk)) {
-        map <- map %>%
-          addControl(
-          html = "<h2 style='text-align: center;'>Disclaimer: No sample station found within protected area of outside boundary</h2>",
-          position = "topleft"
-        )
-      }
-      map
-    } else {
-        NULL
-      }
+  output$indicatorPlot <- renderUI({
+    img_outputs <- lapply(seq_along(image_files), function(i) {
+      image_id <- paste0("image_display_", i)
+      div(
+        imageOutput(image_id),
+        style = "display: inline-block; margin: 10px; width: 15px; height: 10px; overflow: hidden;"
+      )
+    })
+    do.call(tagList, img_outputs)
   })
 
   output$indicatorLeaflet <- leaflet::renderLeaflet({
@@ -951,7 +903,7 @@ server <- function(input, output, session) {
     shiny::updateTabsetPanel(session, "tabs", selected=updatedTab)
   })
 
-  output$networkObjectiveText <- shiny::renderUI({ #JAIM
+  output$networkObjectiveText <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
