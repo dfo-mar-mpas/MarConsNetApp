@@ -504,8 +504,6 @@ server <- function(input, output, session) {
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
       if (!(input$tabs == "tab_0")) {
         if (input$tabs %in% odf$tab) {
-          #browser()
-
         objective <- gsub("\n", "", odf$objectives[which(odf$tab == tab_id)])
         flower <- odf$flower_plot[which(odf$tab == tab_id)]
         area <- gsub("_", " ", gsub("_CO$", "", odf$area[which(odf$tab == tab_id)]))
@@ -658,7 +656,6 @@ server <- function(input, output, session) {
   output$DT <- DT::renderDT({
     req(input$tabs)
     info <- calculated_info()
-    #browser()
     req(info)  # Ensure the info is available
     indicatorProject <- as.numeric(info$indicatorProject)
     Projects <- NULL
@@ -671,10 +668,14 @@ server <- function(input, output, session) {
         Projects[i] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", '<a href=\"http://glf-proxy:8018/mar-spa/reports/',indicatorProject[i],'.html" target="_blank" rel="noopener noreferrer" style="color: black; font-weight: bold; TEXT-DECORATION: underline">',indicatorProject[i],'</a>')
       }
     }
-
+#browser()
     if (!(length(info$indicator_names) == 1 && "<a href=" %in% info$ind_tabs)) {
+      # The below line puts the links in the proper format to direct us to the relevant tab when it is clicked on.
+      formatted_indicators <- trimws(gsub("\n", "", paste0("<a href=", unlist(strsplit(as.character(info$ind_tabs), "<a href="))[nzchar(unlist(strsplit(as.character(info$ind_tabs), "<a href=")))])), "both")
+
+
       dfdt <- data.frame(
-        Indicator = info$indicator_names,
+        Indicator = formatted_indicators,
         Status = info$indicatorStatus,
         Trend = info$indicatorTrend,
         Projects = Projects,
