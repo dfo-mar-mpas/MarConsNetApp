@@ -62,7 +62,10 @@ ui <- shiny::fluidPage(
       }
     "))),
   shiny::titlePanel("Maritimes Conservation Network App"),
-  shiny::uiOutput("gohome"),
+  fluidRow(
+    shiny::column(2, shiny::uiOutput("gohome")),
+    shiny::column(2, offset=1, shiny::uiOutput("goback"))
+    ),
   #Makes the tabs hide
   shiny::tags$style(shiny::HTML("
     .nav-tabs { display: none; }
@@ -1113,6 +1116,23 @@ server <- function(input, output, session) {
     shiny::updateTabsetPanel(session, "tabs", selected = "tab_0")
   })
 
+  output$goback <- shiny::renderUI({
+    req(input$tabs)
+    req(state$mpas)
+    if (input$tabs %in% pillar_ecol_df$tab) {
+      shiny::actionButton(inputId = "goback", "Back")
+    }
+  })
+
+  shiny::observeEvent(input$goback, {
+    back_area <- tolower(NAME_to_tag(names=pillar_ecol_df$areaID[which(pillar_ecol_df$tab %in% input$tabs)]))
+    back_bin <- pillar_ecol_df$bin[which(pillar_ecol_df$tab %in% input$tabs)]
+
+    k1 <- which(grepl(back_area, tolower(APPTABS$place)))
+    k2 <- which(APPTABS$flower %in% back_bin)
+    shiny::updateTabsetPanel(session, "tabs", selected = APPTABS$tab[intersect(k1,k2)])
+  })
+
 
   output$network <- shiny::renderUI({
     req(input$tabs)
@@ -1301,5 +1321,4 @@ server <- function(input, output, session) {
 
 # Run the application
 shiny::shinyApp(ui = ui, server = server)
-
 }
