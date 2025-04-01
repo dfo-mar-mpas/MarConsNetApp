@@ -101,7 +101,7 @@ ui <- shiny::fluidPage(
                                      shiny::uiOutput("objectives")),
                        shiny::column(width=6, align="right",
                                      br(),
-                                     shiny::plotOutput("flowerPlot",click="flower_click"))
+                                     shiny::uiOutput("conditionalFlower"))
                        ),
        shiny::fluidRow(shiny::column(width=6, offset=6, align="right", br(), shiny::uiOutput("flowerType")))
 
@@ -539,7 +539,10 @@ server <- function(input, output, session) {
         } else {
           ki2 <- ki1
         }
+
         keepind <- intersect(ki1, ki2)
+        keepind <- keepind[!(is.na(pillar_ecol_df$indicator[keepind]))]
+
         if (input$tabs %in% pillar_ecol_df$tab) {
           keepind <- which(pillar_ecol_df$tab == input$tabs)
         }
@@ -671,6 +674,26 @@ server <- function(input, output, session) {
     if (!(length(info$indicator_names) == 1 && "<a href=" %in% info$ind_tabs)) {
       # The below line puts the links in the proper format to direct us to the relevant tab when it is clicked on.
       formatted_indicators <- trimws(gsub("\n", "", paste0("<a href=", unlist(strsplit(as.character(info$ind_tabs), "<a href="))[nzchar(unlist(strsplit(as.character(info$ind_tabs), "<a href=")))])), "both")
+
+      if (input$mpas == "All") {
+      ped <- pillar_ecol_df[info$keep,]
+      ss_areas <- unique(ped$areaID)
+      ss_indicators <- list()
+      for (i in seq_along(ss_areas)) {
+        k2 <- which(ped$areaID == ss_areas[i])
+        k3 <- which(ped$areaID == "Scotian Shelf" & ped$indicator == ss_areas[i])
+        if (length(k3) == 0) {
+          k <- which(!(ped$indicator %in% ss_areas))
+          k2 <- intersect(k,k2)
+        }
+        ss_indicators[[i]] <- c(k3, k2)
+      }
+      order <- unlist(ss_indicators)
+      } else {
+        order <- 1:length(info$keep)
+      }
+      #browser()
+
       dfdt <- data.frame(
         Indicator = formatted_indicators,
         Status = info$indicatorStatus,
@@ -682,7 +705,7 @@ server <- function(input, output, session) {
       )
 
       dfdt <- dfdt %>%
-        arrange(is.na(info$indicatorStatus))
+        arrange(order)
     }
 
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
@@ -762,7 +785,7 @@ server <- function(input, output, session) {
               list(
                 src = normalizePath(image_files[i], winslash = "/"),
                 contentType = "image/jpeg",
-                width = "50%"
+                width = "75%"
               )
             }, deleteFile = FALSE)
           })
@@ -838,6 +861,17 @@ server <- function(input, output, session) {
     }
   })
 
+  output$conditionalFlower <- shiny::renderUI({
+    req(input$mpas)
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      plotOutput("flowerPlot",click="flower_click")
+    } else { #JAIM
+      NULL
+    }
+
+  }) #JAIM
+
   output$flowerPlot <- shiny::renderPlot({
     req(input$mpas)
     req(input$tabs)
@@ -862,6 +896,8 @@ server <- function(input, output, session) {
                                             min_score=0,
                                             title=NAME
                                             )
+        } else {
+        NULL
       }
     }
   }
