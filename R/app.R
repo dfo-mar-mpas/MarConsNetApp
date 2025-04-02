@@ -63,8 +63,7 @@ ui <- shiny::fluidPage(
     "))),
   shiny::titlePanel("Maritimes Conservation Network App"),
   fluidRow(
-    shiny::column(2, shiny::uiOutput("gohome")),
-    shiny::column(2, offset=1, shiny::uiOutput("goback"))
+    shiny::column(2, shiny::uiOutput("gohome"))
     ),
   #Makes the tabs hide
   shiny::tags$style(shiny::HTML("
@@ -114,7 +113,6 @@ ui <- shiny::fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
-
   state <- shiny::reactiveValues(
     mpas = NULL,
     projects = NULL,
@@ -151,7 +149,7 @@ server <- function(input, output, session) {
     req(input$mpas)
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      if (input$mpas == "All" || tolower(NAME_to_tag(names = input$mpas)) %in% tolower(areas)) {
+      if (input$mpas == "All" || tolower(input$mpas) %in% tolower(areas)) {
       choices <- c("Status","Network Design Targets", "Level of Certainty", "Models", "In Situ Measurements", "Time Since Last in Situ Measurement")
       selectInput("flowerType", "Select Score Type", choices=choices, selected = "Status")
       } else {
@@ -268,8 +266,6 @@ server <- function(input, output, session) {
         )
       )
     ))
-
-
   })
 
 
@@ -287,7 +283,6 @@ server <- function(input, output, session) {
     }
   })
 
-
   if(onedrive != "MarConsNetTargets"){
     reporturl <- "/htmlfiles/"
   } else {
@@ -299,12 +294,13 @@ server <- function(input, output, session) {
   # Check if the static HTML file exists
   observe({
     req(input$mpas)
-    static_file_path <- paste0(file.path(onedrive,"data", "reports"), "/", NAME_to_tag(names=input$mpas), ".html")
+    #browser() # HERE JAIM
+    static_file_path <- paste0(file.path(onedrive,"data", "reports"), "/", make.names(paste0(input$mpas,".html")))
     if (file.exists(static_file_path)) {
       # Show a link to the existing file
       output$report_button_ui <- renderUI({
         tags$a(
-          href = paste0(reporturl,NAME_to_tag(names=input$mpas), ".html"),
+          href = paste0(reporturl,make.names(paste0(input$mpas, ".html"))),
           target = "_blank",
           class = "btn btn-primary",
           "Report"
@@ -330,7 +326,7 @@ server <- function(input, output, session) {
           coords = subarea_coords[which(names(subarea_coords) == input$mpas)]
         )
         output_dir <- file.path(onedrive,"data", "reports")
-        output_file <- file.path(paste0(output_dir,"/", NAME_to_tag(names=input$mpas), ".html"))
+        output_file <- file.path(paste0(output_dir,"/", make.names(names=input$mpas, ".html")))
         render(rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
         output$report_ui <- renderUI({
           tags$iframe(src = "report.html", width = "100%", height = "600px")
@@ -345,20 +341,7 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(input$mpas)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      if (grepl("Marine Protected Area", state$mpas)) {
-        string <- gsub("Marine Protected Area", "MPA", state$mpas)
-        if (grepl("Estuary", state$mpas)) {
-          string <- gsub("Estuary ", "", string)
-        }
-        string <- gsub("\\.", "", string)
-      } else if (state$mpas == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)") {
-        string <- "WEBCA"
-      } else {
-        string <- state$mpas
-      }
-
-      string <- gsub(" ", "_", string)
-      keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
+      keepO <- which(areas == state$mpas)
       if (!(length(keepO) == 0)) {
         shiny::tags$b("Site Level Conservation Objectives")
       }
@@ -368,23 +351,7 @@ server <- function(input, output, session) {
   output$objectives <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      # Process site name logic
-      if (grepl("Marine Protected Area", state$mpas)) {
-        string <- gsub("Marine Protected Area", "MPA", state$mpas)
-        if (grepl("Estuary", state$mpas)) {
-          string <- gsub("Estuary ", "", string)
-        }
-        string <- gsub("\\.", "", string)
-      } else if (grepl("Western", state$mpas)) {
-        string <- "WEBCA"
-      } else {
-        string <- state$mpas
-      }
-      string <- gsub(" ", "_", string)
-
-      # Find matching objectives
-      keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
-
+        keepO <- which(names(Objectives_processed) == state$mpas)
       if (!(length(keepO) == 0)) {
         textO <- Objectives_processed[[keepO]]
         # Create UI elements for objectives with bar charts
@@ -538,7 +505,7 @@ server <- function(input, output, session) {
         if (!(input$mpas == "All")) {
           #2024/12/31 Issue 7
          #ki2 <- which(tolower(pillar_ecol_df$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
-          ki2 <- which(tolower(NAME_to_tag(name=pillar_ecol_df$areaID)) == tolower(NAME_to_tag(names=input$mpas)))
+          ki2 <- which(tolower(pillar_ecol_df$areaID) == tolower(input$mpas))
         } else {
           ki2 <- ki1
         }
@@ -695,7 +662,6 @@ server <- function(input, output, session) {
       } else {
         order <- 1:length(info$keep)
       }
-      #browser()
 
       dfdt <- data.frame(
         Indicator = formatted_indicators,
@@ -869,11 +835,11 @@ server <- function(input, output, session) {
     req(input$tabs)
     if (input$tabs == "tab_0") {
       plotOutput("flowerPlot",click="flower_click")
-    } else { #JAIM
+    } else {
       NULL
     }
 
-  }) #JAIM
+  })
 
   output$flowerPlot <- shiny::renderPlot({
     req(input$mpas)
@@ -932,9 +898,9 @@ server <- function(input, output, session) {
       wording <- "environmental representativity"
     }
     if (input$mpas == "All") {
-      string <- tolower("Scotian_Shelf")
+      string <- "Scotian_Shelf"
     } else {
-      string <- NAME_to_tag(names=input$mpas)
+      string <- input$mpas
     }
     k1 <- which(APPTABS$place == string)
     k2 <- which(tolower(APPTABS$flower) == wording)
@@ -1040,7 +1006,7 @@ server <- function(input, output, session) {
     req(input$mpas)
     if (input$tabs == "tab_0" & !(state$mpas == "All")) {
       # Ensure filtered_odf is created inside this condition
-      string <- NAME_to_tag(names=input$mpas)
+      string <- input$mpas
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
       if (!(length(keepO) == 0)) {
       S_Objectives <- Objectives_processed[[keepO]]
@@ -1115,24 +1081,6 @@ server <- function(input, output, session) {
   shiny::observeEvent(input$gohome, {
     shiny::updateTabsetPanel(session, "tabs", selected = "tab_0")
   })
-
-  output$goback <- shiny::renderUI({
-    req(input$tabs)
-    req(state$mpas)
-    if (input$tabs %in% pillar_ecol_df$tab) {
-      shiny::actionButton(inputId = "goback", "Back")
-    }
-  })
-
-  shiny::observeEvent(input$goback, {
-    back_area <- tolower(NAME_to_tag(names=pillar_ecol_df$areaID[which(pillar_ecol_df$tab %in% input$tabs)]))
-    back_bin <- pillar_ecol_df$bin[which(pillar_ecol_df$tab %in% input$tabs)]
-
-    k1 <- which(grepl(back_area, tolower(APPTABS$place)))
-    k2 <- which(APPTABS$flower %in% back_bin)
-    shiny::updateTabsetPanel(session, "tabs", selected = APPTABS$tab[intersect(k1,k2)])
-  })
-
 
   output$network <- shiny::renderUI({
     req(input$tabs)

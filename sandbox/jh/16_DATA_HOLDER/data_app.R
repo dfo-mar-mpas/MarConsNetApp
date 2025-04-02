@@ -3,7 +3,15 @@ library(dplyr); library(sf); library(shinyjs); library(viridis); library(arcpull
 library(MarConsNetAnalysis);library(MarConsNetData);
 library(TBSpayRates); library(dataSPA); library(readxl)
 library(ggplot2); library(shinyBS); library(Mar.datawrangling); library(DT); library(rmarkdown)
-library(stringr); library(tidyr); library(officer); library(RColorBrewer)
+library(stringr); library(tidyr); library(officer); library(RColorBrewer); library(rvest); library(httr2); library(httr)
+
+
+mani <- tar_manifest(script = "inst/_targets.R",
+                     fields = "name") |>
+  unlist(use.names = FALSE)
+tar_load(names=mani[!grepl("rv_data",mani)&!grepl("ind_",mani)&!grepl("bin_",mani)&!grepl("ecol_obj",mani)])
+
+
 
 # 1. MPAs
 MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)

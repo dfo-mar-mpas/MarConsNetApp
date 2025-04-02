@@ -73,7 +73,7 @@ list(
 
   tar_target(name = APPTABS,
              command = {
-               ftabs <- data.frame(flower=unique(c(Ecological$grouping, Ecological$labels)), place=tolower("Scotian_Shelf"))
+               ftabs <- data.frame(flower=unique(c(Ecological$grouping, Ecological$labels)), place="Scotian_Shelf")
                mytabs <- NULL
                for (i in seq_along(MPAs$NAME_E)) {
                  df <- ftabs
@@ -86,8 +86,7 @@ list(
                apptabs$tab <- paste0("tab_", seq_along(1:length(apptabs$flower)))
                apptabs$link <- paste0("link_", seq_along(1:length(apptabs$flower)))
                home <- data.frame(flower="home", place="home", tab="tab_0", link="link_0")
-               apptabs <- rbind(home, apptabs)
-               NAME_to_tag(apptabs)
+               rbind(home, apptabs)
              }),
 
   tar_target(name = om, # FIXME: need use a real cookie or otherwise update the data
@@ -101,7 +100,7 @@ list(
 
   tar_target(name = areas,
              command = {
-               c("st_Anns_Bank_MPA", "musquash_MPA", "gully_MPA", "WEBCA") # Only including Maritimes
+               MPAs$NAME_E
              }),
 
   tar_target(name = objectives,
@@ -120,6 +119,7 @@ list(
                }
                OBJECTIVES <- lapply(OBJECTIVES, unlist)
                names(OBJECTIVES) <- areas
+               OBJECTIVES <- OBJECTIVES[which(unname(unlist(lapply(OBJECTIVES, function(x) !(is.null(x))))))]
                OBJECTIVES
              }),
 
@@ -222,7 +222,9 @@ list(
 
   tar_target(name = Context,
              command = {
-               lapply(areas, function(x) data_context(type="site", area=x))
+               c <- lapply(areas, function(x) data_context(type="site", area=x))
+               c <- c[which(unname(unlist(lapply(c, function(x) !(is.null(x))))))]
+               c
                }),
 
   tar_target(name = fp,
@@ -266,20 +268,22 @@ list(
                )
                O$flower_plot <- 0
                O$area <- 0
-               get_first_four_words <- function(texts) {
+               get_first_four_words <- function(texts) { # 7 words
                  lapply(texts, function(text) {
                    words <- strsplit(text, " ")[[1]] # Split each string into words
-                   first_four_words <- paste(words[1:min(4, length(words))], collapse = " ") # Concatenate the first four words (or fewer if there are not enough words)
+                   first_four_words <- paste(words[1:min(7, length(words))], collapse = " ") # Concatenate the first four words (or fewer if there are not enough words)
                    return(first_four_words)
                  })
                }
 
-               #2025/03/26 this all works
-
                for (i in seq_along(O$objectives)) {
+                 message(i)
                  ob <- gsub("[-\n]", "", O$objectives[i])
                  if (!(O$objectives[i] == "0")) {
                    keep <- which(tolower(get_first_four_words(fp$label_Objective)) == tolower(get_first_four_words(ob)[[1]]))
+                   if (length(keep) > 1) {
+                     browser()
+                   }
                    if (!(length(keep) == 0)) {
                      O$flower_plot[i] <- fp$Flowerplot_connection[keep]
                      O$area[i] <- fp$label_Framework[keep]
@@ -298,7 +302,7 @@ list(
                  message("i = ", i)
                  if (!(i == 1)) {
                    if (!(grepl("Indicator", O$flower_plot[i]))) {
-                     k1 <- which(gsub("\\.","", APPTABS$place) == tolower(sub("_CO$", "", O$area[i]))) # SAME AREA AND FLOWER
+                     k1 <- which(APPTABS$place %in% O$area[i]) # SAME AREA AND FLOWER
                      k2 <- which(APPTABS$flower == O$flower_plot[i])
                      if (length(k2) == 0) {
                        if (grepl("Environmental", O$flower_plot[i], ignore.case=TRUE)) {
