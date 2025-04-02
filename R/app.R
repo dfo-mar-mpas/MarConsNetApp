@@ -1098,6 +1098,10 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(state$mpas)
     palette <- viridis::viridis(length(input$projects))
+
+
+
+
     if (input$tabs == "tab_0") {
       if (!(is.null(state$mpas))) {
         coords <- subarea_coords[[state$mpas]]
@@ -1105,26 +1109,28 @@ server <- function(input, output, session) {
           leaflet::addTiles()
 
         if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
+          selected <- which(MPA_report_card$NAME_E == state$mpas)
           map <- map %>% leaflet::addPolygons(
-            data=MPAs[which(MPAs$NAME_E == state$mpas),]$geoms,
-            fillColor=ifelse(input$mpas == MPAs$NAME_E[19], "#FFFFBF", "#EDEDED"),
+            data=MPA_report_card[selected,]$geoms,
+            fillColor=ifelse(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED"),
             opacity=1,
             fillOpacity = 1,
             weight = 1,
-            color=ifelse(input$mpas == MPAs$NAME_E[19], "black", "lightgrey")
+            color=ifelse(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey")
           )
 
         } else if (state$mpas == "All") {
-          for (c in seq_along(subarea_coords)) {
-            coord <- subarea_coords[[c]]
+          # for (c in seq_along(MPA_report_card)) {
+            # coord <- subarea_coords[[c]]
             map <- map %>%
-              leaflet::addPolygons(data=MPAs[c,]$geoms,
-                                   fillColor = ifelse(names(subarea_coords)[c] == MPAs$NAME_E[19], "#FFFFBF", "#EDEDED"),
+              leaflet::addPolygons(data=MPA_report_card$geoms,
+                                   fillColor = unname(if_else(!is.na(MPA_report_card$grade), flowerPalette[MPA_report_card$grade], "#EDEDED")),
                                    opacity=1,
                                    fillOpacity = 1,
                                    weight = 1,
-                                   color = ifelse(names(subarea_coords)[c] == MPAs$NAME_E[19], "black", "lightgrey"))
-          }
+                                   color = if_else(!is.na(MPA_report_card$grade), "black", "lightgrey"),
+                                   popup = MPA_report_card$NAME_E)
+          # }
         }
 
         if (!(is.null(input$projects))) {

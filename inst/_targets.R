@@ -899,7 +899,7 @@ list(
 
  ##### Ecological Pillar #####
 
- tar_target(pillar_ecol_df_data,
+ tar_target(pillar_ecol_df,
 
             {
             APPTABS
@@ -934,7 +934,7 @@ list(
  tar_target(all_project_geoms,
              command = {
 
-               pillar_ecol_df_data |>
+               pillar_ecol_df |>
                  filter(!map_lgl(data, is.null)) |>
                  mutate(data = map(data,~.x |> select(year,geometry) |> distinct())) |>
                  select(data,type,PPTID,areaID) |>
@@ -947,19 +947,19 @@ list(
 tar_target(plot_files,
             command = {
               allplotnames <- NULL
-              for(i in 1:nrow(pillar_ecol_df_data)){
-                if(!is.null(pillar_ecol_df_data$plot[[i]])){
+              for(i in 1:nrow(pillar_ecol_df)){
+                if(!is.null(pillar_ecol_df$plot[[i]])){
                 filename <-  file.path(Sys.getenv("OneDriveCommercial"),
                                        "MarConsNetTargets",
                                        "data", "plots",
                                        make.names(paste0("plot_",
-                                                         pillar_ecol_df_data$areaID[i],
+                                                         pillar_ecol_df$areaID[i],
                                                          "_",
-                                                         pillar_ecol_df_data$indicator[i],
+                                                         pillar_ecol_df$indicator[i],
                                                          ".png")))
 
                 allplotnames <- c(allplotnames,filename)
-                ggsave(filename,pillar_ecol_df_data$plot[[i]])
+                ggsave(filename,pillar_ecol_df$plot[[i]])
                 }
               }
               allplotnames
@@ -1370,7 +1370,19 @@ tar_target(plot_files,
  #
  #            }),
 
- tar_target(name = upload_all_data_to_shiny,
+
+tar_target(name = MPA_report_card,
+           command = {
+             left_join(MPAs,pillar_ecol_df |>
+               select(-data,-plot) |>
+               filter(indicator %in% MPAs$NAME_E) |>
+               calc_group_score(grouping_var = "indicator") |>
+               mutate(grade = if_else(is.nan(score),
+                                      NA,
+                                      calc_letter_grade(score))),
+               by=c("NAME_E"="indicator"))
+           }),
+tar_target(name = upload_all_data_to_shiny,
             command = {
 
               if(Sys.getenv("USERPROFILE")=="C:\\Users\\DaigleR"){
