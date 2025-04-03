@@ -82,7 +82,7 @@ ui <- shiny::fluidPage(
       shiny::uiOutput("mpas"),
       shiny::uiOutput("projects"),
       shiny::conditionalPanel(
-        condition = "!(input.mpas === 'All') && input.tabs === 'tab_0'",
+        condition = "!(input.mpas === 'Scotian Shelf') && input.tabs === 'tab_0'",
       shiny::uiOutput("report_button_ui")),
       uiOutput("report_ui"),
       br(),
@@ -129,7 +129,7 @@ server <- function(input, output, session) {
   is_button_visible <- shiny::reactive({
     req(input$mpas)
     req(input$projects)
-    length(input$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(input$mpas == "All")
+    length(input$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(input$mpas == "Scotian Shelf")
   })
 
   input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division") # THE SAME AS STATE
@@ -149,7 +149,7 @@ server <- function(input, output, session) {
     req(input$mpas)
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      if (input$mpas == "All" || tolower(input$mpas) %in% tolower(areas)) {
+      if (input$mpas == "Scotian Shelf" || tolower(input$mpas) %in% tolower(areas)) {
       choices <- c("Status","Network Design Targets", "Level of Certainty", "Models", "In Situ Measurements", "Time Since Last in Situ Measurement")
       selectInput("flowerType", "Select Score Type", choices=choices, selected = "Status")
       } else {
@@ -272,7 +272,7 @@ server <- function(input, output, session) {
   output$mpas <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      shiny::selectInput("mpas","Select Protected/Conserved Area:",choices = c("All", MPAs$NAME_E), selected=state$mpas)
+      shiny::selectInput("mpas","Select Protected/Conserved Area:",choices = c("Scotian Shelf", MPAs$NAME_E), selected=state$mpas)
     }
   })
 
@@ -317,7 +317,7 @@ server <- function(input, output, session) {
   # Logic to generate the report
   observeEvent(input$report, {
     req(input$mpas)
-    if (!(state$mpas == "All")) {
+    if (!(state$mpas == "Scotian Shelf")) {
       # Define the Rmd file to render
       rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
       if (file.exists(rmd_file)) {
@@ -502,7 +502,7 @@ server <- function(input, output, session) {
         } else {
         ki1 <- which(grepl(flower, gsub("\\(|\\)", "", pillar_ecol_df$bin), ignore.case = TRUE))
         }
-        if (!(input$mpas == "All")) {
+        if (!(input$mpas == "Scotian Shelf")) {
           #2024/12/31 Issue 7
          #ki2 <- which(tolower(pillar_ecol_df$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
           ki2 <- which(tolower(pillar_ecol_df$areaID) == tolower(input$mpas))
@@ -645,7 +645,7 @@ server <- function(input, output, session) {
       # The below line puts the links in the proper format to direct us to the relevant tab when it is clicked on.
       formatted_indicators <- trimws(gsub("\n", "", paste0("<a href=", unlist(strsplit(as.character(info$ind_tabs), "<a href="))[nzchar(unlist(strsplit(as.character(info$ind_tabs), "<a href=")))])), "both")
 
-      if (input$mpas == "All") {
+      if (input$mpas == "Scotian Shelf") {
       ped <- pillar_ecol_df[info$keep,]
       ss_areas <- unique(ped$areaID)
       ss_indicators <- list()
@@ -845,7 +845,7 @@ server <- function(input, output, session) {
     req(input$mpas)
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      if (state$mpas == "All") {
+      if (state$mpas == "Scotian Shelf") {
         NAME <- "Scotian Shelf"
         MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),],
                                             grouping = "objective",
@@ -897,7 +897,7 @@ server <- function(input, output, session) {
     if (wording == "environmental (representativity)") {
       wording <- "environmental representativity"
     }
-    if (input$mpas == "All") {
+    if (input$mpas == "Scotian Shelf") {
       string <- "Scotian_Shelf"
     } else {
       string <- input$mpas
@@ -953,8 +953,8 @@ server <- function(input, output, session) {
           output[[paste0("bar", id)]] <- renderPlot({
             # Ensure bar chart is rendered only when tab_0 is active
             if (input$tabs == "tab_0") {
-              req(input$mpas %in% c("All", unique(pillar_ecol_df$areaID)))
-              if (state$mpas == "All") {
+              req(input$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
+              if (state$mpas == "Scotian Shelf") {
                 c1 <- 1:length(pillar_ecol_df$areaID)
               } else {
                 c1 <- which(pillar_ecol_df$areaID == state$mpas)
@@ -1004,7 +1004,7 @@ server <- function(input, output, session) {
   shiny::observeEvent(input$mpas, {
     req(input$tabs)
     req(input$mpas)
-    if (input$tabs == "tab_0" & !(state$mpas == "All")) {
+    if (input$tabs == "tab_0" & !(state$mpas == "Scotian Shelf")) {
       # Ensure filtered_odf is created inside this condition
       string <- input$mpas
       keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
@@ -1020,9 +1020,9 @@ server <- function(input, output, session) {
           output[[paste0("site_bar", id)]] <- renderPlot({
             # Ensure bar chart is rendered only when tab_0 is active
             if (input$tabs == "tab_0") {
-              req(input$mpas %in% c("All", unique(pillar_ecol_df$areaID)))
+              req(input$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
               # Ensure ymax is properly filtered and has a single value
-              if (state$mpas == "All") {
+              if (state$mpas == "Scotian Shelf") {
                 c1 <- 1:length(pillar_ecol_df$areaID)
               } else {
                 c1 <- which(pillar_ecol_df$areaID == state$mpas)
@@ -1108,7 +1108,7 @@ server <- function(input, output, session) {
         map <- leaflet::leaflet() %>%
           leaflet::addTiles()
 
-        if (!(is.null(state$mpas)) && !(state$mpas == "All")) {
+        if (!(is.null(state$mpas)) && !(state$mpas == "Scotian Shelf")) {
           selected <- which(MPA_report_card$NAME_E == state$mpas)
           map <- map %>% leaflet::addPolygons(
             data=MPA_report_card[selected,]$geoms,
@@ -1119,7 +1119,7 @@ server <- function(input, output, session) {
             color=ifelse(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey")
           )
 
-        } else if (state$mpas == "All") {
+        } else if (state$mpas == "Scotian Shelf") {
           # for (c in seq_along(MPA_report_card)) {
             # coord <- subarea_coords[[c]]
             map <- map %>%
@@ -1200,7 +1200,7 @@ server <- function(input, output, session) {
               longitude <- unique_coords$longitude
             }
 
-            if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) { # We want it filtered
+            if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Scotian Shelf")) { # We want it filtered
               m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
               coords <- cbind(longitude, latitude)
               points_sf <- sf::st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = sf::st_crs(4326))
@@ -1214,7 +1214,7 @@ server <- function(input, output, session) {
             LON[[i]] <- longitude
             if (!(length(latitude) == 0)) {
               if ("geometry" %in% names(pd)) {
-                if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "All")) {
+                if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "")) {
                   sf::st_crs(geometry) <- 4326
                   geometry <- st_transform(geometry, sf::st_crs(m))
                   geometry <- st_make_valid(geometry)
