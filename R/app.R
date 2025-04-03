@@ -294,7 +294,6 @@ server <- function(input, output, session) {
   # Check if the static HTML file exists
   observe({
     req(input$mpas)
-    #browser() # HERE JAIM
     static_file_path <- paste0(file.path(onedrive,"data", "reports"), "/", make.names(paste0(input$mpas,".html")))
     if (file.exists(static_file_path)) {
       # Show a link to the existing file
@@ -348,7 +347,7 @@ server <- function(input, output, session) {
     }
   })
 
-  output$objectives <- shiny::renderUI({
+  output$objectives <- shiny::renderUI({ #JAIM
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
         keepO <- which(names(Objectives_processed) == state$mpas)
@@ -1005,15 +1004,14 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(input$mpas)
     if (input$tabs == "tab_0" & !(state$mpas == "Scotian Shelf")) {
+      #browser()
       # Ensure filtered_odf is created inside this condition
-      string <- input$mpas
-      keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case = TRUE))))
+      keepO <- input$mpas
       if (!(length(keepO) == 0)) {
       S_Objectives <- Objectives_processed[[keepO]]
 
 
       filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
-
       for (fo in seq_along(filtered_odfS$objectives)) {
         local({
           id <- fo
@@ -1027,11 +1025,18 @@ server <- function(input, output, session) {
               } else {
                 c1 <- which(pillar_ecol_df$areaID == state$mpas)
               }
-              c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
+
+              if (tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]) == "environmental (representativity)") {
+                c2 <- which(tolower(pillar_ecol_df$bin) == "environmental representativity")
+
+              } else {
+                c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
+              }
+
+
               KEEP <- intersect(c1,c2)
               ymax <- pillar_ecol_df$score[KEEP]
               weight <- pillar_ecol_df$weight[KEEP]
-
 
               # Handling empty or multiple ymax cases
               if (length(ymax) == 0) {
