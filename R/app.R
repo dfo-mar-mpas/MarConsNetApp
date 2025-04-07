@@ -1143,7 +1143,6 @@ server <- function(input, output, session) {
           APJ_filtered <- all_project_geoms[keep_projects,]
 
           projectIds <- unique(APJ_filtered$PPTID) # The sub is because input$projects is snowCrabSurvey (1093)
-          #browser()
 
           for (i in seq_along(projectIds)) {
             APJ <- APJ_filtered[which(APJ_filtered$PPTID == projectIds[i]),]
@@ -1196,6 +1195,7 @@ server <- function(input, output, session) {
         map
 
       }
+    }
   })
 
   observeEvent(input$tabs, {
