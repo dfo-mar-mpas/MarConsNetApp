@@ -110,7 +110,6 @@ c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$obj
   }
 cat(sprintf('<span style="color:%s; background-color:lightgray; padding:3px;"><b>%s</b></span><br>', finalCol, S_Objectives[fo]))
 }
-#cat(Objectives_processed[[which(tolower(areas) == tolower(NAME_to_tag(names=input$mpas)))]])
 ```
 
 
@@ -166,9 +165,9 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == input$mpas),],
 
 
 
-```{r, echo=FALSE, comment=NA, results="asis"}
+```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
 p <- pillar_ecol_df[which(pillar_ecol_df$areaID == string),]
-area_grade <- calc_letter_grade(weighted.mean(p$ind_status, p$weight, na.rm=TRUE))
+area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
 
 ```
 
@@ -185,6 +184,7 @@ for (i in seq_along(unique(pillar_ecol_df$bin))) {
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
+library(knitr)
 library(leaflet)
 
 image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
@@ -228,17 +228,15 @@ for (i in seq_along(keeper2)) {
     # FINDING PLOT
       k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
       k2 <- which(grepl(make.names(keeper2[[i]]$Indicator[j]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
-    KEEP <- intersect(k1,k2)
-
-    plot_file <- image_files[KEEP]
+      KEEP <- intersect(k1,k2)
+      plot_file <- image_files[KEEP]
     
     # END PLOT
-
-    if (!(length(plot_file) == 1)) {
+      if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
-        knitr::include_graphics(plot_file[p])
+        cat("![](", plot_file[p], ")\n\n", sep = "")
       }
-    }
+      }
       
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("%s.\n\n", keeper2[[i]]$Status[j]))

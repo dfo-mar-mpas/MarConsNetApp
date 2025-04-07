@@ -317,15 +317,15 @@ server <- function(input, output, session) {
   observeEvent(input$report, {
     req(input$mpas)
     if (!(state$mpas == "Scotian Shelf")) {
+      #browser()
       # Define the Rmd file to render
       rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
       if (file.exists(rmd_file)) {
         params <- list(
-          mpas = input$mpas,
-          coords = subarea_coords[which(names(subarea_coords) == input$mpas)]
+          mpas = input$mpas
         )
         output_dir <- file.path(onedrive,"data", "reports")
-        output_file <- file.path(paste0(output_dir,"/", make.names(names=input$mpas, ".html")))
+        output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=input$mpas, ".html"))))
         render(rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
         output$report_ui <- renderUI({
           tags$iframe(src = "report.html", width = "100%", height = "600px")
