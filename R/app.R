@@ -279,7 +279,7 @@ server <- function(input, output, session) {
   output$projects <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      shiny::selectInput("projects", "Select Project(s):", choices=paste0(dataTable$title, " (", dataTable$id,")"), multiple=TRUE, selected=state$projects)
+      shiny::selectInput("projects", "Select Project(s):", choices=paste0(unique(all_project_geoms$project_short_title), " (",unique(all_project_geoms$PPTID),")"), multiple=TRUE, selected=state$projects)
     }
   })
 
@@ -1004,7 +1004,6 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(input$mpas)
     if (input$tabs == "tab_0" & !(state$mpas == "Scotian Shelf")) {
-      #browser()
       # Ensure filtered_odf is created inside this condition
       keepO <- input$mpas
       if (!(length(keepO) == 0)) {
@@ -1104,12 +1103,8 @@ server <- function(input, output, session) {
     req(state$mpas)
     palette <- viridis::viridis(length(input$projects))
 
-
-
-
     if (input$tabs == "tab_0") {
       if (!(is.null(state$mpas))) {
-        coords <- subarea_coords[[state$mpas]]
         map <- leaflet::leaflet() %>%
           leaflet::addTiles()
 
@@ -1125,8 +1120,6 @@ server <- function(input, output, session) {
           )
 
         } else if (state$mpas == "Scotian Shelf") {
-          # for (c in seq_along(MPA_report_card)) {
-            # coord <- subarea_coords[[c]]
             map <- map %>%
               leaflet::addPolygons(data=MPA_report_card$geoms,
                                    fillColor = unname(if_else(!is.na(MPA_report_card$grade), flowerPalette[MPA_report_card$grade], "#EDEDED")),
@@ -1135,114 +1128,63 @@ server <- function(input, output, session) {
                                    weight = 1,
                                    color = if_else(!is.na(MPA_report_card$grade), "black", "lightgrey"),
                                    popup = MPA_report_card$NAME_E)
-          # }
         }
 
         if (!(is.null(input$projects))) {
-          projectIds <- dataTable$id[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+          if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Scotian Shelf")) { # We want it filtered
+            k1 <- which(all_project_geoms$areaID == state$mpas)
+            k2 <- which(all_project_geoms$project_short_title %in% sub("\\s*\\(.*", "", input$projects))
+            keep_projects <- intersect(k1,k2)
 
-          projectPackages <- dataTable$package[which(dataTable$title %in% sub(" .*", "", input$projects))] # The sub is because input$projects is snowCrabSurvey (1093)
+          } else {
+          keep_projects <- which(all_project_geoms$project_short_title %in% sub("\\s*\\(.*", "", input$projects))
+          }
 
-          LAT <- NULL
-          LON <- NULL
+          APJ_filtered <- all_project_geoms[keep_projects,]
+
+          projectIds <- unique(APJ_filtered$PPTID) # The sub is because input$projects is snowCrabSurvey (1093)
+          #browser()
 
           for (i in seq_along(projectIds)) {
-            pd <- projectData[[which(as.numeric(names(projectData)) %in% projectIds[i])]]
-            if (!("argoFloats" %in% class(pd))) {
-              # BANDAID FIX: ISSUE 93
-              if ("lat" %in% names(pd)) {
-                latitude <- pd$lat
-                longitude <- pd$lon
-              } else {
-              longitude <- pd$longitude
-              latitude <- pd$latitude
-              }
-              type <- pd$type
+            APJ <- APJ_filtered[which(APJ_filtered$PPTID == projectIds[i]),]
+            type <- APJ$type
+            popupContent <- mapply(
+              function(type_val, proj_id) {
+                paste0(
+                  type_val,
+                  "<br>",  # Line break
+                  "<a href='http://glf-proxy:8018/mar-spa/reports/", proj_id, ".html' target='_blank'  rel='noopener noreferrer'>",
+                  "View Investment: ", proj_id,
+                  "</a>"
+                )
+              },
+              type,  # Your vector of types
+              projectIds[i],  # Your vector of project IDs
+              SIMPLIFY = FALSE
+            ) |>
+              unlist()
+            geom <- APJ$geometry
+            if (any(st_geometry_type(geom) == "POLYGON")) {
+              # Remote Sensing
+              point_keep <- which(st_geometry_type(geom) == "POINT")
+              polygon_keep <- which(st_geometry_type(geom) == "POLYGON")
+              sf_polygons <- st_as_sf(APJ[polygon_keep,], sf_column = "geometry")
 
-              popupContent <- mapply(
-                function(type_val, proj_id) {
-                  paste0(
-                    type_val,
-                    "<br>",  # Line break
-                    "<a href='http://glf-proxy:8018/mar-spa/reports/", proj_id, ".html' target='_blank'  rel='noopener noreferrer'>",
-                    "View Investment: ", proj_id,
-                    "</a>"
-                  )
-                },
-                type,  # Your vector of types
-                projectIds[i],  # Your vector of project IDs
-                SIMPLIFY = FALSE
-              ) |>
-                unlist()
-
-              if ("geometry" %in% names(pd)) {
-                geometry <- pd$geometry
-              }
-            } else {
-              longitude <- pd[['longitude']]
-              latitude <- pd[['latitude']]
-              type <- "Argo Floats"
-            }
-
-            bad <- unique(c(which(is.na(longitude)), which(is.na(latitude))))
-            if (length(bad) > 0) {
-              latitude <- latitude[-bad]
-              longitude <- longitude[-bad]
-              type <- type[-bad]
-              if ("geometry" %in% names(pd)) {
-                geometry <- geometry[-bad]
-              }
-            }
-
-            if (length(latitude) > 1000) { # issue 21
-              latitude <- round(latitude,1)
-              longitude <- round(longitude,1)
-              coord <- data.frame(latitude, longitude)
-
-              # Get unique pairs
-              unique_coords <- unique(coord)
-              latitude <- unique_coords$latitude
-              longitude <- unique_coords$longitude
-            }
-
-            if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Scotian Shelf")) { # We want it filtered
-              m <- MPAs$geoms[which(MPAs$NAME_E == state$mpas)]
-              coords <- cbind(longitude, latitude)
-              points_sf <- sf::st_as_sf(data.frame(coords), coords = c("longitude", "latitude"), crs = sf::st_crs(4326))
-              points_within <- sf::st_within(points_sf, m, sparse = FALSE)
-              within_points <- points_sf[apply(points_within, 1, any), ]
-              longitude <- sf::st_coordinates(within_points)[, 1]
-              latitude <- sf::st_coordinates(within_points)[, 2]
-            }
-
-            LAT[[i]] <- latitude
-            LON[[i]] <- longitude
-            if (!(length(latitude) == 0)) {
-              if ("geometry" %in% names(pd)) {
-                if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "")) {
-                  sf::st_crs(geometry) <- 4326
-                  geometry <- st_transform(geometry, sf::st_crs(m))
-                  geometry <- st_make_valid(geometry)
-                  overlaps_poly <- st_intersects(geometry, m, sparse = FALSE)
-                  map <- map %>%
-                    addPolygons(data=geometry[which(overlaps_poly[,1])], popup=popupContent[which(overlaps_poly[,1])], color="yellow", weight=0.5, opacity=0)
-                } else {
-                  map <- map %>%
-                    addPolygons(data=geometry, popup=popupContent, color="yellow", weight=0.5, opacity=0)
-                }
-
-              }
               map <- map %>%
-                leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i],
-                                          popup=ifelse("data.frame" %in% class(pd),
-                                                       popupContent,
-                                                       "Type Unknown"))
-            }
+                leaflet::addPolygons(data=sf_polygons, color="lightyellow",
+                                     popup=unique(popupContent[polygon_keep]), weight=0.5, fillOpacity = 0.1,)
+            } else {
+              point_keep <- 1:length(APJ$geometry)
 
-            if (i == length(projectIds) && any(unlist(lapply(LAT, length))) == 0) {
-              shiny::showNotification("Not all of the selected projects exist in this area. Unfilter the data to see where this project takes place.", duration = 5)
             }
+            latitude <- st_coordinates(APJ$geometry[point_keep])[, "Y"]
+            longitude <- st_coordinates(APJ$geometry[point_keep])[, "X"]
+
+            map <- map %>%
+              leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i],
+                                        popup=unname(popupContent[point_keep]))
           }
+
           map <- map %>%
             leaflet::addLegend(
               "bottomright",
@@ -1252,8 +1194,8 @@ server <- function(input, output, session) {
             )
         }
         map
+
       }
-    }
   })
 
   observeEvent(input$tabs, {

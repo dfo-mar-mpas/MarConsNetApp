@@ -22,35 +22,32 @@ cat("</div>")
 
 ### Network Objectives
 ```{r, echo=FALSE, comment=NA, results="asis"}
-string <- NAME_to_tag(names = input$mpas)
-keepO <- which(unlist(lapply(areas, function(x)
-  grepl(x, string, ignore.case = TRUE))))
-
+string <- state$mpas
 
 filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
 
 for (fo in seq_along(filtered_odf$objectives)) {
   id <- fo
-  req(input$mpas %in% c("All", unique(pillar_ecol_df$area_name)))
-  if (state$mpas == "All") {
-    c1 <- 1:length(pillar_ecol_df$area_name)
+  req(input$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
+  if (state$mpas == "Scotian Shelf") {
+    c1 <- 1:length(pillar_ecol_df$areaID)
   } else {
-    c1 <- which(pillar_ecol_df$area_name == state$mpas)
+    c1 <- which(pillar_ecol_df$areaID == state$mpas)
   }
-  c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
-  KEEP <- intersect(c1, c2)
-  ymax <- pillar_ecol_df$ind_status[KEEP]
+ c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
+  KEEP <- intersect(c1,c2)
+  ymax <- pillar_ecol_df$score[KEEP]
   weight <- pillar_ecol_df$weight[KEEP]
-  
-  # Handling empty or multiple ymax cases
   if (length(ymax) == 0) {
-    # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
-    c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
-    KEEP <- intersect(c1, c2)
-    ymax <- pillar_ecol_df$ind_status[KEEP]
-    weight <- pillar_ecol_df$weight[KEEP]
+  # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
+  c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
+  KEEP <- intersect(c1,c2)
+  ymax <- pillar_ecol_df$score[KEEP]
+  weight <- pillar_ecol_df$weight[KEEP]
   }
-  ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
+
+  #ymax <- ymax[-which(ymax == 0)]
+  ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
   # Create data frame for plotting
   data <- data.frame(x = paste0("Objective ", id), y = ymax)
   clc <- as.character(calc_letter_grade(data$y))
@@ -65,9 +62,8 @@ cat(sprintf('<span style="color:%s; background-color:lightgray; padding:3px;"><b
 ### Site Objectives
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
-string <- NAME_to_tag(names = input$mpas)
-keepO <- which(unlist(lapply(areas, function(x)
-  grepl(x, string, ignore.case = TRUE))))
+string <- input$mpas
+keepO <- string
 
 
 S_Objectives <- Objectives_processed[[keepO]]
@@ -77,15 +73,23 @@ filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
 
 for (fo in seq_along(filtered_odfS$objectives)) {
   id <- fo
-  req(input$mpas %in% c("All", unique(pillar_ecol_df$area_name)))
+  req(input$mpas %in% c("All", unique(pillar_ecol_df$areaID)))
   if (state$mpas == "All") {
-    c1 <- 1:length(pillar_ecol_df$area_name)
+    c1 <- 1:length(pillar_ecol_df$areaID)
   } else {
-    c1 <- which(pillar_ecol_df$area_name == state$mpas)
+    c1 <- which(pillar_ecol_df$areaID == state$mpas)
   }
-  c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
+  
+   if (tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]) == "environmental (representativity)") {
+ c2 <- which(tolower(pillar_ecol_df$bin) == "environmental representativity")
+
+} else {
+c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
+ }
+  
+  
   KEEP <- intersect(c1, c2)
-  ymax <- pillar_ecol_df$ind_status[KEEP]
+  ymax <- pillar_ecol_df$score[KEEP]
   weight <- pillar_ecol_df$weight[KEEP]
   
   # Handling empty or multiple ymax cases
@@ -93,10 +97,8 @@ for (fo in seq_along(filtered_odfS$objectives)) {
     # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
     c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
     KEEP <- intersect(c1, c2)
-    ymax <- pillar_ecol_df$ind_status[KEEP]
+    ymax <- pillar_ecol_df$score[KEEP]
     weight <- pillar_ecol_df$weight[KEEP]
-
-    
   }
   ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
   # Create data frame for plotting
@@ -115,15 +117,14 @@ cat(sprintf('<span style="color:%s; background-color:lightgray; padding:3px;"><b
 ### Context
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
-cat(Context[[which(tolower(areas) == tolower(NAME_to_tag(names=input$mpas)))]])
+cat(Context[[string]])
 ```
 
 
 ```{r, echo=FALSE}
-#cat(paste0("The area is ", params$coords[[input$mpas]]))
 map <- leaflet() %>%
   addTiles() %>%
-  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == input$mpas)], fillOpacity = 0.5, weight = 2, color="black")
+  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == state$mpas)], fillOpacity = 0.5, weight = 2, color=flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == string)]]])
 
 map
 ```
@@ -154,10 +155,10 @@ For each bin (and area of interest), the weighted mean is taken to determine the
 ### Flower plot
 
 ```{r, echo=FALSE, comment=NA, results="asis", warn=FALSE}
-plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == input$mpas),],
+plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == input$mpas),],
                                             grouping = "objective",
                                             labels = "bin",
-                                            score = "ind_status",
+                                            score = "score",
                                             max_score=100,
                                             min_score=0,
                                             title="Flower plot frame work")
@@ -166,7 +167,7 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$area_name == input$mpas),],
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
-p <- pillar_ecol_df[which(pillar_ecol_df$area_name == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)"),]
+p <- pillar_ecol_df[which(pillar_ecol_df$areaID == string),]
 area_grade <- calc_letter_grade(weighted.mean(p$ind_status, p$weight, na.rm=TRUE))
 
 ```
@@ -177,7 +178,7 @@ As shown above, in `r params$mpas` the over all grade based on our criteria is `
 for (i in seq_along(unique(pillar_ecol_df$bin))) {
   keep <- which(pillar_ecol_df$bin == unique(pillar_ecol_df$bin)[i])
   df <- pillar_ecol_df[keep,]
-  cat(sprintf("Indicator bin: %s (%s).\n\n", unique(pillar_ecol_df$bin)[i], calc_letter_grade(weighted.mean(df$ind_status, df$weight,na.rm=TRUE))))
+  cat(sprintf("Indicator bin: %s (%s).\n\n", unique(pillar_ecol_df$bin)[i], calc_letter_grade(weighted.mean(df$score, df$weight,na.rm=TRUE))))
   #cat(sprintf("%s.\n\n", " "))
       }
 ```
@@ -185,27 +186,32 @@ for (i in seq_along(unique(pillar_ecol_df$bin))) {
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
 library(leaflet)
-keeper <- indicator_to_plot[which(tolower(indicator_to_plot$area) == tolower(NAME_to_tag(names =
-                                                                                           input$mpas))), ]
+
+image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
+                                    "MarConsNetTargets","data",
+                                    "plots")
+image_files <- list.files(image_folder, full.names = TRUE)
+
+keeper <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas), ]
 
 BINS <- unique(trimws(tolower(unlist(
-  strsplit(keeper$indicator_bin, ";")
+  strsplit(keeper$bin, ";")
 )), "both"))
 
 keeper2 <- NULL
 
 for (i in seq_along(BINS)) {
   KK <- keeper[which(grepl(BINS[i], trimws(tolower(
-    keeper$indicator_bin
+    keeper$bin
   ), "both"))), ]
-  
+
   keeper2[[i]] <- data.frame(
-    Indicator = KK$indicators,
-    Status = KK$status,
-    Trend = KK$trend,
-    Plot = KK$plot,
-    Grade = KK$status_grade,
-    Project = KK$project,
+    Indicator = KK$indicator,
+    Status = KK$status_statement,
+    Trend = KK$trend_statement,
+    #Plot = KK$plot,
+    Grade = KK$score,
+    Project = KK$PPTID,
     stringsAsFactors = FALSE
   )
   
@@ -217,56 +223,33 @@ for (i in seq_along(keeper2)) {
   cat(sprintf("### Indicator Bin: %s\n\n", BINS[i]))
   for (j in seq_along(keeper2[[i]]$Indicator)) {
     cat(sprintf("<b>Indicator: %s.</b>\n\n", keeper2[[i]]$Indicator[j]))
-    if (!(keeper2[[i]]$Plot[j] == "0")) {
-      plotty <- keeper2[[i]]$Plot[j]
-      if (grepl("ah=ah", plotty)) {
-        ah <- all_haddock
+    
+    
+    # FINDING PLOT
+      k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
+      k2 <- which(grepl(make.names(keeper2[[i]]$Indicator[j]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
+    KEEP <- intersect(k1,k2)
+
+    plot_file <- image_files[KEEP]
+    
+    # END PLOT
+
+    if (!(length(plot_file) == 1)) {
+      for (p in seq_along(plot_file)) {
+        knitr::include_graphics(plot_file[p])
       }
-      
-      if (grepl("bd=bd", plotty)) {
-        bd <- bloom_df
-      }
-      par(mfrow = c(1, 2))
-      eval(parse(text = keeper2[[i]]$Plot[j]))
-      
-      mapk <- mapData[[which(names(mapData) == plotty)]]
-      
-      plot(
-        st_geometry(mapk$area),
-        col = "gray",
-        main = "Spatial Visualization",
-        xlab = "Longitude",
-        ylab = "Latitude",
-        border = NA
-      )
-      
-      # Add the "outside" polygons
-      plot(
-        st_geometry(mapk$outside),
-        col = "red",
-        add = TRUE,
-        border = NA
-      )
-      
-      # Add circle markers for points
-      points(mapk$longitude,
-             mapk$latitude,
-             col = "black",
-             pch = 20)
-      
-      par(mfrow = c(1, 1))
+    }
       
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("%s.\n\n", keeper2[[i]]$Status[j]))
       cat(sprintf("%s.\n\n", keeper2[[i]]$Trend[j]))
       cat(sprintf("%s.\n\n", " "))
-      cat(sprintf("This indicator has a grade of: %s.\n\n", keeper2[[i]]$Grade[j]))
+      cat(sprintf("This indicator has a score of: %s.\n\n", keeper2[[i]]$Grade[j]))
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf(
         "Data was provided from project %s.\n\n",
         keeper2[[i]]$Project[j]
       ))
-    }
   }
 }
 
@@ -280,25 +263,25 @@ The following indicators have been identified as direct measure of climate chang
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
-trends <- indicator_to_plot$trend[which(tolower(indicator_to_plot$indicators) %in% tolower(climate_change$indicators))]
-analysis <- NULL
-for (i in seq_along(trends)) {
-  if (!(grepl("BLANK", trends[i]))) {
-  analysis[[i]] <- climate_analysis(trend=trends[i], itp=indicator_to_plot)
-  } else {
-  analysis[[i]] <- "There is no data for this indicator yet."
-  }
-}
-
-
-for (i in seq_along(climate_change$indicators)) {
-      cat(sprintf("<b>Indicator: %s.</b>\n\n", climate_change$indicators[i]))
-      cat(sprintf("%s.\n\n", " "))
-      cat(sprintf("%s.\n\n", climate_change$summary[i]))
-      cat(sprintf("%s.\n\n", " "))
-      cat(sprintf("Actual results showed:\n\n"))
-      cat(sprintf("%s.\n\n", analysis[[i]]))
-}
+# trends <- pillar_ecol_df$trend_statement[which(tolower(pillar_ecol_df$indicator) %in% tolower(climate_change$indicators))]
+# analysis <- NULL
+# for (i in seq_along(trends)) {
+#   if (!(grepl("BLANK", trends[i]))) {
+#   analysis[[i]] <- climate_analysis(trend=trends[i], itp=indicator_to_plot)
+#   } else {
+#   analysis[[i]] <- "There is no data for this indicator yet."
+#   }
+# }
+# 
+# 
+# for (i in seq_along(climate_change$indicators)) {
+#       cat(sprintf("<b>Indicator: %s.</b>\n\n", climate_change$indicators[i]))
+#       cat(sprintf("%s.\n\n", " "))
+#       cat(sprintf("%s.\n\n", climate_change$summary[i]))
+#       cat(sprintf("%s.\n\n", " "))
+#       cat(sprintf("Actual results showed:\n\n"))
+#       cat(sprintf("%s.\n\n", analysis[[i]]))
+# }
 ```
 
 

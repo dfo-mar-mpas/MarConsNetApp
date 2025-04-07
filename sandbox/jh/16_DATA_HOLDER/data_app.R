@@ -3,7 +3,8 @@ library(dplyr); library(sf); library(shinyjs); library(viridis); library(arcpull
 library(MarConsNetAnalysis);library(MarConsNetData);
 library(TBSpayRates); library(dataSPA); library(readxl)
 library(ggplot2); library(shinyBS); library(Mar.datawrangling); library(DT); library(rmarkdown)
-library(stringr); library(tidyr); library(officer); library(RColorBrewer); library(rvest); library(httr2); library(httr)
+library(stringr); library(tidyr); library(officer); library(RColorBrewer); library(rvest); library(httr2); library(httr);
+library(tidyverse); library(dplyr)
 
 
 mani <- tar_manifest(script = "inst/_targets.R",

@@ -160,6 +160,7 @@ list(
   tar_target(name = Context,
              command = {
                c <- lapply(areas, function(x) data_context(type="site", area=x))
+               names(c) <- areas
                c <- c[which(unname(unlist(lapply(c, function(x) !(is.null(x))))))]
                c
                }),
@@ -800,8 +801,8 @@ list(
 
                pillar_ecol_df |>
                  filter(!map_lgl(data, is.null)) |>
-                 mutate(data = map(data,~.x |> select(year,geometry) |> distinct())) |>
-                 select(data,type,PPTID,areaID) |>
+                 mutate(data = map(data,~.x |> dplyr::select(year,geometry) |> distinct())) |>
+                 dplyr::select(data,type, project_short_title, PPTID,areaID) |>
                  unnest(cols = data) |>
                  st_as_sf()
 
