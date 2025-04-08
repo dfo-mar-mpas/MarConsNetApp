@@ -193,6 +193,7 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$about, {
+    #browser()
     req(input$about)
     showModal(modalDialog(
       title = "User Guide",
@@ -262,6 +263,15 @@ server <- function(input, output, session) {
                    tags$li("If there is a significant change, an F is assigned.")
                  )
                ),
+               renderImage({
+                 # Path to your image outside the 'www' folder
+                 list(
+                   src = paste0(onedrive, "/data/visual_flow.png"),
+                   contentType = "image/png",
+                   width = "580px",
+                   height = "auto"
+                 )
+               }, deleteFile = FALSE),
                p("From: ", a("http://127.0.0.1:3803/", href = "http://127.0.0.1:3803/"))
         )
       )
