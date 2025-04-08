@@ -184,15 +184,6 @@ list(
              }
              ),
 
-  tar_target(name = binned_indicators,
-             command = {
-               bi <- read_excel(system.file("data", "indicator_binning.xlsx", package = "MarConsNetAnalysis"))
-               ## Giving indicator links
-               bi$tab<- paste0("tab_", length(APPTABS$flower)+(1:length(bi$indicators)))
-               bi$link <- paste0("link_", length(APPTABS$flower)+(1:length(bi$indicators)))
-               bi
-             }),
-
   tar_target(name = odf,
              command = {
                O <- data.frame(
