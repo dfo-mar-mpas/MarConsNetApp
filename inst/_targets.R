@@ -42,12 +42,6 @@ list(
              st_transform(read_sf(system.file("data","WEBCA_10k_85k.shp", package = "MarConsNetAnalysis"))$geometry, crs=4326)
   ),
 
-
-  tar_target(name = subarea_coords,
-             command = {
-               getLatLon(MPAs)
-             }),
-
   tar_target(name = Ecological,
              command = {
                data.frame(grouping=rep(c("Biodiversity",
