@@ -245,9 +245,9 @@ list(
                      O$tab[i] <- APPTABS$tab[keep]
                      O$link[i] <- APPTABS$link[keep]
                    } else {
-                     k <- which(binned_indicators$indicators == trimws(gsub("-", "", gsub("\n", "", O$objectives[i]))), "right")
-                     O$tab[i] <- binned_indicators$tab[k]
-                     O$link[i] <- binned_indicators$link[k]
+                     k <- which(pillar_ecol_df$indicators == trimws(gsub("-", "", gsub("\n", "", O$objectives[i]))), "right")
+                     O$tab[i] <- pillar_ecol_df$tab[k]
+                     O$link[i] <- pillar_ecol_df$link[k]
 
                    }
                  } else {
