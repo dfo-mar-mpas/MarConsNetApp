@@ -417,44 +417,18 @@ server <- function(input, output, session) {
 
   output$contextButton <- shiny::renderUI({
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      if (grepl("Marine Protected Area", state$mpas)) {
-        string <- gsub("Marine Protected Area", "MPA", state$mpas)
-        if (grepl("Estuary", state$mpas)) {
-          string <- gsub("Estuary ", "", string)
-        }
-        string <- gsub("\\.", "", string)
-      } else if (grepl("Western", state$mpas, ignore.case=TRUE)) {
-        string <- "WEBCA"
-      } else {
-        string <- state$mpas
-      }
-      string <- gsub(" ", "_", string)
-
-      #string <- gsub("\\.", "", gsub(" ", "", state$mpas))
-      keepO <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
+      string <- state$mpas
+      keepO <- which(areas == string)
       if (!(length(keepO) == 0)) {
         shiny::actionButton(inputId="contextButton", label="Context")
       }
-    } # conditions
+    }
   })
 
   shiny::observeEvent(input$contextButton, {
-
-    if (grepl("Marine Protected Area", state$mpas)) {
-      string <- gsub("Marine Protected Area", "MPA", state$mpas)
-      if (grepl("Estuary", state$mpas)) {
-        string <- gsub("Estuary ", "", string)
-      }
-      string <- gsub("\\.", "", string)
-    } else if (grepl("Western", state$mpas, ignore.case=TRUE)) {
-      string <- "WEBCA"
-    } else {
-      string <- state$mpas
-    }
-    string <- gsub(" ", "_", string)
-
-    keepC <- which(unlist(lapply(areas, function(x) grepl(x, string, ignore.case=TRUE))))
-    textC <- Context[[keepC]]
+    string <- state$mpas
+    keepC <- which(areas == string)
+    textC <- Context[areas[keepC]]
     textC <- unlist(lapply(textC, function(x) paste(x, "\n\n")))
     shiny::showModal(shiny::modalDialog(
       title = "Marine Protected Area Context",
