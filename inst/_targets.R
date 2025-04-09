@@ -388,7 +388,8 @@ list(
             command = {
              process_indicator(data = NA,
                                indicator = "placeholder",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type = 'time-series')
             }),
 
  tar_target(ind_fish_length,
@@ -410,7 +411,8 @@ list(
                                PPTID = 726,
                                project_short_title = "RV Survey",
                                areas = MPAs,
-                               plot_type = "violin")
+                               plot_type = "violin",
+                               plot_lm=FALSE)
               }
  ),
 
@@ -433,7 +435,8 @@ list(
                                PPTID = 726,
                                project_short_title = "RV Survey",
                                areas = MPAs,
-                               plot_type = "violin")
+                               plot_type = "violin",
+                               plot_lm=FALSE)
             }
 ),
 
@@ -456,7 +459,8 @@ list(
                                PPTID = 726,
                                project_short_title = "RV Survey",
                                areas = MPAs,
-                               plot_type = "violin")
+                               plot_type = "violin",
+                               plot_lm=FALSE)
             }),
 
  tar_target(ind_haddock_biomass,
@@ -478,7 +482,8 @@ list(
                                PPTID = 726,
                                project_short_title = "RV Survey",
                                areas = MPAs,
-                               plot_type = "violin")
+                               plot_type = "violin",
+                               plot_lm=FALSE)
             }),
 
 
@@ -497,7 +502,9 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 579,
                                project_short_title = "AZMP",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type='time-series',
+                               plot_lm=FALSE)
             }),
 
 
@@ -518,7 +525,9 @@ list(
                                PPTID = 579,
                                project_short_title = "AZMP",
                                climate = TRUE,
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type='time-series',
+                               plot_lm=FALSE)
             }),
 
  tar_target(ind_nitrate,
@@ -535,7 +544,9 @@ list(
                                project_short_title = "AZMP",
                                climate = TRUE,
                                other_nest_variables="depth",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type = 'time-series',
+                               plot_lm=FALSE)
             }),
 
  tar_target(ind_salinity,
@@ -552,7 +563,9 @@ list(
                                PPTID = 579,
                                project_short_title = "AZMP",
                                other_nest_variables="depth",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type='time-series',
+                               plot_lm=FALSE)
             }),
 
  tar_target(ind_temperature,
@@ -570,7 +583,9 @@ list(
                                project_short_title = "AZMP",
                                climate = TRUE,
                                other_nest_variables="depth",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type='time-series',
+                               plot_lm=FALSE)
             }),
 
  tar_target(ind_chlorophyll,
@@ -588,7 +603,9 @@ list(
                                PPTID = 579,
                                project_short_title = "AZMP",
                                other_nest_variables="depth",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type='time-series',
+                               plot_lm=FALSE)
             }),
 
  tar_target(ind_bloom_amplitude,
@@ -625,7 +642,9 @@ list(
                                scoring = "desired state: stable",
                                PPTID = 579,
                                project_short_title = "AZMP",
-                               areas = MPAs)
+                               areas = MPAs,
+                               plot_type = "time-series",
+                               plot_lm=FALSE)
             }
  ),
 
