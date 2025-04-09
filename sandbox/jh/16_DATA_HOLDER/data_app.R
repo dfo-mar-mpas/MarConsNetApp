@@ -10,7 +10,7 @@ library(tidyverse); library(dplyr)
 mani <- tar_manifest(script = "inst/_targets.R",
                      fields = "name") |>
   unlist(use.names = FALSE)
-tar_load(names=mani[!grepl("rv_data",mani)&!grepl("ind_",mani)&!grepl("bin_",mani)&!grepl("ecol_obj",mani)])
+tar_load(names=mani[!grepl("rv_data",mani)&!grepl("ind_",mani)&!grepl("bin_",mani)&!grepl("ecol_obj",mani)], store=tar_paths())
 
 
 

@@ -2,7 +2,7 @@
 library(targets)
 
 if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
-  tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))
+  tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets", "MarConsNetAnalaysis"))
 }
 
 
@@ -10,9 +10,8 @@ if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","ap
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
 tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
-               "shiny", "leaflet", "dplyr", "shinyjs", "devtools", "MarConsNetAnalysis", "MarConsNetData",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
-               "RColorBrewer", "car", "purrr"),
+               "RColorBrewer", "car", "purrr", "MarConsNetAnalysis"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -387,7 +386,7 @@ list(
  # tar_target(ind_placeholder_df,ind_placeholder(areas = all_areas)),
  tar_target(ind_placeholder_df,
             command = {
-              process_indicator(data = NA,
+             process_indicator(data = NA,
                                indicator = "placeholder",
                                areas = MPAs)
             }),
@@ -400,7 +399,7 @@ list(
                        latitude = LATITUDE,
                        fish_length = FLEN,
                        year = YEAR)  |>
-                select(longitude, latitude, year, fish_length)
+                dplyr::select(longitude, latitude, year, fish_length)
 
               process_indicator(data = data,
                                indicator_var_name = "fish_length",
@@ -423,7 +422,7 @@ list(
                        latitude = LATITUDE,
                        fish_weight = FWT,
                        year = YEAR)  |>
-                select(longitude, latitude, year, fish_weight)
+                dplyr::select(longitude, latitude, year, fish_weight)
 
               process_indicator(data = data,
                                indicator_var_name = "fish_weight",
@@ -446,7 +445,7 @@ list(
                        latitude = LATITUDE,
                        haddock_counts = TOTNO,
                        year = YEAR)  |>
-                select(longitude, latitude, year, haddock_counts)
+                dplyr::select(longitude, latitude, year, haddock_counts)
 
               process_indicator(data = data,
                                indicator_var_name = "haddock_counts",
@@ -468,7 +467,7 @@ list(
                        latitude = LATITUDE,
                        haddock_biomass = TOTWGT,
                        year = YEAR)  |>
-                select(longitude, latitude, year, haddock_biomass)
+                dplyr::select(longitude, latitude, year, haddock_biomass)
 
               process_indicator(data = data,
                                indicator_var_name = "haddock_biomass",
@@ -488,7 +487,7 @@ list(
 
               data <- data_azmp_zooplankton_annual_stations |>
                 mutate(Calanus_finmarchicus_biomass = Calanus_finmarchicus_log10)  |>
-                select(longitude, latitude, year, Calanus_finmarchicus_biomass)
+                dplyr::select(longitude, latitude, year, Calanus_finmarchicus_biomass)
 
               process_indicator(data = data,
                                indicator = "Biomass of Zooplankton (Calanus finmarchicus)",
@@ -508,7 +507,7 @@ list(
             command={
               data <- azmpdata::Derived_Monthly_Stations |>
                 left_join(data_azmp_fixed_stations, by = "station")  |>
-                select(longitude, latitude, year, sea_surface_height)
+                dplyr::select(longitude, latitude, year, sea_surface_height)
 
               process_indicator(data = data,
                                indicator_var_name = "sea_surface_height",
@@ -525,7 +524,7 @@ list(
  tar_target(ind_nitrate,
             command={
               data <- data_azmp_Discrete_Occupations_Sections  |>
-                select(longitude, latitude, year, depth, nitrate)
+                dplyr::select(longitude, latitude, year, depth, nitrate)
               process_indicator(data = data,
                                indicator_var_name = "nitrate",
                                indicator = "Nutrient Conditions (Nitrate)",
@@ -543,7 +542,7 @@ list(
             command={
 
               data <- data_azmp_Discrete_Occupations_Sections  |>
-                select(longitude, latitude, year, depth, salinity)
+                dplyr::select(longitude, latitude, year, depth, salinity)
               process_indicator(data = data,
                                indicator_var_name = "salinity",
                                indicator = "Salinity",
@@ -559,7 +558,7 @@ list(
  tar_target(ind_temperature,
             command={
               data <- data_azmp_Discrete_Occupations_Sections  |>
-                select(longitude, latitude, year, depth, temperature)
+                dplyr::select(longitude, latitude, year, depth, temperature)
 
               process_indicator(data = data,
                                indicator_var_name = "temperature",
@@ -577,7 +576,7 @@ list(
  tar_target(ind_chlorophyll,
             command={
               data <- data_azmp_Discrete_Occupations_Sections  |>
-                select(longitude, latitude, year, depth, chlorophyll)
+                dplyr::select(longitude, latitude, year, depth, chlorophyll)
 
 
               process_indicator(data = data,
@@ -613,7 +612,7 @@ list(
                 filter(area == "CSS_remote_sensing") |>
                 mutate(geometry = polygon_sf) |>
                 st_as_sf() |>
-                select(area, year, bloom_amplitude, geometry) |>
+                dplyr::select(area, year, bloom_amplitude, geometry) |>
                 st_make_valid()
 
 
