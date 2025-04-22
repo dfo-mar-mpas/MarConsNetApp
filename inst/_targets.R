@@ -2,7 +2,7 @@
 library(targets)
 
 if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
-  tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets", "MarConsNetAnalaysis"))
+  tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))
 }
 
 
@@ -11,7 +11,8 @@ if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","ap
 tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
-               "RColorBrewer", "car", "purrr", "MarConsNetAnalysis"),
+               "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
+               "rnaturalearth"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -28,13 +29,53 @@ tar_option_set(
 
 list(
   ##### Areas #####
-  tar_target(name=planning_area,
-             data_planning_areas()),
+  tar_target(name = regions,
+             command = {
+               PA <- get_spatial_layer("https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/eastern_canada_marine_spatial_planning_areas/MapServer/0")
+
+               canada <- ne_states(country = "Canada", returnclass = "sf")
+
+               A <- PA[grepl(PA$NAME_E, pattern = "Gulf"), ]
+               B <- canada[canada$name_en %in% c("Quebec","Newfoundland and Labrador"), ]
+               C <- canada[canada$name_en %in% c("New Brunswick","Nova Scotia","Prince Edward Island"), ]
+
+
+
+               # Create a fine resolution grid within A
+               grid_points <- st_make_grid(A, cellsize = 0.025, what = "polygons") %>%
+                 st_as_sf() %>%
+                 st_filter(A) # Keep only points inside A
+
+
+               # Determine which part is closer to which reference polygon
+               regions <- grid_points |>
+                 st_as_sf() |>
+                 mutate(centroids = st_centroid(x),
+                        dist_to_B = as.numeric(st_distance(centroids, st_union(B))),
+                        dist_to_C = as.numeric(st_distance(centroids, st_union(C))),
+                        NAME_E = ifelse(dist_to_B < dist_to_C, "Quebec", "Gulf")) |>
+                 group_by(NAME_E) |>
+                 summarise(geoms = st_union(x)) |>
+                 bind_rows(PA[!grepl(PA$NAME_E, pattern = "Gulf"), ])
+
+             }),
 
   # get the Protected and Conserved areas in the bioregion
   tar_target(name = MPAs,
              command = {
-               data_CPCAD_areas(planning_area,  zones = FALSE)
+               areas <- get_spatial_layer("https://maps-cartes.ec.gc.ca/arcgis/rest/services/CWS_SCF/CPCAD/MapServer/0",
+                                 where="BIOME='M' AND MGMT_E='Fisheries And Oceans Canada'") |>
+                 group_by(NAME_E, NAME_F) |>
+                 summarise(geoms = st_make_valid(st_union(geoms)))
+
+               centroids <- st_centroid(areas$geoms) |>
+                 st_as_sf() |>
+                 st_join(regions)
+
+               areas$region <- centroids$NAME_E
+
+               areas |>
+                 filter(!is.na(region))
              }),
 
   tar_target(Outside, #FIXME: this is only for WEBCA at the moment
@@ -280,7 +321,7 @@ list(
      st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
               crs = 4326,
               remove = FALSE) |>
-     st_filter(planning_area) |>
+     st_filter(regions[regions$NAME_E=="Scotian Shelf and Bay of Fundy",]) |>
      st_join(MPAs |> select(NAME_E), left=TRUE) |>
      as.data.frame() |>
      select(-geometry)
@@ -304,7 +345,7 @@ list(
      st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
               crs = 4326,
               remove = FALSE) |>
-     st_filter(planning_area) |>
+     st_filter(regions[regions$NAME_E=="Scotian Shelf and Bay of Fundy",]) |>
      st_join(MPAs |> select(NAME_E), left=TRUE) |>
      as.data.frame() |>
      select(-geometry)
@@ -340,6 +381,31 @@ list(
 
 
             }),
+
+ tar_target(name = data_QC_gulf_biogenic_habitat,
+            command = {
+              # Sea pens significant areas
+              # from https://open.canada.ca/data/en/dataset/87ae08e8-5fc2-476a-b3f5-c8f0ea4be9ef
+              seapens <- get_spatial_layer("https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/sea_pens_plumes_mer_significant_benthic_areas/MapServer/0")
+
+              # Sponge Fields from https://osdp-psdo.canada.ca/dp/en/search/metadata/NRCAN-FGP-1-7b71b73b-0d05-4c61-958d-4beccd1bd3b1
+              spongeREST <- "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/csas_corals_sponges_2010_en/MapServer/"
+              sponge <- bind_rows(get_spatial_layer(paste0(spongeREST,"10")),
+                                  get_spatial_layer(paste0(spongeREST,"11")) |>
+                                    mutate(Threshold = as.character(Threshold)))
+
+              data_QC_gulf_biogenic_habitat <- bind_rows(seapens |>
+                                        select(geoms) |>
+                                        mutate(layer = "Seapen Significant Areas"),
+                                      sponge |>
+                                        select(geoms) |>
+                                        mutate(layer = "Sponge Fields")) |>
+                group_by(layer) |>
+                reframe(geoms = st_make_valid(st_combine(geoms))) |>
+                st_as_sf()
+            }),
+
+
 
  tar_target(name = data_azmp_fixed_stations,
             command = {
@@ -434,7 +500,7 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 726,
                                project_short_title = "RV Survey",
-                               areas = MPAs,
+                               areas = MPAs[MPAs$region=="Scotian Shelf and Bay of Fundy",],
                                plot_type = "violin",
                                plot_lm=FALSE)
             }
@@ -629,7 +695,7 @@ list(
                 filter(area == "CSS_remote_sensing") |>
                 mutate(geometry = polygon_sf) |>
                 st_as_sf() |>
-                dplyr::select(area, year, bloom_amplitude, geometry) |>
+                dplyr::select(year, bloom_amplitude, geometry) |>
                 st_make_valid()
 
 
@@ -647,6 +713,21 @@ list(
                                plot_lm=FALSE)
             }
  ),
+
+ tar_target(name = ind_QC_gulf_biogenic_habitat_representation,
+            command = {
+                            process_indicator(data = data_QC_gulf_biogenic_habitat,
+                               indicator_var_name = "layer",
+                               indicator = "Biogenic Habitat Representation",
+                               type = "Model",
+                               units = NA,
+                               scoring = "representation",
+                               PPTID = NA,
+                               project_short_title = "Biogenic Habitat",
+                               areas = MPAs[MPAs$region %in% c("Quebec","Gulf"),],
+                               plot_type='map',
+                               plot_lm=FALSE)
+            }),
 
  ##### Indicator Bins #####
  tar_target(bin_biodiversity_FunctionalDiversity_df,
@@ -708,7 +789,7 @@ list(
                              "Uniqueness",
                              weights_ratio=1,
                              weights_sum = 1,
-                             ind_placeholder_df
+                             ind_QC_gulf_biogenic_habitat_representation
             )),
  tar_target(bin_productivity_BiomassMetrics_df,
             aggregate_groups("bin",
@@ -783,9 +864,10 @@ list(
               mutate(PPTID = as.character(PPTID))
 
           x <-  pedf |>
-   group_by(objective, bin, areaID) |>
+            left_join(select(as.data.frame(MPAs),NAME_E, region),by = c("areaID"="NAME_E")) |>
+   group_by(objective, bin, areaID, region) |>
    reframe(indicator = unique(areaID),
-           areaID = "Scotian Shelf",
+           areaID = unique(region),
            score = weighted.mean(score,weight,na.rm = TRUE),
            score = if_else(is.nan(score),NA,score),
            PPTID = paste(PPTID, collapse = "; ")) |>
