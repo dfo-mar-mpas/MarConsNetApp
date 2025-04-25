@@ -56,7 +56,9 @@ list(
                         NAME_E = ifelse(dist_to_B < dist_to_C, "Quebec", "Gulf")) |>
                  group_by(NAME_E) |>
                  summarise(geoms = st_union(x)) |>
-                 bind_rows(PA[!grepl(PA$NAME_E, pattern = "Gulf"), ])
+                 bind_rows(PA[!grepl(PA$NAME_E, pattern = "Gulf"), ]) |>
+                 mutate(NAME_E = if_else(NAME_E == "Scotian Shelf and Bay of Fundy","Maritimes", NAME_E),
+                        NAME_E = if_else(NAME_E == "Newfoundland-Labrador Shelves","Newfoundland & Labrador", NAME_E))
 
              }),
 
@@ -321,7 +323,7 @@ list(
      st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
               crs = 4326,
               remove = FALSE) |>
-     st_filter(regions[regions$NAME_E=="Scotian Shelf and Bay of Fundy",]) |>
+     st_filter(regions[regions$NAME_E=="Maritimes",]) |>
      st_join(MPAs |> select(NAME_E), left=TRUE) |>
      as.data.frame() |>
      select(-geometry)
@@ -345,7 +347,7 @@ list(
      st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
               crs = 4326,
               remove = FALSE) |>
-     st_filter(regions[regions$NAME_E=="Scotian Shelf and Bay of Fundy",]) |>
+     st_filter(regions[regions$NAME_E=="Maritimes",]) |>
      st_join(MPAs |> select(NAME_E), left=TRUE) |>
      as.data.frame() |>
      select(-geometry)
@@ -500,7 +502,7 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 726,
                                project_short_title = "RV Survey",
-                               areas = MPAs[MPAs$region=="Scotian Shelf and Bay of Fundy",],
+                               areas = MPAs[MPAs$region=="Maritimes",],
                                plot_type = "violin",
                                plot_lm=FALSE)
             }
@@ -789,7 +791,8 @@ list(
                              "Uniqueness",
                              weights_ratio=1,
                              weights_sum = 1,
-                             ind_QC_gulf_biogenic_habitat_representation
+                             ind_QC_gulf_biogenic_habitat_representation,
+                             ind_placeholder_df
             )),
  tar_target(bin_productivity_BiomassMetrics_df,
             aggregate_groups("bin",
@@ -861,10 +864,10 @@ list(
                              ecol_obj_biodiversity_df,
                              ecol_obj_habitat_df,
                              ecol_obj_productivity_df)|>
-              mutate(PPTID = as.character(PPTID))
+              mutate(PPTID = as.character(PPTID)) |>
+              left_join(select(as.data.frame(MPAs),NAME_E, region),by = c("areaID"="NAME_E"))
 
           x <-  pedf |>
-            left_join(select(as.data.frame(MPAs),NAME_E, region),by = c("areaID"="NAME_E")) |>
    group_by(objective, bin, areaID, region) |>
    reframe(indicator = unique(areaID),
            areaID = unique(region),
