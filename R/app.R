@@ -53,6 +53,12 @@ app <- function() {
     }
   }
 
+  regions_js_array <- paste0('[',
+                             paste0('"', unique(pillar_ecol_df$region), '"', collapse = ','),
+                             ']')
+  condition <- paste0('!', regions_js_array, '.includes(input.mpas) && input.tabs === "tab_0"')
+
+
 ui <- shiny::fluidPage(
   shinyjs::useShinyjs(),
   shiny::tags$head(
@@ -79,10 +85,11 @@ ui <- shiny::fluidPage(
       br(), br(),
       shiny::uiOutput("legendUI"),
       br(),
+      shiny::uiOutput("region"),
       shiny::uiOutput("mpas"),
       shiny::uiOutput("projects"),
       shiny::conditionalPanel(
-        condition = "!(input.mpas === 'Scotian Shelf') && input.tabs === 'tab_0'",
+        condition = condition,
       shiny::uiOutput("report_button_ui")),
       uiOutput("report_ui"),
       br(),
@@ -114,7 +121,8 @@ ui <- shiny::fluidPage(
 # Define server logic
 server <- function(input, output, session) {
   state <- shiny::reactiveValues(
-    mpas = NULL,
+    region = "Maritimes",
+    mpas = "Maritimes",
     projects = NULL,
     fundingSource = NULL,
     theme = NULL,
@@ -127,12 +135,21 @@ server <- function(input, output, session) {
   rv <- shiny::reactiveValues(button_label = "See All Project Data")
 
   is_button_visible <- shiny::reactive({
-    req(input$mpas)
+    req(state$mpas)
     req(input$projects)
-    length(input$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(input$mpas == "Scotian Shelf")
+    length(state$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(state$mpas %in% unique(pillar_ecol_df$region))
   })
 
-  input_ids <- c("mpas", "projects", "fundingSource", "theme", "functionalGroup", "section", "division") # THE SAME AS STATE
+  # Reactive expression to update MPA choices based on selected regions
+  mpas_choices <- reactive({
+    mpas <- pillar_ecol_df[pillar_ecol_df$region %in% state$region,c("areaID","region")] |>
+      unique()
+
+    split(mpas$areaID, mpas$region, drop = TRUE)
+  })
+
+
+  input_ids <- c("mpas", "region", "projects", "fundingSource", "theme", "functionalGroup", "section", "division") # THE SAME AS STATE
 
   lapply(input_ids, function(id) {
     shiny::observeEvent(input[[id]], {
@@ -146,10 +163,10 @@ server <- function(input, output, session) {
   })
 
   output$flowerType <- renderUI({
-    req(input$mpas)
+    req(state$mpas)
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      if (input$mpas == "Scotian Shelf" || tolower(input$mpas) %in% tolower(areas)) {
+      if (state$mpas %in% unique(pillar_ecol_df$areaID) || tolower(state$mpas) %in% tolower(areas)) {
       choices <- c("Status","Network Design Targets", "Level of Certainty", "Models", "In Situ Measurements", "Time Since Last in Situ Measurement")
       selectInput("flowerType", "Select Score Type", choices=choices, selected = "Status")
       } else {
@@ -162,7 +179,7 @@ server <- function(input, output, session) {
   })
 
   output$legendUI <- renderUI({
-    req(input$mpas)
+    req(state$mpas)
     req(input$tabs)
     # Generate legend items
     if (input$tabs == "tab_0") {
@@ -282,7 +299,15 @@ server <- function(input, output, session) {
   output$mpas <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      shiny::selectInput("mpas","Select Protected/Conserved Area:",choices = c("Scotian Shelf", MPAs$NAME_E), selected=state$mpas)
+      shiny::selectInput("mpas","Select Protected/Conserved Area:",choices = mpas_choices(), selected=state$mpas)
+    }
+  })
+
+  output$region <- shiny::renderUI({
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      regionlist <- unique(pillar_ecol_df$region)
+      shiny::selectInput("region","Select Region(s)",choices = regionlist[!is.na(regionlist)], selected=state$region, multiple=TRUE)
     }
   })
 
@@ -303,13 +328,13 @@ server <- function(input, output, session) {
 
   # Check if the static HTML file exists
   observe({
-    req(input$mpas)
-    static_file_path <- paste0(file.path(onedrive,"data", "reports"), "/", make.names(paste0(input$mpas,".html")))
+    req(state$mpas)
+    static_file_path <- paste0(file.path(onedrive,"data", "reports"), "/", make.names(paste0(state$mpas,".html")))
     if (file.exists(static_file_path)) {
       # Show a link to the existing file
       output$report_button_ui <- renderUI({
         tags$a(
-          href = paste0(reporturl,make.names(paste0(input$mpas, ".html"))),
+          href = paste0(reporturl,make.names(paste0(state$mpas, ".html"))),
           target = "_blank",
           class = "btn btn-primary",
           "Report"
@@ -325,17 +350,17 @@ server <- function(input, output, session) {
 
   # Logic to generate the report
   observeEvent(input$report, {
-    req(input$mpas)
-    if (!(state$mpas == "Scotian Shelf")) {
+    req(state$mpas)
+    if (!(state$mpas %in% unique(pillar_ecol_df$region))) {
       #browser()
       # Define the Rmd file to render
       rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
       if (file.exists(rmd_file)) {
         params <- list(
-          mpas = input$mpas
+          mpas = state$mpas
         )
         output_dir <- file.path(onedrive,"data", "reports")
-        output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=input$mpas, ".html"))))
+        output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=state$mpas, ".html"))))
         render(rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
         output$report_ui <- renderUI({
           tags$iframe(src = "report.html", width = "100%", height = "600px")
@@ -348,7 +373,7 @@ server <- function(input, output, session) {
 
   output$siteObjectiveText <- shiny::renderUI({
     req(input$tabs)
-    req(input$mpas)
+    req(state$mpas)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       keepO <- which(areas == state$mpas)
       if (!(length(keepO) == 0)) {
@@ -416,6 +441,7 @@ server <- function(input, output, session) {
   })
 
   output$contextButton <- shiny::renderUI({
+    req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       string <- state$mpas
       keepO <- which(areas == string)
@@ -485,12 +511,12 @@ server <- function(input, output, session) {
         } else {
         ki1 <- which(grepl(flower, gsub("\\(|\\)", "", pillar_ecol_df$bin), ignore.case = TRUE))
         }
-        if (!(input$mpas == "Scotian Shelf")) {
+        if (!(state$mpas %in% unique(pillar_ecol_df$region))) {
           #2024/12/31 Issue 7
          #ki2 <- which(tolower(pillar_ecol_df$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
-          ki2 <- which(tolower(pillar_ecol_df$areaID) == tolower(input$mpas))
+          ki2 <- which(tolower(pillar_ecol_df$areaID) == tolower(state$mpas))
         } else {
-          ki2 <- ki1
+          ki2 <- which(pillar_ecol_df$region %in% state$region)
         }
 
         keepind <- intersect(ki1, ki2)
@@ -522,7 +548,7 @@ server <- function(input, output, session) {
         indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"),
                                   "Ecosystem Based Management Objective:",
                                   "Indicator Bin:")
-        CO_label <- ifelse(area %in% c("Scotian Shelf"),
+        CO_label <- ifelse(area %in% unique(pillar_ecol_df$region),
                            "Network Level Conservation Objective:",
                            "Site Level Conservation Objective:")
         indicator_bin_label <- ifelse(grepl("Indicator", flower, ignore.case = TRUE), "\n\n", "Indicators:")
@@ -628,13 +654,14 @@ server <- function(input, output, session) {
       # The below line puts the links in the proper format to direct us to the relevant tab when it is clicked on.
       formatted_indicators <- trimws(gsub("\n", "", paste0("<a href=", unlist(strsplit(as.character(info$ind_tabs), "<a href="))[nzchar(unlist(strsplit(as.character(info$ind_tabs), "<a href=")))])), "both")
 
-      if (input$mpas == "Scotian Shelf") {
-      ped <- pillar_ecol_df[info$keep,]
+      if (state$mpas %in% unique(pillar_ecol_df$region)) {
+      ped <- pillar_ecol_df[info$keep,] |>
+        filter(region %in% state$region)
       ss_areas <- unique(ped$areaID)
       ss_indicators <- list()
       for (i in seq_along(ss_areas)) {
         k2 <- which(ped$areaID == ss_areas[i])
-        k3 <- which(ped$areaID == "Scotian Shelf" & ped$indicator == ss_areas[i])
+        k3 <- which(ped$areaID %in% unique(pillar_ecol_df$region) & ped$indicator == ss_areas[i])
         if (length(k3) == 0) {
           k <- which(!(ped$indicator %in% ss_areas))
           k2 <- intersect(k,k2)
@@ -724,7 +751,7 @@ server <- function(input, output, session) {
                                     "MarConsNetTargets","data",
                                     "plots")
           image_files <- list.files(image_folder, full.names = TRUE)
-          k1 <- which(grepl(make.names(input$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
+          k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
           k2 <- which(grepl(make.names(pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
           KEEP <- intersect(k1,k2)
 
@@ -814,7 +841,7 @@ server <- function(input, output, session) {
   })
 
   output$conditionalFlower <- shiny::renderUI({
-    req(input$mpas)
+    req(state$mpas)
     req(input$tabs)
     if (input$tabs == "tab_0") {
       plotOutput("flowerPlot",click="flower_click")
@@ -825,20 +852,10 @@ server <- function(input, output, session) {
   })
 
   output$flowerPlot <- shiny::renderPlot({
-    req(input$mpas)
+    req(state$mpas)
     req(input$tabs)
+    # browser()
     if (input$tabs == "tab_0") {
-      if (state$mpas == "Scotian Shelf") {
-        NAME <- "Scotian Shelf"
-        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),],
-                                            grouping = "objective",
-                                            labels = "bin",
-                                            score = "score",
-                                            max_score=100,
-                                            min_score=0,
-                                            title=NAME)
-      } else {
-        if (state$mpas %in% pillar_ecol_df$areaID) {
         NAME <- state$mpas
         MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),],
                                             grouping = "objective",
@@ -848,17 +865,13 @@ server <- function(input, output, session) {
                                             min_score=0,
                                             title=NAME
                                             )
-        } else {
-        NULL
-      }
-    }
   }
 
 
   })
 
   shiny::observeEvent(input$flower_click, {
-    req(input$mpas)
+    req(state$mpas)
     req(input$flower_click)
     req(input$tabs)
     xscale <- 0.5
@@ -880,11 +893,8 @@ server <- function(input, output, session) {
     if (wording == "environmental (representativity)") {
       wording <- "environmental representativity"
     }
-    if (input$mpas == "Scotian Shelf") {
-      string <- "Scotian_Shelf"
-    } else {
-      string <- input$mpas
-    }
+
+    string <- state$mpas
     k1 <- which(APPTABS$place == string)
     k2 <- which(tolower(APPTABS$flower) == wording)
     updatedTab <- APPTABS$tab[intersect(k1,k2)]
@@ -936,8 +946,8 @@ server <- function(input, output, session) {
           output[[paste0("bar", id)]] <- renderPlot({
             # Ensure bar chart is rendered only when tab_0 is active
             if (input$tabs == "tab_0") {
-              req(input$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
-              if (state$mpas == "Scotian Shelf") {
+              req(state$mpas %in% unique(pillar_ecol_df$areaID))
+              if (state$mpas == "Maritimes") {
                 c1 <- 1:length(pillar_ecol_df$areaID)
               } else {
                 c1 <- which(pillar_ecol_df$areaID == state$mpas)
@@ -984,12 +994,12 @@ server <- function(input, output, session) {
     }
   })
 
-  shiny::observeEvent(input$mpas, {
+  shiny::observeEvent(state$mpas, {
     req(input$tabs)
-    req(input$mpas)
-    if (input$tabs == "tab_0" & !(state$mpas == "Scotian Shelf")) {
+    req(state$mpas)
+    if (input$tabs == "tab_0" & !(state$mpas == "Maritimes")) {
       # Ensure filtered_odf is created inside this condition
-      keepO <- input$mpas
+      keepO <- state$mpas
       if (!(length(keepO) == 0)) {
       S_Objectives <- Objectives_processed[[keepO]]
 
@@ -1001,9 +1011,9 @@ server <- function(input, output, session) {
           output[[paste0("site_bar", id)]] <- renderPlot({
             # Ensure bar chart is rendered only when tab_0 is active
             if (input$tabs == "tab_0") {
-              req(input$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
+              req(state$mpas %in% c("Maritimes", unique(pillar_ecol_df$areaID)))
               # Ensure ymax is properly filtered and has a single value
-              if (state$mpas == "Scotian Shelf") {
+              if (state$mpas == "Maritimes") {
                 c1 <- 1:length(pillar_ecol_df$areaID)
               } else {
                 c1 <- which(pillar_ecol_df$areaID == state$mpas)
@@ -1085,6 +1095,8 @@ server <- function(input, output, session) {
   output$map <- leaflet::renderLeaflet({
     req(input$tabs)
     req(state$mpas)
+    req(state$region)
+
     palette <- viridis::viridis(length(input$projects))
 
     if (input$tabs == "tab_0") {
@@ -1092,7 +1104,7 @@ server <- function(input, output, session) {
         map <- leaflet::leaflet() %>%
           leaflet::addTiles()
 
-        if (!(is.null(state$mpas)) && !(state$mpas == "Scotian Shelf")) {
+        if (!(is.null(state$mpas)) && !(state$mpas %in% unique(pillar_ecol_df$region))) {
           selected <- which(MPA_report_card$NAME_E == state$mpas)
           map <- map %>% leaflet::addPolygons(
             data=MPA_report_card[selected,]$geoms,
@@ -1103,19 +1115,20 @@ server <- function(input, output, session) {
             color=ifelse(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey")
           )
 
-        } else if (state$mpas == "Scotian Shelf") {
+        } else if (state$mpas %in% unique(pillar_ecol_df$region)) {
+          selected <- which(MPA_report_card$region %in% state$region)
             map <- map %>%
-              leaflet::addPolygons(data=MPA_report_card$geoms,
-                                   fillColor = unname(if_else(!is.na(MPA_report_card$grade), flowerPalette[MPA_report_card$grade], "#EDEDED")),
+              leaflet::addPolygons(data=MPA_report_card$geoms[selected],
+                                   fillColor = unname(if_else(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED")),
                                    opacity=1,
                                    fillOpacity = 1,
                                    weight = 1,
-                                   color = if_else(!is.na(MPA_report_card$grade), "black", "lightgrey"),
-                                   popup = MPA_report_card$NAME_E)
+                                   color = if_else(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey"),
+                                   popup = MPA_report_card$NAME_E[selected])
         }
 
         if (!(is.null(input$projects))) {
-          if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Scotian Shelf")) { # We want it filtered
+          if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) { # We want it filtered
             k1 <- which(all_project_geoms$areaID == state$mpas)
             k2 <- which(all_project_geoms$project_short_title %in% sub("\\s*\\(.*", "", input$projects))
             keep_projects <- intersect(k1,k2)

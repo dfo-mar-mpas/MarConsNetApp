@@ -109,7 +109,7 @@ list(
 
   tar_target(name = APPTABS,
              command = {
-               ftabs <- data.frame(flower=unique(c(Ecological$grouping, Ecological$labels)), place="Scotian_Shelf")
+               ftabs <- expand.grid(flower=unique(c(Ecological$grouping, Ecological$labels)), place=unique(MPAs$region))
                mytabs <- NULL
                for (i in seq_along(MPAs$NAME_E)) {
                  df <- ftabs
