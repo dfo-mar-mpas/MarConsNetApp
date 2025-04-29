@@ -218,9 +218,12 @@ list(
 
   tar_target(name=indicatorFlower,
              command = {
-               grades <- c(100, 50, 0)
-               palette <- c("#2C7BB6", "#FFFFBF","#D7191C")
-               names(palette) <- grades
+
+               palette <- flowerPalette
+               names(palette) <- c(0,25,50,75,100)
+               #grades <- c(100, 50, 0)
+               #palette <- c("#2C7BB6", "#FFFFBF","#D7191C")
+               #names(palette) <- grades
                palette
 
              }
