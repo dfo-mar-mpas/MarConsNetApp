@@ -882,6 +882,44 @@ list(
             #                              "_",
             #                              indicator)))
             mutate(tab=paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))))
+
+
+          # Rearranging pillar_ecol
+
+          areas <- unique(x$areaID)
+
+
+          pillar_list <- split(x, x$areaID)
+
+          mpa_list <- pillar_list[-which(names(pillar_list) %in% regions$NAME_E)]
+          # Order based on score
+          mpa_list <- lapply(mpa_list, function(ddff) {
+            ddff[order(ddff$score, na.last = TRUE), ]
+          })
+
+          region_list <-  pillar_list[which(names(pillar_list) %in% regions$NAME_E)]
+          region_list <- lapply(region_list, function(ddff) {
+            ddff[order(ddff$score, na.last = TRUE), ]
+          })
+          # Order based on score
+
+          for (i in seq_along(region_list)) {
+            reg <- region_list[[i]]
+            for (j in 1:nrow(reg)) {
+              reg2 <- reg[j,]
+              region_bin <- reg2$indicator
+              keep <- which(names(mpa_list) == region_bin)
+              mpa_list[[keep]] <- rbind(reg2, mpa_list[[keep]])
+            }
+
+          }
+
+
+          # In r, there is a row for every indicator bin, for every mpa that makes up that region. E.g. if there is 3 mpas in that region there are 3*11 rows.
+
+          do.call(rbind, mpa_list)
+
+
  }),
 
  tar_target(all_project_geoms,

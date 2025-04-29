@@ -210,7 +210,6 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$about, {
-    #browser()
     req(input$about)
     showModal(modalDialog(
       title = "User Guide",
@@ -352,7 +351,6 @@ server <- function(input, output, session) {
   observeEvent(input$report, {
     req(state$mpas)
     if (!(state$mpas %in% unique(pillar_ecol_df$region))) {
-      #browser()
       # Define the Rmd file to render
       rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
       if (file.exists(rmd_file)) {
@@ -526,6 +524,7 @@ server <- function(input, output, session) {
           keepind <- which(pillar_ecol_df$tab == input$tabs)
         }
         binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$indicator[keepind]))
+        areaID <- pillar_ecol_df$areaID[keepind]
 
         ind_tabs <- shiny::tagList(lapply(seq_along(pillar_ecol_df$indicator[keepind]), function(i) {
           tab_id <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$tab[keepind][i]))
@@ -578,6 +577,7 @@ server <- function(input, output, session) {
             CO_label = CO_label,
             objective = objective,
             area = area,
+            areaID=areaID,
             indicator_label = indicator_label,
             flower = flower,
             indicator_bin_label = indicator_bin_label,
@@ -596,6 +596,7 @@ server <- function(input, output, session) {
             CO_label = CO_label,
             objective = objective,
             area = area,
+            areaID=areaID,
             indicator_label = indicator_label,
             flower = flower,
             indicator_bin_label = indicator_bin_label,
@@ -650,41 +651,45 @@ server <- function(input, output, session) {
         Projects[i] <- paste0(unique(om$project_title[which(om$project_id == as.numeric(indicatorProject[i]))]), " : ", '<a href=\"http://glf-proxy:8018/mar-spa/reports/',indicatorProject[i],'.html" target="_blank" rel="noopener noreferrer" style="color: black; font-weight: bold; TEXT-DECORATION: underline">',indicatorProject[i],'</a>')
       }
     }
+
     if (!(length(info$indicator_names) == 1 && "<a href=" %in% info$ind_tabs)) {
       # The below line puts the links in the proper format to direct us to the relevant tab when it is clicked on.
       formatted_indicators <- trimws(gsub("\n", "", paste0("<a href=", unlist(strsplit(as.character(info$ind_tabs), "<a href="))[nzchar(unlist(strsplit(as.character(info$ind_tabs), "<a href=")))])), "both")
 
-      if (state$mpas %in% unique(pillar_ecol_df$region)) {
-      ped <- pillar_ecol_df[info$keep,] |>
-        filter(region %in% state$region)
-      ss_areas <- unique(ped$areaID)
-      ss_indicators <- list()
-      for (i in seq_along(ss_areas)) {
-        k2 <- which(ped$areaID == ss_areas[i])
-        k3 <- which(ped$areaID %in% unique(pillar_ecol_df$region) & ped$indicator == ss_areas[i])
-        if (length(k3) == 0) {
-          k <- which(!(ped$indicator %in% ss_areas))
-          k2 <- intersect(k,k2)
-        }
-        ss_indicators[[i]] <- c(k3, k2)
-      }
-      order <- unlist(ss_indicators)
-      } else {
-        order <- 1:length(info$keep)
-      }
+      # if (state$mpas %in% unique(pillar_ecol_df$region)) {
+      # ped <- pillar_ecol_df[info$keep,] |>
+      #   filter(region %in% state$region)
+      # ss_areas <- unique(ped$areaID)
+      # ss_indicators <- list()
+      # for (i in seq_along(ss_areas)) {
+      #   k2 <- which(ped$areaID == ss_areas[i])
+      #   k3 <- which(ped$areaID %in% unique(pillar_ecol_df$region) & ped$indicator == ss_areas[i])
+      #   if (length(k3) == 0) {
+      #     k <- which(!(ped$indicator %in% ss_areas))
+      #     k2 <- intersect(k,k2)
+      #   }
+      #   ss_indicators[[i]] <- c(k3, k2)
+      # }
+      # order <- unlist(ss_indicators)
+      # } else {
+      #   order <- 1:length(info$keep)
+      # }
+
+      #browser()
 
       dfdt <- data.frame(
-        Indicator = formatted_indicators,
-        Status = info$indicatorStatus,
-        Trend = info$indicatorTrend,
-        Projects = Projects,
-        Score=info$indicatorGrade,
-        Method=info$indicatorScore,
+        Indicator = formatted_indicators[-which(info$areaID %in% regions$NAME_E)],
+        areaID=info$areaID[-which(info$areaID %in% regions$NAME_E)],
+        Status = info$indicatorStatus[-which(info$areaID %in% regions$NAME_E)],
+        Trend = info$indicatorTrend[-which(info$areaID %in% regions$NAME_E)],
+        Projects = Projects[-which(info$areaID %in% regions$NAME_E)],
+        Score=info$indicatorGrade[-which(info$areaID %in% regions$NAME_E)],
+        Method=info$indicatorScore[-which(info$areaID %in% regions$NAME_E)],
         stringsAsFactors = FALSE
       )
 
-      dfdt <- dfdt %>%
-        arrange(order)
+      # dfdt <- dfdt %>%
+      #   arrange(order)
     }
 
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
@@ -854,7 +859,6 @@ server <- function(input, output, session) {
   output$flowerPlot <- shiny::renderPlot({
     req(state$mpas)
     req(input$tabs)
-    # browser()
     if (input$tabs == "tab_0") {
         NAME <- state$mpas
         MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),],
@@ -1116,7 +1120,7 @@ server <- function(input, output, session) {
           )
 
         } else if (state$mpas %in% unique(pillar_ecol_df$region)) {
-          selected <- which(MPA_report_card$region %in% state$region)
+          selected <- which(MPA_report_card$region %in% state$mpas)
             map <- map %>%
               leaflet::addPolygons(data=MPA_report_card$geoms[selected],
                                    fillColor = unname(if_else(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED")),
