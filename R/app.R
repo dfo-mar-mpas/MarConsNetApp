@@ -696,19 +696,35 @@ server <- function(input, output, session) {
       if (!(input$tabs == "tab_0")) {
         if (!(length(info$indicator_names) == 1 && info$indicator_names == "<a href=")) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
-        DT::datatable(
-          dfdt,
-          escape = FALSE,
-          options = list(pageLength = 100)
-        ) %>%
+
+        #browser()
+
+        dfdt$Grade <- sapply(dfdt$Score, calc_letter_grade)
+        # DT::datatable(dfdt, escape = FALSE, options = list(pageLength = 100)) %>%
+        #   DT::formatStyle(
+        #     columns = colnames(dfdt),  # Apply styling to all columns
+        #     target = 'row',  # Target the entire row for styling
+        #     backgroundColor = DT::styleEqual(
+        #       names(flowerPalette),  # Map based on letter grades
+        #       flowerPalette[names(flowerPalette)]  # Apply corresponding colors
+        #     )
+        #   )
+
+        DT::datatable(dfdt, escape = FALSE, options = list(
+          pageLength = 100,
+          columnDefs = list(
+            list(targets = ncol(dfdt), visible = FALSE)  # Hide the Grade column (last column)
+          )
+        )) %>%
           DT::formatStyle(
-            columns = colnames(dfdt), # Apply styling to all columns in each row
-            target = 'row',            # Target the entire row
+            columns = colnames(dfdt),  # Apply styling to all columns
+            target = 'row',  # Target the entire row for styling
             backgroundColor = DT::styleEqual(
-              names(indicatorFlower),    # Map based on Grade values
-              indicatorFlower[names(indicatorFlower)] # Apply corresponding colors from the flowerPalette
+              names(flowerPalette),  # Map based on letter grades
+              flowerPalette[names(flowerPalette)]  # Apply corresponding colors
             )
           )
+
       } else {
         # MODAL
         showModal(modalDialog(
