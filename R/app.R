@@ -630,9 +630,6 @@ server <- function(input, output, session) {
         "<p>", info$area, "</p>",
         "<p><strong>", info$indicator_label, "</strong></p>",
         "<p>", info$flower, "</p>",
-        #"<p><strong>", info$indicator_bin_label, "</strong></p>",
-        #"<p>", paste0(info$ind_links, collapse = "<br>"), "</p>",
-        #"<p><strong>Projects:</strong></p>",
         "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>"
       )
     )
@@ -670,9 +667,6 @@ server <- function(input, output, session) {
         Method=info$indicatorScore[good],
         stringsAsFactors = FALSE
       )
-
-      # dfdt <- dfdt %>%
-      #   arrange(order)
     }
 
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
@@ -752,9 +746,19 @@ server <- function(input, output, session) {
           image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
                                     "MarConsNetTargets","data",
                                     "plots")
+          #browser()
           image_files <- list.files(image_folder, full.names = TRUE)
-          k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
+
+
           k2 <- which(grepl(make.names(pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
+
+          if (!(state$mpas %in% regions$NAME_E)) {
+            k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
+
+          } else {
+            k1 <- which(grepl(make.names(pillar_ecol_df$areaID[which(pillar_ecol_df$tab == input$tabs)]), image_files))
+          }
+
           KEEP <- intersect(k1,k2)
 
           image_files <- image_files[KEEP]
