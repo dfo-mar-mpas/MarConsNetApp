@@ -923,7 +923,7 @@ server <- function(input, output, session) {
 
   output$networkObjectiveText <- shiny::renderUI({
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && "Maritimes" %in% state$region) {
       filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
       # Create a div for filtered objectives and bar charts
       objectiveDivs <- lapply(seq_along(filtered_odf$objectives), function(i) {
@@ -948,7 +948,7 @@ server <- function(input, output, session) {
         )
       })
       shiny::tagList(
-        shiny::h3("Network Conservation Objectives"),
+        shiny::h3("Maritimes Network Conservation Objectives"),
         do.call(tagList, objectiveDivs)
       )
 
