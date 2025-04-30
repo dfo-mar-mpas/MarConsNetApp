@@ -109,18 +109,21 @@ list(
 
   tar_target(name = APPTABS,
              command = {
-               ftabs <- expand.grid(flower=unique(c(Ecological$grouping, Ecological$labels)), place=unique(MPAs$region))
-               mytabs <- NULL
-               for (i in seq_along(MPAs$NAME_E)) {
-                 df <- ftabs
-                 df$place <- MPAs$NAME_E[i]
-                 mytabs[[i]] <- df
-               }
+               apptabs <- expand.grid(flower=unique(c(Ecological$grouping, Ecological$labels)),
+                                    place=unique(c(MPAs$region,MPAs$NAME_E))) |>
+                 mutate(tab = paste0("tab_", 1:length(flower)),
+                        link = paste0("link_", 1:length(flower)))
+               # mytabs <- NULL
+               # for (i in seq_along(MPAs$NAME_E)) {
+               #   df <- ftabs
+               #   df$place <- MPAs$NAME_E[i]
+               #   mytabs[[i]] <- df
+               # }
 
-               MYTABS <- do.call(rbind, mytabs)
-               apptabs <- rbind(ftabs, MYTABS)
-               apptabs$tab <- paste0("tab_", seq_along(1:length(apptabs$flower)))
-               apptabs$link <- paste0("link_", seq_along(1:length(apptabs$flower)))
+               # MYTABS <- do.call(rbind, mytabs)
+               # apptabs <- rbind(ftabs, MYTABS)
+               # apptabs$tab <- paste0("tab_", seq_along(1:length(apptabs$flower)))
+               # apptabs$link <- paste0("link_", seq_along(1:length(apptabs$flower)))
                home <- data.frame(flower="home", place="home", tab="tab_0", link="link_0")
                rbind(home, apptabs)
              }),

@@ -900,14 +900,20 @@ server <- function(input, output, session) {
     x <- (input$flower_click$x-xscale)/xscale
     y <- (input$flower_click$y+50-yscale)/yscale
 
+    ped <- pillar_ecol_df |>
+      filter(areaID == state$mpas) |>
+      select(bin, objective, weight) |>
+      unique() |>
+      arrange(objective,bin) |>
+      mutate(angle = (cumsum(weight)-weight/2)/sum(weight)*360)
+
     clickangle <- 90-atan2(y,x)*180/pi
     if(clickangle<0) clickangle <- 360+clickangle
-    pillar_ecol_df$angle <- (cumsum(pillar_ecol_df$weight)-pillar_ecol_df$weight/2)/sum(pillar_ecol_df$weight)*360
 
     if(sqrt(x^2+y^2)>0.75){
-      wording <- tolower(pillar_ecol_df$objective[which.min(abs(pillar_ecol_df$angle-clickangle))])
+      wording <- tolower(ped$objective[which.min(abs(ped$angle-clickangle))])
     } else {
-      wording <-tolower(pillar_ecol_df$bin[which.min(abs(pillar_ecol_df$angle-clickangle))])
+      wording <- tolower(ped$bin[which.min(abs(ped$angle-clickangle))])
     }
 
     if (wording == "environmental (representativity)") {
