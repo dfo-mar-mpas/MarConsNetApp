@@ -223,7 +223,7 @@ list(
              command = {
 
                palette <- flowerPalette
-               names(palette) <- c(0,25,50,75,100)
+               names(palette) <- c(100,75,50,25,0)
                #grades <- c(100, 50, 0)
                #palette <- c("#2C7BB6", "#FFFFBF","#D7191C")
                #names(palette) <- grades

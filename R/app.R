@@ -541,7 +541,9 @@ server <- function(input, output, session) {
           )
         }))
 
-        PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case = TRUE) & grepl(flower, om$tags, ignore.case = TRUE))]))
+        PPTProjects <- pillar_ecol_df$PPTID[keepind]
+
+        #PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case = TRUE) & grepl(flower, om$tags, ignore.case = TRUE))]))
         PPTtitles <- unlist(lapply(PPTProjects, function(x) unique(om$project_title[which(om$project_id == x)])))
 
         indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"),
@@ -656,35 +658,16 @@ server <- function(input, output, session) {
       # The below line puts the links in the proper format to direct us to the relevant tab when it is clicked on.
       formatted_indicators <- trimws(gsub("\n", "", paste0("<a href=", unlist(strsplit(as.character(info$ind_tabs), "<a href="))[nzchar(unlist(strsplit(as.character(info$ind_tabs), "<a href=")))])), "both")
 
-      # if (state$mpas %in% unique(pillar_ecol_df$region)) {
-      # ped <- pillar_ecol_df[info$keep,] |>
-      #   filter(region %in% state$region)
-      # ss_areas <- unique(ped$areaID)
-      # ss_indicators <- list()
-      # for (i in seq_along(ss_areas)) {
-      #   k2 <- which(ped$areaID == ss_areas[i])
-      #   k3 <- which(ped$areaID %in% unique(pillar_ecol_df$region) & ped$indicator == ss_areas[i])
-      #   if (length(k3) == 0) {
-      #     k <- which(!(ped$indicator %in% ss_areas))
-      #     k2 <- intersect(k,k2)
-      #   }
-      #   ss_indicators[[i]] <- c(k3, k2)
-      # }
-      # order <- unlist(ss_indicators)
-      # } else {
-      #   order <- 1:length(info$keep)
-      # }
-
-      #browser()
+      good <- which(!(info$areaID %in% regions$NAME_E))
 
       dfdt <- data.frame(
-        Indicator = formatted_indicators[-which(info$areaID %in% regions$NAME_E)],
-        areaID=info$areaID[-which(info$areaID %in% regions$NAME_E)],
-        Status = info$indicatorStatus[-which(info$areaID %in% regions$NAME_E)],
-        Trend = info$indicatorTrend[-which(info$areaID %in% regions$NAME_E)],
-        Projects = Projects[-which(info$areaID %in% regions$NAME_E)],
-        Score=info$indicatorGrade[-which(info$areaID %in% regions$NAME_E)],
-        Method=info$indicatorScore[-which(info$areaID %in% regions$NAME_E)],
+        Indicator = formatted_indicators[good],
+        areaID=info$areaID[good],
+        Status = info$indicatorStatus[good],
+        Trend = info$indicatorTrend[good],
+        Projects = Projects[good],
+        Score=info$indicatorGrade[good],
+        Method=info$indicatorScore[good],
         stringsAsFactors = FALSE
       )
 
@@ -696,8 +679,6 @@ server <- function(input, output, session) {
       if (!(input$tabs == "tab_0")) {
         if (!(length(info$indicator_names) == 1 && info$indicator_names == "<a href=")) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
-
-        #browser()
 
         dfdt$Grade <- sapply(dfdt$Score, calc_letter_grade)
         # DT::datatable(dfdt, escape = FALSE, options = list(pageLength = 100)) %>%
@@ -902,7 +883,7 @@ server <- function(input, output, session) {
 
     ped <- pillar_ecol_df |>
       filter(areaID == state$mpas) |>
-      select(bin, objective, weight) |>
+      dplyr::select(bin, objective, weight) |>
       unique() |>
       arrange(objective,bin) |>
       mutate(angle = (cumsum(weight)-weight/2)/sum(weight)*360)
