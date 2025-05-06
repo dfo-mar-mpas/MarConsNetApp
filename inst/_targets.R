@@ -84,6 +84,44 @@ list(
              st_transform(read_sf(system.file("data","WEBCA_10k_85k.shp", package = "MarConsNetAnalysis"))$geometry, crs=4326)
   ),
 
+  tar_target(name = ebsa,
+             command = {
+               ebsa <- get_spatial_layer("https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/ecologically_and_biologically_significant_areas/MapServer/1") |>
+                 st_make_valid()|>
+                 st_filter(regions)
+             }),
+
+  tar_target(name = sar_ch,
+             command = {
+               # ESRI REST cannot handle the query, downloading the FGDB manually instead from:
+               # https://open.canada.ca/data/en/dataset/db177a8c-5d7d-49eb-8290-31e6a45d786c
+
+               # Create a temporary directory for the download
+               temp_dir <- tempdir()
+               zip_file <- file.path(temp_dir, "CriticalHabitat_HabitatEssentiel.zip")
+               unzip_dir <- file.path(temp_dir, "extracted_fgdb")
+
+               # Download the file
+               download.file(
+                 "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/db177a8c-5d7d-49eb-8290-31e6a45d786c/attachments/CriticalHabitat_HabitatEssentiel.zip",
+                 destfile = zip_file,
+                 mode = "wb"
+               )
+
+               # Create directory for extraction
+               dir.create(unzip_dir, showWarnings = FALSE)
+
+               # Unzip the file
+               unzip(zip_file, exdir = unzip_dir)
+
+               sar_ch <- st_read(file.path(unzip_dir, "CriticalHabitat_EDH_2025.gdb"),
+                                 layer = "DFO_SARA_CH_EDH")|>
+                 st_cast("MULTIPOLYGON")|>
+                 st_make_valid() |>
+                 st_transform(st_crs(regions)) |>
+                 st_filter(regions)
+             }),
+
   tar_target(name = Ecological,
              command = {
                data.frame(grouping=rep(c("Biodiversity",
@@ -737,6 +775,46 @@ list(
                                plot_lm=FALSE)
             }),
 
+tar_target(name = ind_ebsa_representation,
+           command = {
+             process_indicator(data = ebsa,
+                               indicator_var_name = "Name",
+                               indicator = "EBSA Representation",
+                               type = "TBD",
+                               units = NA,
+                               scoring = "representation",
+                               PPTID = NA,
+                               project_short_title = "Biogenic Habitat",
+                               areas = MPAs,
+                               plot_type='map',
+                               plot_lm=FALSE)
+           }),
+
+tar_target(name = ind_SAR_CH_representation,
+           command = {
+
+             data <- sar_ch |>
+               rowwise() |>
+               mutate(name = if_else(is.na(POP_E),
+                                           paste0("Critical Habitat for ", COMMON_E),
+                                           paste0("Critical Habitat for ", COMMON_E,": ",POP_E))) |>
+               group_by(name) |>
+               reframe(geoms = st_make_valid(st_union(Shape))) |>
+               st_as_sf()
+
+             process_indicator(data = data,
+                               indicator_var_name = "name",
+                               indicator = "Species At Risk Critical Habitat Representation",
+                               type = "Model",
+                               units = NA,
+                               scoring = "representation",
+                               PPTID = NA,
+                               project_short_title = "SAR CH Habitat",
+                               areas = MPAs,
+                               plot_type='map',
+                               plot_lm=FALSE)
+           }),
+
  ##### Indicator Bins #####
  tar_target(bin_biodiversity_FunctionalDiversity_df,
             aggregate_groups("bin",
@@ -757,7 +835,7 @@ list(
                              "Species Diversity",
                              weights_ratio=1,
                              weights_sum = 1,
-                             ind_placeholder_df
+                             ind_SAR_CH_representation
             )),
  tar_target(bin_habitat_Connectivity_df,
             aggregate_groups("bin",
@@ -798,7 +876,7 @@ list(
                              weights_ratio=1,
                              weights_sum = 1,
                              ind_QC_gulf_biogenic_habitat_representation,
-                             ind_placeholder_df
+                             ind_ebsa_representation
             )),
  tar_target(bin_productivity_BiomassMetrics_df,
             aggregate_groups("bin",
