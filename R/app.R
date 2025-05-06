@@ -556,14 +556,30 @@ server <- function(input, output, session) {
         binned_indicator_label <- ifelse(grepl("Indicator", flower, ignore.case = TRUE), "\n\n",
                                          paste0(binned_ind, collapse = "<br>"))
 
-        if (!(length(PPTProjects) == 0)) {
+        if (!(length(PPTProjects) == 0) & !all(is.na(PPTProjects)|PPTProjects=="NA")) {
           urls <- paste0("https://dmapps/en/ppt/projects/", PPTProjects, "/view/")
           formatted_urls <- sapply(seq_along(PPTProjects), function(i) {
             paste0('<strong><a href="', urls[i], '" target="_blank">Project ', PPTProjects[i], '</a></strong>')
           })
           formatted_projects <- paste0(formatted_urls, " - ", PPTtitles)
 
-          activityType <- unlist(lapply(PPTProjects, function(x) unique(om$activity_type[which(om$project_id == x)])))
+          activityType <- unlist(lapply(PPTProjects, function(x){
+            if(is.na(x)|x=="NA"){
+              NA
+            } else if (grepl(";",x)) {
+              lapply(unlist(strsplit(x, ";")), function(y) {
+                y <- trimws(y)
+                if(y=="NA"){
+                  NA
+                } else
+                unique(om$activity_type[which(om$project_id == y)])
+              }) |>
+                paste(collapse = "; ")
+            } else {
+              unique(om$activity_type[which(om$project_id == x)])
+            }
+            unique(om$activity_type[which(om$project_id == x)])
+          }))
           activityData <- split(formatted_projects, activityType)
 
           formatted_projects_grouped <- shiny::tagList(lapply(names(activityData), function(activity) {
