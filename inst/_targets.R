@@ -12,7 +12,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth"),
+               "rnaturalearth","DBI","duckdb"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -322,9 +322,9 @@ list(
                      O$tab[i] <- APPTABS$tab[keep]
                      O$link[i] <- APPTABS$link[keep]
                    } else {
-                     k <- which(pillar_ecol_df$indicators == trimws(gsub("-", "", gsub("\n", "", O$objectives[i]))), "right")
-                     O$tab[i] <- pillar_ecol_df$tab[k]
-                     O$link[i] <- pillar_ecol_df$link[k]
+                     k <- which(data_pillar_ecol_df$indicators == trimws(gsub("-", "", gsub("\n", "", O$objectives[i]))), "right")
+                     O$tab[i] <- data_pillar_ecol_df$tab[k]
+                     O$link[i] <- data_pillar_ecol_df$link[k]
 
                    }
                  } else {
@@ -336,6 +336,164 @@ list(
                O
 
              }),
+
+
+
+
+
+  ############ data loading ############
+  tar_target(name = data_MAR_cumulative_impacts,
+             {
+               temp_zip <- tempfile(fileext = ".zip")
+               download.file("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/37b59b8b-1c1c-4869-802f-c09571cc984b/attachments/Cumul_Impact_Maritimes.zip", temp_zip, mode = "wb")
+
+               # Create temporary directory
+               temp_dir <- tempfile()
+               dir.create(temp_dir)
+
+               # Extract ZIP contents
+               unzip(temp_zip, exdir = temp_dir)
+
+               # List files in the directory
+               raster_files <- list.files(temp_dir, pattern = "\\.tif$", full.names = TRUE, recursive = TRUE)
+
+               # Load the rasters
+               rasters <- lapply(raster_files,stars::read_stars)
+
+               # You can then work with the rasters
+               names(rasters) <- basename(raster_files)
+               rasters
+               }
+             ),
+
+  tar_target(name = rawdata_obis_parquet_files,
+             command = {
+               # see https://obis.org/data/access/ for the latest version of their full "periodic" export
+               url = "https://obis-open-data.s3.amazonaws.com/snapshots/obis_20250318_parquet.zip"
+               dest_dir = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data","obis_data")
+
+               # Set zip file path
+               zip_path <- file.path(dest_dir, "obis_data.zip")
+
+               # Download the file if it doesn't exist
+               if (!file.exists(zip_path)) {
+                 message("Downloading OBIS parquet dataset...")
+                 utils::download.file(url, zip_path, mode = "wb")
+               } else {
+                 message("Using previously downloaded zip file.")
+               }
+
+               # Extract if needed
+               extract_dir <- file.path(dest_dir, "extracted")
+               if (!dir.exists(extract_dir) || length(list.files(extract_dir)) == 0) {
+                 message("Extracting parquet files...")
+                 utils::unzip(zip_path, exdir = extract_dir)
+               } else {
+                 message("Using previously extracted files.")
+               }
+
+               # Return the path to the extracted files
+               return(extract_dir)
+
+             },
+             format = "file"
+  ),
+
+  tar_target(name = rawdata_obis_by_region,
+             command = {
+               bbox <- st_bbox(regions) |> as.numeric()
+               mid_x <- (bbox[1] + bbox[3]) / 2
+               mid_y <- (bbox[2] + bbox[4]) / 2
+
+               # Create coordinates for the 4 quadrants
+               coords <- list(
+                 nw = c(xmin = bbox[1], ymin = mid_y, xmax = mid_x, ymax = bbox[4]),
+                 ne = c(xmin = mid_x, ymin = mid_y, xmax = bbox[3], ymax = bbox[4]),
+                 sw = c(xmin = bbox[1], ymin = bbox[2], xmax = mid_x, ymax = mid_y),
+                 se = c(xmin = mid_x, ymin = bbox[2], xmax = bbox[3], ymax = mid_y)
+               )
+
+               # Convert all to WKT in one step
+               obis <- lapply(coords, function(subcoords) {
+                 # browser()
+                 class(subcoords) <- "bbox"
+                 regionswkt <- subcoords |>
+                   st_as_sfc(crs = st_crs(regions)) |>
+                   st_as_text()
+
+                 con <- dbConnect(duckdb::duckdb())
+                 dbExecute(con, "SET memory_limit='16GB'")
+
+                 message("extracting OBIS data for region: ", regions$NAME_E)
+
+                 occ <- dbGetQuery(con,
+                                    paste0("
+    install spatial;
+    load spatial;
+    select * from read_parquet('",gsub("\\\\","/",rawdata_obis_parquet_files),"/occurrence/*.parquet')
+    where ST_Intersects(geometry, ST_GeomFromText('",regionswkt,"'))
+"))|>
+                   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+                            crs = 4326,
+                            remove = FALSE) |>
+                   st_filter(regions) |>
+                   st_join(MPAs |> select(NAME_E), left=TRUE) |>
+                   st_join(regions |> select(NAME_E), left=TRUE)
+                 dbDisconnect(con, shutdown = TRUE)
+                 occ
+               }) |>
+                 bind_rows()
+
+
+
+                 # regionswkt <- regions |>
+                 #   st_bbox() |>
+                 #   st_as_sfc() |>
+                 #   st_as_text()
+
+
+               },
+             pattern = map(regions),
+             iteration = "list"),
+
+  tar_target(
+    name = data_obis,
+    command = bind_rows(rawdata_obis_by_region)
+  ),
+
+  tar_target(name = data_MAR_biofouling_AIS,
+             command = {
+               # see https://open.canada.ca/data/en/dataset/8d87f574-0661-40a0-822f-e9eabc35780d
+               # Create a temporary directory for the download
+               temp_dir <- tempdir()
+               zip_file <- file.path(temp_dir, "Downloads2023.gdb.zip")
+               unzip_dir <- file.path(temp_dir, "extracted_fgdb")
+
+               # Download the file
+               download.file(
+                 "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/8d87f574-0661-40a0-822f-e9eabc35780d/attachments/Downloads2023.gdb.zip",
+                 destfile = zip_file,
+                 mode = "wb"
+               )
+
+               # Create directory for extraction
+               dir.create(unzip_dir, showWarnings = FALSE)
+
+               # Unzip the file
+               unzip(zip_file, exdir = unzip_dir)
+               list.files(unzip_dir, full.names = TRUE)
+
+               layers <- st_layers(file.path(unzip_dir, "Downloads2023.gdb"))
+
+               ais <- lapply(layers$name, function(x){
+                 st_read(file.path(unzip_dir, "Downloads2023.gdb"),
+                         layer = x)
+               })
+               names(ais) <- layers$name
+               ais
+             }
+  ),
+
 
  tar_target(ds_all,
             # because this is loaded with the Mar.datawrangling package and not mentioned in the arguments to many of it's functions
@@ -782,12 +940,13 @@ tar_target(name = ind_ebsa_representation,
                                indicator = "EBSA Representation",
                                type = "TBD",
                                units = NA,
-                               scoring = "representation",
+                               scoring = "representation: cumulative distribution with regional thresholds",
                                PPTID = NA,
                                project_short_title = "Biogenic Habitat",
                                areas = MPAs,
                                plot_type='map',
-                               plot_lm=FALSE)
+                               plot_lm=FALSE
+                               )
            }),
 
 tar_target(name = ind_SAR_CH_representation,
@@ -807,13 +966,78 @@ tar_target(name = ind_SAR_CH_representation,
                                indicator = "Species At Risk Critical Habitat Representation",
                                type = "Model",
                                units = NA,
-                               scoring = "representation",
+                               scoring = "representation: cumulative distribution with regional thresholds",
                                PPTID = NA,
                                project_short_title = "SAR CH Habitat",
                                areas = MPAs,
                                plot_type='map',
                                plot_lm=FALSE)
            }),
+
+tar_target(name = ind_species_representation,
+           command = {
+
+             data <- data_obis |>
+               group_by(scientificName) |>
+               rowwise() |>
+               mutate(name = scientificName) |>
+               group_by(name) |>
+               reframe(geoms = st_make_valid(st_union(geometry))) |>
+               st_as_sf()
+
+            process_indicator(data = data,
+                               indicator_var_name = "name",
+                               indicator = "Species Richness (OBIS)",
+                               type = "Observations",
+                               units = NA,
+                               scoring = "representation: cumulative distribution with regional thresholds",
+                               PPTID = NA,
+                               project_short_title = "OBIS Occurrences",
+                               areas = MPAs,
+                               plot_type='map',
+                               plot_lm=FALSE)
+           }),
+
+  tar_target(name = ind_MAR_cum_impact,
+             command = {
+
+               process_indicator(data = data_MAR_cumulative_impacts$Cumul_Impact_Maritimes_ALL.tif,
+                                 indicator_var_name = "Cumul_Impact_Maritimes_ALL.tif",
+                                 indicator = "Cumulative Impacts",
+                                 type = "Model",
+                                 units = NA,
+                                 scoring = "median",
+                                 direction = "inverse",
+                                 PPTID = NA,
+                                 project_short_title = "Cumulative Impacts",
+                                 areas = MPAs[MPAs$region=="Maritimes",],
+                                 plot_type='map',
+                                 plot_lm=FALSE)
+             }),
+
+tar_target(name = ind_MAR_biofouling_AIS,
+           command = {
+             data <- data_MAR_biofouling_AIS$AIS_AllSpecies_2021_PA |>
+               filter(cover_index == 1) |>
+               group_by(species_name) |>
+               reframe(geoms = st_make_valid(st_union(Shape))) |>
+               st_as_sf()
+
+             process_indicator(data = data,
+                               indicator_var_name = "species_name",
+                               indicator = "Biofouling AIS representation",
+                               type = "Observations",
+                               units = NA,
+                               scoring = "representation",
+                               direction = "inverse",
+                               PPTID = NA,
+                               project_short_title = "Biofouling AIS",
+                               areas = MPAs[MPAs$region=="Maritimes",],
+                               plot_type='map',
+                               plot_lm=FALSE)
+           }),
+
+
 
  ##### Indicator Bins #####
  tar_target(bin_biodiversity_FunctionalDiversity_df,
@@ -835,7 +1059,7 @@ tar_target(name = ind_SAR_CH_representation,
                              "Species Diversity",
                              weights_ratio=1,
                              weights_sum = 1,
-                             ind_SAR_CH_representation
+                             ind_species_representation
             )),
  tar_target(bin_habitat_Connectivity_df,
             aggregate_groups("bin",
@@ -861,13 +1085,15 @@ tar_target(name = ind_SAR_CH_representation,
                              "Key Fish Habitat",
                              weights_ratio = 1,
                              weights_sum = 1,
-                             ind_temperature
+                             ind_temperature,
+                             ind_SAR_CH_representation
             )),
  tar_target(bin_habitat_ThreatstoHabitat_df,
             aggregate_groups("bin",
                              "Threats to Habitat",
                              weights_ratio=1,
                              weights_sum = 1,
+                             ind_MAR_biofouling_AIS,
                              ind_placeholder_df
             )),
  tar_target(bin_habitat_Uniqueness_df,
@@ -935,7 +1161,7 @@ tar_target(name = ind_SAR_CH_representation,
 
  ##### Ecological Pillar #####
 
- tar_target(pillar_ecol_df,
+ tar_target(data_pillar_ecol_df,
 
             {
             APPTABS
@@ -1006,10 +1232,14 @@ tar_target(name = ind_SAR_CH_representation,
 
  }),
 
+tar_target(name = pillar_ecol_df,
+           command = select(pillar_ecol_df,-data,-plot)),
+
+
  tar_target(all_project_geoms,
              command = {
 
-               pillar_ecol_df |>
+               data_pillar_ecol_df |>
                  filter(!map_lgl(data, is.null)) |>
                  mutate(data = map(data,~.x |> dplyr::select(year,geometry) |> distinct())) |>
                  dplyr::select(data,type, project_short_title, PPTID,areaID) |>
@@ -1022,19 +1252,19 @@ tar_target(name = ind_SAR_CH_representation,
 tar_target(plot_files,
             command = {
               allplotnames <- NULL
-              for(i in 1:nrow(pillar_ecol_df)){
-                if(!is.null(pillar_ecol_df$plot[[i]])){
+              for(i in 1:nrow(data_pillar_ecol_df)){
+                if(!is.null(data_pillar_ecol_df$plot[[i]])){
                 filename <-  file.path(Sys.getenv("OneDriveCommercial"),
                                        "MarConsNetTargets",
                                        "data", "plots",
                                        make.names(paste0("plot_",
-                                                         pillar_ecol_df$areaID[i],
+                                                         data_pillar_ecol_df$areaID[i],
                                                          "_",
-                                                         pillar_ecol_df$indicator[i],
+                                                         data_pillar_ecol_df$indicator[i],
                                                          ".png")))
 
                 allplotnames <- c(allplotnames,filename)
-                ggsave(filename,pillar_ecol_df$plot[[i]])
+                ggsave(filename,data_pillar_ecol_df$plot[[i]])
                 }
               }
               allplotnames
@@ -1291,7 +1521,7 @@ tar_target(plot_files,
 
 tar_target(name = MPA_report_card,
            command = {
-             left_join(MPAs,pillar_ecol_df |>
+             left_join(MPAs,data_pillar_ecol_df |>
                select(-data,-plot) |>
                filter(indicator %in% MPAs$NAME_E) |>
                calc_group_score(grouping_var = "indicator") |>
