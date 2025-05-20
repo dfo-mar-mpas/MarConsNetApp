@@ -1094,6 +1094,7 @@ tar_target(name = ind_MAR_biofouling_AIS,
                              weights_ratio=1,
                              weights_sum = 1,
                              ind_MAR_biofouling_AIS,
+                             ind_MAR_cum_impact,
                              ind_placeholder_df
             )),
  tar_target(bin_habitat_Uniqueness_df,
