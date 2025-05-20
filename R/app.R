@@ -514,11 +514,14 @@ server <- function(input, output, session) {
          #ki2 <- which(tolower(pillar_ecol_df$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
           ki2 <- which(tolower(pillar_ecol_df$areaID) == tolower(state$mpas))
         } else {
-          ki2 <- which(pillar_ecol_df$region %in% state$region)
+          ki2 <- which(pillar_ecol_df$region %in% state$mpas)
         }
+
+        # browser()
 
         keepind <- intersect(ki1, ki2)
         keepind <- keepind[!(is.na(pillar_ecol_df$indicator[keepind]))]
+        keepind <- keepind[pillar_ecol_df$indicator[keepind]!="placeholder"]
 
         if (input$tabs %in% pillar_ecol_df$tab) {
           keepind <- which(pillar_ecol_df$tab == input$tabs)
@@ -580,7 +583,12 @@ server <- function(input, output, session) {
             }
             unique(om$activity_type[which(om$project_id == x)])
           }))
-          activityData <- split(formatted_projects, activityType)
+
+          if(length(activityType) == 0){
+            activityData <- list(formatted_projects)
+          } else {
+            activityData <- split(formatted_projects, activityType)
+          }
 
           formatted_projects_grouped <- shiny::tagList(lapply(names(activityData), function(activity) {
             shiny::tags$div(
