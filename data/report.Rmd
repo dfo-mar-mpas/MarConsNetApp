@@ -1,18 +1,29 @@
 ---
-title: "Generated Report"
+title: "Annual Report"
 output: html_document
 ---
 
-# Introduction
-
-### Conservation Area
+## Conservation Area
 
 `r params$mpas`
 
+## At-a-glance
+
+```{r, echo=FALSE,comment=NA, results="asis"}
+string <- state$mpas
+if (!(length(Context[[string]]) == 0)) {
+cat(Context[[string]])
+} else {
+  cat("There is no available context for this area.")
+}
+```
+
+
 ```{r, echo=FALSE, comment=NA, results="asis"}
 cat("<div style='display: flex; gap: 10px;'>")
-for (name in names(flowerPalette)) {
-  color <- flowerPalette[name]
+PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
+for (name in names(PALETTE)) {
+  color <- PALETTE[name]
   cat(sprintf("<div style='width: 50px; height: 20px; background-color: %s; text-align: center; 
                color: black; border: 1px solid #000; line-height: 20px;'>%s</div>", 
                color, name))
@@ -20,10 +31,9 @@ for (name in names(flowerPalette)) {
 cat("</div>")
 ```
 
-### Network Objectives
-```{r, echo=FALSE, comment=NA, results="asis"}
-string <- state$mpas
+## Network Conservation Objectives
 
+```{r, echo=FALSE, comment=NA, results="asis"}
 filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
 
 for (fo in seq_along(filtered_odf$objectives)) {
@@ -59,7 +69,7 @@ cat(sprintf('<span style="color:%s; background-color:lightgray; padding:3px;"><b
 }
 ```
 
-### Site Objectives
+## Site Conservation Objectives
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
 string <- input$mpas
@@ -68,7 +78,7 @@ keepO <- string
 
 S_Objectives <- Objectives_processed[[keepO]]
 
-
+if (!(length(S_Objectives) == 0)) {
 filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
 
 for (fo in seq_along(filtered_odfS$objectives)) {
@@ -110,51 +120,49 @@ c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$obj
   }
 cat(sprintf('<span style="color:%s; background-color:lightgray; padding:3px;"><b>%s</b></span><br>', finalCol, S_Objectives[fo]))
 }
+} else {
+  cat("There are no site objectives pulled with our tools for this area.")
+}
 ```
 
 
-### Context
+```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+p <- pillar_ecol_df[which(pillar_ecol_df$areaID == string),]
+area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
 
-```{r, echo=FALSE,comment=NA, results="asis"}
-cat(Context[[string]])
 ```
-
 
 ```{r, echo=FALSE}
+if (string %in% MPA_report_card$NAME_E) {
 map <- leaflet() %>%
   addTiles() %>%
-  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == state$mpas)], fillOpacity = 0.5, weight = 2, color=flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == string)]]])
+  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == state$mpas)], fillOpacity = 0.5, weight = 2, color=ifelse(is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]),"#EDEDED",                                                                                                       flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]]]))
+} else {
+  map <- leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == state$mpas)], fillOpacity = 0.5, weight = 2, color=flowerPalette[[area_grade]])
+  
+}
 
 map
 ```
 
+## Creature Feature
 
-# Methods
+FIXME - Get from PPT Milestones/Deliverable
 
-The status of `r params$mpas` is reported using the flower plot frame work, shown below in Figure 1. This approach provides a mechanism to bin indicators into bins: Genetic Diversity, Species Diversity, Functional Diversity, Environmental Representativity, Key Fish Habitat,               Connectivity, Uniqueness, Threats to Habitat, Biomass Metrics, Structure and Function, and Threats to Productivity. It then provides a means to report on the status of each bin in different protected/conserved areas even though we do not have measurements of the same indicators in all areas.
+## Research and Monitoring
 
-The score is calculated by determining the desired trend of the indicator, then
-looking at the actual trend of the indicator. If the trend
+### CSAS and Publications
 
-- is statistically significant AND matches the desired direction for the
-indicator, a score of A is assigned.
-- is not statistically significant but matches the desired direction for
-the indicator, a B is assigned
-- Has no change a C is assigned
-- is not statistically significant and going is the opposite direction
-of the desired direction a D is assigned
-- is statistically significant and going in the opposite direction,
-a F is assigned.
-
-For each bin (and area of interest), the weighted mean is taken to determine the overall score.
+FIXME: CSAS From CSAS app/ CSAS website/ PPT
+FIXME: Publications from milestones/deliverables
 
 
-# Results
+### Flower Plot
 
-### Flower plot
-
-```{r, echo=FALSE, comment=NA, results="asis", warn=FALSE}
-plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == input$mpas),],
+```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),],
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "score",
@@ -164,22 +172,15 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == input$mpas),],
 ```
 
 
-
-```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-p <- pillar_ecol_df[which(pillar_ecol_df$areaID == string),]
-area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
-
-```
-
 As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
-for (i in seq_along(unique(pillar_ecol_df$bin))) {
-  keep <- which(pillar_ecol_df$bin == unique(pillar_ecol_df$bin)[i])
-  df <- pillar_ecol_df[keep,]
-  cat(sprintf("Indicator bin: %s (%s).\n\n", unique(pillar_ecol_df$bin)[i], calc_letter_grade(weighted.mean(df$score, df$weight,na.rm=TRUE))))
+for (i in seq_along(unique(p$bin))) {
+  keep <- which(p$bin == unique(p$bin)[i])
+  df <- p[keep,]
+  cat(sprintf("Indicator bin: %s (%s).\n\n", unique(p$bin)[i], calc_letter_grade(weighted.mean(df$score, df$weight,na.rm=TRUE))))
   #cat(sprintf("%s.\n\n", " "))
-      }
+}
 ```
 
 
@@ -234,7 +235,8 @@ for (i in seq_along(keeper2)) {
     # END PLOT
       if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
-        cat("![](", plot_file[p], ")\n\n", sep = "")
+        #cat("![](", plot_file[p], ")\n\n", sep = "")
+         cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
       }
       }
       
@@ -253,36 +255,13 @@ for (i in seq_along(keeper2)) {
 
 ```
 
-# Discussion
+## Discussion
 
-### Climate Change
+FIXME: Useful to get groupings of indicators here
 
-The following indicators have been identified as direct measure of climate change and are measured in `r params$mpas`:
+## Collaborations and partnerships
 
-
-```{r, echo=FALSE, comment=NA, results="asis"}
-# trends <- pillar_ecol_df$trend_statement[which(tolower(pillar_ecol_df$indicator) %in% tolower(climate_change$indicators))]
-# analysis <- NULL
-# for (i in seq_along(trends)) {
-#   if (!(grepl("BLANK", trends[i]))) {
-#   analysis[[i]] <- climate_analysis(trend=trends[i], itp=indicator_to_plot)
-#   } else {
-#   analysis[[i]] <- "There is no data for this indicator yet."
-#   }
-# }
-# 
-# 
-# for (i in seq_along(climate_change$indicators)) {
-#       cat(sprintf("<b>Indicator: %s.</b>\n\n", climate_change$indicators[i]))
-#       cat(sprintf("%s.\n\n", " "))
-#       cat(sprintf("%s.\n\n", climate_change$summary[i]))
-#       cat(sprintf("%s.\n\n", " "))
-#       cat(sprintf("Actual results showed:\n\n"))
-#       cat(sprintf("%s.\n\n", analysis[[i]]))
-# }
-```
-
-
+FIXME: Get from PPT
 
 
 

@@ -7,11 +7,8 @@ library(stringr); library(tidyr); library(officer); library(RColorBrewer); libra
 library(tidyverse); library(dplyr)
 
 
-mani <- tar_manifest(script = "inst/_targets.R",
-                     fields = "name") |>
-  unlist(use.names = FALSE)
-tar_load(names=mani[!grepl("rv_data",mani)&!grepl("ind_",mani)&!grepl("bin_",mani)&!grepl("ecol_obj",mani)], store=tar_paths())
-
+tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context"))
+source("R/app.R");app()
 
 
 # 1. MPAs

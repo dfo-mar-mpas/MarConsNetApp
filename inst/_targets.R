@@ -12,7 +12,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -1271,7 +1271,6 @@ tar_target(plot_files,
               allplotnames
             }),
 
-
  tar_target(fish_length,
             command = {
               get_data('rv', data.dir = "C:/Users/HarbinJ/Documents/data/rv")
@@ -1427,6 +1426,7 @@ tar_target(plot_files,
               DF$units <- "mmol/m3"
               DF
             }),
+
 
  tar_target(salinity,
             command={
