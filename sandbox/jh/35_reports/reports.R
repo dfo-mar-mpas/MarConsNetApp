@@ -1,4 +1,3 @@
-
 mpas <- MPAs$NAME_E
 rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
 output_dir <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports")

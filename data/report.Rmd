@@ -72,7 +72,7 @@ cat(sprintf('<span style="color:%s; background-color:lightgray; padding:3px;"><b
 ## Site Conservation Objectives
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
-string <- input$mpas
+string <- state$mpas
 keepO <- string
 
 
@@ -236,7 +236,7 @@ for (i in seq_along(keeper2)) {
       if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
         #cat("![](", plot_file[p], ")\n\n", sep = "")
-         cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
+         cat('<img src="', plot_file[p], '" width="400"/>\n\n', sep = "")
       }
       }
       
@@ -261,7 +261,94 @@ FIXME: Useful to get groupings of indicators here
 
 ## Collaborations and partnerships
 
-FIXME: Get from PPT
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
+
+
+project_subset <- pillar_ecol_df$PPTID[which(pillar_ecol_df$areaID == state$mpas)]
+if (!(length(project_subset) == 0)) {
+p_subset <- unique(trimws(unlist(strsplit(project_subset, ";")), "both"))
+}
+if (any(is.na(p_subset))) {
+  p_subset <- p_subset[-which(is.na(p_subset))]
+}
+if (any(p_subset == "NA")) {
+  p_subset <- p_subset[-which(p_subset == "NA")]
+}
+
+if (any(p_subset %in% collaborations$project_id)) {
+  good_col <- which(collaborations$project_id %in% p_subset)
+  collab_subset <- collaborations[good_col,]
+  
+  ## For collaborations, I need to obtain the year. This would allow me to say 'for this year, x collaborations happened, but in previous years for this project, Y collaborations have happened).
+  
+  last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
+  
+  year_keep <- which(collab_subset$fiscal_year == last_year)
+  
+  if (!(length(year_keep) == 0)) {
+    recent_col <- collab_subset[year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
+    names(recent_col) <- c("Project ID", "Organization", "Year")
+    
+    
+    # HERE JAIM
+   organizations <- unique(recent_col$Organization)
+    rc <- data.frame(Organization=organizations)
+    
+    for (i in seq_along(organizations)) {
+      keeping <- which(recent_col$Organization == organizations[i])
+      rc$Year[i] <- paste0(sort(unique(recent_col[keeping,]$Year)), collapse= ", ")
+    }
+    
+    
+    
+    # END
+    
+    cat(paste0("The following collaborations/partnerships were identified for ", last_year, " for projects that contributed to this site:"))
+    cat("\n\n")
+
+    print(knitr::kable(rc, caption = "Recent Collaborations and Partnerships",row.names=FALSE))
+
+    cat("\n\n")
+
+    
+  } else {
+  cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. /n/n"))  
+  }
+  
+  
+  if (!(length(which((!(1:length(collab_subset$project_id)%in% year_keep))))) == 0) {
+    
+    cat("The following past partnerships/collaborations have been identified and contributed to this site: \n\n")
+    past_coll <- collab_subset[-year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
+    names(past_coll) <- c("Project ID", "Organization", "Year")
+    
+    # HERE JAIM
+    organizations <- unique(past_coll$Organization)
+    pc <- data.frame(Organization=organizations)
+    
+    for (i in seq_along(organizations)) {
+      keeping <- which(past_coll$Organization == organizations[i])
+      pc$Year[i] <- paste0(sort(unique(past_coll[keeping,]$Year)), collapse= ", ")
+    }
+    
+    # END JAIM
+    
+    
+    
+
+    
+    print(knitr::kable(pc, caption = "Past Collaborations and Partnerships",row.names=FALSE))
+    
+  } else {
+    cat("There are no partnerships/collaborations identified from previous years. \n\n")
+  }
+  
+  
+} else {
+    cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool. \n\n")
+}
+```
 
 
 

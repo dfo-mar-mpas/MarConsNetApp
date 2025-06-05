@@ -175,6 +175,15 @@ list(
 
              }),
 
+
+  tar_target(name = collaborations, # FIXME: need use a real cookie or otherwise update the data
+             command = {
+              cookie <- "csrftoken=S376xZx5TJdrtYkPJ2WXfI61JFj3YmZm; sessionid=1pkplzm9v9cb43ksg508cwefnxkl29ew"
+               col <- dataSPA::getData(type='collaboration', cookie=cookie)
+             }),
+
+
+
   tar_target(name = areas,
              command = {
                MPAs$NAME_E
@@ -396,7 +405,9 @@ list(
                return(extract_dir)
 
              },
-             format = "file"
+             format = "file",
+             cue = tar_cue("never")
+
   ),
 
   tar_target(name = rawdata_obis_by_region,
