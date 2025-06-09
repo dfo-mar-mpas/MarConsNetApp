@@ -153,12 +153,6 @@ FIXME - Get from PPT Milestones/Deliverable
 
 ## Research and Monitoring
 
-### CSAS and Publications
-
-FIXME: CSAS From CSAS app/ CSAS website/ PPT
-FIXME: Publications from milestones/deliverables
-
-
 ### Flower Plot
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
@@ -263,8 +257,6 @@ FIXME: Useful to get groupings of indicators here
 
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
-
-
 project_subset <- pillar_ecol_df$PPTID[which(pillar_ecol_df$areaID == state$mpas)]
 if (!(length(project_subset) == 0)) {
 p_subset <- unique(trimws(unlist(strsplit(project_subset, ";")), "both"))
@@ -289,9 +281,7 @@ if (any(p_subset %in% collaborations$project_id)) {
   if (!(length(year_keep) == 0)) {
     recent_col <- collab_subset[year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
     names(recent_col) <- c("Project ID", "Organization", "Year")
-    
-    
-    # HERE JAIM
+
    organizations <- unique(recent_col$Organization)
     rc <- data.frame(Organization=organizations)
     
@@ -299,31 +289,19 @@ if (any(p_subset %in% collaborations$project_id)) {
       keeping <- which(recent_col$Organization == organizations[i])
       rc$Year[i] <- paste0(sort(unique(recent_col[keeping,]$Year)), collapse= ", ")
     }
-    
-    
-    
-    # END
-    
     cat(paste0("The following collaborations/partnerships were identified for ", last_year, " for projects that contributed to this site:"))
     cat("\n\n")
 
     print(knitr::kable(rc, caption = "Recent Collaborations and Partnerships",row.names=FALSE))
-
     cat("\n\n")
-
-    
   } else {
   cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. /n/n"))  
   }
-  
-  
   if (!(length(which((!(1:length(collab_subset$project_id)%in% year_keep))))) == 0) {
     
     cat("The following past partnerships/collaborations have been identified and contributed to this site: \n\n")
     past_coll <- collab_subset[-year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
     names(past_coll) <- c("Project ID", "Organization", "Year")
-    
-    # HERE JAIM
     organizations <- unique(past_coll$Organization)
     pc <- data.frame(Organization=organizations)
     
@@ -331,24 +309,39 @@ if (any(p_subset %in% collaborations$project_id)) {
       keeping <- which(past_coll$Organization == organizations[i])
       pc$Year[i] <- paste0(sort(unique(past_coll[keeping,]$Year)), collapse= ", ")
     }
-    
-    # END JAIM
-    
-    
-    
 
-    
     print(knitr::kable(pc, caption = "Past Collaborations and Partnerships",row.names=FALSE))
     
   } else {
     cat("There are no partnerships/collaborations identified from previous years. \n\n")
   }
-  
-  
 } else {
     cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool. \n\n")
 }
 ```
 
+### Deliverables and CSAS
 
+## Deliverables
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
+deliv_keep <- which(deliverables$project_id %in% p_subset & deliverables$year == last_year) # Only projects for this area / last year
+
+if (length(deliv_keep > 0)) {
+  delv <- deliverables[deliv_keep,][c("classification_display", "description")]
+  if (any(str_count(delv$description, "\\S+") > 35)) {
+  delv$description[which(str_count(delv$description, "\\S+") > 35)] <- " "
+  }
+  
+  names(delv) <- c("Deliverable", "Description")
+  
+  print(knitr::kable(delv, caption = paste0("Deliverables for " , last_year ),row.names=FALSE))
+} else {
+  cat("There has been no identified deliverables in the Project Planning Tool for projects supporting this area./n/n")
+}
+
+```
+## CSAS
+
+FIXME: CSAS From CSAS app/ CSAS website/ PPT
 

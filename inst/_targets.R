@@ -178,8 +178,132 @@ list(
 
   tar_target(name = collaborations, # FIXME: need use a real cookie or otherwise update the data
              command = {
-              cookie <- "csrftoken=S376xZx5TJdrtYkPJ2WXfI61JFj3YmZm; sessionid=1pkplzm9v9cb43ksg508cwefnxkl29ew"
+              cookie <- "cookie"
                col <- dataSPA::getData(type='collaboration', cookie=cookie)
+             }),
+
+  tar_target(name = deliverables, # FIXME: need use a real cookie or otherwise update the data
+             command = {
+               cookie <- "cookie"
+               debug <- 0
+               links <- c("https://dmapps/api/ppt/project-years/", "https://dmapps/api/ppt/activities-full/")
+
+               API_DATA <- NULL
+
+               for (i in seq_along(links)) {
+                 req <- httr2::request(links[i])
+
+                 # Add custom headers
+                 req <- req |> httr2::req_headers("Cookie" = cookie)
+                 req <- req |> httr2::req_headers("Accept" = "application/json")
+
+                 # Automatically retry if the request fails
+                 req <- req |> httr2::req_retry(max_tries = 5)
+
+                 # Get the requested data by querying the API
+                 resp <- try(httr2::req_perform(req), silent=TRUE)
+
+                 page_data <- httr2::resp_body_json(resp)
+
+
+                 api_data <- page_data$results
+
+                 # Get the information about the next page in the API results
+                 next_page <- page_data$`next`
+                 cat(paste0(next_page, '\n'))
+
+                 cat(paste0('Number of API records = ', length(api_data), '\n'))
+
+                 # Check if the next page is not null (end of pages) before extract the data from
+                 # next page.
+                 while (!is.null(next_page)) {
+                   # Modifying API Call
+                   req <- httr2::request(next_page)
+                   # Add custom headers
+                   req <- req |> httr2::req_headers("Cookie" = cookie)
+                   req <- req |> httr2::req_headers("Accept" = "application/json")
+                   # Automatically retry if the request fails
+                   req <- req |> httr2::req_retry(max_tries = 5)
+                   # Get the requested data by querying the API
+                   resp <- httr2::req_perform(req)
+                   # Read the returned data as a JSON file
+                   page_data <- httr2::resp_body_json(resp)
+                   # Add current page data to full list
+                   api_data <- c(api_data, page_data$results)
+                   cat(paste0('Number of API records = ', length(api_data), '\n'))
+
+                   # Get the information about the next page in the API results
+                   next_page <- page_data$`next`
+                   if(debug>0){
+                     if(exists("debug_page")){
+                       debug_page <- debug_page-1
+                     } else {
+                       debug_page <- debug-1
+                     }
+
+                     if(debug_page==1) {
+                       debug_page <- debug
+                       next_page <- NULL
+                     }
+                   }
+                   cat(paste0(next_page, '\n'))
+                 }
+
+                 API_DATA[[i]] <- api_data
+
+               }
+
+               names(API_DATA) <- links
+
+               project_year_id <- unlist(lapply(api_data, function(x) x$project_year_id))
+               type_display <- unlist(lapply(api_data, function(x) x$type_display))
+               classification_display <- lapply(api_data, function(x) {
+                 if (is.null(x$classification_display)) NA else x$classification_display
+               })
+               year <- unlist(lapply(api_data, function(x) x$project_year_obj$display_name))
+
+               description <- lapply(api_data, function(x) {
+                 if (is.null(x$description)) NA else x$description
+               })
+
+               df <- data.frame("project_year_id"=project_year_id,
+                                "type_display"=type_display,
+                                "classification_display"=unlist(classification_display),
+                                "year"=year,
+                                "description"=unlist(description))
+
+
+               p_ids <- lapply(API_DATA[[which(names(API_DATA)== "https://dmapps/api/ppt/project-years/")]], function(x) x$project$id)
+
+               my_list <- vector("list", length = length(unique(unlist(p_ids))))
+               names(my_list) <- unique(unlist(p_ids))
+
+               for (i in seq_along(names(my_list))) {
+                 keep <- which(p_ids == names(my_list)[i][[1]])
+                 my_list[[i]] <- unlist(lapply(API_DATA[[which(names(API_DATA) == "https://dmapps/api/ppt/project-years/")]][[which(p_ids == names(my_list)[i])[1]]]$project$year, function(x) x$id))
+               }
+
+               # Assigning year and project ID
+
+               assign_id <- function(df) {
+                 # 1. Assign project_id by matching to my_list
+                 df$project_id <- sapply(df$project_year_id, function(id) {
+                   match_idx <- which(sapply(my_list, function(x) id %in% x))
+                   if (length(match_idx) > 0) as.numeric(names(my_list)[match_idx[1]]) else NA
+                 })
+                 return(df)
+               }
+
+
+               DD <- assign_id(df)
+
+               DD <- DD[which(DD$type_display == "Deliverable"),]
+
+               DD <- DD[which(!grepl("Agreement", DD$classification_display, ignore.case=TRUE)),]
+               DD <- DD[, c("project_id", "classification_display", "description", "year")]
+               DD <- DD[-which(is.na(DD$classification_display)),]
+
+               deliverables <- DD
              }),
 
 
