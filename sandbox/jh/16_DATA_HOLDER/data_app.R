@@ -7,7 +7,7 @@ library(stringr); library(tidyr); library(officer); library(RColorBrewer); libra
 library(tidyverse); library(dplyr)
 
 
-tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", collaborations))
+tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas"))
 source("R/app.R");app()
 
 

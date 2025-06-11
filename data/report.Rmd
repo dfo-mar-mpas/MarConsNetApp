@@ -10,6 +10,7 @@ output: html_document
 ## At-a-glance
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
+last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- state$mpas
 if (!(length(Context[[string]]) == 0)) {
 cat(Context[[string]])
@@ -133,23 +134,59 @@ area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
 ```
 
 ```{r, echo=FALSE}
+
 if (string %in% MPA_report_card$NAME_E) {
-map <- leaflet() %>%
-  addTiles() %>%
-  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == state$mpas)], fillOpacity = 0.5, weight = 2, color=ifelse(is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]),"#EDEDED",                                                                                                       flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]]]))
-} else {
+  fill_color <- ifelse(
+    is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]),
+    "#EDEDED",
+    flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]]]
+  )
+
+  # Set border color conditionally
+  border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+
   map <- leaflet() %>%
-  addTiles() %>%
-  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == state$mpas)], fillOpacity = 0.5, weight = 2, color=flowerPalette[[area_grade]])
+    addTiles() %>%
+    addPolygons(
+      data = MPAs$geoms[which(MPAs$NAME_E == state$mpas)],
+      fillColor = fill_color,
+      fillOpacity = 0.5,
+      weight = 2,
+      color = border_color
+    )
   
+} else {
+  fill_color <- flowerPalette[[area_grade]]
+  border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+
+  map <- leaflet() %>%
+    addTiles() %>%
+    addPolygons(
+      data = MPAs$geoms[which(MPAs$NAME_E == state$mpas)],
+      fillColor = fill_color,
+      fillOpacity = 0.5,
+      weight = 2,
+      color = border_color
+    )
 }
+
 
 map
 ```
 
 ## Creature Feature
 
-FIXME - Get from PPT Milestones/Deliverable
+```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+#FIXME - Get from PPT Milestones/Deliverable
+
+if (state$mpas == "St. Anns Bank Marine Protected Area") {
+  cat("Scientists have found large numbers of thorny skate or kekunaluej purses (egg capsules) in a part of St. Anns Bank Marine Protected Area")
+} else {
+  cat("There is no identified creature feature for this area.")
+}
+
+
+```
 
 ## Research and Monitoring
 
@@ -169,12 +206,28 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),],
 As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
+
+# Create an empty data frame to store results
+summary_table <- data.frame(
+  `Indicator Bin` = character(),
+  `Grade` = character(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through bins and calculate grades
 for (i in seq_along(unique(p$bin))) {
   keep <- which(p$bin == unique(p$bin)[i])
-  df <- p[keep,]
-  cat(sprintf("Indicator bin: %s (%s).\n\n", unique(p$bin)[i], calc_letter_grade(weighted.mean(df$score, df$weight,na.rm=TRUE))))
-  #cat(sprintf("%s.\n\n", " "))
+  df <- p[keep, ]
+  
+  grade <- calc_letter_grade(weighted.mean(df$score, df$weight, na.rm = TRUE))
+  
+  summary_table[i, ] <- c(unique(p$bin)[i], grade)
 }
+
+# Print as a table
+print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
+
+
 ```
 
 
@@ -215,7 +268,8 @@ for (i in seq_along(BINS)) {
 names(keeper2) <- BINS
 
 for (i in seq_along(keeper2)) {
-  cat(sprintf("### Indicator Bin: %s\n\n", BINS[i]))
+  #cat(sprintf("### Indicator Bin: %s\n\n", BINS[i]))
+  cat(sprintf('<details><summary><strong>Indicator Bin: %s</strong></summary>\n\n', toupper(BINS[i])))
   for (j in seq_along(keeper2[[i]]$Indicator)) {
     cat(sprintf("<b>Indicator: %s.</b>\n\n", keeper2[[i]]$Indicator[j]))
     
@@ -245,13 +299,12 @@ for (i in seq_along(keeper2)) {
         keeper2[[i]]$Project[j]
       ))
   }
+  cat("</details>\n\n")
 }
+
 
 ```
 
-## Discussion
-
-FIXME: Useful to get groupings of indicators here
 
 ## Collaborations and partnerships
 
@@ -274,7 +327,7 @@ if (any(p_subset %in% collaborations$project_id)) {
   
   ## For collaborations, I need to obtain the year. This would allow me to say 'for this year, x collaborations happened, but in previous years for this project, Y collaborations have happened).
   
-  last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
+  #last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
   
   year_keep <- which(collab_subset$fiscal_year == last_year)
   
@@ -320,9 +373,9 @@ if (any(p_subset %in% collaborations$project_id)) {
 }
 ```
 
-### Deliverables and CSAS
+## Outreach and engagement
 
-## Deliverables
+### Deliverables
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
 deliv_keep <- which(deliverables$project_id %in% p_subset & deliverables$year == last_year) # Only projects for this area / last year
@@ -341,7 +394,27 @@ if (length(deliv_keep > 0)) {
 }
 
 ```
-## CSAS
+### CSAS
 
-FIXME: CSAS From CSAS app/ CSAS website/ PPT
+```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
+# Which ones to keep
+csas_keep <- which(grepl(paste(state$mpas, collapse = "|"), csas$title)) # state$mpas
+if (state$mpas == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)") {
+csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
+} else if (state$mpas ==  "St. Anns Bank Marine Protected Area") {
+  csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))
+}
+
+if (length(csas_keep) > 0) {
+  CSAS <- csas[csas_keep,]
+  names(CSAS) <- c("Title", "Date")
+  print(knitr::kable(CSAS, caption = paste0("CSAS Processes for " , state$mpas),row.names=FALSE))
+} else {
+  cat("There have been no identified relevant CSAS meetings in the CSAS DMapps related to this area.")
+}
+
+
+
+
+```
 

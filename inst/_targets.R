@@ -12,7 +12,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -305,6 +305,103 @@ list(
 
                deliverables <- DD
              }),
+
+  tar_target(name = csas,
+             command = {
+               cookie <- "cookie" # FIXME: need real cookie to update
+
+               links <- c("https://dmapps/api/csas/meetings/")
+
+               req <- httr2::request(links)
+
+               # Add custom headers
+               req <- req |> httr2::req_headers("Cookie" = cookie)
+               req <- req |> httr2::req_headers("Accept" = "application/json")
+
+               # Automatically retry if the request fails
+               req <- req |> httr2::req_retry(max_tries = 5)
+
+               # Get the requested data by querying the API
+               resp <- try(httr2::req_perform(req), silent = TRUE)
+
+               page_data <- httr2::resp_body_json(resp)
+
+
+               api_data <- page_data$results
+
+               # Get the information about the next page in the API results
+               next_page <- page_data$`next`
+               cat(paste0(next_page, '\n'))
+
+               cat(paste0('Number of API records = ', length(api_data), '\n'))
+
+               # Check if the next page is not null (end of pages) before extract the data from
+               # next page.
+               while (!is.null(next_page)) {
+                 # Modifying API Call
+                 req <- httr2::request(next_page)
+                 # Add custom headers
+                 req <- req |> httr2::req_headers("Cookie" = cookie)
+                 req <- req |> httr2::req_headers("Accept" = "application/json")
+                 # Automatically retry if the request fails
+                 req <- req |> httr2::req_retry(max_tries = 5)
+                 # Get the requested data by querying the API
+                 resp <- httr2::req_perform(req)
+                 # Read the returned data as a JSON file
+                 page_data <- httr2::resp_body_json(resp)
+                 # Add current page data to full list
+                 api_data <- c(api_data, page_data$results)
+                 cat(paste0('Number of API records = ', length(api_data), '\n'))
+
+                 # Get the information about the next page in the API results
+                 next_page <- page_data$`next`
+
+                 cat(paste0(next_page, '\n'))
+               }
+
+               API_DATA <- api_data
+
+               title <- unlist(lapply(API_DATA, function(x) x$display))
+               display_dates <-  unlist(lapply(API_DATA, function(x) x$display_dates))
+               display_dates <- gsub('&rarr;', "-", display_dates)
+
+               df <- data.frame('title'=title,
+                                'date'=display_dates
+                                )
+
+
+
+
+
+             }),
+
+
+
+  # tar_target(name = render_reports,
+  #            command = {
+  #              MPAs
+  #              pillar_ecol_df
+  #              Context
+  #              flowerPalette
+  #              odf
+  #              N_Objectives
+  #
+  #              mpas <- MPAs$NAME_E
+  #              rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
+  #              output_dir <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports")
+  #
+  #              for (i in seq_along(mpas)) {
+  #                message(i)
+  #                state <- list()
+  #                params <- list()
+  #                input <- list()
+  #                state$mpas <- mpas[i]
+  #                params$mpas <- mpas[i]
+  #                input$mpas <- mpas[i]
+  #                output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=mpas[i], ".html"))))
+  #                render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
+  #              }
+  #            }),
 
 
 
