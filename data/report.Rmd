@@ -297,7 +297,7 @@ for (i in seq_along(keeper2)) {
       
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("%s.\n\n", keeper2[[i]]$Status[j]))
-      if (!(keeper2[[i]]$Trend == "There is no temporal dimension in this data.")) {
+      if (!(keeper2[[i]]$Trend[j] == "There is no temporal dimension in this data.")) {
       cat(sprintf("%s.\n\n", keeper2[[i]]$Trend[j]))
       }
       cat(sprintf("%s.\n\n", " "))
