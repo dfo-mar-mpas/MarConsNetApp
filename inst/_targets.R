@@ -1510,7 +1510,7 @@ tar_target(name = ind_MAR_biofouling_AIS,
  }),
 
 tar_target(name = pillar_ecol_df,
-           command = select(pillar_ecol_df,-data,-plot)),
+           command = select(data_pillar_ecol_df,-data,-plot)),
 
 
  tar_target(all_project_geoms,
@@ -1518,8 +1518,31 @@ tar_target(name = pillar_ecol_df,
 
                data_pillar_ecol_df |>
                  filter(!map_lgl(data, is.null)) |>
-                 mutate(data = map(data,~.x |> dplyr::select(year,geometry) |> distinct())) |>
-                 dplyr::select(data,type, project_short_title, PPTID,areaID) |>
+                 mutate(data = map(data,function(x){
+                   # browser()
+                   if(!inherits(x,"sf")) x <- st_as_sf(x)
+
+                   if("geoms" %in% names(x)) {
+                     x <- x |>
+                       mutate(geometry = geoms) |>
+                       as.data.frame() |>
+                       select(-geoms) |>
+                       st_as_sf()
+                   }
+
+                   if(!("year" %in% names(x))) {
+                     x <- x |>
+                       mutate(year = NA)
+                   }
+
+                   x |>
+                     st_cast("GEOMETRY") |>
+                     dplyr::select(year,geometry) |>
+                     st_as_sf() |>
+                     unique()
+                 })
+                 ) |>
+                 dplyr::select(data,type, project_short_title, PPTID,areaID)|>
                  unnest(cols = data) |>
                  st_as_sf()
 
