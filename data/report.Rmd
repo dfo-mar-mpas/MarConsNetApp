@@ -252,7 +252,13 @@ for (i in seq_along(BINS)) {
   KK <- keeper[which(grepl(BINS[i], trimws(tolower(
     keeper$bin
   ), "both"))), ]
-
+  
+  # Remove NA and placeholder indicators
+  
+  if (any(is.na(KK$indicator) | KK$indicator == "placeholder")) {
+    KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder")),]
+  }
+  
   keeper2[[i]] <- data.frame(
     Indicator = KK$indicator,
     Status = KK$status_statement,
@@ -268,8 +274,9 @@ for (i in seq_along(BINS)) {
 names(keeper2) <- BINS
 
 for (i in seq_along(keeper2)) {
-  #cat(sprintf("### Indicator Bin: %s\n\n", BINS[i]))
   cat(sprintf('<details><summary><strong>Indicator Bin: %s</strong></summary>\n\n', toupper(BINS[i])))
+  
+  if (!(length(keeper2[[i]]$Indicator) == 0)) {
   for (j in seq_along(keeper2[[i]]$Indicator)) {
     cat(sprintf("<b>Indicator: %s.</b>\n\n", keeper2[[i]]$Indicator[j]))
     
@@ -290,7 +297,9 @@ for (i in seq_along(keeper2)) {
       
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("%s.\n\n", keeper2[[i]]$Status[j]))
+      if (!(keeper2[[i]]$Trend == "There is no temporal dimension in this data.")) {
       cat(sprintf("%s.\n\n", keeper2[[i]]$Trend[j]))
+      }
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("This indicator has a score of: %s.\n\n", keeper2[[i]]$Grade[j]))
       cat(sprintf("%s.\n\n", " "))
@@ -298,7 +307,11 @@ for (i in seq_along(keeper2)) {
         "Data was provided from project %s.\n\n",
         keeper2[[i]]$Project[j]
       ))
-  }
+  } # END HERE
+  
+  } else {
+  cat("There are no indicators in the app for this indicator bin.")
+}
   cat("</details>\n\n")
 }
 
@@ -390,10 +403,11 @@ if (length(deliv_keep > 0)) {
   
   print(knitr::kable(delv, caption = paste0("Deliverables for " , last_year ),row.names=FALSE))
 } else {
-  cat("There has been no identified deliverables in the Project Planning Tool for projects supporting this area./n/n")
+  cat("There has been no identified deliverables in the Project Planning Tool for projects supporting this area.")
 }
 
 ```
+
 ### CSAS
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
@@ -403,6 +417,8 @@ if (state$mpas == "Western/Emerald Banks Conservation Area (Restricted Fisheries
 csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
 } else if (state$mpas ==  "St. Anns Bank Marine Protected Area") {
   csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))
+} else if (state$mpas == "Musquash Estuary Marine Protected Area") {
+  csas_keep <- c(csas_keep, which(grepl("Musquash", csas$title, ignore.case=TRUE)))
 }
 
 if (length(csas_keep) > 0) {
