@@ -770,6 +770,11 @@ list(
              }
   ),
 
+  tar_target(name = "data_musquash_benthic_infauna",
+             command = {
+               infauna <- arcpullr::get_spatial_layer("https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/musquash_benthic_infauna/MapServer/1")
+             }),
+
 
  tar_target(ds_all,
             # because this is loaded with the Mar.datawrangling package and not mentioned in the arguments to many of it's functions
@@ -883,6 +888,31 @@ list(
                 group_by(layer) |>
                 reframe(geoms = st_make_valid(st_combine(geoms))) |>
                 st_as_sf()
+            }),
+
+ tar_target(name = data_musquash_nekton_occurence,
+            command = {
+              # data from https://catalogue.ogsl.ca/en/dataset/ca-cioos_4c93ac96-0a9f-41d5-9505-80a3b24c30ae
+
+              tmp <- tempfile()
+              tmp2 <- tempfile()
+              download.file("https://catalogue.ogsl.ca/data/ecw/ca-cioos_4c93ac96-0a9f-41d5-9505-80a3b24c30ae/ecw_nekton-project_occurrence_2019-2021.csv",
+                            tmp, mode = "wb")
+              download.file("https://catalogue.ogsl.ca/data/ecw/ca-cioos_4c93ac96-0a9f-41d5-9505-80a3b24c30ae/ecw_nekton-project_event_2019-2021.csv",
+                            tmp2, mode = "wb")
+
+              nekton <- read.csv(tmp)
+              events <- read.csv(tmp2)
+
+              nekton |>
+                left_join(events, by = "eventID") |>
+                st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326, remove = FALSE)
+            }),
+
+ tar_target(name = data_musquash_ECW_water_quality,
+            command = {
+              data_musquash_ECW_water_quality <- read_excel(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data","ECW_MEM_COMPLETE Water Quality Data 2014 to 2024_2025.06.06_v1.xlsx")) |>
+                st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
             }),
 
 
@@ -1313,6 +1343,45 @@ tar_target(name = ind_MAR_biofouling_AIS,
                                plot_lm=FALSE)
            }),
 
+ tar_target(name = "ind_musquash_infaunal_diversity",
+            command = {
+              data <- data_musquash_benthic_infauna |>
+                group_by(scientificName_Nom_scientifique) |>
+                reframe(geoms = st_make_valid(st_union(geoms))) |>
+                st_as_sf()
+
+              process_indicator(data = data,
+                                indicator_var_name = "scientificName_Nom_scientifique",
+                                indicator = "Infaunal Diversity",
+                                type = "Observations",
+                                units = NA,
+                                scoring = "representation: cumulative distribution with regional thresholds",
+                                PPTID = 827,
+                                project_short_title = "Musquash benthic monitoring",
+                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                                plot_type='map',
+                                plot_lm=FALSE)
+            }),
+ tar_target(name = ind_musquash_nekton_diversity,
+            command = {
+              data <- data_musquash_nekton_occurence |>
+              group_by(scientificName) |>
+              reframe(geoms = st_make_valid(st_union(geometry))) |>
+              st_as_sf()
+
+            process_indicator(data = data,
+                              indicator_var_name = "scientificName",
+                              indicator = "Nekton Diversity (ECW)",
+                              type = "Observations",
+                              units = NA,
+                              scoring = "representation: cumulative distribution with regional thresholds",
+                              PPTID = NA,
+                              project_short_title = "ECW Nekton Project",
+                              areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                              plot_type='map',
+                              plot_lm=FALSE)
+            }),
+
 
 
  ##### Indicator Bins #####
@@ -1335,7 +1404,10 @@ tar_target(name = ind_MAR_biofouling_AIS,
                              "Species Diversity",
                              weights_ratio=1,
                              weights_sum = 1,
-                             ind_species_representation
+                             ind_species_representation,
+                             ind_musquash_infaunal_diversity,
+                             ind_musquash_nekton_diversity
+
             )),
  tar_target(bin_habitat_Connectivity_df,
             aggregate_groups("bin",
