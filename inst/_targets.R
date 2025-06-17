@@ -12,7 +12,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny"),
+               "rnaturalearth","DBI","duckdb","mregions2", "rmarkdown", "shiny"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -627,8 +627,8 @@ list(
 
              },
              format = "file",
-             cue = tar_cue("never")
 
+             cue = tar_cue("never") # Prevents re-downloading unless the file is deleted
   ),
 
   tar_target(name = rawdata_obis_by_region,
@@ -723,6 +723,50 @@ list(
                })
                names(ais) <- layers$name
                ais
+             }
+  ),
+
+
+  tar_target(name = data_WORMS_species_distributions,
+             command = {
+               distributions <- map(unique(data_obis$aphiaid), function(aphiaID) {
+                 url <- sprintf("https://www.marinespecies.org/rest/AphiaDistributionsByAphiaID/%d", aphiaID)
+                 tryCatch({
+                   jsonlite::fromJSON(url) |>
+                     mutate(aphiaID = aphiaID)
+                 }, error = function(e) {
+                   NULL
+                 })
+               }) |>
+                 bind_rows()
+             }),
+
+  tar_target(name = data_WORMS_species_distributions_polygons,
+             {
+               polygons <- data_WORMS_species_distributions |>
+                 dplyr::select(locationID) |>
+                 unique() |>
+                 mutate(mrID = as.numeric(basename(locationID)),
+                        geometry = map(mrID,function(id) {
+                          print(id)
+                          tryCatch({
+                            browser()
+                            gaz_geometry(id)
+                          }, error = function(e) {
+                            print("no polygon")
+                            NA})
+                        }) ) |>
+                 filter(!is.na(geometry)) |>
+                 rowwise() |>
+                 mutate(geometry = st_sfc(st_combine(geometry))) |>
+                 st_as_sf() |>
+                 select(-mrID)
+               polygons
+
+               # data_WORMS_species_distributions |>
+               #   left_join(polygons, by = "locationID")
+
+
              }
   ),
 
