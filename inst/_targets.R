@@ -12,7 +12,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb","mregions2", "rmarkdown", "shiny"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -775,6 +775,30 @@ list(
                infauna <- arcpullr::get_spatial_layer("https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/musquash_benthic_infauna/MapServer/1")
              }),
 
+  tar_target(name = "data_musquash_eutrophication",
+             command = {
+               file <- paste0(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), "/ECW_MEM_COMPLETE Water Quality Data 2014 to 2024_2025.06.06_v1.xlsx")
+               sheets <-  excel_sheets(file)
+               final <- list()
+               for (i in seq_along(sheets)) {
+                 d <- read_excel(file, sheet=sheets[i], skip=19) # The Eutrophication starts at line 21
+                 if (!(length(d) == 0)) {
+                 d$year <- sheets[i]
+                 } else {
+                   d <- 1
+                 }
+                 final[[i]] <- d
+               }
+
+               names(final) <- sheets
+
+               combined <- bind_rows(final[!sapply(final, function(x) identical(x, 1))])
+               combined$year <- as.numeric(sub("-.*", "", combined$year))
+               combined
+
+
+             }),
+
 
  tar_target(ds_all,
             # because this is loaded with the Mar.datawrangling package and not mentioned in the arguments to many of it's functions
@@ -1382,6 +1406,98 @@ tar_target(name = ind_MAR_biofouling_AIS,
                               plot_lm=FALSE)
             }),
 
+tar_target(name=ind_musquash_ph,
+           command= {
+
+             # kylo
+             data <- data_musquash_eutrophication  |>
+               dplyr::select(Lon, Lat, pH, year)
+
+             process_indicator(data = data,
+                               indicator_var_name = "pH",
+                               indicator = "pH",
+                               type = "Discrete Occupations Sections",
+                               units = NA,
+                               scoring = "desired state: increase",
+                               PPTID = NA,
+                               project_short_title = NA,
+                               climate = TRUE,
+                               areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                               plot_type='time-series',
+                               plot_lm=FALSE,
+                               latitude='Lat',
+                               longitude='Lon')
+
+           }
+           ),
+tar_target(name=ind_musquash_dissolved_oxygen,
+           command= {
+             data <- data_musquash_eutrophication |>
+               rename(DO_mg_L= `DO (mg/L)`) |>
+               dplyr::select(Lon, Lat, DO_mg_L, year)
+
+             process_indicator(data = data,
+                               indicator_var_name = "DO_mg_L",
+                               indicator = "Dissolved Oxygen",
+                               type = "Discrete Occupations Sections",
+                               units = "mg/L",
+                               scoring = "desired state: increase",
+                               PPTID = NA,
+                               project_short_title = NA,
+                               climate = TRUE,
+                               areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                               plot_type='time-series',
+                               plot_lm=FALSE,
+                               latitude='Lat',
+                               longitude='Lon')
+           }
+),
+
+tar_target(name=ind_musquash_phosphate,
+           command= {
+             data <- data_musquash_eutrophication |>
+               rename(phosphate= `tot P (mg/L)`) |>
+               dplyr::select(Lon, Lat, phosphate, year)
+
+             process_indicator(data = data,
+                               indicator_var_name = "phosphate",
+                               indicator = "Phosphate",
+                               type = "Discrete Occupations Sections",
+                               units = "mg/L",
+                               scoring = "desired state: increase",
+                               PPTID = NA,
+                               project_short_title = NA,
+                               climate = TRUE,
+                               areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                               plot_type='time-series',
+                               plot_lm=FALSE,
+                               latitude='Lat',
+                               longitude='Lon')
+           }
+),
+
+tar_target(name=ind_musquash_secchi,
+           command= {
+             data <- data_musquash_eutrophication |>
+               rename(secchi= `Secchi  (m)`) |>
+               dplyr::select(Lon, Lat, secchi, year)
+
+             process_indicator(data = data,
+                               indicator_var_name = "secchi",
+                               indicator = "Secchi Depth",
+                               type = "Discrete Occupations Sections",
+                               units = "m",
+                               scoring = "desired state: increase",
+                               PPTID = NA,
+                               project_short_title = NA,
+                               climate = TRUE,
+                               areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                               plot_type='time-series',
+                               plot_lm=FALSE,
+                               latitude='Lat',
+                               longitude='Lon')
+           }
+),
 
 
  ##### Indicator Bins #####
@@ -1419,14 +1535,18 @@ tar_target(name = ind_MAR_biofouling_AIS,
  tar_target(bin_habitat_EnvironmentalRepresentativity_df,
             aggregate_groups("bin",
                              "Environmental Representativity",
-                             weights_ratio = c(1,1,1,0.5,1,1),
+                             weights_ratio = c(1,1,1,0.5,1,1,1,1,1,1),
                              weights_sum = 1,
                              ind_nitrate,
                              ind_salinity,
                              ind_chlorophyll,
                              ind_temperature,
                              ind_surface_height,
-                             ind_bloom_amplitude
+                             ind_bloom_amplitude,
+                             ind_musquash_ph,
+                             ind_musquash_dissolved_oxygen,
+                             ind_musquash_phosphate,
+                             ind_musquash_secchi
                              )),
  tar_target(bin_habitat_KeyFishHabitat_df,
             aggregate_groups("bin",

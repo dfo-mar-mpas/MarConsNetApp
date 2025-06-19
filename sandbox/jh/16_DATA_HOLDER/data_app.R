@@ -10,6 +10,11 @@ library(tidyverse); library(dplyr)
 tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas"))
 source("R/app.R");app()
 
+tar_make(c("all_project_geoms", "MPA_report_card", "odf", "pillar_ecol_df", "plot_files"),
+         script=tar_paths("inst"),
+         store=tar_paths())
+tar_load(c("all_project_geoms", "MPA_report_card", "odf", "pillar_ecol_df", "plot_files"))
+
 
 # 1. MPAs
 MPAs <- data_CPCAD_areas(data_bioregion("Scotian Shelf"),  zones = FALSE)
