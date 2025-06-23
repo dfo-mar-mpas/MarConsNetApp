@@ -12,7 +12,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -1345,7 +1345,7 @@ list(
                                indicator = "Biogenic Habitat Representation",
                                type = "Model",
                                units = NA,
-                               scoring = "representation",
+                               scoring = "representation: cumulative distribution with regional thresholds",
                                PPTID = NA,
                                project_short_title = "Biogenic Habitat",
                                areas = MPAs[MPAs$region %in% c("Quebec","Gulf"),],
@@ -1457,7 +1457,7 @@ tar_target(name = ind_MAR_biofouling_AIS,
                                plot_lm=FALSE)
            }),
 
- tar_target(name = "ind_musquash_infaunal_diversity",
+ tar_target(name = ind_musquash_infaunal_diversity,
             command = {
               data <- data_musquash_benthic_infauna |>
                 group_by(scientificName_Nom_scientifique) |>
