@@ -309,7 +309,17 @@ for (i in seq_along(keeper2)) {
       cat(sprintf("%s.\n\n", keeper2[[i]]$Trend[j]))
       }
       cat(sprintf("%s.\n\n", " "))
-      cat(sprintf("This indicator has a score of: %s.\n\n", keeper2[[i]]$Grade[j]))
+      cat(sprintf(
+  "This indicator has a score of: %s.\n\nBased on the following scoring scheme: %s\n",
+  keeper2[[i]]$Grade[j],
+  pillar_ecol_df$scoring[
+    which(
+      pillar_ecol_df$indicator == keeper2[[i]]$Indicator[j] &
+      pillar_ecol_df$areaID == state$mpas
+    )
+  ]
+))
+
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf(
         "Data was provided from project %s.\n\n",

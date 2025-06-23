@@ -12,7 +12,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -799,6 +799,96 @@ list(
 
              }),
 
+  tar_target(data_musquash_coliform,
+             command= {
+
+               #lat <- c('45 11 863', '45 11 693', '45 11 686', '45 11 711', '45 11 195', '45 10 776','45 10 523',
+               #             '45 10 136','45 9 300', '45 8 982','45 9 768','45 10 010') # From excel spread sheet
+               #lon <- c("-66 19 400","-66 19 165","-66 16 743","-66 16 217", "-66 15 428","-66 14 191",
+                # "-66 13 756", "-66 13 517", "-66 13 804", "-66 15 514", "-66 16 247","-66 15 275")
+
+
+               #lat <- as.numeric(conv_unit(lat, from = "deg_min_sec", to = "dec_deg"))
+               #lon <- as.numeric(conv_unit(lon, from = "deg_min_sec", to = "dec_deg"))
+
+               # TEST
+               #these were converted using the internet because everything I tried online did not work.
+
+               lat <- c(
+                 45.19772, 45.19488, 45.19477, 45.19518,
+                 45.18658, 45.17960, 45.17538, 45.16893,
+                 45.15500, 45.14970, 45.16280, 45.16683
+               )
+
+               lon <- c(-66.32333, -66.31942, -66.27905, -66.27028, -66.25713, -66.23652,
+               -66.22927, -66.22528, -66.23007, -66.25857, -66.27078, -66.25458)
+
+               # END
+
+               file <- paste0(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), "/ECW_MEM_COMPLETE Water Quality Data 2014 to 2024_2025.06.06_v1.xlsx")
+               sheets <-  excel_sheets(file)
+               final <- list()
+               coliform_data <- list()
+               for (i in seq_along(sheets)) {
+                 message(i)
+                 d <- read_excel(file, sheet=sheets[i])
+
+                 # Get dates
+                 times <- as.character(unlist(d[which(grepl("SPRING", d))+1,]))
+                 times <- as.POSIXct(sub(".* - ", "", times[-(which(is.na(times) | times == "Station"))]), format = "%Y/%m/%d")
+
+                 d <- d[-c(1:(which(grepl("MPN",d))[1]-1)), ] # Find MPN
+                 if (any(which(apply(d, 1, function(x) all(is.na(x)))))) {
+                 d <- d[c(1:which(apply(d, 1, function(x) all(is.na(x))))[1]-1),]# Find first NA row
+                 }
+
+                 names <- as.character(unlist(d[1, ]))
+                 names[is.na(names)] <- "X"
+
+                 # Remove side latitude/longitude
+                 if (any(names == "Site Latitude")) {
+                 d <- d[, 1:(which(names == "Site Latitude") - 1)]
+                 }
+                 name_counts <- ave(names, names, FUN = seq_along)
+                 unique_names <- paste0(names, "_", name_counts)
+
+                 names(d) <- unique_names
+
+                 Stations <- d$X_2
+                 d <- d[-c(1:2)]
+
+                 colifor <- list()
+
+                 for (j in seq_along(times)) {
+                   if (!(is.na(times[j]))) {
+                   colifor[[j]] <- d[,c(which(grepl(j, names(d))))]
+                   colifor[[j]]$Time <- times[j]
+                   colifor[[j]]$Station <- Stations
+                   colifor[[j]] <- colifor[[j]][-1,]
+                   names(colifor[[j]]) <- gsub("_[0-9]+$", "", names(colifor[[j]]))
+                   colifor[[j]]$MPN[which(grepl("<", colifor[[j]]$MPN))] <- 0
+                   colifor[[j]]$MPN <- as.numeric(colifor[[j]]$MPN)
+                   colifor[[j]]$Temperature <- as.numeric(colifor[[j]]$Temperature)
+                   colifor[[j]]$Salinity <- as.numeric(colifor[[j]]$Salinity)
+                   colifor[[j]]$latitude <- lat[as.numeric(colifor[[j]]$Station)]
+                   colifor[[j]]$longitude <- lon[as.numeric(colifor[[j]]$Station)]
+                   } else {
+                     colifor[[j]] <- NULL
+                   }
+                 }
+
+                 colifor <- colifor[!sapply(colifor, is.null)]
+
+                 coliform_data[[i]] <- do.call(rbind, colifor)
+
+               }
+               coliform_data <- do.call(rbind, coliform_data)
+               coliform_data$`Time Collected` <- format(as.POSIXct(as.numeric(coliform_data$`Time Collected`) * 86400, origin = "1899-12-30", tz = "UTC"), "%H:%M")
+               coliform_data$year <- format(coliform_data$Time, "%Y")
+               coliform_data
+
+             }),
+
 
  tar_target(ds_all,
             # because this is loaded with the Mar.datawrangling package and not mentioned in the arguments to many of it's functions
@@ -1408,8 +1498,6 @@ tar_target(name = ind_MAR_biofouling_AIS,
 
 tar_target(name=ind_musquash_ph,
            command= {
-
-             # kylo
              data <- data_musquash_eutrophication  |>
                dplyr::select(Lon, Lat, pH, year)
 
@@ -1499,6 +1587,26 @@ tar_target(name=ind_musquash_secchi,
            }
 ),
 
+tar_target(name=ind_musquash_coliform,
+           command= {
+             data <- data_musquash_coliform |>
+               dplyr::select(latitude, longitude, MPN, year)
+
+             process_indicator(data = data,
+                               indicator_var_name = "MPN",
+                               indicator = "Coliform",
+                               type = "Discrete Occupations Sections",
+                               units = "MPN",
+                               scoring = "desired state: decrease",
+                               PPTID = NA,
+                               project_short_title = NA,
+                               climate = TRUE,
+                               areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                               plot_type='time-series',
+                               plot_lm=FALSE)
+           }
+),
+
 
  ##### Indicator Bins #####
  tar_target(bin_biodiversity_FunctionalDiversity_df,
@@ -1535,7 +1643,7 @@ tar_target(name=ind_musquash_secchi,
  tar_target(bin_habitat_EnvironmentalRepresentativity_df,
             aggregate_groups("bin",
                              "Environmental Representativity",
-                             weights_ratio = c(1,1,1,0.5,1,1,1,1,1,1),
+                             weights_ratio = c(1,1,1,0.5,1,1,1,1,1,1,1),
                              weights_sum = 1,
                              ind_nitrate,
                              ind_salinity,
@@ -1546,7 +1654,8 @@ tar_target(name=ind_musquash_secchi,
                              ind_musquash_ph,
                              ind_musquash_dissolved_oxygen,
                              ind_musquash_phosphate,
-                             ind_musquash_secchi
+                             ind_musquash_secchi,
+                             ind_musquash_coliform
                              )),
  tar_target(bin_habitat_KeyFishHabitat_df,
             aggregate_groups("bin",
@@ -1708,7 +1817,7 @@ tar_target(name = pillar_ecol_df,
  tar_target(all_project_geoms,
              command = {
 
-               data_pillar_ecol_df |>
+                data_pillar_ecol_df |>
                  filter(!map_lgl(data, is.null)) |>
                  mutate(data = map(data,function(x){
                    # browser()
@@ -1718,7 +1827,7 @@ tar_target(name = pillar_ecol_df,
                      x <- x |>
                        mutate(geometry = geoms) |>
                        as.data.frame() |>
-                       select(-geoms) |>
+                       dplyr::select(-geoms) |>
                        st_as_sf()
                    }
 
@@ -1726,6 +1835,9 @@ tar_target(name = pillar_ecol_df,
                      x <- x |>
                        mutate(year = NA)
                    }
+
+                   x <- x |>
+                     mutate(year=as.numeric(year))
 
                    x |>
                      st_cast("GEOMETRY") |>
