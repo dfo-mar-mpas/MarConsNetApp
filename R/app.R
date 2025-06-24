@@ -312,8 +312,9 @@ server <- function(input, output, session) {
 
   output$projects <- shiny::renderUI({
     req(input$tabs)
+    distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID")])
     if (input$tabs == "tab_0") {
-      shiny::selectInput("projects", "Select Project(s):", choices=paste0(unique(all_project_geoms$project_short_title), " (",unique(all_project_geoms$PPTID),")"), multiple=TRUE, selected=state$projects)
+      shiny::selectInput("projects", "Select Project(s):", choices=unique(paste0(distinct_rows$project_short_title, " (", distinct_rows$PPTID, ")")), multiple=TRUE, selected=state$projects)
     }
   })
 
@@ -1175,6 +1176,8 @@ server <- function(input, output, session) {
           APJ_filtered <- all_project_geoms[keep_projects,]
 
           projectIds <- unique(APJ_filtered$PPTID) # The sub is because input$projects is snowCrabSurvey (1093)
+
+          #browser()
 
           for (i in seq_along(projectIds)) {
             APJ <- APJ_filtered[which(APJ_filtered$PPTID == projectIds[i]),]
