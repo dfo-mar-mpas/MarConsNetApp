@@ -518,8 +518,6 @@ server <- function(input, output, session) {
           ki2 <- which(pillar_ecol_df$region %in% state$mpas)
         }
 
-        # browser()
-
         keepind <- intersect(ki1, ki2)
         keepind <- keepind[!(is.na(pillar_ecol_df$indicator[keepind]))]
         keepind <- keepind[pillar_ecol_df$indicator[keepind]!="placeholder"]
@@ -771,7 +769,6 @@ server <- function(input, output, session) {
           image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
                                     "MarConsNetTargets","data",
                                     "plots")
-          #browser()
           image_files <- list.files(image_folder, full.names = TRUE)
 
 
@@ -1164,6 +1161,10 @@ server <- function(input, output, session) {
         }
 
         if (!(is.null(input$projects))) {
+          # if (length(input$projects) == 2) {
+          #   browser()
+          # }
+
           if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) { # We want it filtered
             k1 <- which(all_project_geoms$areaID == state$mpas)
             k2 <- which(all_project_geoms$project_short_title %in% sub("\\s*\\(.*", "", input$projects))
@@ -1175,12 +1176,19 @@ server <- function(input, output, session) {
 
           APJ_filtered <- all_project_geoms[keep_projects,]
 
-          projectIds <- unique(APJ_filtered$PPTID) # The sub is because input$projects is snowCrabSurvey (1093)
+          projectIds <- sub(".*\\((.*)\\).*", "\\1", input$projects) # The sub is because input$projects is snowCrabSurvey (1093)
 
-          #browser()
+          for (i in seq_along(input$projects)) {
+            if (!(projectIds[i] == "NA")) {
+            k1 <- which(APJ_filtered$PPTID == projectIds[i])
+            } else {
+              k1 <- which(is.na(APJ_filtered$PPTID))
+            }
+            k2 <- which(APJ_filtered$project_short_title ==  sub(" \\(.*", "", input$projects[i]))
+            keep <- intersect(k1,k2)
 
-          for (i in seq_along(projectIds)) {
-            APJ <- APJ_filtered[which(APJ_filtered$PPTID == projectIds[i]),]
+            APJ <- APJ_filtered[keep,]
+
             type <- APJ$type
             popupContent <- mapply(
               function(type_val, proj_id) {
@@ -1205,18 +1213,35 @@ server <- function(input, output, session) {
               sf_polygons <- st_as_sf(APJ[polygon_keep,], sf_column = "geometry")
 
               map <- map %>%
-                leaflet::addPolygons(data=sf_polygons, color="lightyellow",
-                                     popup=unique(popupContent[polygon_keep]), weight=0.5, fillOpacity = 0.1,)
+                leaflet::addPolygons(data=sf_polygons, color=palette[i],
+                                     popup=unique(popupContent[polygon_keep]), weight=0.5, fillOpacity = 0.3,)
             } else {
               point_keep <- 1:length(APJ$geometry)
 
             }
+            #browser()
+
+            if (!("sfc_GEOMETRY" %in% class(APJ$geometry[point_keep]))) {
+              if (!(length(point_keep) == 0)) {
             latitude <- st_coordinates(APJ$geometry[point_keep])[, "Y"]
             longitude <- st_coordinates(APJ$geometry[point_keep])[, "X"]
 
             map <- map %>%
               leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i],
                                         popup=unname(popupContent[point_keep]))
+              }
+            } else {
+              if (!(length(point_keep) == 0)) {
+              APJ_sub <<- APJ[point_keep, ]
+              multipoints <- APJ_sub %>% filter(st_geometry_type(.) == "MULTIPOINT")
+              points <- APJ_sub %>% filter(st_geometry_type(.) == "POINT")
+              multipoints_expanded <- st_cast(multipoints, "POINT")
+              APJ_points <- bind_rows(points, multipoints_expanded)
+              map <- map %>%
+                addCircleMarkers(data=APJ_points, radius = 3, color=palette[i],
+                                 popup=unname(popupContent[point_keep]))
+              }
+            }
           }
 
           map <- map %>%
