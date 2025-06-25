@@ -10,6 +10,7 @@ output: html_document
 ## At-a-glance
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
+library(leaflet)
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- state$mpas
 if (!(length(Context[[string]]) == 0)) {
@@ -305,7 +306,9 @@ for (i in seq_along(keeper2)) {
       
       cat(sprintf("%s.\n\n", " "))
       cat(sprintf("%s.\n\n", keeper2[[i]]$Status[j]))
-      if (!(keeper2[[i]]$Trend[j] == "There is no temporal dimension in this data.")) {
+      if (is.na(keeper2[[i]]$Trend[j])) {
+        cat(sprintf("%s.\n\n", "No temporal analysis completed for this indicator."))
+      } else if (!(keeper2[[i]]$Trend[j] == "There is no temporal dimension in this data.")) {
       cat(sprintf("%s.\n\n", keeper2[[i]]$Trend[j]))
       }
       cat(sprintf("%s.\n\n", " "))

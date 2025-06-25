@@ -377,31 +377,34 @@ list(
 
 
 
-  # tar_target(name = render_reports,
-  #            command = {
-  #              MPAs
-  #              pillar_ecol_df
-  #              Context
-  #              flowerPalette
-  #              odf
-  #              N_Objectives
-  #
-  #              mpas <- MPAs$NAME_E
-  #              rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
-  #              output_dir <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports")
-  #
-  #              for (i in seq_along(mpas)) {
-  #                message(i)
-  #                state <- list()
-  #                params <- list()
-  #                input <- list()
-  #                state$mpas <- mpas[i]
-  #                params$mpas <- mpas[i]
-  #                input$mpas <- mpas[i]
-  #                output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=mpas[i], ".html"))))
-  #                render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
-  #              }
-  #            }),
+  tar_target(name = render_reports,
+             command = {
+               MPAs
+               pillar_ecol_df
+               Context
+               flowerPalette
+               odf
+               N_Objectives
+               Objectives_processed
+               MPA_report_card
+               collaborations
+
+               mpas <- MPAs$NAME_E
+               rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
+               output_dir <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports")
+
+               for (i in seq_along(mpas)) {
+                 message(i)
+                 state <- list()
+                 params <- list()
+                 input <- list()
+                 state$mpas <- mpas[i]
+                 params$mpas <- mpas[i]
+                 input$mpas <- mpas[i]
+                 output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=mpas[i], ".html"))))
+                 render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
+               }
+             }),
 
 
 
@@ -811,7 +814,6 @@ list(
                #lat <- as.numeric(conv_unit(lat, from = "deg_min_sec", to = "dec_deg"))
                #lon <- as.numeric(conv_unit(lon, from = "deg_min_sec", to = "dec_deg"))
 
-               # TEST
                #these were converted using the internet because everything I tried online did not work.
 
                lat <- c(
@@ -822,8 +824,6 @@ list(
 
                lon <- c(-66.32333, -66.31942, -66.27905, -66.27028, -66.25713, -66.23652,
                -66.22927, -66.22528, -66.23007, -66.25857, -66.27078, -66.25458)
-
-               # END
 
                file <- paste0(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), "/ECW_MEM_COMPLETE Water Quality Data 2014 to 2024_2025.06.06_v1.xlsx")
                sheets <-  excel_sheets(file)
@@ -1069,6 +1069,15 @@ list(
             command= {
               ws <- project_whale_biodiversity()
               ws
+            }),
+
+
+ tar_target(control_polygons,
+            command= {
+              MPAs
+              cp <- MPAs |>
+                mutate(geoms = st_difference(st_buffer(geoms,20000),geoms)
+                )
             }),
 
  ##### Indicators #####
@@ -1608,6 +1617,85 @@ tar_target(name=ind_musquash_coliform,
 ),
 
 
+
+
+tar_target(ind_nitrate_inside_outside,
+           command={
+
+             control_polygons
+             MPAs
+             data <- data_azmp_Discrete_Occupations_Sections  |>
+               dplyr::select(longitude, latitude, year, depth, nitrate)
+
+             process_indicator(data = data,
+                                    indicator_var_name = "nitrate",
+                                    indicator = "Nutrient Conditions (Nitrate) Inside Outside Comparison",
+                                    type = "Discrete Occupations Sections",
+                                    units = "mmol/m3",
+                                    scoring = "control site linear trend: less inside",
+                                    PPTID = 579,
+                                    project_short_title = "AZMP",
+                                    climate = TRUE,
+                                    other_nest_variables="depth",
+                                    areas = MPAs,
+                                    plot_type = 'outside-comparison',
+                                    plot_lm=FALSE,
+                                    control_polygon=control_polygons)
+           }),
+
+tar_target(ind_musquash_phosphate_inside_outside,
+           command={
+
+             control_polygons
+             MPAs
+             data_musquash_eutrophication
+             data <- data_musquash_eutrophication |>
+               rename(phosphate= `tot P (mg/L)`) |>
+               dplyr::select(Lon, Lat, phosphate, year)
+
+             x <- process_indicator(data = data,
+                               indicator_var_name = "phosphate",
+                               indicator = "Nutrient Conditions (Phosphate) Inside Outside Comparison",
+                               type = "Discrete Occupations Sections",
+                               units = "mg/L",
+                               scoring = "control site linear trend: less inside",
+                               PPTID = NA,
+                               project_short_title = NA,
+                               climate = TRUE,
+                               areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                               plot_type='outside-comparison',
+                               plot_lm=FALSE,
+                               latitude='Lat',
+                               longitude="Lon",
+                               control_polygon=control_polygons)
+           }),
+
+tar_target(ind_musquash_coliform_inside_outside,
+           command={
+
+             control_polygons
+             MPAs
+             data_musquash_coliform
+
+             data <- data_musquash_coliform |>
+               dplyr::select(latitude, longitude, MPN, year)
+
+             process_indicator(data = data,
+                               indicator_var_name = "MPN",
+                               indicator = "Coliform Inside Outside Comparison",
+                               type = "Discrete Occupations Sections",
+                               units = "MPN",
+                               scoring = "control site linear trend: less inside",
+                               PPTID = NA,
+                               project_short_title = NA,
+                               climate = TRUE,
+                               areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                               plot_type='outside-comparison',
+                               plot_lm=FALSE,
+                               control_polygon=control_polygons)
+           }),
+
+
  ##### Indicator Bins #####
  tar_target(bin_biodiversity_FunctionalDiversity_df,
             aggregate_groups("bin",
@@ -1672,7 +1760,10 @@ tar_target(name=ind_musquash_coliform,
                              weights_sum = 1,
                              ind_MAR_biofouling_AIS,
                              ind_MAR_cum_impact,
-                             ind_placeholder_df
+                             ind_placeholder_df,
+                             ind_nitrate_inside_outside,
+                             ind_musquash_phosphate_inside_outside,
+                             ind_musquash_coliform_inside_outside
             )),
  tar_target(bin_habitat_Uniqueness_df,
             aggregate_groups("bin",

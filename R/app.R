@@ -1161,21 +1161,14 @@ server <- function(input, output, session) {
         }
 
         if (!(is.null(input$projects))) {
-          # if (length(input$projects) == 2) {
-          #   browser()
-          # }
-
           if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) { # We want it filtered
             k1 <- which(all_project_geoms$areaID == state$mpas)
             k2 <- which(all_project_geoms$project_short_title %in% sub("\\s*\\(.*", "", input$projects))
             keep_projects <- intersect(k1,k2)
-
           } else {
           keep_projects <- which(all_project_geoms$project_short_title %in% sub("\\s*\\(.*", "", input$projects))
           }
-
           APJ_filtered <- all_project_geoms[keep_projects,]
-
           projectIds <- sub(".*\\((.*)\\).*", "\\1", input$projects) # The sub is because input$projects is snowCrabSurvey (1093)
 
           for (i in seq_along(input$projects)) {
