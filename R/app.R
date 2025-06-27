@@ -45,10 +45,7 @@ app <- function() {
   } else {
     onedrive <- "MarConsNetTargets"
     if(!exists("APPTABS")){
-      mani <- tar_manifest(script = system.file("_targets.R", package = "MarConsNetApp"),
-                           fields = "name") |>
-        unlist(use.names = FALSE)
-      tar_load(names=mani[!grepl("rv_data",mani)&!grepl("rv_rawdata",mani)],
+      tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological"),
                store = "MarConsNetTargets/app_targets")
     }
   }
