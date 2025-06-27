@@ -338,6 +338,83 @@ for (i in seq_along(keeper2)) {
 
 
 ```
+## Discussion
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
+climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == state$mpa)])
+
+
+
+for (i in seq_along(climate_indicators)) {
+  indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == state$mpas)
+  
+  if (!(length(indicator_keep) == 0)) {
+    
+    excel_keep <- which(climate$Indicator == climate_indicators[i])
+    
+    
+    pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == state$mpas)
+    
+    
+    cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
+    
+    cat(climate$Context[excel_keep], "\n\n")
+    cat("In our analysis, ")
+    cat(pillar_ecol_df$trend_statement[indicator_keep])
+    
+    if (!(grepl("There is only one year of data", pillar_ecol_df$trend_statement[indicator_keep]))) {
+    
+    pval <- str_extract(pillar_ecol_df$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
+      str_extract("\\d+(\\.\\d+)?") |>
+      as.numeric()
+    
+    if (pval > 0.05) {
+      cat(". The change in this indicator in the MPA is not significant.")
+    } else {
+      cat(". The change in this indicator in the MPA is significant.")
+    }
+    
+    cat(" An inside/outside comparison was done to help understand the impacts of climate change on this variable. Results showed ")
+    
+    result <- pillar_ecol_df$status_statement[pillar_keep_inside]
+    
+    cat(paste0(tolower(result), "."))
+    
+    if (!(grepl("Protection could therefore be positively impacting this variable", result))) {
+      # No sig dif between the two
+      desired <- sub(".*\\s+", "", pillar_ecol_df$scoring[indicator_keep])
+      actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df$trend_statement[indicator_keep])), "increase", "decrease")
+      
+      if (pval > 0.05) { ## This is pval of the variable (not inside/ outside)
+        cat("The rate in which this indicator is changing is not significant (p=", pval,") which suggests that climate change does not seem to have a significant impact on that particular indicator.")
+      } else {
+        # change is significant
+        if (identical(desired, actual_results)) {
+          cat("The results show us that climate change doesn't seem to be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant trend in the opposite direction than we would expect.")
+        } else {
+          #The trend is going in the opposite direction that we would expect and
+          #statistically significant,we point out that according to our analysis
+          cat("The results show us that climate change could be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant
+        trend in the direction than we would expect as a result of climate change.")
+        }
+      }
+    }
+    } else {
+    cat("More sampling is suggested.")
+  }
+  }
+  
+  cat("\n\n")
+}
+
+
+```
+
+
+
+
+
+
 
 
 ## Collaborations and partnerships

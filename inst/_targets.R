@@ -80,6 +80,12 @@ list(
                  filter(!is.na(region))
              }),
 
+  tar_target(name=climate,
+             command = {
+               x <- list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE)[which(grepl("climate_change",list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE) ))]
+               read_excel(x)
+             }),
+
   tar_target(Outside, #FIXME: this is only for WEBCA at the moment
              st_transform(read_sf(system.file("data","WEBCA_10k_85k.shp", package = "MarConsNetAnalysis"))$geometry, crs=4326)
   ),
@@ -1520,7 +1526,7 @@ tar_target(name=ind_musquash_ph,
                                project_short_title = NA,
                                climate = TRUE,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series',
+                               plot_type='time-series-no-line',
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude='Lon')
@@ -1543,7 +1549,7 @@ tar_target(name=ind_musquash_dissolved_oxygen,
                                project_short_title = NA,
                                climate = TRUE,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series',
+                               plot_type='time-series-no-line',
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude='Lon')
@@ -1558,7 +1564,7 @@ tar_target(name=ind_musquash_phosphate,
 
              process_indicator(data = data,
                                indicator_var_name = "phosphate",
-                               indicator = "Phosphate",
+                               indicator = "Nutrient Conditions (Phosphate)",
                                type = "Discrete Occupations Sections",
                                units = "mg/L",
                                scoring = "desired state: increase",
@@ -1566,7 +1572,7 @@ tar_target(name=ind_musquash_phosphate,
                                project_short_title = NA,
                                climate = TRUE,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series',
+                               plot_type='time-series-no-line',
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude='Lon')
@@ -1589,7 +1595,7 @@ tar_target(name=ind_musquash_secchi,
                                project_short_title = NA,
                                climate = TRUE,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series',
+                               plot_type='time-series-no-line',
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude='Lon')
@@ -1611,7 +1617,7 @@ tar_target(name=ind_musquash_coliform,
                                project_short_title = NA,
                                climate = TRUE,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series',
+                               plot_type='time-series-no-line',
                                plot_lm=FALSE)
            }
 ),
@@ -1653,7 +1659,7 @@ tar_target(ind_musquash_phosphate_inside_outside,
                rename(phosphate= `tot P (mg/L)`) |>
                dplyr::select(Lon, Lat, phosphate, year)
 
-             x <- process_indicator(data = data,
+             process_indicator(data = data,
                                indicator_var_name = "phosphate",
                                indicator = "Nutrient Conditions (Phosphate) Inside Outside Comparison",
                                type = "Discrete Occupations Sections",
