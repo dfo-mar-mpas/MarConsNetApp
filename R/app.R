@@ -763,8 +763,8 @@ server <- function(input, output, session) {
         currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
 
-          image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
-                                    "MarConsNetTargets","data",
+          image_folder <- file.path(onedrive,
+                                    "data",
                                     "plots")
           image_files <- list.files(image_folder, full.names = TRUE)
 
