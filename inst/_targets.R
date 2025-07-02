@@ -2244,19 +2244,48 @@ tar_target(name = upload_all_data_to_shiny,
 
               system(paste0('scp -r -i ',
                             file.path(Sys.getenv("USERPROFILE"),'.ssh','id_rsa'),
-                            ' -P 22018 "',
+                            ' -P 22 "',
                             file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','app_targets'),
                             '" "',
                             serveruser,
-                            '@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
+                            '@mar-spa.ent.dfo-mpo.ca:/home/rdaigle/MarConsNetTargets/'))
 
-              system(paste0('scp -r -i ',
+              # create data folder
+              system(paste0('ssh -i ',
                             file.path(Sys.getenv("USERPROFILE"),'.ssh','id_rsa'),
-                            ' -P 22018 "',
-                            file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data'),
-                            '" "',
+                            ' -p 22 ',
                             serveruser,
-                            '@glf-proxy:/home/rdaigle/MarConsNetTargets/'))
+                            '@mar-spa.ent.dfo-mpo.ca "mkdir -p /home/rdaigle/MarConsNetTargets/data"'))
+
+
+              # copy data files
+              datafiles <- list.files(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data'),include.dirs = FALSE)
+              datadirs <- list.dirs(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data'),recursive = FALSE, full.names = FALSE)
+              for(f in datafiles[!(datafiles %in% datadirs)]){
+                system(paste0('scp -i ',
+                              file.path(Sys.getenv("USERPROFILE"),'.ssh','id_rsa'),
+                              ' -P 22 "',
+                              file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data',f),
+                              '" "',
+                              serveruser,
+                              '@mar-spa.ent.dfo-mpo.ca:/home/rdaigle/MarConsNetTargets/data/'))
+              }
+
+
+              # copy data directories
+              for(f in datadirs[datadirs!="obis_data"]){
+                system(paste0('scp -r -i ',
+                              file.path(Sys.getenv("USERPROFILE"),'.ssh','id_rsa'),
+                              ' -P 22 "',
+                              file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data',f),
+                              '" "',
+                              serveruser,
+                              '@mar-spa.ent.dfo-mpo.ca:/home/rdaigle/MarConsNetTargets/data/'))
+              }
+
+
+
+
 
               TRUE
             },
