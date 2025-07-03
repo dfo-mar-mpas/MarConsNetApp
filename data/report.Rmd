@@ -133,14 +133,14 @@ cat(sprintf( '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black
 
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-p <- pillar_ecol_df[which(pillar_ecol_df$areaID == string),]
+p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
 area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
 
 ```
 
 ```{r, echo=FALSE}
 
-if (string %in% MPA_report_card$NAME_E) {
+if (state$mpas %in% MPA_report_card$NAME_E) {
   fill_color <- ifelse(
     is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]),
     "#EDEDED",
@@ -216,6 +216,7 @@ As shown above, in `r params$mpas` the over all grade based on our criteria is `
 summary_table <- data.frame(
   `Indicator Bin` = character(),
   `Grade` = character(),
+  `Number of Indicators` = character(),
   stringsAsFactors = FALSE
 )
 
@@ -226,7 +227,13 @@ for (i in seq_along(unique(p$bin))) {
   
   grade <- calc_letter_grade(weighted.mean(df$score, df$weight, na.rm = TRUE))
   
-  summary_table[i, ] <- c(unique(p$bin)[i], grade)
+  if (any(is.na(df$indicator) | df$indicator == "placeholder")) {
+  indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder")])
+  } else {
+    indicatorLength <- length(df$indicator)
+  }
+  
+  summary_table[i, ] <- c(unique(p$bin)[i], grade, indicatorLength)
 }
 
 # Print as a table
@@ -341,9 +348,10 @@ for (i in seq_along(keeper2)) {
 ## Discussion
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
+
+cat("### Climate Change\n")
+
 climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == state$mpa)])
-
-
 
 for (i in seq_along(climate_indicators)) {
   indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == state$mpas)
@@ -406,6 +414,28 @@ for (i in seq_along(climate_indicators)) {
   
   cat("\n\n")
 }
+
+cat("### Research Recommendations \n")
+
+cat(paste0(
+  "The following indicator bins do not have any data: ",
+  paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
+  ". It is recommended to further study these areas.\n"
+))
+cat("\n\n")
+
+# Bad grade table
+badGrade <- which(pillar_ecol_df$areaID == state$mpas & (!(is.na(pillar_ecol_df$indicator))) & (!(pillar_ecol_df$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df$indicator))) & (pillar_ecol_df$score < 51 | is.na(pillar_ecol_df$score)))
+
+badGradeTable <- pillar_ecol_df[badGrade, ] |> 
+  dplyr::group_by(bin) |>
+  dplyr::ungroup() |>
+  dplyr::select("indicator", "score")
+
+
+cat("The following indicators are scoring low or don't have enough data to properly score. Some additional effort should be considered with these indicators: \n")
+
+print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Explore",row.names=FALSE))
 
 
 ```
