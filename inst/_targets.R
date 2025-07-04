@@ -1968,7 +1968,7 @@ tar_target(name = pillar_ecol_df,
                      unique()
                  })
                  ) |>
-                 dplyr::select(data,type, project_short_title, PPTID,areaID)|>
+                 dplyr::select(data,type, project_short_title, PPTID,areaID, source)|>
                  unnest(cols = data) |>
                  st_as_sf()
 

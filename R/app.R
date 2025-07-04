@@ -309,9 +309,9 @@ server <- function(input, output, session) {
 
   output$projects <- shiny::renderUI({
     req(input$tabs)
-    distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID")])
+    distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID", "source")])
     if (input$tabs == "tab_0") {
-      shiny::selectInput("projects", "Select Project(s):", choices=unique(paste0(distinct_rows$project_short_title, " (", distinct_rows$PPTID, ")")), multiple=TRUE, selected=state$projects)
+      shiny::selectInput("projects", "Select Project(s):", choices=unique(paste0(distinct_rows$project_short_title, " (", ifelse(is.na(distinct_rows$PPTID),distinct_rows$source,distinct_rows$PPTID), ")")), multiple=TRUE, selected=state$projects)
     }
   })
 
