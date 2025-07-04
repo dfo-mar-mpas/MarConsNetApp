@@ -36,43 +36,69 @@ cat("</div>")
 ## Network Conservation Objectives
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
+# Initialize empty table
+objective_table <- data.frame(
+  Objective = character(),
+  Flower_Plot_Linkage = character(),
+  Rationale = character(),
+  stringsAsFactors = FALSE
+)
+
 filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
 
 for (fo in seq_along(filtered_odf$objectives)) {
   id <- fo
   req(input$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
+
   if (state$mpas == "Scotian Shelf") {
     c1 <- 1:length(pillar_ecol_df$areaID)
   } else {
     c1 <- which(pillar_ecol_df$areaID == state$mpas)
   }
- c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
-  KEEP <- intersect(c1,c2)
-  ymax <- pillar_ecol_df$score[KEEP]
-  weight <- pillar_ecol_df$weight[KEEP]
-  if (length(ymax) == 0) {
-  # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
-  c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
-  KEEP <- intersect(c1,c2)
-  ymax <- pillar_ecol_df$score[KEEP]
-  weight <- pillar_ecol_df$weight[KEEP]
+
+  flower_linkage_name <- odf$flower_plot[which(odf$objectives == N_Objectives[id])]
+
+  # Try to match by bin
+  c2 <- which(tolower(pillar_ecol_df$bin) == tolower(flower_linkage_name))
+  KEEP <- intersect(c1, c2)
+
+  # Fallback: match by objective
+  if (length(KEEP) == 0) {
+    c2 <- which(tolower(pillar_ecol_df$objective) == tolower(flower_linkage_name))
+    KEEP <- intersect(c1, c2)
   }
 
-  #ymax <- ymax[-which(ymax == 0)]
-  ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
-  # Create data frame for plotting
-  data <- data.frame(x = paste0("Objective ", id), y = ymax)
-  clc <- as.character(calc_letter_grade(data$y))
-  finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-  if (length(finalCol) == 0) {
-    finalCol <- "#EDEDED"
+  flower_linkage <- if (length(KEEP) > 0) {
+    unique(pillar_ecol_df$bin[KEEP])[1]
+  } else {
+    NA
   }
-#cat(sprintf('<span style="color:%s; background-color:lightgray; padding:3px;"><b>%s</b></span><br>', finalCol, N_Objectives[fo]))
-cat(sprintf(
-  '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span><br>',
-  finalCol, N_Objectives[fo]
-))
+
+  ymax <- pillar_ecol_df$score[KEEP]
+  weight <- pillar_ecol_df$weight[KEEP]
+  ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
+
+  # Convert score to grade + color
+  clc <- as.character(calc_letter_grade(ymax))
+  finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+  if (length(finalCol) == 0) finalCol <- "#EDEDED"
+
+  # Add styled objective label and linkage to the table
+  objective_table <- rbind(objective_table, data.frame(
+    Objective = sprintf(
+      '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span>',
+      finalCol, N_Objectives[fo]
+    ),
+    Flower_Plot_Linkage = flower_linkage,
+    Rationale = NA_character_,
+    stringsAsFactors = FALSE
+  ))
 }
+
+# Optional: View in HTML in RMarkdown or render in Shiny
+DT::datatable(objective_table, escape = FALSE, rownames = FALSE)
+
+
 ```
 
 ## Site Conservation Objectives
@@ -81,54 +107,91 @@ cat(sprintf(
 string <- state$mpas
 keepO <- string
 
-
+# Get site-level objectives
 S_Objectives <- Objectives_processed[[keepO]]
 
+# Initialize the table
+objective_table_site <- data.frame(
+  Objective = character(),
+  Flower_Plot_Linkage = character(),
+  Rationale = character(),
+  stringsAsFactors = FALSE
+)
+
 if (!(length(S_Objectives) == 0)) {
-filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
+  filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
 
-for (fo in seq_along(filtered_odfS$objectives)) {
-  id <- fo
-  req(input$mpas %in% c("All", unique(pillar_ecol_df$areaID)))
-  if (state$mpas == "All") {
-    c1 <- 1:length(pillar_ecol_df$areaID)
-  } else {
-    c1 <- which(pillar_ecol_df$areaID == state$mpas)
-  }
-  
-   if (tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]) == "environmental (representativity)") {
- c2 <- which(tolower(pillar_ecol_df$bin) == "environmental representativity")
+  for (fo in seq_along(filtered_odfS$objectives)) {
+    id <- fo
+    req(input$mpas %in% c("All", unique(pillar_ecol_df$areaID)))
 
-} else {
-c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
- }
-  
-  
-  KEEP <- intersect(c1, c2)
-  ymax <- pillar_ecol_df$score[KEEP]
-  weight <- pillar_ecol_df$weight[KEEP]
-  
-  # Handling empty or multiple ymax cases
-  if (length(ymax) == 0) {
-    # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
-    c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
+    # Subset rows by MPA
+    if (state$mpas == "All") {
+      c1 <- 1:length(pillar_ecol_df$areaID)
+    } else {
+      c1 <- which(pillar_ecol_df$areaID == state$mpas)
+    }
+
+    # Get flower plot linkage name
+    flower_linkage_name <- odf$flower_plot[which(odf$objectives == S_Objectives[id])]
+
+    # Special handling for environmental representativity
+    if (tolower(flower_linkage_name) == "environmental (representativity)") {
+      c2 <- which(tolower(pillar_ecol_df$bin) == "environmental representativity")
+    } else {
+      c2 <- which(tolower(pillar_ecol_df$bin) == tolower(flower_linkage_name))
+    }
+
     KEEP <- intersect(c1, c2)
     ymax <- pillar_ecol_df$score[KEEP]
     weight <- pillar_ecol_df$weight[KEEP]
+
+    # Fallback match by 'objective' field
+    if (length(ymax) == 0) {
+      c2 <- which(tolower(pillar_ecol_df$objective) == tolower(flower_linkage_name))
+      KEEP <- intersect(c1, c2)
+      ymax <- pillar_ecol_df$score[KEEP]
+      weight <- pillar_ecol_df$weight[KEEP]
+    }
+
+    # Calculate weighted mean
+    ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
+
+    # Convert score to grade → color
+    clc <- as.character(calc_letter_grade(ymax))
+    finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+    if (length(finalCol) == 0) finalCol <- "#EDEDED"
+
+    # Add row to site-level table with HTML color styling
+    objective_table_site <- rbind(objective_table_site, data.frame(
+      Objective = sprintf(
+        '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span>',
+        finalCol, S_Objectives[fo]
+      ),
+      Flower_Plot_Linkage = flower_linkage_name,
+      Rationale = NA_character_,
+      stringsAsFactors = FALSE
+    ))
   }
-  ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
-  # Create data frame for plotting
-  data <- data.frame(x = paste0("Objective ", id), y = ymax)
-  clc <- as.character(calc_letter_grade(data$y))
-  finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-  if (length(finalCol) == 0) {
-    finalCol <- "#EDEDED"
-  }
-cat(sprintf( '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span><br>', finalCol, S_Objectives[fo]))
-}
+
+  # Render the styled DT table
+  DT::datatable(
+    objective_table_site,
+    escape = FALSE,
+    rownames = FALSE,
+    options = list(
+      dom = 't',         # No filter/search box
+      pageLength = 100   # Show all if < 100
+    )
+  )
+
 } else {
   cat("There are no site objectives pulled with our tools for this area.")
 }
+
+
+
+
 ```
 
 
