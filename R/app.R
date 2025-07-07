@@ -609,6 +609,7 @@ server <- function(input, output, session) {
             indicatorStatus = pillar_ecol_df$status_statement[keepind],
             indicatorTrend = pillar_ecol_df$trend_statement[keepind],
             indicatorGrade = pillar_ecol_df$score[keepind],
+            Source=pillar_ecol_df$source[keepind],
             indicatorProject = pillar_ecol_df$PPTID[keepind],
             indicatorScore = pillar_ecol_df$scoring[keepind]
             #formatted_projects = formatted_projects_grouped
@@ -628,6 +629,7 @@ server <- function(input, output, session) {
             indicatorStatus = pillar_ecol_df$status_statement[keepind],
             indicatorTrend = pillar_ecol_df$trend_statement[keepind],
             indicatorGrade = pillar_ecol_df$score[keepind],
+            Source=pillar_ecol_df$source[keepind],
             indicatorProject = pillar_ecol_df$PPTID[keepind],
             indicatorScore = pillar_ecol_df$scoring[keepind]
             #formatted_projects = "There are no projects for this selection."
@@ -683,6 +685,7 @@ server <- function(input, output, session) {
         Status = info$indicatorStatus[good],
         Trend = info$indicatorTrend[good],
         Projects = Projects[good],
+        Source=info$Source[good],
         Score=info$indicatorGrade[good],
         Method=info$indicatorScore[good],
         stringsAsFactors = FALSE
@@ -695,15 +698,11 @@ server <- function(input, output, session) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
 
         dfdt$Grade <- sapply(dfdt$Score, calc_letter_grade)
-        # DT::datatable(dfdt, escape = FALSE, options = list(pageLength = 100)) %>%
-        #   DT::formatStyle(
-        #     columns = colnames(dfdt),  # Apply styling to all columns
-        #     target = 'row',  # Target the entire row for styling
-        #     backgroundColor = DT::styleEqual(
-        #       names(flowerPalette),  # Map based on letter grades
-        #       flowerPalette[names(flowerPalette)]  # Apply corresponding colors
-        #     )
-        #   )
+
+        # NEW 2025/07/07
+        if (any(is.na(dfdt$Trend))) {
+        dfdt <- dfdt[-(which(is.na(dfdt$Trend))),]
+        }
 
         DT::datatable(dfdt, escape = FALSE, options = list(
           pageLength = 100,
