@@ -5,14 +5,12 @@ if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","ap
   tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))
 }
 
-
-
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
 tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -1094,7 +1092,11 @@ list(
              process_indicator(data = NA,
                                indicator = "placeholder",
                                areas = MPAs,
-                               plot_type = 'time-series')
+                               plot_type = c('time-series','map'),
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME"
+                               )
             }),
 
  tar_target(ind_fish_length,
@@ -1117,7 +1119,10 @@ list(
                                source="RV Survey",
                                project_short_title = "RV Survey",
                                areas = MPAs,
-                               plot_type = "violin",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
+                               plot_type = c("violin", "map"),
                                plot_lm=FALSE)
               }
  ),
@@ -1140,9 +1145,12 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 726,
                                source="RV Survey",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                project_short_title = "RV Survey",
                                areas = MPAs[MPAs$region=="Maritimes",],
-                               plot_type = "violin",
+                               plot_type = c("violin", "map"),
                                plot_lm=FALSE)
             }
 ),
@@ -1165,9 +1173,12 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 726,
                                source="RV Survey",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                project_short_title = "RV Survey",
                                areas = MPAs,
-                               plot_type = "violin",
+                               plot_type = c("violin", "map"),
                                plot_lm=FALSE)
             }),
 
@@ -1189,9 +1200,12 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 726,
                                source="RV Survey",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                project_short_title = "RV Survey",
                                areas = MPAs,
-                               plot_type = "violin",
+                               plot_type = c("violin", "map"),
                                plot_lm=FALSE)
             }),
 
@@ -1203,7 +1217,7 @@ list(
                 mutate(Calanus_finmarchicus_biomass = Calanus_finmarchicus_log10)  |>
                 dplyr::select(longitude, latitude, year, Calanus_finmarchicus_biomass)
 
-              process_indicator(data = data,
+               process_indicator(data = data,
                                indicator = "Biomass of Zooplankton (Calanus finmarchicus)",
                                indicator_var_name = "Calanus_finmarchicus_biomass",
                                type = "Zooplankton Net Tows",
@@ -1211,9 +1225,12 @@ list(
                                scoring = "desired state: increase",
                                PPTID = 579,
                                source="AZMP",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                project_short_title = "AZMP",
                                areas = MPAs,
-                               plot_type='time-series',
+                               plot_type=c('time-series','map'),
                                plot_lm=FALSE)
             }),
 
@@ -1236,8 +1253,11 @@ list(
                                source="AZMP",
                                project_short_title = "AZMP",
                                climate = TRUE,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                areas = MPAs,
-                               plot_type='time-series',
+                               plot_type=c('time-series','map'),
                                plot_lm=FALSE)
             }),
 
@@ -1255,9 +1275,12 @@ list(
                                source="AZMP",
                                project_short_title = "AZMP",
                                climate = TRUE,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                other_nest_variables="depth",
                                areas = MPAs,
-                               plot_type = 'time-series',
+                               plot_type = c('time-series','map'),
                                plot_lm=FALSE)
             }),
 
@@ -1277,7 +1300,10 @@ list(
                                project_short_title = "AZMP",
                                other_nest_variables="depth",
                                areas = MPAs,
-                               plot_type='time-series',
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
+                               plot_type=c('time-series','map'),
                                plot_lm=FALSE)
             }),
 
@@ -1298,7 +1324,10 @@ list(
                                climate = TRUE,
                                other_nest_variables="depth",
                                areas = MPAs,
-                               plot_type='time-series',
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
+                               plot_type=c('time-series','map'),
                                plot_lm=FALSE)
             }),
 
@@ -1319,7 +1348,10 @@ list(
                                project_short_title = "AZMP",
                                other_nest_variables="depth",
                                areas = MPAs,
-                               plot_type='time-series',
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
+                               plot_type=c('time-series','map'),
                                plot_lm=FALSE)
             }),
 
@@ -1357,9 +1389,12 @@ list(
                                scoring = "desired state: stable",
                                PPTID = 579,
                                source="AZMP",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                project_short_title = "AZMP",
                                areas = MPAs,
-                               plot_type = "time-series",
+                               plot_type = c("time-series","map"),
                                plot_lm=FALSE)
             }
  ),
@@ -1374,6 +1409,9 @@ list(
                                scoring = "representation: cumulative distribution with regional thresholds",
                                PPTID = NA,
                                source="Open Data (DFO)",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                project_short_title = "Biogenic Habitat",
                                areas = MPAs[MPAs$region %in% c("Quebec","Gulf"),],
                                plot_type='map',
@@ -1390,6 +1428,9 @@ tar_target(name = ind_ebsa_representation,
                                scoring = "representation: cumulative distribution with regional thresholds",
                                PPTID = NA,
                                source="Open Data (DFO)",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                project_short_title = "Biogenic Habitat",
                                areas = MPAs,
                                plot_type='map',
@@ -1415,7 +1456,9 @@ tar_target(name = ind_SAR_CH_representation,
                                units = NA,
                                scoring = "representation: cumulative distribution with regional thresholds",
                                PPTID = NA,
-                               source="Open Data (DFO)",
+                               source="Open Data (DFO)",climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                project_short_title = "SAR CH Habitat",
                                areas = MPAs,
                                plot_type='map',
@@ -1427,14 +1470,13 @@ tar_target(name = ind_species_representation,
 
              data <- data_obis |>
                group_by(scientificName) |>
-               rowwise() |>
-               mutate(name = scientificName) |>
-               group_by(name) |>
-               reframe(geoms = st_make_valid(st_union(geometry))) |>
+               reframe(subclass = unique(subclass[!is.na(subclass)])[1],
+                       geoms = st_make_valid(st_union(geometry))) |>
+               ungroup() |>
                st_as_sf()
 
-            process_indicator(data = data,
-                               indicator_var_name = "name",
+             process_indicator(data = data,
+                               indicator_var_name = "scientificName",
                                indicator = "Species Richness (OBIS)",
                                type = "Observations",
                                units = NA,
@@ -1442,8 +1484,12 @@ tar_target(name = ind_species_representation,
                                PPTID = NA,
                                source="OBIS",
                                project_short_title = "OBIS Occurrences",
+                               bin_rationale="FIXME",
+                               other_nest_variables = "subclass",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
                                areas = MPAs,
-                               plot_type='map',
+                               plot_type='map-species',
                                plot_lm=FALSE)
            }),
 
@@ -1458,6 +1504,9 @@ tar_target(name = ind_species_representation,
                                  direction = "inverse",
                                  PPTID = NA,
                                  source="Open Data (DFO)",
+                                 climate_expectation="FIXME",
+                                 indicator_rationale="FIXME",
+                                 bin_rationale="FIXME",
                                  project_short_title = "Cumulative Impacts",
                                  areas = MPAs[MPAs$region=="Maritimes",],
                                  plot_type='map',
@@ -1480,6 +1529,9 @@ tar_target(name = ind_MAR_biofouling_AIS,
                                scoring = "representation",
                                direction = "inverse",
                                PPTID = NA,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                source="Open Data (DFO)",
                                project_short_title = "Biofouling AIS",
                                areas = MPAs[MPAs$region=="Maritimes",],
@@ -1502,6 +1554,9 @@ tar_target(name = ind_MAR_biofouling_AIS,
                                 scoring = "representation: cumulative distribution with regional thresholds",
                                 PPTID = 827,
                                 source="Open Data (DFO)",
+                                climate_expectation="FIXME",
+                                indicator_rationale="FIXME",
+                                bin_rationale="FIXME",
                                 project_short_title = "Musquash benthic monitoring",
                                 areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                                 plot_type='map',
@@ -1522,6 +1577,9 @@ tar_target(name = ind_MAR_biofouling_AIS,
                               scoring = "representation: cumulative distribution with regional thresholds",
                               PPTID = NA,
                               source="Eastern Charlotte Waterways",
+                              climate_expectation="FIXME",
+                              indicator_rationale="FIXME",
+                              bin_rationale="FIXME",
                               project_short_title = "ECW Nekton Project",
                               areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                               plot_type='map',
@@ -1543,8 +1601,11 @@ tar_target(name=ind_musquash_ph,
                                source="Eastern Charlotte Waterways",
                                project_short_title = NA,
                                climate = TRUE,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series-no-line',
+                               plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude='Lon')
@@ -1567,8 +1628,11 @@ tar_target(name=ind_musquash_dissolved_oxygen,
                                source="Eastern Charlotte Waterways",
                                project_short_title = NA,
                                climate = TRUE,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series-no-line',
+                               plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude='Lon')
@@ -1591,8 +1655,11 @@ tar_target(name=ind_musquash_phosphate,
                                source="Eastern Charlotte Waterways",
                                project_short_title = NA,
                                climate = TRUE,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series-no-line',
+                               plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude='Lon')
@@ -1615,8 +1682,11 @@ tar_target(name=ind_musquash_secchi,
                                source="Eastern Charlotte Waterways",
                                project_short_title = NA,
                                climate = TRUE,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series-no-line',
+                               plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude='Lon')
@@ -1637,9 +1707,12 @@ tar_target(name=ind_musquash_coliform,
                                PPTID = NA,
                                source="Eastern Charlotte Waterways",
                                project_short_title = NA,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                climate = TRUE,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='time-series-no-line',
+                               plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE)
            }
 ),
@@ -1664,10 +1737,13 @@ tar_target(ind_nitrate_inside_outside,
                                     PPTID = 579,
                                     source="AZMP",
                                     project_short_title = "AZMP",
+                                    climate_expectation="FIXME",
+                                    indicator_rationale="FIXME",
+                                    bin_rationale="FIXME",
                                     climate = TRUE,
                                     other_nest_variables="depth",
                                     areas = MPAs,
-                                    plot_type = 'outside-comparison',
+                                    plot_type = c('outside-comparison','map'),
                                     plot_lm=FALSE,
                                     control_polygon=control_polygons)
            }),
@@ -1689,11 +1765,14 @@ tar_target(ind_musquash_phosphate_inside_outside,
                                units = "mg/L",
                                scoring = "control site linear trend: less inside",
                                PPTID = NA,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                source="Eastern Charlotte Waterways",
                                project_short_title = NA,
                                climate = TRUE,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='outside-comparison',
+                               plot_type=c('outside-comparison','map'),
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude="Lon",
@@ -1717,11 +1796,14 @@ tar_target(ind_musquash_coliform_inside_outside,
                                units = "MPN",
                                scoring = "control site linear trend: less inside",
                                PPTID = NA,
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="FIXME",
                                source="Eastern Charlotte Waterways",
                                project_short_title = NA,
                                climate = TRUE,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                               plot_type='outside-comparison',
+                               plot_type=c('outside-comparison','map'),
                                plot_lm=FALSE,
                                control_polygon=control_polygons)
            }),
@@ -1968,7 +2050,7 @@ tar_target(name = pillar_ecol_df,
                      unique()
                  })
                  ) |>
-                 dplyr::select(data,type, project_short_title, PPTID,areaID, source)|>
+                 dplyr::select(data,type, project_short_title, PPTID,areaID, source, climate_expectation, indicator_rationale, bin_rationale)|>
                  unnest(cols = data) |>
                  st_as_sf()
 
@@ -1979,6 +2061,7 @@ tar_target(plot_files,
             command = {
               allplotnames <- NULL
               for(i in 1:nrow(data_pillar_ecol_df)){
+                message(i)
                 if(!is.null(data_pillar_ecol_df$plot[[i]])){
                 filename <-  file.path(Sys.getenv("OneDriveCommercial"),
                                        "MarConsNetTargets",
