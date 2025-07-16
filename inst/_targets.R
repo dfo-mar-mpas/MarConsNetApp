@@ -1546,6 +1546,20 @@ tar_target(name = ind_MAR_biofouling_AIS,
                 reframe(geoms = st_make_valid(st_union(geoms))) |>
                 st_as_sf()
 
+              subclass <- NULL
+              for (i in seq_along(data$scientificName_Nom_scientifique)) {
+                result <- try(worrms::wm_records_name(data$scientificName_Nom_scientifique[i]), silent=TRUE)
+                if (inherits(result, "try-error")) {
+                  subclass[i] <- NA
+                } else {
+                  aphia_id <- result$AphiaID[1]  # Use the first match, or refine if needed
+                  classification <- worrms::wm_classification(id = aphia_id)
+                  subclass[i] <- ifelse(length(classification$scientificname[which(classification$rank == "Subclass")]) == 0, NA, classification$scientificname[which(classification$rank == "Subclass")])
+                }
+              }
+
+              data$subclass <- subclass
+
               process_indicator(data = data,
                                 indicator_var_name = "scientificName_Nom_scientifique",
                                 indicator = "Infaunal Diversity",
@@ -1557,9 +1571,10 @@ tar_target(name = ind_MAR_biofouling_AIS,
                                 climate_expectation="FIXME",
                                 indicator_rationale="FIXME",
                                 bin_rationale="FIXME",
+                                other_nest_variables="subclass",
                                 project_short_title = "Musquash benthic monitoring",
                                 areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
-                                plot_type='map',
+                                plot_type='map-species',
                                 plot_lm=FALSE)
             }),
  tar_target(name = ind_musquash_nekton_diversity,

@@ -272,7 +272,6 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),],
 As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
-
 # Create an empty data frame to store results
 summary_table <- data.frame(
   `Indicator Bin` = character(),
@@ -288,8 +287,8 @@ for (i in seq_along(unique(p$bin))) {
   
   grade <- calc_letter_grade(weighted.mean(df$score, df$weight, na.rm = TRUE))
   
-  if (any(is.na(df$indicator) | df$indicator == "placeholder")) {
-  indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder")])
+  if (any(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))) {
+  indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))])
   } else {
     indicatorLength <- length(df$indicator)
   }
@@ -319,6 +318,7 @@ BINS <- unique(trimws(tolower(unlist(
   strsplit(keeper$bin, ";")
 )), "both"))
 
+
 keeper2 <- NULL
 
 for (i in seq_along(BINS)) {
@@ -328,8 +328,8 @@ for (i in seq_along(BINS)) {
   
   # Remove NA and placeholder indicators
   
-  if (any(is.na(KK$indicator) | KK$indicator == "placeholder")) {
-    KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder")),]
+  if (any(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))) {
+    KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))),]
   }
   
   keeper2[[i]] <- data.frame(
@@ -369,7 +369,7 @@ for (i in seq_along(keeper2)) {
       if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
         #cat("![](", plot_file[p], ")\n\n", sep = "")
-         cat('<img src="', plot_file[p], '" width="400"/>\n\n', sep = "")
+         cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
       }
       }
       
