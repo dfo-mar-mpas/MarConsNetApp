@@ -10,7 +10,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units", "oceglider", "RCurl"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -372,11 +372,6 @@ list(
                df <- data.frame('title'=title,
                                 'date'=display_dates
                                 )
-
-
-
-
-
              }),
 
 
@@ -1127,6 +1122,126 @@ list(
               }
  ),
 
+
+ #JAIM
+ tar_target(data_gliders,
+            command= {
+              MPAs
+              reDownload <- FALSE
+              options(timeout = 700)
+              dataDir <- tempdir()
+              ftpUrl <- 'dontpush'
+              dirs <- getURL(paste(ftpUrl,'', sep ="/"), ftp.use.epsv = FALSE, dirlistonly = TRUE)
+              dirnames <- strsplit(dirs, "\r*\n")[[1]]
+              okdir <- grepl('^GLD\\w+$', dirnames) # just in case something else gets put there
+              glddir <- dirnames[okdir]
+              # define subdirectory of which processed files to download
+              subdir <- 'L0-timeseries-post'
+              for(dir in glddir){
+                message(which(glddir == dir))
+                cat(paste('Check directory', dir), sep = '\n')
+                # check that subdir exists
+                pathcheck <- paste(ftpUrl, dir, '', sep = '/')
+                glddircontents <- getURL(url = pathcheck, ftp.use.epsv = FALSE, dirlistonly = TRUE)
+                glddircontents <- strsplit(glddircontents, "\r*\n")[[1]]
+                hasSubdir <- any(grepl(pattern = subdir,
+                                       x = glddircontents))
+                if(hasSubdir){
+                  path <- paste(ftpUrl,
+                                dir,
+                                subdir,
+                                '', # to add '/' at end
+                                sep = '/')
+                  files <- getURL(url = path,
+                                  ftp.use.epsv = FALSE, dirlistonly = TRUE)
+                  filenames <- strsplit(files, "\r*\n")[[1]]
+                  cat(paste('    Found', length(filenames), 'files'), sep = '\n')
+                  if(length(filenames) != 0){ # meaning data was able to be processed
+                    # should only be 1 file, but for completeness
+                    for(f in filenames){
+                      url <- paste0(path, f)
+                      destfile <- paste(dataDir, f, sep = '/')
+                      if(!file.exists(destfile) | reDownload){
+                        cat(paste('        Downloading', f), sep = '\n')
+                        downloadedFile <- try(download.file(url = url,
+                                                            destfile = destfile,
+                                                            mode = 'wb'), silent=TRUE)
+                      } else {
+                        cat(paste('        ', destfile, 'exists locally.'), sep = '\n')
+                      }
+                    } # closes f
+                  } # closes length(filenames)
+                } else { # closes hasSubDir
+                  cat(paste('      ', subdir, 'does not exist.'), sep = '\n')
+                }
+              }
+
+              # Making the netcdfs into a data frame for the app
+
+              files <- list.files(path = dataDir, pattern = "\\.nc$", full.names = TRUE)
+              glider_list <- vector("list", length(files))  # pre-allocate list
+
+              for (i in seq_along(files)) {
+                message(i)
+                x <- try(read.glider.netcdf(file = files[i]), silent=TRUE)
+                if (!(inherits(x, "try-error"))) {
+                  glider_list[[i]] <- data.frame(
+                    BBP700 = if (!is.null(x[["BBP700"]])) x[["BBP700"]] else NA,
+                    CDOM = if (!is.null(x[["CDOM"]])) x[["CDOM"]] else NA,
+                    CHLA = if (!is.null(x[["CHLA"]])) x[["CHLA"]] else NA,
+                    CNDC = if (!is.null(x[["CNDC"]])) x[["CNDC"]] else NA,
+                    CNDC2 = if (!is.null(x[["CNDC2"]])) x[["CNDC2"]] else NA,
+                    DeadReckoning = if (!is.null(x[["DeadReckoning"]])) x[["DeadReckoning"]] else NA,
+                    depth = if (!is.null(x[["depth"]])) x[["depth"]] else NA,
+                    DOXY = if (!is.null(x[["DOXY"]])) x[["DOXY"]] else NA,
+                    FLUORESCENCE_CHLA = if (!is.null(x[["FLUORESCENCE_CHLA"]])) x[["FLUORESCENCE_CHLA"]] else NA,
+                    FREQUENCY_DOXY = if (!is.null(x[["FREQUENCY_DOXY"]])) x[["FREQUENCY_DOXY"]] else NA,
+                    GLIDER_HEADING = if (!is.null(x[["GLIDER_HEADING"]])) x[["GLIDER_HEADING"]] else NA,
+                    GLIDER_PITCH = if (!is.null(x[["GLIDER_PITCH"]])) x[["GLIDER_PITCH"]] else NA,
+                    GLIDER_ROLL = if (!is.null(x[["GLIDER_ROLL"]])) x[["GLIDER_ROLL"]] else NA,
+                    latitude = if (!is.null(x[["latitude"]])) x[["latitude"]] else NA,
+                    LEGATO_CODA_CORR_PHASE = if (!is.null(x[["LEGATO_CODA_CORR_PHASE"]])) x[["LEGATO_CODA_CORR_PHASE"]] else NA,
+                    longitude = if (!is.null(x[["longitude"]])) x[["longitude"]] else NA,
+                    MFLUV1_NAPH_SCALED = if (!is.null(x[["MFLUV1_NAPH_SCALED"]])) x[["MFLUV1_NAPH_SCALED"]] else NA,
+                    MFLUV1_PHE_SCALED = if (!is.null(x[["MFLUV1_PHE_SCALED"]])) x[["MFLUV1_PHE_SCALED"]] else NA,
+                    MFLUV1_TMP = if (!is.null(x[["MFLUV1_TMP"]])) x[["MFLUV1_TMP"]] else NA,
+                    MFLUV1_TRY_SCALED = if (!is.null(x[["MFLUV1_TRY_SCALED"]])) x[["MFLUV1_TRY_SCALED"]] else NA,
+                    NavState = if (!is.null(x[["NavState"]])) x[["NavState"]] else NA,
+                    oxygenConcentration = if (!is.null(x[["oxygenConcentration"]])) x[["oxygenConcentration"]] else NA,
+                    PRES = if (!is.null(x[["PRES"]])) x[["PRES"]] else NA,
+                    PRES2 = if (!is.null(x[["PRES2"]])) x[["PRES2"]] else NA,
+                    profileDirection = if (!is.null(x[["profileDirection"]])) x[["profileDirection"]] else NA,
+                    profileIndex = if (!is.null(x[["profileIndex"]])) x[["profileIndex"]] else NA,
+                    PSAL = if (!is.null(x[["PSAL"]])) x[["PSAL"]] else NA,
+                    PSAL2 = if (!is.null(x[["PSAL2"]])) x[["PSAL2"]] else NA,
+                    salinity = if (!is.null(x[["salinity"]])) x[["salinity"]] else NA,
+                    TEMP = if (!is.null(x[["TEMP"]])) x[["TEMP"]] else NA,
+                    TEMP_DOXY = if (!is.null(x[["TEMP_DOXY"]])) x[["TEMP_DOXY"]] else NA,
+                    TEMP2 = if (!is.null(x[["TEMP2"]])) x[["TEMP2"]] else NA,
+                    time = if (!is.null(x[["time"]])) x[["time"]] else NA
+                  )
+                } else {
+                  glider_list[[i]] <- NULL
+                }
+              }
+              glider_combined <- do.call(rbind, glider_list)
+
+              glider_combined
+
+
+
+
+
+            }),
+
+
+
+
+
+
+
+
+
  tar_target(ind_fish_weight,
             command = {
 
@@ -1276,13 +1391,60 @@ list(
                                project_short_title = "AZMP",
                                climate = TRUE,
                                climate_expectation="FIXME",
-                               indicator_rationale="FIXME",
+                               indicator_rationale="Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020).",
                                bin_rationale="FIXME",
                                other_nest_variables="depth",
                                areas = MPAs,
                                plot_type = c('time-series','map'),
                                plot_lm=FALSE)
             }),
+
+tar_target(ind_silicate,
+           command={
+             data <- data_azmp_Discrete_Occupations_Sections  |>
+               dplyr::select(longitude, latitude, year, depth, silicate)
+             process_indicator(data = data,
+                               indicator_var_name = "silicate",
+                               indicator = "Nutrient Conditions (Silicate)",
+                               type = "Discrete Occupations Sections",
+                               units = "mmol/m3",
+                               scoring = "desired state: decrease",
+                               PPTID = 579,
+                               source="AZMP",
+                               project_short_title = "AZMP",
+                               climate = TRUE,
+                               climate_expectation="FIXME",
+                               indicator_rationale="Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020). ",
+                               bin_rationale="FIXME",
+                               other_nest_variables="depth",
+                               areas = MPAs,
+                               plot_type = c('time-series','map'),
+                               plot_lm=FALSE)
+           }),
+
+tar_target(ind_phosphate,
+           command={
+             data <- data_azmp_Discrete_Occupations_Sections  |>
+               dplyr::select(longitude, latitude, year, depth, phosphate)
+             process_indicator(data = data,
+                               indicator_var_name = "phosphate",
+                               indicator = "Nutrient Conditions (Phosphate)",
+                               type = "Discrete Occupations Sections",
+                               units = "mmol/m3",
+                               scoring = "desired state: decrease",
+                               PPTID = 579,
+                               source="AZMP",
+                               project_short_title = "AZMP",
+                               climate = TRUE,
+                               climate_expectation="FIXME",
+                               indicator_rationale="Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020).",
+                               bin_rationale="FIXME",
+                               other_nest_variables="depth",
+                               areas = MPAs[-which(MPAs$NAME_E =="Musquash Estuary Marine Protected Area")],
+                               plot_type = c('time-series','map'),
+                               plot_lm=FALSE)
+           }),
+
 
  tar_target(ind_salinity,
             command={
@@ -1301,7 +1463,7 @@ list(
                                other_nest_variables="depth",
                                areas = MPAs,
                                climate_expectation="FIXME",
-                               indicator_rationale="FIXME",
+                               indicator_rationale="Salinity changes can impact ocean biological functions and may produce community shifts including trophic cascades (e.g., Röthig et al. 2023). Changes in salinity can also adversely affect the temperature tolerance of aquatic organisms (e.g., Farias et al. 2024)",
                                bin_rationale="FIXME",
                                plot_type=c('time-series','map'),
                                plot_lm=FALSE)
@@ -1325,7 +1487,7 @@ list(
                                other_nest_variables="depth",
                                areas = MPAs,
                                climate_expectation="FIXME",
-                               indicator_rationale="FIXME",
+                               indicator_rationale="Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
                                bin_rationale="FIXME",
                                plot_type=c('time-series','map'),
                                plot_lm=FALSE)
@@ -1349,7 +1511,7 @@ list(
                                other_nest_variables="depth",
                                areas = MPAs,
                                climate_expectation="FIXME",
-                               indicator_rationale="FIXME",
+                               indicator_rationale="Chlorophyll a measurements are typically used as a proxy for primary production at the ocean surface, which, in turn, can influence ocean bottom conditions through benthic/pelagic coupling.",
                                bin_rationale="FIXME",
                                plot_type=c('time-series','map'),
                                plot_lm=FALSE)
@@ -1398,6 +1560,91 @@ list(
                                plot_lm=FALSE)
             }
  ),
+
+tar_target(ind_bloom_timing,
+           command={
+             script_lines <- readLines("https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_01a_define_polygons.R")
+
+             k1 <- which(grepl("poly\\$atlantic = list", script_lines))
+             k2 <- which(grepl("-61.1957, -61.1957, -59.54983, -59.54983, -61.1957", script_lines))
+             script <- script_lines[k1:k2]
+             poly <- list()
+             eval(parse(text=script))
+             DF <- poly$atlantic$AZMP$CSS_V02
+
+             coords <- matrix(c(DF$lon, DF$lat), ncol = 2, byrow = FALSE)
+             coords <- rbind(coords, coords[1,])
+             polygon_sf <- st_sfc(st_polygon(list(coords)))
+             st_crs(polygon_sf) <- 4326
+
+
+             data <- azmpdata::RemoteSensing_Annual_Broadscale |>
+               filter(area == "CSS_remote_sensing") |>
+               mutate(geometry = polygon_sf) |>
+               st_as_sf() |>
+               dplyr::select(year, bloom_start, geometry) |>
+               st_make_valid()
+
+
+             process_indicator(data = data,
+                               indicator_var_name = "bloom_start",
+                               indicator = "Bloom Start (Timing)",
+                               type = "Remote Sensing",
+                               units = "(days since January 1st)", # FIXME: I think
+                               scoring = "desired state: stable",
+                               PPTID = 579,
+                               source="AZMP",
+                               climate_expectation="FIXME",
+                               indicator_rationale="FIXME",
+                               bin_rationale="The timing of the spring bloom can directly influence the survival success of fish larvae. For example, the spring peak in phytoplankton production, along with high rates of C. finmarchicus reproduction, have been shown to occur within the historical haddock spawning period (Head et al. 2005).",
+                               project_short_title = "AZMP",
+                               areas = MPAs,
+                               plot_type = c("time-series","map"),
+                               plot_lm=FALSE)
+           }
+),
+
+tar_target(name=ind_phytoplankton,
+           command={
+             data_azmp_fixed_stations
+             # Add rows one by one
+             data <- azmpdata::Phytoplankton_Occupations_Stations
+             data$latitude <- NA
+             data$longitude <- NA
+             for (i in seq_along(unique(data$station))) {
+                 data$latitude[which(data$station == unique(data$station)[i])] <- data_azmp_fixed_stations$latitude[which(data_azmp_fixed_stations$station == unique(data$station)[i])]
+                 data$longitude[which(data$station == unique(data$station)[i])] <- data_azmp_fixed_stations$longitude[which(data_azmp_fixed_stations$station == unique(data$station)[i])]
+             }
+
+             data <- data |>
+               st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |>
+               st_make_valid() |>
+               mutate(sum_phytoplankton = rowSums(across(c(diatoms, dinoflagellates, flagellates)), na.rm = TRUE)) |> # FIXME: I think
+               mutate(year=as.numeric(format(date, "%Y")))|>
+               dplyr::select(sum_phytoplankton, year, geometry)
+
+
+
+
+             x <- process_indicator(data = data,
+                               indicator = "Abundance of Phytoplankton (Diatoms, Dinoflagellates,Flagellates)",
+                               indicator_var_name = "sum_phytoplankton",
+                               type = "Continuous Plankton Recorder",
+                               units = "unit unknown",
+                               scoring = "desired state: increase",
+                               PPTID = 579,
+                               source="AZMP",
+                               climate_expectation="FIXME",
+                               indicator_rationale="Phytoplankton constitutes the base of the marine food web and, consequently, their production sets an upper limit on the production of all higher trophic levels.",
+                               bin_rationale="FIXME",
+                               project_short_title = "AZMP",
+                               areas = MPAs,
+                               plot_type=c('time-series','map'),
+                               plot_lm=FALSE)
+
+
+           }),
+
 
  tar_target(name = ind_QC_gulf_biogenic_habitat_representation,
             command = {
@@ -1698,8 +1945,8 @@ tar_target(name=ind_musquash_secchi,
                                project_short_title = NA,
                                climate = TRUE,
                                climate_expectation="FIXME",
-                               indicator_rationale="FIXME",
-                               bin_rationale="FIXME",
+                               indicator_rationale="The secchi depth can be a powerful indicator of water clarity and can reveal important information about ecosystem health. A higher secchi depth (clearer water) often implies low turbidity, fewer suspended sediments, and potentially lower levels of pollution or eutrophication. Lower secchi depth can indicator higher nutrient inputs, runoff, algal blooms, or sediment disturbance - possibly from nearby land use, fishing activity or climate events.",
+                               bin_rationale="The secchi depth can be a powerful indicator of water clarity and can reveal important information about ecosystem health.",
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                                plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE,
@@ -1862,11 +2109,14 @@ tar_target(ind_musquash_coliform_inside_outside,
                              weights_ratio = c(1,1,1,0.5,1,1,1,1,1,1,1),
                              weights_sum = 1,
                              ind_nitrate,
+                             ind_silicate,
+                             ind_phosphate,
                              ind_salinity,
                              ind_chlorophyll,
                              ind_temperature,
                              ind_surface_height,
                              ind_bloom_amplitude,
+                             ind_bloom_timing,
                              ind_musquash_ph,
                              ind_musquash_dissolved_oxygen,
                              ind_musquash_phosphate,
@@ -1910,7 +2160,8 @@ tar_target(ind_musquash_coliform_inside_outside,
                              ind_fish_weight,
                              ind_haddock_biomass,
                              ind_haddock_counts,
-                             ind_zooplankton
+                             ind_zooplankton,
+                             ind_phytoplankton
             )),
  tar_target(bin_productivity_StructureandFunction_df,
             aggregate_groups("bin",
@@ -2189,35 +2440,6 @@ tar_target(plot_files,
               AH
             }),
 
- tar_target(zooplankton,
-            command={
-
-              df <- azmpdata::Zooplankton_Annual_Stations
-              sdf <- azmpdata::Derived_Occupations_Stations
-              df$latitude <- 0
-              df$longitude <- 0
-              for (i in seq_along(unique(df$station))) {
-                if (unique(df$station)[i] == "HL2") { # ISSUE 53
-                  k <- 274
-                } else {
-                  k <- 1
-                }
-                df$latitude[which(df$station == unique(df$station)[i])] <- sdf$latitude[which(sdf$station == unique(df$station)[i])][k]
-                df$longitude[which(df$station == unique(df$station)[i])] <- sdf$longitude[which(sdf$station == unique(df$station)[i])][k]
-              }
-
-              df$type <- "Zooplankton AZMP"
-              df$Calanus_finmarchicus_biomass <- df$Calanus_finmarchicus_log10
-
-              DF <- df[c("latitude", "longitude", "type", "Calanus_finmarchicus_biomass", "year")]
-              DF$units <- "log_10"
-              DF
-
-            }),
-
-
-
-
  tar_target(surface_height,
             command={
               df <- azmpdata::Derived_Monthly_Stations
@@ -2239,58 +2461,6 @@ tar_target(plot_files,
               df
             }),
 
- tar_target(nitrate,
-            command={
-              df <- azmpdata::Discrete_Occupations_Sections
-              df$year <- as.numeric(format(df$date, "%Y"))
-              df$type <- "AZMP"
-
-              DF <- df[,c("latitude", "longitude", "year", "nitrate", "type", "depth")]
-              DF$units <- "mmol/m3"
-              DF
-            }),
-
-
- tar_target(salinity,
-            command={
-              df <- azmpdata::Discrete_Occupations_Sections
-              df$year <- as.numeric(format(df$date, "%Y"))
-              df$type <- "AZMP"
-
-              DF <- df[,c("latitude", "longitude", "year", "salinity", "type", "depth")]
-              DF$units <- "psu"
-              DF
-            }),
-
- tar_target(temperature,
-            command={
-              df <- azmpdata::Discrete_Occupations_Sections
-              df$year <- as.numeric(format(df$date, "%Y"))
-              df$type <- "AZMP"
-
-              DF <- df[,c("latitude", "longitude", "year", "temperature", "type", "depth")]
-              DF$units <- "C"
-              DF
-            }),
-
- tar_target(chlorophyll,
-            command={
-              df <- azmpdata::Discrete_Occupations_Sections
-              df$year <- as.numeric(format(df$date, "%Y"))
-              df$type <- "In situ AZMP"
-
-              DF <- df[,c("latitude", "longitude", "year", "chlorophyll", "type", "depth")]
-              DF$units <- "ug/L"
-              DF
-            }),
-
-
-
-
-
-
-
-
  tar_target(climate_change,
             command= {
               doc <- read_docx(file.path(system.file(package = "MarConsNetAnalysis"), "data", "climate.docx"))
@@ -2310,35 +2480,6 @@ tar_target(plot_files,
               summary <- unlist(lapply(split_text, function(x) x[2]))
               cc <- data.frame(indicators=indicators, summary=summary)
             }),
-
-
- tar_target(bloom_df,
-            command={
-              script_lines <- readLines("https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_01a_define_polygons.R")
-
-              k1 <- which(grepl("poly\\$atlantic = list", script_lines))
-              k2 <- which(grepl("-61.1957, -61.1957, -59.54983, -59.54983, -61.1957", script_lines))
-              script <- script_lines[k1:k2]
-              poly <- list()
-              eval(parse(text=script))
-              DF <- poly$atlantic$AZMP$CSS_V02
-
-              coords <- matrix(c(DF$lon, DF$lat), ncol = 2, byrow = FALSE)
-              coords <- rbind(coords, coords[1,])
-              polygon_sf <- st_sfc(st_polygon(list(coords)))
-              st_crs(polygon_sf) <- 4326
-
-
-              df <- azmpdata::RemoteSensing_Annual_Broadscale
-              df <- df[which(df$area == "CSS_remote_sensing"),]
-              df$geom <- rep(polygon_sf)
-
-              DF <- df[,c("area", "year", "bloom_amplitude", "geom"),]
-              DF$type <- "Remote Sensing"
-              DF$units <- "(unit unknown)"
-              DF
-            }
-            ),
 
 
  ##### Pillar #####

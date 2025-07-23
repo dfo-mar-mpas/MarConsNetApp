@@ -4,7 +4,7 @@ library(MarConsNetAnalysis);library(MarConsNetData);
 library(TBSpayRates); library(dataSPA); library(readxl)
 library(ggplot2); library(shinyBS); library(Mar.datawrangling); library(DT); library(rmarkdown)
 library(stringr); library(tidyr); library(officer); library(RColorBrewer); library(rvest); library(httr2); library(httr);
-library(tidyverse); library(dplyr)
+library(tidyverse); library(dplyr); library(qs2)
 
 
 tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate"))
@@ -85,6 +85,7 @@ x <- process_indicator(data = data,
 # TEST 3 (inside vs outside)
 tar_load(data_azmp_Discrete_Occupations_Sections)
 tar_load(control_polygons)
+tar_load(MPAs)
 data <- data_azmp_Discrete_Occupations_Sections  |>
   dplyr::select(longitude, latitude, year, depth, nitrate)
 
@@ -130,4 +131,26 @@ x <- process_indicator(data = data,
                   plot_lm=FALSE,
                   latitude='Lat',
                   longitude='Lon')
+
+# TESTER
+data <- data_musquash_coliform |>
+  dplyr::select(latitude, longitude, MPN, year)
+
+process_indicator(data = data,
+                  indicator_var_name = "MPN",
+                  indicator = "Coliform Inside Outside Comparison",
+                  type = "Discrete Occupations Sections",
+                  units = "MPN",
+                  scoring = "control site linear trend: less inside",
+                  PPTID = NA,
+                  climate_expectation="FIXME",
+                  indicator_rationale="FIXME",
+                  bin_rationale="FIXME",
+                  source="Eastern Charlotte Waterways",
+                  project_short_title = NA,
+                  climate = TRUE,
+                  areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                  plot_type=c('outside-comparison','map'),
+                  plot_lm=FALSE,
+                  control_polygon=control_polygons)
 
