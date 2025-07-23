@@ -2106,7 +2106,6 @@ tar_target(ind_musquash_coliform_inside_outside,
  tar_target(bin_habitat_EnvironmentalRepresentativity_df,
             aggregate_groups("bin",
                              "Environmental Representativity",
-                             weights_ratio = c(1,1,1,0.5,1,1,1,1,1,1,1),
                              weights_sum = 1,
                              ind_nitrate,
                              ind_silicate,
@@ -2210,6 +2209,7 @@ tar_target(ind_musquash_coliform_inside_outside,
  ##### Ecological Pillar #####
 
  tar_target(data_pillar_ecol_df,
+      weights_ratio = c(1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 
             {
             APPTABS
