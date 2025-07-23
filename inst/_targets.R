@@ -1124,7 +1124,7 @@ list(
 
 
  #JAIM
- tar_target(data_gliders,
+ tar_target(raw_data_gliders,
             command= {
               MPAs
               reDownload <- FALSE
@@ -1348,6 +1348,37 @@ list(
                                plot_type=c('time-series','map'),
                                plot_lm=FALSE)
             }),
+
+
+tar_target(ind_zooplankton_community_composition,
+           command={
+             data <- data_azmp_zooplankton_annual_stations %>%
+               pivot_longer(cols = matches("_log10$"), names_to = "taxa", values_to = "log_biomass") %>%
+               mutate(biomass = 10^log_biomass) %>%
+               group_by(station, year) %>%
+               mutate(relative_biomass = biomass / sum(biomass, na.rm = TRUE)) %>%
+               ungroup()
+
+             data <- data[-which(is.na(data$relative_biomass)),]
+
+
+             x <- process_indicator(data = data,
+                                    indicator = "Zooplankton Community Composition",
+                                    indicator_var_name = "relative_biomass",
+                                    type = "Zooplankton Net Tows",
+                                    units = NA,
+                                    scoring = "desired state: increase",
+                                    PPTID = 579,
+                                    source="AZMP",
+                                    climate_expectation="FIXME",
+                                    indicator_rationale="Zooplankton shifts driven by climate change can cause declines in food quality for fish (e.g., Heneghan et al. 2023).",
+                                    bin_rationale="FIXME",
+                                    project_short_title = "AZMP",
+                                    other_nest_variables = c("zooplankton_meso_dry_weight","log_biomass", "biomass", "relative_biomass", "station", "taxa"),
+                                    areas = MPAs,
+                                    plot_type=c('community-composition', 'map'),
+                                    plot_lm=FALSE)
+           }),
 
 
 
@@ -2107,6 +2138,7 @@ tar_target(ind_musquash_coliform_inside_outside,
             aggregate_groups("bin",
                              "Environmental Representativity",
                              weights_sum = 1,
+                             weights_ratio = c(1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
                              ind_nitrate,
                              ind_silicate,
                              ind_phosphate,
@@ -2160,6 +2192,7 @@ tar_target(ind_musquash_coliform_inside_outside,
                              ind_haddock_biomass,
                              ind_haddock_counts,
                              ind_zooplankton,
+                             ind_zooplankton_community_composition,
                              ind_phytoplankton
             )),
  tar_target(bin_productivity_StructureandFunction_df,
@@ -2209,8 +2242,6 @@ tar_target(ind_musquash_coliform_inside_outside,
  ##### Ecological Pillar #####
 
  tar_target(data_pillar_ecol_df,
-      weights_ratio = c(1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-
             {
             APPTABS
             target_bin_weight <- 1
