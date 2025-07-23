@@ -1440,7 +1440,7 @@ tar_target(ind_phosphate,
                                indicator_rationale="Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020).",
                                bin_rationale="FIXME",
                                other_nest_variables="depth",
-                               areas = MPAs[-which(MPAs$NAME_E =="Musquash Estuary Marine Protected Area")],
+                               areas = MPAs[-(which(MPAs$NAME_E =="Musquash Estuary Marine Protected Area")),],
                                plot_type = c('time-series','map'),
                                plot_lm=FALSE)
            }),
@@ -1519,7 +1519,7 @@ tar_target(ind_phosphate,
 
  tar_target(ind_bloom_amplitude,
             command={
-              script_lines <- readLines("https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_01a_define_polygons.R")
+              script_lines <- readLines("https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_00c_define_polygons.R")
 
               k1 <- which(grepl("poly\\$atlantic = list", script_lines))
               k2 <- which(grepl("-61.1957, -61.1957, -59.54983, -59.54983, -61.1957", script_lines))
@@ -1563,7 +1563,7 @@ tar_target(ind_phosphate,
 
 tar_target(ind_bloom_timing,
            command={
-             script_lines <- readLines("https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_01a_define_polygons.R")
+             script_lines <- readLines("https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_00c_define_polygons.R")
 
              k1 <- which(grepl("poly\\$atlantic = list", script_lines))
              k2 <- which(grepl("-61.1957, -61.1957, -59.54983, -59.54983, -61.1957", script_lines))
