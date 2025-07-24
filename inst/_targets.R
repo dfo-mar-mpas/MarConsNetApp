@@ -10,7 +10,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units", "oceglider", "RCurl"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units", "oceglider", "RCurl", "oce"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -1122,9 +1122,7 @@ list(
               }
  ),
 
-
- #JAIM
- tar_target(raw_data_gliders,
+ tar_target(data_gliders,
             command= {
               MPAs
               reDownload <- FALSE
@@ -1181,10 +1179,93 @@ list(
               files <- list.files(path = dataDir, pattern = "\\.nc$", full.names = TRUE)
               glider_list <- vector("list", length(files))  # pre-allocate list
 
+              message(paste0("files , " ,files))
+
               for (i in seq_along(files)) {
                 message(i)
-                x <- try(read.glider.netcdf(file = files[i]), silent=TRUE)
+                x <- try(oceglider::read.glider.netcdf(file = files[i]), silent=TRUE)
+                message(paste0("CLASS::", class(x)))
                 if (!(inherits(x, "try-error"))) {
+                  # weird dates in the files due to a hardware issue with the gliders
+                  #good_year <- names(which.max(table(as.numeric(format(x[['time']], "%Y")))))
+                  #message(paste0("hi ", good_year))
+                  x <- oceglider::subset(x, grepl(names(which.max(table(as.numeric(format(x[['time']], "%Y"))))), time))
+
+                  # Remove profiles with profileIndex == 0 (inflecting/stalled)
+                  x <- oceglider::subset(x, which(!(profileIndex == 0)))
+
+                  # vertically binning and temporally averaging the data. For our analysis we bin it to 1dbar and hourly average.
+
+
+                  # startTime and endTime will be numeric, that's OK b/c it will work for next calculation
+                  # find which profiles are within the defined averaging time
+                  # here it will be 1 hour.
+                  dt <- 60 * 60 #sph
+                  # define depth bins
+                  dz <- 1 # size of depth bins
+                  nz <- 600 # max depth of bins
+                  z <- seq(1, nz, by = dz)
+
+                  # initialize indices output
+                  vars <- names(x[['data']][['payload1']]) # get all variables in glider file
+                  # define breaks for splitting data
+                  zbreaks <- c(0,z) + dz/2
+
+                  dsubdata <- x[['data']][['payload1']]
+                  # split the data based on pressure breaks (zbreaks)
+                  dsplit <- split(x = dsubdata, f = cut(dsubdata[['PRES']], breaks = zbreaks))
+                  # now do the mean for each split
+                  ## time is an issue for the `apply(..., FUN=mean)` so omit it
+                  ## this is OK as we'll do the mean time over the entire profile
+                  dmean <- lapply(dsplit, function(k) apply(X = k[,!names(k) %in% 'time'], MARGIN = 2, FUN = mean, na.rm = TRUE))
+                  ## combine it together
+                  dmeanall <- as.data.frame(do.call('rbind', dmean))
+                  ### find which rows have all NA values
+                  omitrows <- apply(X = dmeanall, MARGIN = 1, FUN = function(k) all(is.na(k)))
+                  dmeanall <- dmeanall[!omitrows, ]
+                  zprofile <- z[!omitrows]
+                  ## create ctd object
+                  ### get average values from all data in dsub for certain parameters
+                  profileTime <- mean(dsubdata[['time']],na.rm = TRUE)
+                  profileLongitude <- mean(dsubdata[['longitude']], na.rm = TRUE)
+                  profileLatitude <- mean(dsubdata[['latitude']], na.rm = TRUE)
+                  ### create ctd object
+                  ctdadd <- oce::as.ctd(salinity = dmeanall[['PSAL']],
+                                   temperature = dmeanall[['TEMP']],
+                                   pressure = zprofile,
+                                   conductivity = dmeanall[['CNDC']],
+                                   longitude = profileLongitude,
+                                   latitude = profileLatitude,
+                                   time = profileTime)
+                  ### add remaining variables,
+                  ###     omit a few extra to avoid misleading user, these include :
+                  ###         PRES2, depth
+                  addvars <- vars[!vars %in% c('PSAL', 'TEMP', 'PRES', 'CNDC', 'longitude', 'latitude', 'time', 'PRES2', 'depth')]
+                  for(addvar in addvars){
+                    if(addvar %in% c('DOXY', 'oxygenConcentration')){
+                      addvarname <- 'oxygen'
+                    } else if(addvar %in% c('FLUORESCENCECHLA')){
+                      addvarname <- 'fluorometer'
+                    } else {
+                      addvarname <- addvar
+                    }
+                    ctdadd <- oce::oceSetData(object = ctdadd, name = addvarname, value = dmeanall[[addvar]])
+                  }
+                  ### add metadata from original file
+                  ctdadd@metadata <- x@metadata
+                  ### have to re-set longitude, latitude, and time
+                  ctdadd <- oce::oceSetMetadata(object = ctdadd,
+                                           name = 'longitude',
+                                           value = profileLongitude)
+                  ctdadd <- oce::oceSetMetadata(object = ctdadd,
+                                           name = 'latitude',
+                                           value = profileLatitude)
+                  ctdadd <- oce::oceSetMetadata(object = ctdadd,
+                                           name = 'time',
+                                           value = profileTime)
+                  ### save ctd
+                  x <- ctdadd
+
                   glider_list[[i]] <- data.frame(
                     BBP700 = if (!is.null(x[["BBP700"]])) x[["BBP700"]] else NA,
                     CDOM = if (!is.null(x[["CDOM"]])) x[["CDOM"]] else NA,
@@ -1220,17 +1301,15 @@ list(
                     TEMP2 = if (!is.null(x[["TEMP2"]])) x[["TEMP2"]] else NA,
                     time = if (!is.null(x[["time"]])) x[["time"]] else NA
                   )
+
+
                 } else {
                   glider_list[[i]] <- NULL
                 }
               }
-              glider_combined <- do.call(rbind, glider_list)
 
-              glider_combined
-
-
-
-
+              glider_data <- do.call(rbind, glider_list)
+              glider_data
 
             }),
 
