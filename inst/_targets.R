@@ -1128,7 +1128,8 @@ list(
               reDownload <- FALSE
               options(timeout = 700)
               dataDir <- tempdir()
-              ftpUrl <- 'dontpush'
+              list.files(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data', 'gliders'))
+              ftpUrl <- read.table(list.files(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data', 'gliders'), full.names=TRUE))$V1
               dirs <- getURL(paste(ftpUrl,'', sep ="/"), ftp.use.epsv = FALSE, dirlistonly = TRUE)
               dirnames <- strsplit(dirs, "\r*\n")[[1]]
               okdir <- grepl('^GLD\\w+$', dirnames) # just in case something else gets put there
@@ -1242,13 +1243,8 @@ list(
                   ###         PRES2, depth
                   addvars <- vars[!vars %in% c('PSAL', 'TEMP', 'PRES', 'CNDC', 'longitude', 'latitude', 'time', 'PRES2', 'depth')]
                   for(addvar in addvars){
-                    if(addvar %in% c('DOXY', 'oxygenConcentration')){
-                      addvarname <- 'oxygen'
-                    } else if(addvar %in% c('FLUORESCENCECHLA')){
-                      addvarname <- 'fluorometer'
-                    } else {
                       addvarname <- addvar
-                    }
+
                     ctdadd <- oce::oceSetData(object = ctdadd, name = addvarname, value = dmeanall[[addvar]])
                   }
                   ### add metadata from original file
@@ -1508,6 +1504,37 @@ tar_target(ind_zooplankton_community_composition,
                                plot_type = c('time-series','map'),
                                plot_lm=FALSE)
             }),
+
+tar_target(ind_oxygen,
+           command={
+             MPAs
+             data2 <- data_gliders
+             year <- as.numeric(format(data2$time, "%Y"))
+             data2$year <- year
+             data2 <- data2[which(!is.na(data2$DOXY)),]
+             data2 <- data2[,c("longitude", "latitude", "year", "DOXY", "depth")]
+             process_indicator(data = data2,
+                               indicator_var_name = "DOXY",
+                               indicator = "Oxygen",
+                               type = "Gliders",
+                               units = "mu * mol/kg",
+                               scoring = "desired state: increase",
+                               PPTID = 385,
+                               source="Glider Program",
+                               project_short_title = "Glider Program",
+                               climate = TRUE,
+                               climate_expectation="FIXME",
+                               indicator_rationale="Deoxygenation can impact marine life and its ecosystem directly and indirectly, and lead to changes in the abundance and distribution of fish, which, in turn, affects fisheries and productivity (e.g., Kim et al. 2023). This variable may be particularly important to monitor in deep habitats, where oxygen levels are depleted.",
+                               bin_rationale="FIXME",
+                               other_nest_variables="depth",
+                               areas = MPAs,
+                               plot_type = c('time-series','map'),
+                               plot_lm=FALSE)
+
+           }),
+
+
+
 
 tar_target(ind_silicate,
            command={
@@ -2217,7 +2244,7 @@ tar_target(ind_musquash_coliform_inside_outside,
             aggregate_groups("bin",
                              "Environmental Representativity",
                              weights_sum = 1,
-                             weights_ratio = c(1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+                             weights_ratio = c(1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1),
                              ind_nitrate,
                              ind_silicate,
                              ind_phosphate,
@@ -2231,6 +2258,7 @@ tar_target(ind_musquash_coliform_inside_outside,
                              ind_musquash_dissolved_oxygen,
                              ind_musquash_phosphate,
                              ind_musquash_secchi,
+                             ind_oxygen,
                              ind_musquash_coliform
                              )),
  tar_target(bin_habitat_KeyFishHabitat_df,
