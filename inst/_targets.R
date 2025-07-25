@@ -2528,6 +2528,67 @@ tar_target(plot_files,
               GS <- GSDET[,c("longitude", "latitude", "year", "fish_weight", "type")]
               GS$units <- "g"
               GS
+  tar_target(name = data_MMMP_birds_raw, command = {
+    # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
+    read.delim(
+      file.path(
+        Sys.getenv("OneDriveCommercial"),
+        "MarConsNetTargets",
+        "data",
+        "birds",
+        "naturecounts_request_257783_1752519752346",
+        "mmmp_naturecounts_data.txt"
+      ),
+      header = TRUE
+    )
+  }),
+
+  tar_target(name = data_musquash_MMMP_birds, command = {
+    # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
+    data_MMMP_birds_raw |>
+      filter(!is.na(DecimalLatitude), !is.na(DecimalLongitude)) |>
+      st_as_sf(
+        coords = c("DecimalLongitude", "DecimalLatitude"),
+        crs = 4326,
+        remove = FALSE
+      ) |>
+      st_filter(st_buffer(
+        MPAs[MPAs$NAME_E == "Musquash Estuary Marine Protected Area", ],
+        2000
+      )) |>
+      filter(
+        ScientificName != "",
+        !is.na(ScientificName)
+      ) |>
+      as.data.frame() |>
+      mutate(
+        DecimalLatitude = round(DecimalLatitude, 3),
+        DecimalLongitude = round(DecimalLongitude, 3)
+      ) |>
+      group_by(
+        DecimalLatitude,
+        DecimalLongitude,
+        YearCollected,
+        MonthCollected,
+        DayCollected,
+        CollectorNumber,
+        ScientificName
+      ) |>
+      reframe(n = n()) |>
+      pivot_wider(
+        names_from = ScientificName,
+        values_from = n,
+        values_fill = 0
+      ) |>
+      select(
+        -DecimalLatitude,
+        -DecimalLongitude,
+        -YearCollected,
+        -MonthCollected,
+        -DayCollected,
+        -CollectorNumber
+      )
+  }),
             }
 
  ),
