@@ -2589,6 +2589,63 @@ tar_target(plot_files,
               GSDET$type <- "RV Survey"
               names(GSDET)[which(names(GSDET) == "FWT")] <- "fish_weight"
 
+  tar_target(ind_musquash_birds_sample_coverage, command = {
+    areaID <- "Musquash Estuary Marine Protected Area"
+    sc <- calc_sample_coverage(data_musquash_MMMP_birds)
+
+    ind <- data.frame(
+      areaID = areaID,
+      indicator = "Birds Sample Coverage",
+      type = "Observations",
+      units = NA,
+      scoring = "custom",
+      PPTID = NA,
+      source = "https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr",
+      project_short_title = "Maritime Marsh Monitoring Program",
+      climate = FALSE,
+      design_target = FALSE,
+      data = I(list(data_musquash_MMMP_birds)),
+      score = sc$means[length(sc$means)],
+      status_statement = paste0(
+        "The sample coverage for the ",
+        areaID,
+        " is ",
+        round(max(sc$means) * 100, 1),
+        "%."
+      ),
+      trend_statement = paste0(
+        "The sample coverage is expected to increase by approximately ",
+        round(
+          (sc$means[length(sc$means)] - sc$means[length(sc$means) - 1]) * 100,
+          3
+        ),
+        "% per sample."
+      ),
+      climate_expectation = "FIXME",
+      indicator_rationale = "FIXME",
+      bin_rationale = "FIXME"
+    )
+
+    ind$p <- list(
+      ggplot(as.data.frame(sc[-1]), aes(x = N, y = means * 100)) +
+        geom_line() +
+        geom_ribbon(
+          aes(ymin = (means - sd) * 100, ymax = (means + sd) * 100),
+          alpha = 0.2
+        ) +
+        labs(
+          title = "Sample Coverage",
+          x = "Sample Size",
+          y = "Coverage"
+        ) +
+        theme_classic()
+    )
+
+    ind
+  }),
+      weights_ratio = c(1, 1, 1, 1),
+      ind_musquash_birds_sample_coverage
+
               GS <- GSDET[,c("longitude", "latitude", "year", "fish_weight", "type")]
               GS$units <- "g"
               GS}),
