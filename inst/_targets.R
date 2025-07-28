@@ -10,7 +10,7 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units", "oceglider", "RCurl", "oce"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units", "oceglider", "RCurl", "oce", "gsw"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -1185,7 +1185,6 @@ list(
               for (i in seq_along(files)) {
                 message(i)
                 x <- try(oceglider::read.glider.netcdf(file = files[i]), silent=TRUE)
-                message(paste0("CLASS::", class(x)))
                 if (!(inherits(x, "try-error"))) {
                   # weird dates in the files due to a hardware issue with the gliders
                   #good_year <- names(which.max(table(as.numeric(format(x[['time']], "%Y")))))
@@ -1213,6 +1212,50 @@ list(
                   zbreaks <- c(0,z) + dz/2
 
                   dsubdata <- x[['data']][['payload1']]
+
+                  dsubdata$mld <- NA
+
+                  for (j in seq_along(unique(dsubdata$profileIndex))) {
+                    message(j)
+                    keep <- which(x[['profileIndex']] == unique(dsubdata$profileIndex)[j])
+
+                    if (!all(is.na(dsubdata$PSAL[keep])) && !all(is.na(dsubdata$TEMP[keep])) && !all(is.na(dsubdata$depth[keep]))) {
+                      # Use depth as a proxy for pressure (1 m ≈ 1 dbar)
+                      approx_pres <- dsubdata$depth[keep]
+                      SA <- gsw_SA_from_SP(dsubdata$PSAL[keep], approx_pres[keep],
+                                           mean(dsubdata$longitude[keep], na.rm = TRUE),
+                                           mean(dsubdata$latitude[keep], na.rm = TRUE))
+                      CT <- gsw_CT_from_t(SA, dsubdata$TEMP[keep], approx_pres)
+                      rho <- gsw_rho(SA, CT, approx_pres)
+
+                      # Define MLD function using Δρ threshold
+                      calc_mld <- function(depth, density, threshold = 0.03) {
+                        ord <- order(depth)
+                        depth <- depth[ord]
+                        density <- density[ord]
+                        surface_density <- density[which.min(depth)]
+                        idx <- which(density - surface_density > threshold)
+                        if (length(idx) == 0) {
+                          return(max(depth, na.rm = TRUE))  # fallback if no stratification
+                        } else {
+                          return(depth[min(idx)])
+                        }
+                      }
+
+                      dsubdata$mld[keep] <- calc_mld(dsubdata$depth[keep], rho)
+
+                    } else {
+                      dsubdata$mld[keep] <- NA
+                    }
+
+                  }
+
+                  # Add mld into variable list:
+                  vars <- c(vars, "mld")
+
+                  # Above is to determine the MLD for each profile (upcast and downcast in the glider netcdf)
+
+
                   # split the data based on pressure breaks (zbreaks)
                   dsplit <- split(x = dsubdata, f = cut(dsubdata[['PRES']], breaks = zbreaks))
                   # now do the mean for each split
@@ -1295,9 +1338,9 @@ list(
                     TEMP = if (!is.null(x[["TEMP"]])) x[["TEMP"]] else NA,
                     TEMP_DOXY = if (!is.null(x[["TEMP_DOXY"]])) x[["TEMP_DOXY"]] else NA,
                     TEMP2 = if (!is.null(x[["TEMP2"]])) x[["TEMP2"]] else NA,
-                    time = if (!is.null(x[["time"]])) x[["time"]] else NA
+                    time = if (!is.null(x[["time"]])) x[["time"]] else NA,
+                    mld = if (!is.null(x[["mld"]])) x[["mld"]] else NA
                   )
-
 
                 } else {
                   glider_list[[i]] <- NULL
@@ -1308,13 +1351,6 @@ list(
               glider_data
 
             }),
-
-
-
-
-
-
-
 
 
  tar_target(ind_fish_weight,
@@ -1532,6 +1568,34 @@ tar_target(ind_oxygen,
                                plot_lm=FALSE)
 
            }),
+
+tar_target(ind_stratification,
+            command={
+              MPAs
+              data <- data_gliders
+              year <- as.numeric(format(data$time, "%Y"))
+              data$year <- year
+              data <- data[which(!is.na(data$mld)),]
+              data <- data[,c("longitude", "latitude", "year", "mld", "depth")]
+              process_indicator(data = data,
+                                indicator_var_name = "mld",
+                                indicator = "Mixed Layer Depth",
+                                type = "Gliders",
+                                units = "m",
+                                scoring = "desired state: increase",
+                                PPTID = 385,
+                                source="Glider Program",
+                                project_short_title = "Glider Program",
+                                climate = TRUE,
+                                climate_expectation="FIXME",
+                                indicator_rationale="Stratification of the mixed layer plays a complementary role in phytoplankton blooms (e.g., Greenan et al. 2004).",
+                                bin_rationale="FIXME",
+                                other_nest_variables="depth",
+                                areas = MPAs,
+                                plot_type = c('time-series','map'),
+                                plot_lm=FALSE)
+
+            }),
 
 
 
@@ -2527,7 +2591,8 @@ tar_target(plot_files,
 
               GS <- GSDET[,c("longitude", "latitude", "year", "fish_weight", "type")]
               GS$units <- "g"
-              GS
+              GS}),
+
   tar_target(name = data_MMMP_birds_raw, command = {
     # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
     read.delim(
@@ -2543,7 +2608,8 @@ tar_target(plot_files,
     )
   }),
 
-  tar_target(name = data_musquash_MMMP_birds, command = {
+  tar_target(name = data_musquash_MMMP_birds,
+             command = {
     # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
     data_MMMP_birds_raw |>
       filter(!is.na(DecimalLatitude), !is.na(DecimalLongitude)) |>
@@ -2589,9 +2655,6 @@ tar_target(plot_files,
         -CollectorNumber
       )
   }),
-            }
-
- ),
 
  tar_target(all_haddock,
             command={
