@@ -15,6 +15,8 @@ library(leaflet)
 library(rgbif)
 library(rvest)
 library(dplyr)
+library(DT)
+
 
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- state$mpas
@@ -248,64 +250,120 @@ map
 
 ## Creature Feature
 
-```{r}
-try({inatoccs <- occ_data(geometry = st_as_text(st_as_sfc(st_bbox(MPAs[MPAs$NAME_E == state$mpas,]))),institutionCode = "iNaturalist")
+```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
+try({
+  inatoccs <- occ_search(geometry = st_as_text(st_as_sfc(st_bbox(MPAs[MPAs$NAME_E == state$mpas,]))),institutionCode = "iNaturalist",limit = 100000)
+  
+  sptable <-  inatoccs$data |> 
+    st_as_sf(
+      coords = c("decimalLongitude", "decimalLatitude"),
+      crs = 4326,
+      remove = FALSE
+    ) |> 
+    st_filter(MPAs[MPAs$NAME_E == state$mpas,]) |>
+    as.data.frame() |> 
+    filter(!is.na(speciesKey),
+           kingdom != "Plantae"|genus == "Zostera", # remove plants except eelgrass
+           class!="Mammalia"|family %in% c("Phocidae","Otarioidea"), #remove mammals except seals
+           class!="Reptilia"|family %in% c("Cheloniidae","Dermochelyidae"),# remove reptiles except sea turtles
+           phylum!="Basidiomycota",phylum!="Ascomycota") |> # remove mushrooms and lichens
+    group_by(speciesKey,scientificName,kingdom, phylum, class) |>
+    reframe(n=n(),
+            exampleurl = references[1],
+            rightsHolder = rightsHolder[1]) |> 
+    arrange(desc(n)) |>
+    # head(10) |>
+    rowwise() |>
+    mutate(commonname = NA,
+           imageurl = {
+             url <- try(read_html(exampleurl) |>
+                          html_node('meta[property="og:image"]') |> 
+                          html_attr('content'))
+             if (inherits(url, "try-error")) {
+               NA
+             } else {
+               url
+             }
+           },
+           image_column = paste0(
+             '<a href="', exampleurl, '" target="_blank">',
+             '<img src="', imageurl, '" style="max-height: 100px; max-width: 100px; object-fit: cover;"/>',
+             '<br>',rightsHolder,'</br>',
+             '</a>'
+           )) 
+  
+  for(i in 1:nrow(sptable)){
+    spnames <- try(name_usage(sptable$speciesKey[i], data = "vernacularNames")[[2]] )
+    if(nrow(spnames)>0|| !inherits(spnames, "try-error")) {
+      cn <- spnames |>
+        as.data.frame() |>
+        filter(language == "eng") |> 
+        pull(vernacularName) |>
+        table() |> 
+        sort(decreasing = TRUE) |>
+        head(1) |> 
+        names()
+      if(!is.null(cn)){
+        sptable$commonname[i] <- cn
+      }
+    }
+  }
+  
+  datatable(
+    sptable |> 
+      select(commonname, image_column, scientificName, n, kingdom, phylum, class),
+    
+    # Disable sorting for the image column
+    options = list(
+      # Show 5 entries by default
+      pageLength = 5,
+      
+      # Enable column-specific filtering
+      initComplete = JS(
+        "function(settings, json) {
+          this.api().columns([1, 3, 4, 5, 6, 7]).every(function() {
+            var column = this;
+            var select = $('<select><option value=\"\"></option></select>')
+              .appendTo($(column.footer()).empty())
+              .on('change', function() {
+                var val = $.fn.dataTable.util.escapeRegex(
+                  $(this).val()
+                );
 
-sptable <-  inatoccs$data |> 
-  filter(!is.na(speciesKey),
-  kingdom!="Plantae") |> # remove plants
-  group_by(speciesKey,scientificName) |>
-  reframe(n=n(),
-      exampleurl = references[1]) |> 
-  arrange(desc(n)) |>
-  head(5) |>
-  rowwise() |> 
-  mutate(commonname = name_usage(speciesKey, data = "vernacularNames")[[2]] |>
-      as.data.frame() |>
-      filter(language == "eng") |> 
-      pull(vernacularName) |>
-      table() |> 
-      sort(decreasing = TRUE) |>
-      head(1) |> 
-      names(),
-  imageurl = {
-    try(read_html(exampleurl) |>
-      html_node('meta[property="og:image"]') |> 
-      html_attr('content'))
-  },
-  image_column = paste0(
-        '<a href="', exampleurl, '" target="_blank">',
-        '<img src="', imageurl, '" style="max-height: 100px; max-width: 100px; object-fit: cover;"/>',
-        '</a>'
-      )) |> 
-  select(commonname, image_column, scientificName, n)
+                column
+                  .search(val ? '^' + val + '$' : '', true, false)
+                  .draw();
+              });
 
-require(DT)
-datatable(
-  sptable,
-  
-  # Disable sorting for the image column
-  options = list(
-    columnDefs = list(
-      list(targets = which(colnames(test) == "image_column") - 1, 
-           orderable = FALSE)
-    )
-  ),
-  
-  # Specify column names
-  colnames = c(
-    "Common Name",
-    "Example Image",
-    "Scientific Name", 
-    "iNaturalist Observations"
-  ),
-  
-  # Escape HTML to allow image rendering
-  escape = FALSE,
-  
-  # Add some styling
-  class = 'cell-border stripe hover'
-)})
+            column.data().unique().sort().each(function(d, j) {
+              select.append('<option value=\"' + d + '\">' + d + '</option>')
+            });
+          });
+        }"
+      )
+    ),
+    
+    # Specify column names
+    colnames = c(
+      "Common Name",
+      "Example Image",
+      "Scientific Name", 
+      "iNaturalist Observations",
+      "Kingdom",
+      "Phylum",
+      "Class"
+    ),
+    
+    # Escape HTML to allow image rendering
+    escape = FALSE,
+    
+    # Add some styling
+    class = 'cell-border stripe hover',
+    
+    # Add footer for filtering
+    filter = "bottom"
+  )
+})
 ```
 
 
