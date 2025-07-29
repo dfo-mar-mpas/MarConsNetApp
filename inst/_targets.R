@@ -1113,6 +1113,10 @@ list(
         values_from = n,
         values_fill = 0
       ) |>
+      st_as_sf(
+        coords = c("DecimalLongitude", "DecimalLatitude"),
+        crs = 4326,
+        remove = FALSE) |> 
       select(
         -DecimalLatitude,
         -DecimalLongitude,
@@ -2317,7 +2321,10 @@ tar_target(ind_musquash_coliform_inside_outside,
 
 tar_target(ind_musquash_birds_sample_coverage, command = {
     areaID <- "Musquash Estuary Marine Protected Area"
-    sc <- calc_sample_coverage(data_musquash_MMMP_birds)
+    sc <- data_musquash_MMMP_birds |> 
+      as.data.frame() |> 
+      select(-geometry) |> 
+      calc_sample_coverage()
 
     ind <- data.frame(
       areaID = areaID,
