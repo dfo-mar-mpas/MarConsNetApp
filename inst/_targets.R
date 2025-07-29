@@ -447,25 +447,6 @@ list(
                unlist(NO)
              }),
 
-  tar_target(name=rv_rounded_location,
-             command= {
-
-               df <- data.frame(latitude=haddock_biomass$latitude, longitude=haddock_biomass$longitude)
-               df2 <- data.frame(latitude=all_haddock$latitude, longitude=all_haddock$longitude)
-               df <- rbind(df,df2)
-               latitude <- round(df$latitude,1)
-               longitude <- round(df$longitude,1)
-               coord <- data.frame(latitude, longitude)
-
-               # Get unique pairs
-               unique_coords <- unique(coord)
-               latitude <- unique_coords$latitude
-               longitude <- unique_coords$longitude
-               df <- data.frame(latitude=latitude, longitude=longitude, type="RV Survey")
-               df
-             }
-  ),
-
   tar_target(name = Context,
              command = {
                c <- lapply(areas, function(x) data_context(type="site", area=x))
@@ -1078,6 +1059,69 @@ list(
                 mutate(geoms = st_difference(st_buffer(geoms,20000),geoms)
                 )
             }),
+
+             tar_target(name = data_MMMP_birds_raw, command = {
+    # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
+    read.delim(
+      file.path(
+        Sys.getenv("OneDriveCommercial"),
+        "MarConsNetTargets",
+        "data",
+        "birds",
+        "naturecounts_request_257783_1752519752346",
+        "mmmp_naturecounts_data.txt"
+      ),
+      header = TRUE
+    )
+  }),
+
+  tar_target(name = data_musquash_MMMP_birds,
+             command = {
+    # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
+    data_MMMP_birds_raw |>
+      filter(!is.na(DecimalLatitude), !is.na(DecimalLongitude)) |>
+      st_as_sf(
+        coords = c("DecimalLongitude", "DecimalLatitude"),
+        crs = 4326,
+        remove = FALSE
+      ) |>
+      st_filter(st_buffer(
+        MPAs[MPAs$NAME_E == "Musquash Estuary Marine Protected Area", ],
+        2000
+      )) |>
+      filter(
+        ScientificName != "",
+        !is.na(ScientificName)
+      ) |>
+      as.data.frame() |>
+      mutate(
+        DecimalLatitude = round(DecimalLatitude, 3),
+        DecimalLongitude = round(DecimalLongitude, 3)
+      ) |>
+      group_by(
+        DecimalLatitude,
+        DecimalLongitude,
+        YearCollected,
+        MonthCollected,
+        DayCollected,
+        CollectorNumber,
+        ScientificName
+      ) |>
+      reframe(n = n()) |>
+      pivot_wider(
+        names_from = ScientificName,
+        values_from = n,
+        values_fill = 0
+      ) |>
+      select(
+        -DecimalLatitude,
+        -DecimalLongitude,
+        -YearCollected,
+        -MonthCollected,
+        -DayCollected,
+        -CollectorNumber
+      )
+  }),
 
  ##### Indicators #####
 
@@ -2271,6 +2315,61 @@ tar_target(ind_musquash_coliform_inside_outside,
                                control_polygon=control_polygons)
            }),
 
+tar_target(ind_musquash_birds_sample_coverage, command = {
+    areaID <- "Musquash Estuary Marine Protected Area"
+    sc <- calc_sample_coverage(data_musquash_MMMP_birds)
+
+    ind <- data.frame(
+      areaID = areaID,
+      indicator = "Birds Sample Coverage",
+      type = "Observations",
+      units = NA,
+      scoring = "custom",
+      PPTID = NA,
+      source = "https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr",
+      project_short_title = "Maritime Marsh Monitoring Program",
+      climate = FALSE,
+      design_target = FALSE,
+      data = I(list(data_musquash_MMMP_birds)),
+      score = sc$means[length(sc$means)],
+      status_statement = paste0(
+        "The sample coverage for the ",
+        areaID,
+        " is ",
+        round(max(sc$means) * 100, 1),
+        "%."
+      ),
+      trend_statement = paste0(
+        "The sample coverage is expected to increase by approximately ",
+        round(
+          (sc$means[length(sc$means)] - sc$means[length(sc$means) - 1]) * 100,
+          3
+        ),
+        "% per sample."
+      ),
+      climate_expectation = "FIXME",
+      indicator_rationale = "FIXME",
+      bin_rationale = "FIXME"
+    )
+
+    ind$p <- list(
+      ggplot(as.data.frame(sc[-1]), aes(x = N, y = means * 100)) +
+        geom_line() +
+        geom_ribbon(
+          aes(ymin = (means - sd) * 100, ymax = (means + sd) * 100),
+          alpha = 0.2
+        ) +
+        labs(
+          title = "Sample Coverage",
+          x = "Sample Size",
+          y = "Coverage"
+        ) +
+        theme_classic()
+    )
+
+    ind
+  }),
+
 
  ##### Indicator Bins #####
  tar_target(bin_biodiversity_FunctionalDiversity_df,
@@ -2290,11 +2389,12 @@ tar_target(ind_musquash_coliform_inside_outside,
  tar_target(bin_biodiversity_SpeciesDiversity_df,
             aggregate_groups("bin",
                              "Species Diversity",
-                             weights_ratio=c(1,1,1),
+                             weights_ratio = 1,
                              weights_sum = 1,
                              ind_species_representation,
                              ind_musquash_infaunal_diversity,
-                             ind_musquash_nekton_diversity
+                             ind_musquash_nekton_diversity,
+                             ind_musquash_birds_sample_coverage
 
             )),
  tar_target(bin_habitat_Connectivity_df,
@@ -2308,7 +2408,7 @@ tar_target(ind_musquash_coliform_inside_outside,
             aggregate_groups("bin",
                              "Environmental Representativity",
                              weights_sum = 1,
-                             weights_ratio = c(1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1),
+                             weights_ratio = 1,
                              ind_nitrate,
                              ind_silicate,
                              ind_phosphate,
@@ -2410,7 +2510,7 @@ tar_target(ind_musquash_coliform_inside_outside,
                              bin_productivity_StructureandFunction_df,
                              bin_productivity_ThreatstoProductivity_df)),
 
- ##### Ecological Pillar #####
+ ##### Ecological Pillar and other end products #####
 
  tar_target(data_pillar_ecol_df,
             {
@@ -2547,239 +2647,6 @@ tar_target(plot_files,
               allplotnames
             }),
 
- tar_target(fish_length,
-            command = {
-              get_data('rv', data.dir = "C:/Users/HarbinJ/Documents/data/rv")
-
-              GSDET$latitude <- 0
-              GSDET$longitude <- 0
-              GSDET$year <- 0
-              missions <- unique(GSDET$MISSION)
-
-              GSINF <-GSINF[-which(is.na(GSINF$SDATE)),]
-              for (i in seq_along(missions)) {
-                GSDET$latitude[which(GSDET$MISSION == missions[i])] <- GSINF$LATITUDE[which(GSINF$MISSION == missions[i])][1]
-                GSDET$longitude[which(GSDET$MISSION == missions[i])]  <- GSINF$LONGITUDE[which(GSINF$MISSION == missions[i])][1]
-                GSDET$year[which(GSDET$MISSION == missions[i])]  <- unique(as.numeric(substr(GSINF$SDATE[which(GSINF$MISSION == missions[i])],1,4)))
-              }
-              GSDET$type <- "RV Survey"
-              names(GSDET)[which(names(GSDET) == "FLEN")] <- "fish_length"
-              GS <- GSDET[,c("longitude", "latitude", "year", "fish_length", "type")]
-              GS$units <- "cm"
-              GS
-            }
-
- ),
-
- tar_target(fish_weight,
-            command = {
-              get_data('rv', data.dir = "C:/Users/HarbinJ/Documents/data/rv")
-
-              GSDET$latitude <- 0
-              GSDET$longitude <- 0
-              GSDET$year <- 0
-              missions <- unique(GSDET$MISSION)
-
-              GSINF <-GSINF[-which(is.na(GSINF$SDATE)),]
-              for (i in seq_along(missions)) {
-                GSDET$latitude[which(GSDET$MISSION == missions[i])] <- GSINF$LATITUDE[which(GSINF$MISSION == missions[i])][1]
-                GSDET$longitude[which(GSDET$MISSION == missions[i])]  <- GSINF$LONGITUDE[which(GSINF$MISSION == missions[i])][1]
-                GSDET$year[which(GSDET$MISSION == missions[i])]  <- unique(as.numeric(substr(GSINF$SDATE[which(GSINF$MISSION == missions[i])],1,4)))
-              }
-              GSDET$type <- "RV Survey"
-              names(GSDET)[which(names(GSDET) == "FWT")] <- "fish_weight"
-
-  tar_target(ind_musquash_birds_sample_coverage, command = {
-    areaID <- "Musquash Estuary Marine Protected Area"
-    sc <- calc_sample_coverage(data_musquash_MMMP_birds)
-
-    ind <- data.frame(
-      areaID = areaID,
-      indicator = "Birds Sample Coverage",
-      type = "Observations",
-      units = NA,
-      scoring = "custom",
-      PPTID = NA,
-      source = "https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr",
-      project_short_title = "Maritime Marsh Monitoring Program",
-      climate = FALSE,
-      design_target = FALSE,
-      data = I(list(data_musquash_MMMP_birds)),
-      score = sc$means[length(sc$means)],
-      status_statement = paste0(
-        "The sample coverage for the ",
-        areaID,
-        " is ",
-        round(max(sc$means) * 100, 1),
-        "%."
-      ),
-      trend_statement = paste0(
-        "The sample coverage is expected to increase by approximately ",
-        round(
-          (sc$means[length(sc$means)] - sc$means[length(sc$means) - 1]) * 100,
-          3
-        ),
-        "% per sample."
-      ),
-      climate_expectation = "FIXME",
-      indicator_rationale = "FIXME",
-      bin_rationale = "FIXME"
-    )
-
-    ind$p <- list(
-      ggplot(as.data.frame(sc[-1]), aes(x = N, y = means * 100)) +
-        geom_line() +
-        geom_ribbon(
-          aes(ymin = (means - sd) * 100, ymax = (means + sd) * 100),
-          alpha = 0.2
-        ) +
-        labs(
-          title = "Sample Coverage",
-          x = "Sample Size",
-          y = "Coverage"
-        ) +
-        theme_classic()
-    )
-
-    ind
-  }),
-      weights_ratio = c(1, 1, 1, 1),
-      ind_musquash_birds_sample_coverage
-
-              GS <- GSDET[,c("longitude", "latitude", "year", "fish_weight", "type")]
-              GS$units <- "g"
-              GS}),
-
-  tar_target(name = data_MMMP_birds_raw, command = {
-    # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
-    read.delim(
-      file.path(
-        Sys.getenv("OneDriveCommercial"),
-        "MarConsNetTargets",
-        "data",
-        "birds",
-        "naturecounts_request_257783_1752519752346",
-        "mmmp_naturecounts_data.txt"
-      ),
-      header = TRUE
-    )
-  }),
-
-  tar_target(name = data_musquash_MMMP_birds,
-             command = {
-    # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
-    data_MMMP_birds_raw |>
-      filter(!is.na(DecimalLatitude), !is.na(DecimalLongitude)) |>
-      st_as_sf(
-        coords = c("DecimalLongitude", "DecimalLatitude"),
-        crs = 4326,
-        remove = FALSE
-      ) |>
-      st_filter(st_buffer(
-        MPAs[MPAs$NAME_E == "Musquash Estuary Marine Protected Area", ],
-        2000
-      )) |>
-      filter(
-        ScientificName != "",
-        !is.na(ScientificName)
-      ) |>
-      as.data.frame() |>
-      mutate(
-        DecimalLatitude = round(DecimalLatitude, 3),
-        DecimalLongitude = round(DecimalLongitude, 3)
-      ) |>
-      group_by(
-        DecimalLatitude,
-        DecimalLongitude,
-        YearCollected,
-        MonthCollected,
-        DayCollected,
-        CollectorNumber,
-        ScientificName
-      ) |>
-      reframe(n = n()) |>
-      pivot_wider(
-        names_from = ScientificName,
-        values_from = n,
-        values_fill = 0
-      ) |>
-      select(
-        -DecimalLatitude,
-        -DecimalLongitude,
-        -YearCollected,
-        -MonthCollected,
-        -DayCollected,
-        -CollectorNumber
-      )
-  }),
-
- tar_target(all_haddock,
-            command={
-              get_data('rv', data.dir = "C:/Users/HarbinJ/Documents/data/rv")
-
-              # All haddock
-              GSSPECIES = GSSPECIES[GSSPECIES$CODE %in% c(11),]
-              Mar.datawrangling::self_filter(keep_nullsets = F)
-              ah = Mar.datawrangling::summarize_catches()
-              names(ah)[which(names(ah) == "LATITUDE")] <- "latitude"
-              names(ah)[which(names(ah) == "LONGITUDE")] <- "longitude"
-              names(ah)[which(names(ah) == "SDATE")] <- "date"
-              names(ah)[which(names(ah) == "TOTNO")] <- "haddock_abundance"
-              ah$type <- "RV"
-              ah$units <- "(counts)"
-              names(ah)[which(names(ah) == "TOTWGT")] <- "haddock_biomass"
-              ah$year <- as.numeric(format(ah$date, "%Y"))
-              ah <- ah[-(which(ah$longitude > -10)),] # remove outlier points
-
-              AH <- ah[,c("longitude", "latitude","year", "haddock_abundance", "type", "units"),]
-
-              AH
-            }),
-
- tar_target(haddock_biomass,
-            command={
-              get_data('rv', data.dir = "C:/Users/HarbinJ/Documents/data/rv")
-
-              # All haddock
-              GSSPECIES = GSSPECIES[GSSPECIES$CODE %in% c(11),]
-              Mar.datawrangling::self_filter(keep_nullsets = F)
-              ah = Mar.datawrangling::summarize_catches()
-              names(ah)[which(names(ah) == "LATITUDE")] <- "latitude"
-              names(ah)[which(names(ah) == "LONGITUDE")] <- "longitude"
-              names(ah)[which(names(ah) == "SDATE")] <- "date"
-              names(ah)[which(names(ah) == "TOTNO")] <- "haddock_abundance"
-              ah$type <- "RV"
-              ah$units <- "(counts)"
-              names(ah)[which(names(ah) == "TOTWGT")] <- "haddock_biomass"
-              ah$year <- as.numeric(format(ah$date, "%Y"))
-              ah <- ah[-(which(ah$longitude > -10)),] # remove outlier points
-
-              AH <- ah[,c("longitude", "latitude","year", "haddock_biomass", "type"),]
-              AH$units <- "kg"
-              AH
-            }),
-
- tar_target(surface_height,
-            command={
-              df <- azmpdata::Derived_Monthly_Stations
-              # Add latitude and longitude
-              df$latitude <- 0
-              df$longitude <- 0
-              type <- NULL
-              df$latitude[which(df$station == "Halifax")] <- 43.5475
-              df$longitude[which(df$station == "Halifax")] <- -63.5714
-
-              df$latitude[which(df$station == "Yarmouth")] <- 43.8377
-              df$longitude[which(df$station == "Yarmouth")] <- -66.1150
-
-              df$latitude[which(df$station == "North Sydney")] <- 46.2051
-              df$longitude[which(df$station == "North Sydney")] <- -60.2563
-              df$units <- "m"
-              df$type <- "derived (AZMP)"
-              df <- df[,c("latitude", "longitude", "year", "units", "type", "sea_surface_height")]
-              df
-            }),
-
  tar_target(climate_change,
             command= {
               doc <- read_docx(file.path(system.file(package = "MarConsNetAnalysis"), "data", "climate.docx"))
@@ -2799,9 +2666,6 @@ tar_target(plot_files,
               summary <- unlist(lapply(split_text, function(x) x[2]))
               cc <- data.frame(indicators=indicators, summary=summary)
             }),
-
-
- ##### Pillar #####
 
 tar_target(name = MPA_report_card,
            command = {
