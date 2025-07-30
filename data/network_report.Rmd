@@ -1,0 +1,534 @@
+---
+title: "Annual Report"
+output: html_document
+---
+
+## Conservation Area
+
+`r params$mpas`
+
+## At-a-glance
+
+```{r, echo=FALSE,comment=NA, results="asis"}
+library(sf)
+library(leaflet)
+library(rgbif)
+library(rvest)
+library(dplyr)
+library(DT)
+
+
+last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
+string <- state$mpas
+network_context <- data_context(type="network")
+cat(network_context)
+```
+
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+cat("<div style='display: flex; gap: 10px;'>")
+PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
+for (name in names(PALETTE)) {
+  color <- PALETTE[name]
+  cat(sprintf("<div style='width: 50px; height: 20px; background-color: %s; text-align: center; 
+               color: black; border: 1px solid #000; line-height: 20px;'>%s</div>", 
+               color, name))
+}
+cat("</div>")
+```
+
+## Network Conservation Objectives
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+# Initialize empty table
+objective_table <- data.frame(
+  Objective = character(),
+  Flower_Plot_Linkage = character(),
+  Rationale = character(),
+  stringsAsFactors = FALSE
+)
+
+filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
+
+for (fo in seq_along(filtered_odf$objectives)) {
+  id <- fo
+  req(input$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
+
+  if (state$mpas == "Scotian Shelf") {
+    c1 <- 1:length(pillar_ecol_df$areaID)
+  } else {
+    c1 <- which(pillar_ecol_df$areaID == state$mpas)
+  }
+
+  flower_linkage_name <- odf$flower_plot[which(odf$objectives == N_Objectives[id])]
+
+  # Try to match by bin
+  c2 <- which(tolower(pillar_ecol_df$bin) == tolower(flower_linkage_name))
+  KEEP <- intersect(c1, c2)
+
+  # Fallback: match by objective
+  if (length(KEEP) == 0) {
+    c2 <- which(tolower(pillar_ecol_df$objective) == tolower(flower_linkage_name))
+    KEEP <- intersect(c1, c2)
+  }
+
+  flower_linkage <- if (length(KEEP) > 0) {
+    unique(pillar_ecol_df$bin[KEEP])[1]
+  } else {
+    NA
+  }
+
+  ymax <- pillar_ecol_df$score[KEEP]
+  weight <- pillar_ecol_df$weight[KEEP]
+  ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
+
+  # Convert score to grade + color
+  clc <- as.character(calc_letter_grade(ymax))
+  finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+  if (length(finalCol) == 0) finalCol <- "#EDEDED"
+
+  # Add styled objective label and linkage to the table
+  objective_table <- rbind(objective_table, data.frame(
+    Objective = sprintf(
+      '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span>',
+      finalCol, N_Objectives[fo]
+    ),
+    Flower_Plot_Linkage = flower_linkage,
+    Rationale = NA_character_,
+    stringsAsFactors = FALSE
+  ))
+}
+
+# Optional: View in HTML in RMarkdown or render in Shiny
+DT::datatable(objective_table, escape = FALSE, rownames = FALSE)
+
+
+```
+
+
+```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+p <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
+area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
+
+```
+
+```{r, echo=FALSE}
+
+# HERE JAIM
+map <-  leaflet() %>%
+    addTiles()
+
+for (i in seq_along(MPAs$NAME_E[1:3])) {
+  mpa_of_interest <- MPAs$NAME_E[i]
+
+if (mpa_of_interest %in% MPA_report_card$NAME_E) {
+  fill_color <- ifelse(
+    is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == mpa_of_interest)]),
+    "#EDEDED",
+    flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == mpa_of_interest)]]]
+  )
+
+  # Set border color conditionally
+  border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+
+  map <- map %>% 
+    addPolygons(
+      data = MPAs$geoms[which(MPAs$NAME_E == mpa_of_interest)],
+      fillColor = fill_color,
+      fillOpacity = 0.5,
+      weight = 2,
+      color = border_color
+    )
+  
+} else {
+  fill_color <- flowerPalette[[area_grade]]
+  border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+
+  map <- map %>%
+    addPolygons(
+      data = MPAs$geoms[which(MPAs$NAME_E == mpa_of_interest)],
+      fillColor = fill_color,
+      fillOpacity = 0.5,
+      weight = 2,
+      color = border_color
+    )
+}
+} # end
+
+
+map
+```
+
+## Creature Feature
+
+```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
+# FIXME
+```
+
+## Research and Monitoring
+
+### Flower Plot
+
+```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),],
+                                            grouping = "objective",
+                                            labels = "bin",
+                                            score = "score",
+                                            max_score=100,
+                                            min_score=0,
+                                            title="Flower plot frame work")
+```
+
+
+As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+# Create an empty data frame to store results
+summary_table <- data.frame(
+  `Indicator Bin` = character(),
+  `Grade` = character(),
+  `Number of Indicators` = character(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through bins and calculate grades
+for (i in seq_along(unique(p$bin))) {
+  keep <- which(p$bin == unique(p$bin)[i])
+  df <- p[keep, ]
+  
+  grade <- calc_letter_grade(weighted.mean(df$score, df$weight, na.rm = TRUE))
+  
+  if (any(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))) {
+  indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))])
+  } else {
+    indicatorLength <- length(df$indicator)
+  }
+  
+  summary_table[i, ] <- c(unique(p$bin)[i], grade, indicatorLength)
+}
+
+# Print as a table
+print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
+
+
+```
+
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+library(knitr)
+library(leaflet)
+
+image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
+                                    "MarConsNetTargets","data",
+                                    "plots")
+image_files <- list.files(image_folder, full.names = TRUE)
+
+keeper <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas), ]
+
+BINS <- unique(trimws(tolower(unlist(
+  strsplit(keeper$bin, ";")
+)), "both"))
+
+
+keeper2 <- NULL
+
+for (i in seq_along(BINS)) {
+  KK <- keeper[which(grepl(BINS[i], trimws(tolower(
+    keeper$bin
+  ), "both"))), ]
+  
+  # Remove NA and placeholder indicators
+  
+  if (any(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))) {
+    KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))),]
+  }
+  
+  keeper2[[i]] <- data.frame(
+    Indicator = KK$indicator,
+    Status = KK$status_statement,
+    Trend = KK$trend_statement,
+    #Plot = KK$plot,
+    Grade = KK$score,
+    Project = KK$PPTID,
+    Source = KK$source,
+    stringsAsFactors = FALSE
+  )
+  
+}
+
+names(keeper2) <- BINS
+
+for (i in seq_along(keeper2)) {
+  cat(sprintf('<details><summary><strong>Indicator Bin: %s</strong></summary>\n\n', toupper(BINS[i])))
+  
+  if (!(length(keeper2[[i]]$Indicator) == 0)) {
+  for (j in seq_along(keeper2[[i]]$Indicator)) {
+    cat(sprintf("<b>Indicator: %s.</b>\n\n", keeper2[[i]]$Indicator[j]))
+    
+    
+    # FINDING PLOT
+      k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
+      k2 <- which(grepl(make.names(keeper2[[i]]$Indicator[j]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
+      KEEP <- intersect(k1,k2)
+      
+      if (length(KEEP) > 1) {
+        KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == keeper2[[i]]$Indicator[j])]
+      }
+      plot_file <- image_files[KEEP]
+    
+    # END PLOT
+      if (length(plot_file) > 0) {
+      for (p in seq_along(plot_file)) {
+        #cat("![](", plot_file[p], ")\n\n", sep = "")
+         cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
+      }
+      }
+      
+      cat(sprintf("%s.\n\n", " "))
+      cat(sprintf("%s.\n\n", keeper2[[i]]$Status[j]))
+      if (is.na(keeper2[[i]]$Trend[j])) {
+        cat(sprintf("%s.\n\n", "No temporal analysis completed for this indicator."))
+      } else if (!(keeper2[[i]]$Trend[j] == "There is no temporal dimension in this data.")) {
+      cat(sprintf("%s.\n\n", keeper2[[i]]$Trend[j]))
+      }
+      cat(sprintf("%s.\n\n", " "))
+      cat(sprintf(
+  "This indicator has a score of: %s.\n\nBased on the following scoring scheme: %s\n",
+  keeper2[[i]]$Grade[j],
+  pillar_ecol_df$scoring[
+    which(
+      pillar_ecol_df$indicator == keeper2[[i]]$Indicator[j] &
+      pillar_ecol_df$areaID == state$mpas
+    )
+  ]
+))
+
+      cat(sprintf("%s.\n\n", " "))
+      cat(sprintf(
+        "Data was provided from %s.\n\n",
+        ifelse(is.na(keeper2[[i]]$Project[j]), keeper2[[i]]$Source[j], keeper2[[i]]$Project[j])
+      ))
+  } # END HERE
+  
+  } else {
+  cat("There are no indicators in the app for this indicator bin.")
+}
+  cat("</details>\n\n")
+}
+
+
+```
+## Discussion
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
+
+cat("### Climate Change\n")
+
+climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == state$mpa)])
+
+for (i in seq_along(climate_indicators)) {
+  indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == state$mpas)
+  
+  if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df$trend_statement[indicator_keep]))) {
+    
+    excel_keep <- which(climate$Indicator == climate_indicators[i])
+    pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == state$mpas)
+    
+    cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
+    
+    cat(climate$Context[excel_keep], "\n\n")
+    cat("In our analysis, ")
+    cat(pillar_ecol_df$trend_statement[indicator_keep])
+    
+    if (!(grepl("There is only one year of data", pillar_ecol_df$trend_statement[indicator_keep]))) {
+    
+    pval <- str_extract(pillar_ecol_df$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
+      str_extract("\\d+(\\.\\d+)?") |>
+      as.numeric()
+    
+    if (pval > 0.05) {
+      cat(". The change in this indicator in the MPA is not significant.")
+    } else {
+      cat(". The change in this indicator in the MPA is significant.")
+    }
+    
+    cat(" An inside/outside comparison was done to help understand the impacts of climate change on this variable. Results showed ")
+    
+    result <- pillar_ecol_df$status_statement[pillar_keep_inside]
+    
+    cat(paste0(tolower(result), "."))
+    
+    if (!(grepl("Protection could therefore be positively impacting this variable", result))) {
+      # No sig dif between the two
+      desired <- sub(".*\\s+", "", pillar_ecol_df$scoring[indicator_keep])
+      actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df$trend_statement[indicator_keep])), "increase", "decrease")
+      
+      if (pval > 0.05) { ## This is pval of the variable (not inside/ outside)
+        cat("The rate in which this indicator is changing is not significant (p=", pval,") which suggests that climate change does not seem to have a significant impact on that particular indicator.")
+      } else {
+        # change is significant
+        if (identical(desired, actual_results)) {
+          cat("The results show us that climate change doesn't seem to be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant trend in the opposite direction than we would expect.")
+        } else {
+          #The trend is going in the opposite direction that we would expect and
+          #statistically significant,we point out that according to our analysis
+          cat("The results show us that climate change could be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant
+        trend in the direction than we would expect as a result of climate change.")
+        }
+      }
+    }
+    } else {
+    cat("More sampling is suggested.")
+  }
+  }
+  
+  cat("\n\n")
+}
+
+cat("### Research Recommendations \n")
+
+cat(paste0(
+  "The following indicator bins do not have any data: ",
+  paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
+  ". It is recommended to further study these areas.\n"
+))
+cat("\n\n")
+
+# Bad grade table
+badGrade <- which(pillar_ecol_df$areaID == state$mpas & (!(is.na(pillar_ecol_df$indicator))) & (!(pillar_ecol_df$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df$indicator))) & (pillar_ecol_df$score < 51 | is.na(pillar_ecol_df$score)))
+
+badGradeTable <- pillar_ecol_df[badGrade, ] |> 
+  dplyr::group_by(bin) |>
+  dplyr::ungroup() |>
+  dplyr::select("indicator", "score")
+
+
+cat("The following indicators are scoring low or don't have enough data to properly score. Some additional effort should be considered with these indicators: \n")
+
+print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Explore",row.names=FALSE))
+
+
+```
+
+
+
+
+
+
+
+
+## Collaborations and partnerships
+
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
+project_subset <- pillar_ecol_df$PPTID[which(pillar_ecol_df$areaID == state$mpas)]
+if (!(length(project_subset) == 0)) {
+p_subset <- unique(trimws(unlist(strsplit(project_subset, ";")), "both"))
+}
+if (any(is.na(p_subset))) {
+  p_subset <- p_subset[-which(is.na(p_subset))]
+}
+if (any(p_subset == "NA")) {
+  p_subset <- p_subset[-which(p_subset == "NA")]
+}
+
+if (any(p_subset %in% collaborations$project_id)) {
+  good_col <- which(collaborations$project_id %in% p_subset)
+  collab_subset <- collaborations[good_col,]
+  
+  ## For collaborations, I need to obtain the year. This would allow me to say 'for this year, x collaborations happened, but in previous years for this project, Y collaborations have happened).
+  
+  #last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
+  
+  year_keep <- which(collab_subset$fiscal_year == last_year)
+  
+  if (!(length(year_keep) == 0)) {
+    recent_col <- collab_subset[year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
+    names(recent_col) <- c("Project ID", "Organization", "Year")
+
+   organizations <- unique(recent_col$Organization)
+    rc <- data.frame(Organization=organizations)
+    
+    for (i in seq_along(organizations)) {
+      keeping <- which(recent_col$Organization == organizations[i])
+      rc$Year[i] <- paste0(sort(unique(recent_col[keeping,]$Year)), collapse= ", ")
+    }
+    cat(paste0("The following collaborations/partnerships were identified for ", last_year, " for projects that contributed to this site:"))
+    cat("\n\n")
+
+    print(knitr::kable(rc, caption = "Recent Collaborations and Partnerships",row.names=FALSE))
+    cat("\n\n")
+  } else {
+  cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. /n/n"))  
+  }
+  if (!(length(which((!(1:length(collab_subset$project_id)%in% year_keep))))) == 0) {
+    
+    cat("The following past partnerships/collaborations have been identified and contributed to this site: \n\n")
+    past_coll <- collab_subset[-year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
+    names(past_coll) <- c("Project ID", "Organization", "Year")
+    organizations <- unique(past_coll$Organization)
+    pc <- data.frame(Organization=organizations)
+    
+    for (i in seq_along(organizations)) {
+      keeping <- which(past_coll$Organization == organizations[i])
+      pc$Year[i] <- paste0(sort(unique(past_coll[keeping,]$Year)), collapse= ", ")
+    }
+
+    print(knitr::kable(pc, caption = "Past Collaborations and Partnerships",row.names=FALSE))
+    
+  } else {
+    cat("There are no partnerships/collaborations identified from previous years. \n\n")
+  }
+} else {
+    cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool. \n\n")
+}
+```
+
+## Outreach and engagement
+
+### Deliverables
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
+deliv_keep <- which(deliverables$project_id %in% p_subset & deliverables$year == last_year) # Only projects for this area / last year
+
+if (length(deliv_keep > 0)) {
+  delv <- deliverables[deliv_keep,][c("classification_display", "description")]
+  if (any(str_count(delv$description, "\\S+") > 35)) {
+  delv$description[which(str_count(delv$description, "\\S+") > 35)] <- " "
+  }
+  
+  names(delv) <- c("Deliverable", "Description")
+  
+  print(knitr::kable(delv, caption = paste0("Deliverables for " , last_year ),row.names=FALSE))
+} else {
+  cat("There has been no identified deliverables in the Project Planning Tool for projects supporting this area.")
+}
+
+```
+
+### CSAS
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
+# Which ones to keep
+csas_keep <- which(grepl(paste(state$mpas, collapse = "|"), csas$title)) # state$mpas
+if (state$mpas == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)") {
+csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
+} else if (state$mpas ==  "St. Anns Bank Marine Protected Area") {
+  csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))
+} else if (state$mpas == "Musquash Estuary Marine Protected Area") {
+  csas_keep <- c(csas_keep, which(grepl("Musquash", csas$title, ignore.case=TRUE)))
+}
+
+if (length(csas_keep) > 0) {
+  CSAS <- csas[csas_keep,]
+  names(CSAS) <- c("Title", "Date")
+  print(knitr::kable(CSAS, caption = paste0("CSAS Processes for " , state$mpas),row.names=FALSE))
+} else {
+  cat("There have been no identified relevant CSAS meetings in the CSAS DMapps related to this area.")
+}
+
+
+
+
+```
+
