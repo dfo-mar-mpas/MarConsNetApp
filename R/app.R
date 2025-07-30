@@ -50,10 +50,11 @@ app <- function() {
     }
   }
 
-  regions_js_array <- paste0('[',
-                             paste0('"', unique(pillar_ecol_df$region), '"', collapse = ','),
-                             ']')
-  condition <- paste0('!', regions_js_array, '.includes(input.mpas) && input.tabs === "tab_0"')
+  #regions_js_array <- paste0('[',
+  #                           paste0('"', unique(pillar_ecol_df$region), '"', collapse = ','),
+  #                           ']')
+  #condition <- paste0('!', regions_js_array, '.includes(input.mpas) && input.tabs === "tab_0"')
+  condition <- paste0('input.tabs === "tab_0"')
 
 
 ui <- shiny::fluidPage(
@@ -351,6 +352,9 @@ server <- function(input, output, session) {
     if (!(state$mpas %in% unique(pillar_ecol_df$region))) {
       # Define the Rmd file to render
       rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
+    } else {
+      rmd_file <- system.file("data", "network_report.Rmd", package = "MarConsNetApp")
+    }
       if (file.exists(rmd_file)) {
         params <- list(
           mpas = state$mpas
@@ -361,9 +365,13 @@ server <- function(input, output, session) {
         output$report_ui <- renderUI({
           tags$iframe(src = "report.html", width = "100%", height = "600px")
         })
-      } else {
-        showNotification("The required Rmd file does not exist.", type = "error")
-      }
+      # } else {
+      #
+      #
+      #
+      #
+      #   showNotification("The required Rmd file does not exist.", type = "error")
+      # }
     }
   })
 

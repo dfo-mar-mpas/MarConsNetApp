@@ -368,17 +368,6 @@ try({
 
 
 
-```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-#FIXME - Get from PPT Milestones/Deliverable
-
-if (state$mpas == "St. Anns Bank Marine Protected Area") {
-  cat("Scientists have found large numbers of thorny skate or kekunaluej purses (egg capsules) in a part of St. Anns Bank Marine Protected Area")
-} else {
-  cat("There is no identified creature feature for this area.")
-}
-
-```
-
 ## Research and Monitoring
 
 ### Flower Plot
