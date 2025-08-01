@@ -10,7 +10,8 @@ tar_option_set(
   packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
                "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
                "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units", "oceglider", "RCurl", "oce", "gsw"),
+               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units", "oceglider", "RCurl", "oce", "gsw",
+              "rgbif"),
   #controller = crew::crew_controller_local(workers = 2),
   # imports = c("civi"),
   format = "qs"
@@ -1126,6 +1127,89 @@ list(
         -CollectorNumber
       )
   }),
+
+tar_target(name = rawdata_inaturalist_by_mpa,
+  command = {
+      occ_search(
+        geometry = st_as_text(st_as_sfc(st_bbox(MPAs))),
+        institutionCode = "iNaturalist",
+        limit = 100000
+      )
+  },
+  pattern = map(MPAs)),
+
+tar_target(name = data_inaturalist,
+  command = {
+    rawdata_inaturalist_by_mpa |> 
+    map_dfr( ~.x$data)|> 
+    st_as_sf(
+      coords = c("decimalLongitude", "decimalLatitude"),
+      crs = 4326,
+      remove = FALSE
+    ) 
+  }),
+  
+  
+  tar_target(name = creature_feature,
+    command = {
+      sptable <- data_inaturalist |> 
+      st_as_sf(
+        coords = c("decimalLongitude", "decimalLatitude"),
+        crs = 4326,
+        remove = FALSE
+      ) |> 
+      st_join(MPAs)
+      st_filter(!is.na(NAME_E)) |>
+      as.data.frame() |> 
+      filter(!is.na(speciesKey),
+      kingdom != "Plantae"|genus == "Zostera", # remove plants except eelgrass
+      class!="Mammalia"|family %in% c("Phocidae","Otarioidea"), #remove mammals except seals
+      class!="Reptilia"|family %in% c("Cheloniidae","Dermochelyidae"),# remove reptiles except sea turtles
+      phylum!="Basidiomycota",phylum!="Ascomycota") |> # remove mushrooms and lichens
+      group_by(speciesKey,scientificName,kingdom, phylum, class,NAME_E) |>
+      reframe(n=n(),
+      exampleurl = references[1],
+      rightsHolder = rightsHolder[1]) |> 
+      # arrange(desc(n)) |>
+      # head(10) |>
+      rowwise() |>
+      mutate(commonname = NA,
+        imageurl = {
+          url <- try(read_html(exampleurl) |>
+          html_node('meta[property="og:image"]') |> 
+          html_attr('content'))
+          if (inherits(url, "try-error")) {
+            NA
+          } else {
+            url
+          }
+        },
+        image_column = paste0(
+          '<a href="', exampleurl, '" target="_blank">',
+          '<img src="', imageurl, '" style="max-height: 100px; max-width: 100px; object-fit: cover;"/>',
+          '<br>',rightsHolder,'</br>',
+          '</a>'
+        )) 
+        
+        for(i in 1:nrow(sptable)){
+          spnames <- try(name_usage(sptable$speciesKey[i], data = "vernacularNames")[[2]] )
+          if(nrow(spnames)>0|| !inherits(spnames, "try-error")) {
+            cn <- spnames |>
+            as.data.frame() |>
+            filter(language == "eng") |> 
+            pull(vernacularName) |>
+            table() |> 
+            sort(decreasing = TRUE) |>
+            head(1) |> 
+            names()
+            if(!is.null(cn)){
+              sptable$commonname[i] <- cn
+            }
+          }
+        }
+
+        sptable
+      }),
 
  ##### Indicators #####
 
