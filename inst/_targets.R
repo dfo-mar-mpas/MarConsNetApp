@@ -64,6 +64,7 @@ list(
   # get the Protected and Conserved areas in the bioregion
   tar_target(name = MPAs,
              command = {
+               regions
                areas <- get_spatial_layer("https://maps-cartes.ec.gc.ca/arcgis/rest/services/CWS_SCF/CPCAD/MapServer/0",
                                  where="BIOME='M' AND MGMT_E='Fisheries And Oceans Canada'") |>
                  group_by(NAME_E, NAME_F) |>
@@ -75,8 +76,41 @@ list(
 
                areas$region <- centroids$NAME_E
 
-               areas |>
+               areas <- areas |>
                  filter(!is.na(region))
+
+
+               bbox_coords <- matrix(c(
+                 -171, 24,  # xmin, ymin (Hawaii/Alaska/Florida range)
+                 -50,  24,  # xmax, ymin
+                 -50,  84,  # xmax, ymax
+                 -171, 84,  # xmin, ymax
+                 -171, 24   # close the polygon
+               ), ncol = 2, byrow = TRUE)
+
+               bbox <- st_polygon(list(bbox_coords)) |>
+                 st_sfc(crs = st_crs(areas)) |>
+                 st_make_valid()
+
+               # Step 4: Get union of all MPAs
+               all_mpa_union <- st_union(areas$geoms)
+
+               # Step 5: Compute difference (the "outside" area)
+               outside_geom <- st_difference(bbox, all_mpa_union) |> st_make_valid()
+
+               # Step 6: Create the Outside row
+               outside_row <- tibble(
+                 NAME_E = "Non_Conservation_Area",
+                 NAME_F = "Extérieur",
+                 geoms = outside_geom,
+                 region = NA
+               )
+
+               # Step 7: Bind with existing areas
+               areas_full <- bind_rows(areas, outside_row)
+
+               areas_full
+
              }),
 
   tar_target(name=climate,
@@ -1117,7 +1151,7 @@ list(
       st_as_sf(
         coords = c("DecimalLongitude", "DecimalLatitude"),
         crs = 4326,
-        remove = FALSE) |> 
+        remove = FALSE) |>
       select(
         -DecimalLatitude,
         -DecimalLongitude,
@@ -1140,27 +1174,27 @@ tar_target(name = rawdata_inaturalist_by_mpa,
 
 tar_target(name = data_inaturalist,
   command = {
-    rawdata_inaturalist_by_mpa |> 
-    map_dfr( ~.x$data)|> 
+    rawdata_inaturalist_by_mpa |>
+    map_dfr( ~.x$data)|>
     st_as_sf(
       coords = c("decimalLongitude", "decimalLatitude"),
       crs = 4326,
       remove = FALSE
-    ) 
+    )
   }),
-  
-  
+
+
   tar_target(name = creature_feature,
     command = {
-      sptable <- data_inaturalist |> 
+      sptable <- data_inaturalist |>
       st_as_sf(
         coords = c("decimalLongitude", "decimalLatitude"),
         crs = 4326,
         remove = FALSE
-      ) |> 
+      ) |>
       st_join(MPAs)
       st_filter(!is.na(NAME_E)) |>
-      as.data.frame() |> 
+      as.data.frame() |>
       filter(!is.na(speciesKey),
       kingdom != "Plantae"|genus == "Zostera", # remove plants except eelgrass
       class!="Mammalia"|family %in% c("Phocidae","Otarioidea"), #remove mammals except seals
@@ -1169,14 +1203,14 @@ tar_target(name = data_inaturalist,
       group_by(speciesKey,scientificName,kingdom, phylum, class,NAME_E) |>
       reframe(n=n(),
       exampleurl = references[1],
-      rightsHolder = rightsHolder[1]) |> 
+      rightsHolder = rightsHolder[1]) |>
       # arrange(desc(n)) |>
       # head(10) |>
       rowwise() |>
       mutate(commonname = NA,
         imageurl = {
           url <- try(read_html(exampleurl) |>
-          html_node('meta[property="og:image"]') |> 
+          html_node('meta[property="og:image"]') |>
           html_attr('content'))
           if (inherits(url, "try-error")) {
             NA
@@ -1189,18 +1223,18 @@ tar_target(name = data_inaturalist,
           '<img src="', imageurl, '" style="max-height: 100px; max-width: 100px; object-fit: cover;"/>',
           '<br>',rightsHolder,'</br>',
           '</a>'
-        )) 
-        
+        ))
+
         for(i in 1:nrow(sptable)){
           spnames <- try(name_usage(sptable$speciesKey[i], data = "vernacularNames")[[2]] )
           if(nrow(spnames)>0|| !inherits(spnames, "try-error")) {
             cn <- spnames |>
             as.data.frame() |>
-            filter(language == "eng") |> 
+            filter(language == "eng") |>
             pull(vernacularName) |>
-            table() |> 
+            table() |>
             sort(decreasing = TRUE) |>
-            head(1) |> 
+            head(1) |>
             names()
             if(!is.null(cn)){
               sptable$commonname[i] <- cn
@@ -2405,9 +2439,9 @@ tar_target(ind_musquash_coliform_inside_outside,
 
 tar_target(ind_musquash_birds_sample_coverage, command = {
     areaID <- "Musquash Estuary Marine Protected Area"
-    sc <- data_musquash_MMMP_birds |> 
-      as.data.frame() |> 
-      select(-geometry) |> 
+    sc <- data_musquash_MMMP_birds |>
+      as.data.frame() |>
+      select(-geometry) |>
       calc_sample_coverage()
 
     ind <- data.frame(
@@ -2606,69 +2640,69 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
  tar_target(data_pillar_ecol_df,
             {
             APPTABS
+            regions
             target_bin_weight <- 1
 
             pedf <- aggregate_groups("pillar",
-                             "Ecological",
-                             weights_ratio=NA,
-                             weights_sum = NA,
-                             ecol_obj_biodiversity_df,
-                             ecol_obj_habitat_df,
-                             ecol_obj_productivity_df)|>
-              mutate(PPTID = as.character(PPTID)) |>
-              left_join(select(as.data.frame(MPAs),NAME_E, region),by = c("areaID"="NAME_E"))
+                                       "Ecological",
+                                       weights_ratio=NA,
+                                       weights_sum = NA,
+                                       ecol_obj_biodiversity_df,
+                                       ecol_obj_habitat_df,
+                                       ecol_obj_productivity_df) |>
+                mutate(PPTID = as.character(PPTID)) |>
+                left_join(dplyr::select(as.data.frame(MPAs), NAME_E, region), by = c("areaID"="NAME_E"))
 
-          x <-  pedf |>
-   group_by(objective, bin, areaID, region) |>
-   reframe(indicator = unique(areaID),
-           areaID = unique(region),
-           score = weighted.mean(score,weight,na.rm = TRUE),
-           score = if_else(is.nan(score),NA,score),
-           PPTID = paste(PPTID, collapse = "; ")) |>
-   group_by(bin) |>
-   mutate(weight=target_bin_weight/n()) |>
-   ungroup() |>
-   bind_rows(pedf) |>
-            # mutate(tab=make.names(paste0(areaID,
-            #                              "_",
-            #                              indicator)))
-            mutate(tab=paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))))
+              ##### Make a filtered version for summarizing (excludes Non_Conservation_Area)
+              pedf_filtered <- pedf |> filter(areaID != "Non_Conservation_Area")
 
+              x <- pedf_filtered |>
+                group_by(objective, bin, areaID, region) |>
+                reframe(
+                  indicator = unique(areaID),
+                  areaID = unique(region),
+                  score = weighted.mean(score, weight, na.rm = TRUE),
+                  score = if_else(is.nan(score), NA, score),
+                  PPTID = paste(PPTID, collapse = "; ")
+                ) |>
+                group_by(bin) |>
+                mutate(weight = target_bin_weight / n()) |>
+                ungroup() |>
 
-          # Rearranging pillar_ecol
+                ##### Bind in full data, including Non_Conservation_Area
+                bind_rows(pedf) |>
 
-          areas <- unique(x$areaID)
+                mutate(tab = paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))))
 
+              areas <- unique(x$areaID)
 
-          pillar_list <- split(x, x$areaID)
+              pillar_list <- split(x, x$areaID)
 
-          mpa_list <- pillar_list[-which(names(pillar_list) %in% regions$NAME_E)]
-          # Order based on score
-          mpa_list <- lapply(mpa_list, function(ddff) {
-            ddff[order(ddff$score, na.last = TRUE), ]
-          })
+              ##### Keep Non_Conservation_Area in pillar_list
+              mpa_list <- pillar_list[!names(pillar_list) %in% regions$NAME_E]
 
-          region_list <-  pillar_list[which(names(pillar_list) %in% regions$NAME_E)]
-          region_list <- lapply(region_list, function(ddff) {
-            ddff[order(ddff$score, na.last = TRUE), ]
-          })
-          # Order based on score
+              mpa_list <- lapply(mpa_list, function(ddff) {
+                ddff[order(ddff$score, na.last = TRUE), ]
+              })
 
-          for (i in seq_along(region_list)) {
-            reg <- region_list[[i]]
-            for (j in 1:nrow(reg)) {
-              reg2 <- reg[j,]
-              region_bin <- reg2$indicator
-              keep <- which(names(mpa_list) == region_bin)
-              mpa_list[[keep]] <- rbind(reg2, mpa_list[[keep]])
-            }
+              region_list <- pillar_list[names(pillar_list) %in% regions$NAME_E]
+              region_list <- lapply(region_list, function(ddff) {
+                ddff[order(ddff$score, na.last = TRUE), ]
+              })
 
-          }
+              for (i in seq_along(region_list)) {
+                reg <- region_list[[i]]
+                for (j in 1:nrow(reg)) {
+                  reg2 <- reg[j,]
+                  region_bin <- reg2$indicator
+                  keep <- which(names(mpa_list) == region_bin)
+                  if (length(keep) > 0) {
+                    mpa_list[[keep]] <- rbind(reg2, mpa_list[[keep]])
+                  }
+                }
+              }
 
-
-          # In r, there is a row for every indicator bin, for every mpa that makes up that region. E.g. if there is 3 mpas in that region there are 3*11 rows.
-
-          do.call(rbind, mpa_list)
+              do.call(rbind, mpa_list)
 
 
  }),
@@ -2760,14 +2794,20 @@ tar_target(plot_files,
 
 tar_target(name = MPA_report_card,
            command = {
-             left_join(MPAs,data_pillar_ecol_df |>
-               select(-data,-plot) |>
-               filter(indicator %in% MPAs$NAME_E) |>
-               calc_group_score(grouping_var = "indicator") |>
-               mutate(grade = if_else(is.nan(score),
-                                      NA,
-                                      calc_letter_grade(score))),
-               by=c("NAME_E"="indicator"))
+
+             d_pedf <- data_pillar_ecol_df[-which(data_pillar_ecol_df$areaID == "Non_Conservation_Area"),]
+
+             mrc <- left_join(MPAs,d_pedf |>
+                                            dplyr::select(-data,-plot) |>
+                                            filter(indicator %in% MPAs$NAME_E) |>
+                                            calc_group_score(grouping_var = "indicator") |>
+                                            mutate(grade = if_else(is.nan(score),
+                                                                   NA,
+                                                                   calc_letter_grade(score))),
+                                          by=c("NAME_E"="indicator"))
+
+             mrc
+
            }),
 tar_target(name = upload_all_data_to_shiny,
             command = {

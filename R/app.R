@@ -56,6 +56,13 @@ app <- function() {
   #condition <- paste0('!', regions_js_array, '.includes(input.mpas) && input.tabs === "tab_0"')
   condition <- paste0('input.tabs === "tab_0"')
 
+## FILTERING FOR
+
+  old_pillar_ecol_df <- pillar_ecol_df
+  old_all_project_geoms <- all_project_geoms
+  pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
+  all_project_geoms <- all_project_geoms[-which(all_project_geoms$areaID == "Non_Conservation_Area"),]
+
 
 ui <- shiny::fluidPage(
   shinyjs::useShinyjs(),
