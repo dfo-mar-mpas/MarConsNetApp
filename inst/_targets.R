@@ -1292,7 +1292,6 @@ tar_target(name = data_inaturalist,
 
  tar_target(data_gliders,
             command= {
-              MPAs
               reDownload <- FALSE
               options(timeout = 700)
               dataDir <- tempdir()
