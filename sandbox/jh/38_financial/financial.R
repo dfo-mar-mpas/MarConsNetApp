@@ -2,91 +2,47 @@ library(sf)
 library(dplyr)
 
 # Step 1: Get areas
-tar_load(MPAs)
-areas <- MPAs
-
-
-#   get_spatial_layer(
-#   "https://maps-cartes.ec.gc.ca/arcgis/rest/services/CWS_SCF/CPCAD/MapServer/0",
-#   where =/ "BIOME='M' AND MGMT_E='Fisheries And Oceans Canada'"
-# ) |>
-#   group_by(NAME_E, NAME_F) |>
-#   summarise(geoms = st_make_valid(st_union(geoms)), .groups = "drop")
-
-bbox_coords <- matrix(c(
-  -171, 24,  # xmin, ymin (Hawaii/Alaska/Florida range)
-  -50,  24,  # xmax, ymin
-  -50,  84,  # xmax, ymax
-  -171, 84,  # xmin, ymax
-  -171, 24   # close the polygon
-), ncol = 2, byrow = TRUE)
-
-bbox <- st_polygon(list(bbox_coords)) |>
-  st_sfc(crs = st_crs(areas)) |>
-  st_make_valid()
-
-# Step 4: Get union of all MPAs
-all_mpa_union <- st_union(areas$geoms)
-
-# Step 5: Compute difference (the "outside" area)
-outside_geom <- st_difference(bbox, all_mpa_union) |> st_make_valid()
-
-# Step 6: Create the Outside row
-outside_row <- tibble(
-  NAME_E = "Non_Conservation_Area",
-  NAME_F = "Extérieur",
-  geoms = outside_geom,
-  region = NA
-)
-
-# Step 7: Bind with existing areas
-areas_full <- bind_rows(areas, outside_row)
-
-MPAs <- areas_full
-
-
-
-
-
-
-
-
-
-# Checked indicator level
- # tar_load(data_azmp_Discrete_Occupations_Sections)
- # data <- data_azmp_Discrete_Occupations_Sections  |>
- #   dplyr::select(longitude, latitude, year, depth, temperature)
- #
- #
- # leaflet() %>%
- #   addTiles() %>%
- #   addPolygons(data = areas_full$geoms[length(areas_full$geoms),],
- #               fillColor = "pink",
- #               fillOpacity = 0.5,
- #               color = "black",
- #               weight = 1) %>%
- #   addCircleMarkers(lat=data$latitude, lng=data$longitude,
- #                    radius=1, color="blue", fillOpacity=0.5)
-
-
-# ind <- process_indicator(data = data,
-#                   indicator_var_name = "temperature",
-#                   indicator = "Temperature",
-#                   type = "Discrete Occupations Sections",
-#                   units = "C",
-#                   scoring = "desired state: decrease",
-#                   PPTID = 579,
-#                   source="AZMP",
-#                   project_short_title = "AZMP",
-#                   climate = TRUE,
-#                   other_nest_variables="depth",
-#                   areas = MPAs,
-#                   climate_expectation="FIXME",
-#                   indicator_rationale="Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
-#                   bin_rationale="FIXME",
-#                   plot_type=c('time-series','map'),
-#                   plot_lm=FALSE)
-
+# tar_load(MPAs)
+# areas <- MPAs
+#
+#
+# #   get_spatial_layer(
+# #   "https://maps-cartes.ec.gc.ca/arcgis/rest/services/CWS_SCF/CPCAD/MapServer/0",
+# #   where =/ "BIOME='M' AND MGMT_E='Fisheries And Oceans Canada'"
+# # ) |>
+# #   group_by(NAME_E, NAME_F) |>
+# #   summarise(geoms = st_make_valid(st_union(geoms)), .groups = "drop")
+#
+# bbox_coords <- matrix(c(
+#   -171, 24,  # xmin, ymin (Hawaii/Alaska/Florida range)
+#   -50,  24,  # xmax, ymin
+#   -50,  84,  # xmax, ymax
+#   -171, 84,  # xmin, ymax
+#   -171, 24   # close the polygon
+# ), ncol = 2, byrow = TRUE)
+#
+# bbox <- st_polygon(list(bbox_coords)) |>
+#   st_sfc(crs = st_crs(areas)) |>
+#   st_make_valid()
+#
+# # Step 4: Get union of all MPAs
+# all_mpa_union <- st_union(areas$geoms)
+#
+# # Step 5: Compute difference (the "outside" area)
+# outside_geom <- st_difference(bbox, all_mpa_union) |> st_make_valid()
+#
+# # Step 6: Create the Outside row
+# outside_row <- tibble(
+#   NAME_E = "Non_Conservation_Area",
+#   NAME_F = "Extérieur",
+#   geoms = outside_geom,
+#   region = NA
+# )
+#
+# # Step 7: Bind with existing areas
+# areas_full <- bind_rows(areas, outside_row)
+#
+# MPAs <- areas_full
 
 # Make fake bin level (only aggregion)
 tar_load(ecol_obj_habitat_df)
@@ -202,6 +158,8 @@ tar_target(cost_of_mpas,
            command={
              om
              dped <- data_pillar_ecol_df[-which(data_pillar_ecol_df$indicator %in% MPAs$NAME_E),]
+             MPA <- MPAs[-which(MPAs$NAME_E %in% "Non_Conservation_Area"),]
+
 
 
              OM <- om |>
@@ -225,6 +183,8 @@ tar_target(cost_of_mpas,
                OM$number_of_project_stations[which(OM$project_id == as.numeric(names(ppt)[i]))] <- combinations # FIXME: Note, need to get the same to see if they happened at different times
              }
 
+             # NOW I HAVE THE NUMBER OF STATIONS
+
              OM <- OM[which(OM$project_id %in% names(ppt)),]
              OM <- split(OM, OM$project_id)
 
@@ -236,21 +196,16 @@ tar_target(cost_of_mpas,
 
              # Now that we have price per station we can determine how many unique stations (and time) are within the MPA
 
-             cost_per_site <- vector("list", length(MPAs$NAME_E))
-             names(cost_per_site) <- MPAs$NAME_E
-
-             cost_per_site <- vector("list", length(MPAs$NAME_E))
-             names(cost_per_site) <- MPAs$NAME_E
+             # I HAVE NUMBER OF STATIONS AND COST PER STATION
 
 
-             cost_per_site <- vector("list", length(MPAs$NAME_E))
-             names(cost_per_site) <- MPAs$NAME_E
+             percent_sites_in_mpa <- vector("list", length(MPA$NAME_E))
+             names(percent_sites_in_mpa) <- MPA$NAME_E
 
-             for (i in seq_along(MPAs$NAME_E)) {
+             for (i in seq_along(MPA$NAME_E)) {
                message(i)
                #i <- 45 # FIXME
-               mpa_name <- MPAs$NAME_E[i]
-
+               mpa_name <- MPA$NAME_E[i]
                for (j in seq_along(names(price_per_station))) {
                  message(j)
                  #j <- 2 # FIXME
@@ -259,7 +214,7 @@ tar_target(cost_of_mpas,
 
                  ddff_list <- dped$data[
                    dped$PPTID == pps &
-                     $areaID == mpa_name
+                     dped$areaID == mpa_name
                  ]
 
                  if (any(!vapply(ddff_list, is.null, logical(1)))) {
@@ -269,18 +224,24 @@ tar_target(cost_of_mpas,
                    result <- NULL
                  }
                  if (!(is.null(result))) {
-                   combinations <- result |> distinct(geometry, year) |> nrow() # This is the number of unique stations in the MPA
+                   sites_in_mpa <- result |> distinct(geometry, year) |> nrow() # This is the number of unique stations in the MPA
 
                    # Find percentage of stations in the MPA
-                   cost_per_site[[i]][[j]] <- combinations*price_per_station[[j]]
+                   total_sites <- unique(OM[[which(names(OM) == pps)]]$number_of_project_stations)
+                   percent_sites_in_mpa[[i]][[j]] <- sites_in_mpa/total_sites*100
                  } else {
-                   cost_per_site[[i]][[j]] <- 0
+                   percent_sites_in_mpa[[i]][[j]] <- 0
                  }
                }
              }
-
-             final_cost_per_site <- lapply(cost_per_site, function(x) sum(unlist(x)))
            }
+
+           percent_sites_in_mpa
+
+
+
+
+
 )
 
 
