@@ -1091,6 +1091,8 @@ list(
             command= {
               MPAs
               cp <- MPAs |>
+                filter(NAME_E!="Non_Conservation_Area") |> 
+                rowwise() |> 
                 mutate(geoms = st_difference(st_buffer(geoms,20000),geoms)
                 )
             }),
