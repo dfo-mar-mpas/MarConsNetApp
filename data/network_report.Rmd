@@ -9,7 +9,7 @@ output: html_document
 
 ## At-a-glance
 
-```{r, echo=FALSE,comment=NA, results="asis", message=FALSE}
+```{r, echo=FALSE,comment=NA, results="asis"}
 library(sf)
 library(leaflet)
 library(rgbif)
@@ -107,31 +107,30 @@ DT::datatable(objective_table, escape = FALSE, rownames = FALSE)
 
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-p <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
+if (!(state$mpas %in% "Scotian Shelf")) {
+p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+} else {
+  p <- pillar_ecol_df[whi]
+}
 area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
 
 ```
 
 ```{r, echo=FALSE}
-map <-  leaflet() %>%
-    addTiles()
-
-for (i in seq_along(MPAs$NAME_E)) {
-  mpa_of_interest <- MPAs$NAME_E[i]
-
-if (mpa_of_interest %in% MPA_report_card$NAME_E) {
+if (state$mpas %in% MPA_report_card$NAME_E) {
   fill_color <- ifelse(
-    is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == mpa_of_interest)]),
+    is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]),
     "#EDEDED",
-    flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == mpa_of_interest)]]]
+    flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]]]
   )
 
   # Set border color conditionally
   border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
 
-  map <- map %>% 
+  map <- leaflet() %>%
+    addTiles() %>%
     addPolygons(
-      data = MPAs$geoms[which(MPAs$NAME_E == mpa_of_interest)],
+      data = MPAs$geoms[which(MPAs$NAME_E == state$mpas)],
       fillColor = fill_color,
       fillOpacity = 0.5,
       weight = 2,
@@ -142,16 +141,16 @@ if (mpa_of_interest %in% MPA_report_card$NAME_E) {
   fill_color <- flowerPalette[[area_grade]]
   border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
 
-  map <- map %>%
+  map <- leaflet() %>%
+    addTiles() %>%
     addPolygons(
-      data = MPAs$geoms[which(MPAs$NAME_E == mpa_of_interest)],
+      data = MPAs$geoms[which(MPAs$NAME_E == state$mpas)],
       fillColor = fill_color,
       fillOpacity = 0.5,
       weight = 2,
       color = border_color
     )
 }
-} # end
 
 
 map
@@ -159,14 +158,141 @@ map
 
 ## Creature Feature
 
-FIXME: Waiting for target
+```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
+try({
+  inatoccs <- occ_search(geometry = st_as_text(st_as_sfc(st_bbox(MPAs[MPAs$NAME_E == state$mpas,]))),institutionCode = "iNaturalist",limit = 100000)
+  
+  sptable <-  inatoccs$data |> 
+    st_as_sf(
+      coords = c("decimalLongitude", "decimalLatitude"),
+      crs = 4326,
+      remove = FALSE
+    ) |> 
+    st_filter(MPAs[MPAs$NAME_E == state$mpas,]) |>
+    as.data.frame() |> 
+    filter(!is.na(speciesKey),
+           kingdom != "Plantae"|genus == "Zostera", # remove plants except eelgrass
+           class!="Mammalia"|family %in% c("Phocidae","Otarioidea"), #remove mammals except seals
+           class!="Reptilia"|family %in% c("Cheloniidae","Dermochelyidae"),# remove reptiles except sea turtles
+           phylum!="Basidiomycota",phylum!="Ascomycota") |> # remove mushrooms and lichens
+    group_by(speciesKey,scientificName,kingdom, phylum, class) |>
+    reframe(n=n(),
+            exampleurl = references[1],
+            rightsHolder = rightsHolder[1]) |> 
+    arrange(desc(n)) |>
+    # head(10) |>
+    rowwise() |>
+    mutate(commonname = NA,
+           imageurl = {
+             url <- try(read_html(exampleurl) |>
+                          html_node('meta[property="og:image"]') |> 
+                          html_attr('content'))
+             if (inherits(url, "try-error")) {
+               NA
+             } else {
+               url
+             }
+           },
+           image_column = paste0(
+             '<a href="', exampleurl, '" target="_blank">',
+             '<img src="', imageurl, '" style="max-height: 100px; max-width: 100px; object-fit: cover;"/>',
+             '<br>',rightsHolder,'</br>',
+             '</a>'
+           )) 
+  
+  for(i in 1:nrow(sptable)){
+    spnames <- try(name_usage(sptable$speciesKey[i], data = "vernacularNames")[[2]] )
+    if(nrow(spnames)>0|| !inherits(spnames, "try-error")) {
+      cn <- spnames |>
+        as.data.frame() |>
+        filter(language == "eng") |> 
+        pull(vernacularName) |>
+        table() |> 
+        sort(decreasing = TRUE) |>
+        head(1) |> 
+        names()
+      if(!is.null(cn)){
+        sptable$commonname[i] <- cn
+      }
+    }
+  }
+  
+  datatable(
+    sptable |> 
+      select(commonname, image_column, scientificName, n, kingdom, phylum, class),
+    
+    # Disable sorting for the image column
+    options = list(
+      # Show 5 entries by default
+      pageLength = 5,
+      
+      # Enable column-specific filtering
+      initComplete = JS(
+        "function(settings, json) {
+          this.api().columns([1, 3, 4, 5, 6, 7]).every(function() {
+            var column = this;
+            var select = $('<select><option value=\"\"></option></select>')
+              .appendTo($(column.footer()).empty())
+              .on('change', function() {
+                var val = $.fn.dataTable.util.escapeRegex(
+                  $(this).val()
+                );
+
+                column
+                  .search(val ? '^' + val + '$' : '', true, false)
+                  .draw();
+              });
+
+            column.data().unique().sort().each(function(d, j) {
+              select.append('<option value=\"' + d + '\">' + d + '</option>')
+            });
+          });
+        }"
+      )
+    ),
+    
+    # Specify column names
+    colnames = c(
+      "Common Name",
+      "Example Image",
+      "Scientific Name", 
+      "iNaturalist Observations",
+      "Kingdom",
+      "Phylum",
+      "Class"
+    ),
+    
+    # Escape HTML to allow image rendering
+    escape = FALSE,
+    
+    # Add some styling
+    class = 'cell-border stripe hover',
+    
+    # Add footer for filtering
+    filter = "bottom"
+  )
+})
+```
+
+
+
+```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+#FIXME - Get from PPT Milestones/Deliverable
+
+if (state$mpas == "St. Anns Bank Marine Protected Area") {
+  cat("Scientists have found large numbers of thorny skate or kekunaluej purses (egg capsules) in a part of St. Anns Bank Marine Protected Area")
+} else {
+  cat("There is no identified creature feature for this area.")
+}
+
+```
 
 ## Research and Monitoring
 
 ### Flower Plot
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == "Maritimes"),],
+plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),],
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "score",
@@ -219,7 +345,7 @@ image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
                                     "plots")
 image_files <- list.files(image_folder, full.names = TRUE)
 
-keeper <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E), ]
+keeper <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas), ]
 
 BINS <- unique(trimws(tolower(unlist(
   strsplit(keeper$bin, ";")
@@ -238,15 +364,9 @@ for (i in seq_along(BINS)) {
   if (any(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))) {
     KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))),]
   }
-
-  # Scotian shelf only
-  # Sort KK by indicator
-  KK <- KK[order(KK$indicator), ]
-
   
   keeper2[[i]] <- data.frame(
     Indicator = KK$indicator,
-    Area = KK$areaID,
     Status = KK$status_statement,
     Trend = KK$trend_statement,
     #Plot = KK$plot,
@@ -269,8 +389,7 @@ for (i in seq_along(keeper2)) {
     
     
     # FINDING PLOT
-    # SCOTIAN SHELF ONLY
-      k1 <- 1:length(image_files)
+      k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
       k2 <- which(grepl(make.names(keeper2[[i]]$Indicator[j]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
       KEEP <- intersect(k1,k2)
       
@@ -321,77 +440,72 @@ for (i in seq_along(keeper2)) {
 
 
 ```
-
-### Financial Information
-Coming soon
-
-
 ## Discussion
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
 
-# cat("### Climate Change\n")
-# 
-# climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == state$mpa)])
-# 
-# for (i in seq_along(climate_indicators)) {
-#   indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == state$mpas)
-#   
-#   if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df$trend_statement[indicator_keep]))) {
-#     
-#     excel_keep <- which(climate$Indicator == climate_indicators[i])
-#     pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == state$mpas)
-#     
-#     cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
-#     
-#     cat(climate$Context[excel_keep], "\n\n")
-#     cat("In our analysis, ")
-#     cat(pillar_ecol_df$trend_statement[indicator_keep])
-#     
-#     if (!(grepl("There is only one year of data", pillar_ecol_df$trend_statement[indicator_keep]))) {
-#     
-#     pval <- str_extract(pillar_ecol_df$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
-#       str_extract("\\d+(\\.\\d+)?") |>
-#       as.numeric()
-#     
-#     if (pval > 0.05) {
-#       cat(". The change in this indicator in the MPA is not significant.")
-#     } else {
-#       cat(". The change in this indicator in the MPA is significant.")
-#     }
-#     
-#     cat(" An inside/outside comparison was done to help understand the impacts of climate change on this variable. Results showed ")
-#     
-#     result <- pillar_ecol_df$status_statement[pillar_keep_inside]
-#     
-#     cat(paste0(tolower(result), "."))
-#     
-#     if (!(grepl("Protection could therefore be positively impacting this variable", result))) {
-#       # No sig dif between the two
-#       desired <- sub(".*\\s+", "", pillar_ecol_df$scoring[indicator_keep])
-#       actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df$trend_statement[indicator_keep])), "increase", "decrease")
-#       
-#       if (pval > 0.05) { ## This is pval of the variable (not inside/ outside)
-#         cat("The rate in which this indicator is changing is not significant (p=", pval,") which suggests that climate change does not seem to have a significant impact on that particular indicator.")
-#       } else {
-#         # change is significant
-#         if (identical(desired, actual_results)) {
-#           cat("The results show us that climate change doesn't seem to be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant trend in the opposite direction than we would expect.")
-#         } else {
-#           #The trend is going in the opposite direction that we would expect and
-#           #statistically significant,we point out that according to our analysis
-#           cat("The results show us that climate change could be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant
-#         trend in the direction than we would expect as a result of climate change.")
-#         }
-#       }
-#     }
-#     } else {
-#     cat("More sampling is suggested.")
-#   }
-#   }
-#   
-#   cat("\n\n")
-# }
+cat("### Climate Change\n")
+
+climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == state$mpa)])
+
+for (i in seq_along(climate_indicators)) {
+  indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == state$mpas)
+  
+  if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df$trend_statement[indicator_keep]))) {
+    
+    excel_keep <- which(climate$Indicator == climate_indicators[i])
+    pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == state$mpas)
+    
+    cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
+    
+    cat(climate$Context[excel_keep], "\n\n")
+    cat("In our analysis, ")
+    cat(pillar_ecol_df$trend_statement[indicator_keep])
+    
+    if (!(grepl("There is only one year of data", pillar_ecol_df$trend_statement[indicator_keep]))) {
+    
+    pval <- str_extract(pillar_ecol_df$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
+      str_extract("\\d+(\\.\\d+)?") |>
+      as.numeric()
+    
+    if (pval > 0.05) {
+      cat(". The change in this indicator in the MPA is not significant.")
+    } else {
+      cat(". The change in this indicator in the MPA is significant.")
+    }
+    
+    cat(" An inside/outside comparison was done to help understand the impacts of climate change on this variable. Results showed ")
+    
+    result <- pillar_ecol_df$status_statement[pillar_keep_inside]
+    
+    cat(paste0(tolower(result), "."))
+    
+    if (!(grepl("Protection could therefore be positively impacting this variable", result))) {
+      # No sig dif between the two
+      desired <- sub(".*\\s+", "", pillar_ecol_df$scoring[indicator_keep])
+      actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df$trend_statement[indicator_keep])), "increase", "decrease")
+      
+      if (pval > 0.05) { ## This is pval of the variable (not inside/ outside)
+        cat("The rate in which this indicator is changing is not significant (p=", pval,") which suggests that climate change does not seem to have a significant impact on that particular indicator.")
+      } else {
+        # change is significant
+        if (identical(desired, actual_results)) {
+          cat("The results show us that climate change doesn't seem to be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant trend in the opposite direction than we would expect.")
+        } else {
+          #The trend is going in the opposite direction that we would expect and
+          #statistically significant,we point out that according to our analysis
+          cat("The results show us that climate change could be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant
+        trend in the direction than we would expect as a result of climate change.")
+        }
+      }
+    }
+    } else {
+    cat("More sampling is suggested.")
+  }
+  }
+  
+  cat("\n\n")
+}
 
 cat("### Research Recommendations \n")
 

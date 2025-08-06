@@ -1091,8 +1091,8 @@ list(
             command= {
               MPAs
               cp <- MPAs |>
-                filter(NAME_E!="Non_Conservation_Area") |> 
-                rowwise() |> 
+                filter(NAME_E!="Non_Conservation_Area") |>
+                rowwise() |>
                 mutate(geoms = st_difference(st_buffer(geoms,20000),geoms)
                 )
             }),
@@ -2358,7 +2358,7 @@ tar_target(ind_nitrate_inside_outside,
              data <- data_azmp_Discrete_Occupations_Sections  |>
                dplyr::select(longitude, latitude, year, depth, nitrate)
 
-             process_indicator(data = data,
+             x <- process_indicator(data = data,
                                     indicator_var_name = "nitrate",
                                     indicator = "Nutrient Conditions (Nitrate) Inside Outside Comparison",
                                     type = "Discrete Occupations Sections",
@@ -2376,6 +2376,7 @@ tar_target(ind_nitrate_inside_outside,
                                     plot_type = c('outside-comparison','map'),
                                     plot_lm=FALSE,
                                     control_polygon=control_polygons)
+             x
            }),
 
 tar_target(ind_musquash_phosphate_inside_outside,
