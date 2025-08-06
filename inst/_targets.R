@@ -2757,7 +2757,7 @@ tar_target(plot_files,
               allplotnames <- NULL
               for(i in 1:nrow(data_pillar_ecol_df)){
                 message(i)
-                if(!is.null(data_pillar_ecol_df$plot[[i]])){
+                if(!is.null(data_pillar_ecol_df$plot[[i]])&data_pillar_ecol_df$areaID[[i]]!="Non_Conservation_Area"){
                 filename <-  file.path(Sys.getenv("OneDriveCommercial"),
                                        "MarConsNetTargets",
                                        "data", "plots",
