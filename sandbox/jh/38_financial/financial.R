@@ -155,12 +155,25 @@ MPA_report_card <- left_join(MPAs,d_pedf |>
 # NEED UNIQUE LAT/LON/TIME
 
 tar_target(cost_of_mpas,
+
+           # This looks at the number of samples that were collected in our source dataset.
+           # A 'sample' is considered a unique lat/lon and year. If multiple samples were
+           # taken at the exact same location in the same year, this would only show up once.
+           # Additionally, if there is no 'time' column, a 'sample' is simply considered each
+           # unique lat and lon. This approach also assumes that we have pulled all data.
+           # This should be considered when considering data sets such as AZMP.
+           # It takes the number of samples overall and compares it to the number of samples in the MPA
+
+           # Note that we still don't have any pricing information for 'polygon' type sampling.
+           # This is because all of our indicators like this use external open data.
+
            command={
              om
-             dped <- data_pillar_ecol_df[-which(data_pillar_ecol_df$indicator %in% MPAs$NAME_E),]
+             MPAs
+             dped <- bin_habitat_ThreatstoHabitat_df
+
+             #dped <- data_pillar_ecol_df[-which(data_pillar_ecol_df$indicator %in% MPAs$NAME_E),]
              MPA <- MPAs[-which(MPAs$NAME_E %in% "Non_Conservation_Area"),]
-
-
 
              OM <- om |>
                dplyr::select(project_id, fiscal_year, amount, funding_source_display, category_type)
@@ -169,7 +182,9 @@ tar_target(cost_of_mpas,
                group_by(PPTID)
 
              # Ignoring external data for now
+             if (any(is.na(ppt$PPTID))) {
              ppt <- ppt[-which(is.na(ppt$PPTID)),]
+             }
 
              ppt <- split(ppt, ppt$PPTID)
 
@@ -179,7 +194,14 @@ tar_target(cost_of_mpas,
                PPT <- ppt[[i]]
                d <- PPT$data
                dd <- bind_rows(d)
+               if ("year" %in% names(dd)) {
                combinations <- dd |> distinct(geometry, year) |> nrow()
+               } else {
+                 # This assumes each unique location was sampled once. This is a caveat and should be documented.
+                 # Representation (JAIM)
+                 combinations <- dd |> distinct(geoms) |> nrow()
+
+               }
                OM$number_of_project_stations[which(OM$project_id == as.numeric(names(ppt)[i]))] <- combinations # FIXME: Note, need to get the same to see if they happened at different times
              }
 
@@ -198,19 +220,26 @@ tar_target(cost_of_mpas,
 
              # I HAVE NUMBER OF STATIONS AND COST PER STATION
 
-
              percent_sites_in_mpa <- vector("list", length(MPA$NAME_E))
              names(percent_sites_in_mpa) <- MPA$NAME_E
 
              for (i in seq_along(MPA$NAME_E)) {
-               message(i)
-               #i <- 45 # FIXME
+               message(paste0("i = ", i))
+
+               # TEST
+               if (!(length(ppt) == 0)) {
+               percent_sites_in_mpa[[i]] <- data.frame(project_id=names(price_per_station), percent_sites_in_mpa=rep(NA,length(names(price_per_station))), price_per_station=rep(NA, length(names(price_per_station))), area=MPA$NAME_E[i])
+
+               } else {
+                 percent_sites_in_mpa[[i]] <- data.frame(project_id=NA, percent_sites_in_mpa=NA, price_per_station=NA, area=MPA$NAME_E[i])
+                 next
+               }
+
                mpa_name <- MPA$NAME_E[i]
                for (j in seq_along(names(price_per_station))) {
-                 message(j)
-                 #j <- 2 # FIXME
-
+                 message(paste0("j = ", j))
                  pps <- names(price_per_station)[j]
+
 
                  ddff_list <- dped$data[
                    dped$PPTID == pps &
@@ -218,26 +247,45 @@ tar_target(cost_of_mpas,
                  ]
 
                  if (any(!vapply(ddff_list, is.null, logical(1)))) {
+                   if ("year" %in% names(do.call(rbind, ddff_list))) {
                    result <- bind_rows(ddff_list) |>
                      dplyr::select(year, geometry)
+                   } else {
+                     result <- bind_rows(ddff_list) |>
+                       dplyr::select(geoms)
+                   }
                  } else {
                    result <- NULL
                  }
                  if (!(is.null(result))) {
+                   if ("year" %in% names(result)) {
                    sites_in_mpa <- result |> distinct(geometry, year) |> nrow() # This is the number of unique stations in the MPA
+                   } else {
+                     sites_in_mpa <- result |> distinct(geoms) |> nrow()
+                   }
 
                    # Find percentage of stations in the MPA
                    total_sites <- unique(OM[[which(names(OM) == pps)]]$number_of_project_stations)
-                   percent_sites_in_mpa[[i]][[j]] <- sites_in_mpa/total_sites*100
+
+                   percent_sites_in_mpa[[i]]$percent_sites_in_mpa[j] <- sites_in_mpa/total_sites*100
+                   percent_sites_in_mpa[[i]]$price_per_station[j] <- price_per_station[[which(names(price_per_station) == pps)]]
+
                  } else {
-                   percent_sites_in_mpa[[i]][[j]] <- 0
-                 }
+                   percent_sites_in_mpa[[i]]$percent_sites_in_mpa[j] <- 0
+                   percent_sites_in_mpa[[i]]$price_per_station[j] <- price_per_station[[which(names(price_per_station) == pps)]]
+
+
+                   }
                }
              }
+
+             x <- do.call(rbind, percent_sites_in_mpa)
+             rownames(x) <- NULL
+             if (any(is.na(x$project_id))) {
+             x <- x[-which(is.na(x$project_id)),] # These are like placeholders, outside data, etc.
+             }
+             x
            }
-
-           percent_sites_in_mpa
-
 
 
 

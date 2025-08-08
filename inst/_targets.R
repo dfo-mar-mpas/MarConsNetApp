@@ -536,6 +536,9 @@ list(
                for (i in seq_along(O$objectives)) {
                  message(i)
                  ob <- gsub("[-\n]", "", O$objectives[i])
+                 if (ob == "promote the recovery of atrisk whales and wolffish") {
+                   ob <- "promote the recovery of at-risk whales and"
+                 }
                  if (!(O$objectives[i] == "0")) {
                    keep <- which(tolower(get_first_four_words(fp$label_Objective)) == tolower(get_first_four_words(ob)[[1]]))
                    if (length(keep) > 1) {
@@ -545,7 +548,7 @@ list(
                      O$flower_plot[i] <- fp$Flowerplot_connection[keep]
                      O$area[i] <- fp$label_Framework[keep]
                    } else {
-                     message("i is also wrong ", i)
+                     message("i is also wrong (check fp) ", i)
                    }
                  } else {
                    O$flower_plot[i] <- "flower_0"
@@ -1166,8 +1169,9 @@ list(
 
 tar_target(name = rawdata_inaturalist_by_mpa,
   command = {
-      occ_search(
-        geometry = st_as_text(st_as_sfc(st_bbox(MPAs))),
+    mpa <- MPAs[-which(MPAs$NAME_E == "Non_Conservation_Area"),]
+    rgbif::occ_search(
+        geometry = st_as_text(st_as_sfc(st_bbox(mpa))),
         institutionCode = "iNaturalist",
         limit = 100000
       )
@@ -1542,7 +1546,7 @@ tar_target(name = data_inaturalist,
                                indicator_rationale="FIXME",
                                bin_rationale="FIXME",
                                project_short_title = "RV Survey",
-                               areas = MPAs[MPAs$region=="Maritimes",],
+                               areas = MPAs,
                                plot_type = c("violin", "map"),
                                plot_lm=FALSE)
             }
@@ -2163,6 +2167,7 @@ tar_target(name = ind_MAR_biofouling_AIS,
 
               subclass <- NULL
               for (i in seq_along(data$scientificName_Nom_scientifique)) {
+                message(i)
                 result <- try(worrms::wm_records_name(data$scientificName_Nom_scientifique[i]), silent=TRUE)
                 if (inherits(result, "try-error")) {
                   subclass[i] <- NA
@@ -2175,7 +2180,7 @@ tar_target(name = ind_MAR_biofouling_AIS,
 
               data$subclass <- subclass
 
-              process_indicator(data = data,
+              x <- process_indicator(data = data,
                                 indicator_var_name = "scientificName_Nom_scientifique",
                                 indicator = "Infaunal Diversity",
                                 type = "Observations",
@@ -2188,9 +2193,10 @@ tar_target(name = ind_MAR_biofouling_AIS,
                                 bin_rationale="FIXME",
                                 other_nest_variables="subclass",
                                 project_short_title = "Musquash benthic monitoring",
-                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
+                                areas = MPAs,
                                 plot_type='map-species',
                                 plot_lm=FALSE)
+              x
             }),
  tar_target(name = ind_musquash_nekton_diversity,
             command = {
@@ -2475,7 +2481,7 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
         "% per sample."
       ),
       climate_expectation = "FIXME",
-      indicator_rationale = "FIXME",
+      indicator_rationale = "Seabirds are outside the scope of DFO mandate and so are not assessed here; however, indicators have been developed and are monitored by the Canadian Wildlife Service of Environment and Climate Change Canada.",
       bin_rationale = "FIXME"
     )
 
@@ -2811,6 +2817,144 @@ tar_target(name = MPA_report_card,
              mrc
 
            }),
+
+
+tar_target(cost_of_mpas,
+
+           # This looks at the number of samples that were collected in our source dataset.
+           # A 'sample' is considered a unique lat/lon and year. If multiple samples were
+           # taken at the exact same location in the same year, this would only show up once.
+           # Additionally, if there is no 'time' column, a 'sample' is simply considered each
+           # unique lat and lon. This approach also assumes that we have pulled all data.
+           # This should be considered when considering data sets such as AZMP.
+           # It takes the number of samples overall and compares it to the number of samples in the MPA
+
+           # Note that we still don't have any pricing information for 'polygon' type sampling.
+           # This is because all of our indicators like this use external open data.
+
+           command={
+             om
+             MPAs
+             dped <- data_pillar_ecol_df[-which(data_pillar_ecol_df$indicator %in% MPAs$NAME_E),]
+             message('made it')
+             MPA <- MPAs[-which(MPAs$NAME_E %in% "Non_Conservation_Area"),]
+
+             OM <- om |>
+               dplyr::select(project_id, fiscal_year, amount, funding_source_display, category_type)
+
+             ppt <- dped %>%
+               group_by(PPTID)
+
+             # Ignoring external data for now
+             if (any(is.na(ppt$PPTID))) {
+               ppt <- ppt[-which(is.na(ppt$PPTID)),]
+             }
+
+             ppt <- split(ppt, ppt$PPTID)
+
+             OM$number_of_project_stations <- NA
+
+             for (i in seq_along(ppt)) {
+               PPT <- ppt[[i]]
+               d <- PPT$data
+               dd <- bind_rows(d)
+               if ("year" %in% names(dd)) {
+                 combinations <- dd |> distinct(geometry, year) |> nrow()
+               } else {
+                 # This assumes each unique location was sampled once. This is a caveat and should be documented.
+                 # Representation (JAIM)
+                 combinations <- dd |> distinct(geoms) |> nrow()
+
+               }
+               OM$number_of_project_stations[which(OM$project_id == as.numeric(names(ppt)[i]))] <- combinations # FIXME: Note, need to get the same to see if they happened at different times
+             }
+
+             # NOW I HAVE THE NUMBER OF STATIONS
+
+             OM <- OM[which(OM$project_id %in% names(ppt)),]
+             OM <- split(OM, OM$project_id)
+
+             price_per_station <- list()
+             for (i in seq_along(OM)) {
+               price_per_station[[i]] <- sum(OM[[i]]$amount) / unique(OM[[i]]$number_of_project_stations)
+             }
+             names(price_per_station) <- names(OM)
+
+             # Now that we have price per station we can determine how many unique stations (and time) are within the MPA
+
+             # I HAVE NUMBER OF STATIONS AND COST PER STATION
+
+             percent_sites_in_mpa <- vector("list", length(MPA$NAME_E))
+             names(percent_sites_in_mpa) <- MPA$NAME_E
+
+             for (i in seq_along(MPA$NAME_E)) {
+               message(paste0("i = ", i))
+
+               # TEST
+               if (!(length(ppt) == 0)) {
+                 percent_sites_in_mpa[[i]] <- data.frame(project_id=names(price_per_station), percent_sites_in_mpa=rep(NA,length(names(price_per_station))), price_per_station=rep(NA, length(names(price_per_station))), area=MPA$NAME_E[i])
+
+               } else {
+                 percent_sites_in_mpa[[i]] <- data.frame(project_id=NA, percent_sites_in_mpa=NA, price_per_station=NA, area=MPA$NAME_E[i])
+                 next
+               }
+
+               mpa_name <- MPA$NAME_E[i]
+               for (j in seq_along(names(price_per_station))) {
+                 message(paste0("j = ", j))
+                 pps <- names(price_per_station)[j]
+
+
+                 ddff_list <- dped$data[
+                   dped$PPTID == pps &
+                     dped$areaID == mpa_name
+                 ]
+
+                 if (any(!vapply(ddff_list, is.null, logical(1)))) {
+
+                   if ("year" %in% unique(unlist(lapply(ddff_list, names)))) {
+                     result <- bind_rows(ddff_list) |>
+                       dplyr::select(year, geometry)
+                   } else {
+                     result <- bind_rows(ddff_list) |>
+                       dplyr::select(geoms)
+                   }
+                 } else {
+                   result <- NULL
+                 }
+                 if (!(is.null(result))) {
+                   if ("year" %in% names(result)) {
+                     sites_in_mpa <- result |> distinct(geometry, year) |> nrow() # This is the number of unique stations in the MPA
+                   } else {
+                     sites_in_mpa <- result |> distinct(geoms) |> nrow()
+                   }
+
+                   # Find percentage of stations in the MPA
+                   total_sites <- unique(OM[[which(names(OM) == pps)]]$number_of_project_stations)
+
+                   percent_sites_in_mpa[[i]]$percent_sites_in_mpa[j] <- sites_in_mpa/total_sites*100
+                   percent_sites_in_mpa[[i]]$price_per_station[j] <- price_per_station[[which(names(price_per_station) == pps)]]
+
+                 } else {
+                   percent_sites_in_mpa[[i]]$percent_sites_in_mpa[j] <- 0
+                   percent_sites_in_mpa[[i]]$price_per_station[j] <- price_per_station[[which(names(price_per_station) == pps)]]
+
+
+                 }
+               }
+             }
+
+             x <- do.call(rbind, percent_sites_in_mpa)
+             rownames(x) <- NULL
+             if (any(is.na(x$project_id))) {
+               x <- x[-which(is.na(x$project_id)),] # These are like placeholders, outside data, etc.
+             }
+             x
+           }
+),
+
+
+
 tar_target(name = upload_all_data_to_shiny,
             command = {
 

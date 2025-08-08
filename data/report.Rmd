@@ -311,7 +311,7 @@ try({
   
   datatable(
     sptable |> 
-      select(commonname, image_column, scientificName, n, kingdom, phylum, class),
+      dplyr::select(commonname, image_column, scientificName, n, kingdom, phylum, class),
     
     # Disable sorting for the image column
     options = list(
@@ -454,6 +454,7 @@ for (i in seq_along(BINS)) {
     Grade = KK$score,
     Project = KK$PPTID,
     Source = KK$source,
+    Rationale=KK$indicator_rationale,
     stringsAsFactors = FALSE
   )
   
@@ -467,6 +468,8 @@ for (i in seq_along(keeper2)) {
   if (!(length(keeper2[[i]]$Indicator) == 0)) {
   for (j in seq_along(keeper2[[i]]$Indicator)) {
     cat(sprintf("<b>Indicator: %s.</b>\n\n", keeper2[[i]]$Indicator[j]))
+    
+    cat(sprintf("%s.\n\n", keeper2[[i]]$Rationale[j]))
     
     
     # FINDING PLOT
@@ -518,6 +521,49 @@ for (i in seq_along(keeper2)) {
 }
   cat("</details>\n\n")
 }
+
+
+```
+
+## Investment Information
+
+```{r,echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
+com <- cost_of_mpas[which(cost_of_mpas$area == state$mpas & !(round(cost_of_mpas$percent_sites_in_mpa,0) == 0)),]
+
+if (!(length(com$project_id) == 0)) {
+  
+cat("Disclaimer: The cost information is based on the funding information in the project planning tool. The amount is based on percentage of samples taken in the area of interest.\n\n")
+  
+om_in_site <- om[which(om$project_id %in% unique(com$project_id)),]
+
+for (i in seq_along(unique(com$project_id))) {
+  p_id <- as.numeric(unique(com$project_id)[i])
+  percentage <- com$percent_sites_in_mpa[which(com$project_id == p_id)]
+  om_in_site$amount[which(om_in_site$project_id == p_id)] <- om_in_site$amount[which(om_in_site$project_id == p_id)]*(percentage/100)
+}
+
+try(dataSPA::plotSPA(om=om_in_site, which="omBar"))
+
+proj_titles <- NULL
+for (i in seq_along(com$project_id)) {
+  proj_titles[i] <- unique(pillar_ecol_df$project_short_title[which(pillar_ecol_df$PPTID == com$project_id[i])])
+}
+
+proj <- unique(com$project_id)
+
+
+cat(paste0("The below investment information is based on the following internal DFO projects that have had samples in ", state$mpas," :", paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; ")))
+
+} else {
+  cat("There is no internal investment information available for this area.")
+}
+
+
+
+```
+
+```{r, echo=FALSE}
+try(dataSPA::plotSPA(om=om_in_site, which="omBar"), silent=TRUE)
 
 
 ```
@@ -714,7 +760,7 @@ if (length(deliv_keep > 0)) {
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
 # Which ones to keep
 csas_keep <- which(grepl(paste(state$mpas, collapse = "|"), csas$title)) # state$mpas
-if (state$mpas == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)") {
+if (state$mpas == "Western and Emerald Banks Marine Refuge") {
 csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
 } else if (state$mpas ==  "St. Anns Bank Marine Protected Area") {
   csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))

@@ -9,7 +9,7 @@ output: html_document
 
 ## At-a-glance
 
-```{r, echo=FALSE,comment=NA, results="asis"}
+```{r, echo=FALSE,comment=NA, results="asis", message=FALSE, warning=FALSE, error=FALSE}
 library(sf)
 library(leaflet)
 library(rgbif)
@@ -17,7 +17,7 @@ library(rvest)
 library(dplyr)
 library(DT)
 
-
+MPAs <- MPAs[-which(MPAs$NAME_E == "Non_Conservation_Area"),]
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- state$mpas
 network_context <- data_context(type="network")
@@ -107,192 +107,49 @@ DT::datatable(objective_table, escape = FALSE, rownames = FALSE)
 
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-if (!(state$mpas %in% "Scotian Shelf")) {
 p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
-} else {
-  p <- pillar_ecol_df[whi]
-}
+
 area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
 
 ```
 
 ```{r, echo=FALSE}
-if (state$mpas %in% MPA_report_card$NAME_E) {
-  fill_color <- ifelse(
-    is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]),
-    "#EDEDED",
-    flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]]]
-  )
 
-  # Set border color conditionally
-  border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+map <- leaflet() %>%
+    addTiles()
 
-  map <- leaflet() %>%
-    addTiles() %>%
-    addPolygons(
-      data = MPAs$geoms[which(MPAs$NAME_E == state$mpas)],
-      fillColor = fill_color,
-      fillOpacity = 0.5,
-      weight = 2,
-      color = border_color
-    )
+for (i in seq_along(MPAs$NAME_E)) {
   
-} else {
-  fill_color <- flowerPalette[[area_grade]]
+  fill_color <- ifelse(
+    is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == MPAs$NAME_E[i])]),
+    "#EDEDED",
+    flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == MPAs$NAME_E[i])]]]
+  )
+  
   border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
 
-  map <- leaflet() %>%
-    addTiles() %>%
-    addPolygons(
-      data = MPAs$geoms[which(MPAs$NAME_E == state$mpas)],
-      fillColor = fill_color,
-      fillOpacity = 0.5,
-      weight = 2,
-      color = border_color
-    )
+  map <- map %>% 
+    addPolygons(data=MPAs$geoms[i], fillOpacity = 0.05, weight=2, color=border_color)
 }
 
 
 map
+
 ```
 
 ## Creature Feature
 
 ```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
-try({
-  inatoccs <- occ_search(geometry = st_as_text(st_as_sfc(st_bbox(MPAs[MPAs$NAME_E == state$mpas,]))),institutionCode = "iNaturalist",limit = 100000)
-  
-  sptable <-  inatoccs$data |> 
-    st_as_sf(
-      coords = c("decimalLongitude", "decimalLatitude"),
-      crs = 4326,
-      remove = FALSE
-    ) |> 
-    st_filter(MPAs[MPAs$NAME_E == state$mpas,]) |>
-    as.data.frame() |> 
-    filter(!is.na(speciesKey),
-           kingdom != "Plantae"|genus == "Zostera", # remove plants except eelgrass
-           class!="Mammalia"|family %in% c("Phocidae","Otarioidea"), #remove mammals except seals
-           class!="Reptilia"|family %in% c("Cheloniidae","Dermochelyidae"),# remove reptiles except sea turtles
-           phylum!="Basidiomycota",phylum!="Ascomycota") |> # remove mushrooms and lichens
-    group_by(speciesKey,scientificName,kingdom, phylum, class) |>
-    reframe(n=n(),
-            exampleurl = references[1],
-            rightsHolder = rightsHolder[1]) |> 
-    arrange(desc(n)) |>
-    # head(10) |>
-    rowwise() |>
-    mutate(commonname = NA,
-           imageurl = {
-             url <- try(read_html(exampleurl) |>
-                          html_node('meta[property="og:image"]') |> 
-                          html_attr('content'))
-             if (inherits(url, "try-error")) {
-               NA
-             } else {
-               url
-             }
-           },
-           image_column = paste0(
-             '<a href="', exampleurl, '" target="_blank">',
-             '<img src="', imageurl, '" style="max-height: 100px; max-width: 100px; object-fit: cover;"/>',
-             '<br>',rightsHolder,'</br>',
-             '</a>'
-           )) 
-  
-  for(i in 1:nrow(sptable)){
-    spnames <- try(name_usage(sptable$speciesKey[i], data = "vernacularNames")[[2]] )
-    if(nrow(spnames)>0|| !inherits(spnames, "try-error")) {
-      cn <- spnames |>
-        as.data.frame() |>
-        filter(language == "eng") |> 
-        pull(vernacularName) |>
-        table() |> 
-        sort(decreasing = TRUE) |>
-        head(1) |> 
-        names()
-      if(!is.null(cn)){
-        sptable$commonname[i] <- cn
-      }
-    }
-  }
-  
-  datatable(
-    sptable |> 
-      select(commonname, image_column, scientificName, n, kingdom, phylum, class),
-    
-    # Disable sorting for the image column
-    options = list(
-      # Show 5 entries by default
-      pageLength = 5,
-      
-      # Enable column-specific filtering
-      initComplete = JS(
-        "function(settings, json) {
-          this.api().columns([1, 3, 4, 5, 6, 7]).every(function() {
-            var column = this;
-            var select = $('<select><option value=\"\"></option></select>')
-              .appendTo($(column.footer()).empty())
-              .on('change', function() {
-                var val = $.fn.dataTable.util.escapeRegex(
-                  $(this).val()
-                );
-
-                column
-                  .search(val ? '^' + val + '$' : '', true, false)
-                  .draw();
-              });
-
-            column.data().unique().sort().each(function(d, j) {
-              select.append('<option value=\"' + d + '\">' + d + '</option>')
-            });
-          });
-        }"
-      )
-    ),
-    
-    # Specify column names
-    colnames = c(
-      "Common Name",
-      "Example Image",
-      "Scientific Name", 
-      "iNaturalist Observations",
-      "Kingdom",
-      "Phylum",
-      "Class"
-    ),
-    
-    # Escape HTML to allow image rendering
-    escape = FALSE,
-    
-    # Add some styling
-    class = 'cell-border stripe hover',
-    
-    # Add footer for filtering
-    filter = "bottom"
-  )
-})
+cat("FIX ME")
 ```
 
-
-
-```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-#FIXME - Get from PPT Milestones/Deliverable
-
-if (state$mpas == "St. Anns Bank Marine Protected Area") {
-  cat("Scientists have found large numbers of thorny skate or kekunaluej purses (egg capsules) in a part of St. Anns Bank Marine Protected Area")
-} else {
-  cat("There is no identified creature feature for this area.")
-}
-
-```
 
 ## Research and Monitoring
 
 ### Flower Plot
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),],
+plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == "Maritimes"),],
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "score",
@@ -321,9 +178,9 @@ for (i in seq_along(unique(p$bin))) {
   grade <- calc_letter_grade(weighted.mean(df$score, df$weight, na.rm = TRUE))
   
   if (any(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))) {
-  indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))])
+  indicatorLength <- length(unique(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))]))
   } else {
-    indicatorLength <- length(df$indicator)
+    indicatorLength <- length(unique(df$indicator))
   }
   
   summary_table[i, ] <- c(unique(p$bin)[i], grade, indicatorLength)
@@ -345,16 +202,16 @@ image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
                                     "plots")
 image_files <- list.files(image_folder, full.names = TRUE)
 
-keeper <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas), ]
-
 BINS <- unique(trimws(tolower(unlist(
-  strsplit(keeper$bin, ";")
+  strsplit(pillar_ecol_df$bin, ";")
 )), "both"))
 
-
+keeper <- pillar_ecol_df[-which(pillar_ecol_df$areaID %in% regions$NAME_E),]
 keeper2 <- NULL
 
 for (i in seq_along(BINS)) {
+  message("i = ", i)
+  cat(sprintf('<details><summary><strong>Indicator Bin: %s</strong></summary>\n\n', toupper(BINS[i])))
   KK <- keeper[which(grepl(BINS[i], trimws(tolower(
     keeper$bin
   ), "both"))), ]
@@ -365,79 +222,46 @@ for (i in seq_along(BINS)) {
     KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))),]
   }
   
-  keeper2[[i]] <- data.frame(
-    Indicator = KK$indicator,
-    Status = KK$status_statement,
-    Trend = KK$trend_statement,
-    #Plot = KK$plot,
-    Grade = KK$score,
-    Project = KK$PPTID,
-    Source = KK$source,
-    stringsAsFactors = FALSE
-  )
+  if (!length(KK$objective) == 0) { # Now loop through the indicators in the bin
   
-}
-
-names(keeper2) <- BINS
-
-for (i in seq_along(keeper2)) {
-  cat(sprintf('<details><summary><strong>Indicator Bin: %s</strong></summary>\n\n', toupper(BINS[i])))
+  # TEST
+  map <- leaflet() %>% addTiles()
   
-  if (!(length(keeper2[[i]]$Indicator) == 0)) {
-  for (j in seq_along(keeper2[[i]]$Indicator)) {
-    cat(sprintf("<b>Indicator: %s.</b>\n\n", keeper2[[i]]$Indicator[j]))
+  unique_indicators <- unique(KK$indicator)
+  
+  for (j in seq_along(unique_indicators)) {
+    message("j = ", j)
+    cat(sprintf("<b>Indicator: %s.</b>\n\n", unique_indicators[j]))
+    KK2 <- KK[which(KK$indicator == unique_indicators[j]),]
+    if (any(KK2$areaID == "Non_Conservation_Area")) {
+      KK2 <- KK2[-which(KK2$areaID == "Non_Conservation_Area"),]
+    }
     
-    
-    # FINDING PLOT
-      k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
-      k2 <- which(grepl(make.names(keeper2[[i]]$Indicator[j]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
-      KEEP <- intersect(k1,k2)
+    for (k in seq_along(KK2$areaID)) { # LOOP THROUGH ALL AREAS THAT HAVE THIS INDICATOR TO SHOW ON MAP
+      message("k = ", k)
+      fill_color <- ifelse(
+        is.na(pillar_ecol_df$score[which(pillar_ecol_df$areaID == KK2$areaID[k] & pillar_ecol_df$indicator == unique_indicators[j] & tolower(pillar_ecol_df$bin) == BINS[i])]),
+        "#EDEDED",
+        flowerPalette[[calc_letter_grade(pillar_ecol_df$score[which(pillar_ecol_df$areaID == KK2$areaID[k] & pillar_ecol_df$indicator == unique_indicators[j] & tolower(pillar_ecol_df$bin) == BINS[i])])]]
+      )
       
-      if (length(KEEP) > 1) {
-        KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == keeper2[[i]]$Indicator[j])]
-      }
-      plot_file <- image_files[KEEP]
-    
-    # END PLOT
-      if (length(plot_file) > 0) {
-      for (p in seq_along(plot_file)) {
-        #cat("![](", plot_file[p], ")\n\n", sep = "")
-         cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
-      }
-      }
+      border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
       
-      cat(sprintf("%s.\n\n", " "))
-      cat(sprintf("%s.\n\n", keeper2[[i]]$Status[j]))
-      if (is.na(keeper2[[i]]$Trend[j])) {
-        cat(sprintf("%s.\n\n", "No temporal analysis completed for this indicator."))
-      } else if (!(keeper2[[i]]$Trend[j] == "There is no temporal dimension in this data.")) {
-      cat(sprintf("%s.\n\n", keeper2[[i]]$Trend[j]))
-      }
-      cat(sprintf("%s.\n\n", " "))
-      cat(sprintf(
-  "This indicator has a score of: %s.\n\nBased on the following scoring scheme: %s\n",
-  keeper2[[i]]$Grade[j],
-  pillar_ecol_df$scoring[
-    which(
-      pillar_ecol_df$indicator == keeper2[[i]]$Indicator[j] &
-      pillar_ecol_df$areaID == state$mpas
-    )
-  ]
-))
-
-      cat(sprintf("%s.\n\n", " "))
-      cat(sprintf(
-        "Data was provided from %s.\n\n",
-        ifelse(is.na(keeper2[[i]]$Project[j]), keeper2[[i]]$Source[j], keeper2[[i]]$Project[j])
-      ))
-  } # END HERE
+      map <- map %>% 
+        addPolygons(data=MPAs[which(MPAs$NAME_E == KK2$areaID[k]),], fillOpacity = 0.05, weight=2, color=border_color)
+      
+    }
+    map
+    map <- leaflet() %>% addTiles()
+    
+  }
   
   } else {
-  cat("There are no indicators in the app for this indicator bin.")
+    cat("There are no indicators for this bin.")
+  }
+ 
+  
 }
-  cat("</details>\n\n")
-}
-
 
 ```
 ## Discussion
@@ -633,7 +457,7 @@ if (length(deliv_keep > 0)) {
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
 # Which ones to keep
 csas_keep <- which(grepl(paste(state$mpas, collapse = "|"), csas$title)) # state$mpas
-if (state$mpas == "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)") {
+if (state$mpas == "Western and Emerald Banks Marine Refuge") {
 csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
 } else if (state$mpas ==  "St. Anns Bank Marine Protected Area") {
   csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))
