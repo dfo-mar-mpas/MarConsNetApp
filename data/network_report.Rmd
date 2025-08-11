@@ -18,6 +18,8 @@ library(dplyr)
 library(DT)
 
 MPAs <- MPAs[-which(MPAs$NAME_E == "Non_Conservation_Area"),]
+MPAs <- MPAs[which(MPAs$region == state$mpas),]
+
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- state$mpas
 network_context <- data_context(type="network")
@@ -52,7 +54,7 @@ filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
 
 for (fo in seq_along(filtered_odf$objectives)) {
   id <- fo
-  req(input$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
+  req(state$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
 
   if (state$mpas == "Scotian Shelf") {
     c1 <- 1:length(pillar_ecol_df$areaID)
@@ -113,9 +115,9 @@ area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
 
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, results='asis'}
 
-map <- leaflet() %>%
+maps <- leaflet() %>%
     addTiles()
 
 for (i in seq_along(MPAs$NAME_E)) {
@@ -128,12 +130,11 @@ for (i in seq_along(MPAs$NAME_E)) {
   
   border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
 
-  map <- map %>% 
+  maps <- maps %>% 
     addPolygons(data=MPAs$geoms[i], fillOpacity = 0.05, weight=2, color=border_color)
 }
 
-
-map
+maps
 
 ```
 
@@ -193,75 +194,155 @@ print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
 ```
 
 
-```{r, echo=FALSE, comment=NA, results="asis"}
-library(knitr)
+```{r, echo=FALSE, comment=NA, results='asis'}
+# library(knitr)
+# library(leaflet)
+# 
+# BINS <- unique(trimws(tolower(unlist(
+#   strsplit(pillar_ecol_df$bin, ";")
+# )), "both"))
+# 
+# keeper <- pillar_ecol_df[-which(pillar_ecol_df$areaID %in% regions$NAME_E),]
+# keeper2 <- NULL
+# 
+# for (i in seq_along(BINS[1:4])) {
+#   #message("i = ", i)
+#   cat(sprintf('<details><summary><strong>Indicator Bin: %s</strong></summary>\n\n', toupper(BINS[i])))
+#   KK <- keeper[which(grepl(BINS[i], trimws(tolower(
+#     keeper$bin
+#   ), "both"))), ]
+#   
+#   # Remove NA and placeholder indicators
+#   
+#   if (any(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))) {
+#     KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))),]
+#   }
+#   
+#   if (!length(KK$objective) == 0) { # Now loop through the indicators in the bin
+#  
+#   
+#   unique_indicators <- unique(KK$indicator)
+#   
+#   for (j in seq_along(unique_indicators)) {
+#     #message("j = ", j)
+#     cat(sprintf("<b>Indicator: %s.</b>\n\n", unique_indicators[j]))
+#     KK2 <- KK[which(KK$indicator == unique_indicators[j]),]
+#     if (any(KK2$areaID == "Non_Conservation_Area")) {
+#       KK2 <- KK2[-which(KK2$areaID == "Non_Conservation_Area"),]
+#     }
+#     cat(paste0(unique(KK2$indicator_rationale), "\n\n"))
+#     
+#      map <- leaflet() %>% addTiles()
+#     
+#     for (k in seq_along(KK2$areaID)) { # LOOP THROUGH ALL AREAS THAT HAVE THIS INDICATOR TO SHOW ON MAP
+#       #message("k = ", k)
+#       fill_color <- ifelse(
+#         is.na(pillar_ecol_df$score[which(pillar_ecol_df$areaID == KK2$areaID[k] & pillar_ecol_df$indicator == unique_indicators[j] & tolower(pillar_ecol_df$bin) == BINS[i])]),
+#         "#EDEDED",
+#         flowerPalette[[calc_letter_grade(pillar_ecol_df$score[which(pillar_ecol_df$areaID == KK2$areaID[k] & pillar_ecol_df$indicator == unique_indicators[j] & tolower(pillar_ecol_df$bin) == BINS[i])])]]
+#       )
+#       
+#       border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+#       
+#       map <- map %>% 
+#         addPolygons(data=MPAs[which(MPAs$NAME_E == KK2$areaID[k]),], fillOpacity = 0.05, weight=2, color=border_color)
+#       
+#     }
+#  
+#      print(map, browse = FALSE)
+# 
+#     
+#   }
+#   
+#   } else {
+#     cat("There are no indicators for this bin.")
+#   }
+#  
+#   cat("</details>\n\n")
+# }
+
+
 library(leaflet)
+library(htmltools)
 
-image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
-                                    "MarConsNetTargets","data",
-                                    "plots")
-image_files <- list.files(image_folder, full.names = TRUE)
+# Container to hold all details blocks
+all_details <- list()
 
-BINS <- unique(trimws(tolower(unlist(
-  strsplit(pillar_ecol_df$bin, ";")
-)), "both"))
+BINS <- unique(trimws(tolower(unlist(strsplit(pillar_ecol_df$bin, ";"))), "both"))
 
 keeper <- pillar_ecol_df[-which(pillar_ecol_df$areaID %in% regions$NAME_E),]
-keeper2 <- NULL
 
 for (i in seq_along(BINS)) {
-  message("i = ", i)
-  cat(sprintf('<details><summary><strong>Indicator Bin: %s</strong></summary>\n\n', toupper(BINS[i])))
-  KK <- keeper[which(grepl(BINS[i], trimws(tolower(
-    keeper$bin
-  ), "both"))), ]
   
-  # Remove NA and placeholder indicators
+  bin_upper <- toupper(BINS[i])
   
-  if (any(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))) {
-    KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))),]
+  KK <- keeper[grepl(BINS[i], trimws(tolower(keeper$bin), "both")), ]
+  
+  # Remove NA, placeholder, or missing score
+  KK <- KK[!(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score)), ]
+  
+  if (nrow(KK) == 0) {
+    # If no indicators in this bin, add a simple message block
+    details_block <- tags$details(
+      tags$summary(tags$strong(paste("Indicator Bin:", bin_upper))),
+      "There are no indicators for this bin."
+    )
+    all_details[[length(all_details) + 1]] <- details_block
+    next
   }
-  
-  if (!length(KK$objective) == 0) { # Now loop through the indicators in the bin
-  
-  # TEST
-  map <- leaflet() %>% addTiles()
   
   unique_indicators <- unique(KK$indicator)
   
+  # For each indicator, collect content & maps
+  indicator_blocks <- list()
+  
   for (j in seq_along(unique_indicators)) {
-    message("j = ", j)
-    cat(sprintf("<b>Indicator: %s.</b>\n\n", unique_indicators[j]))
-    KK2 <- KK[which(KK$indicator == unique_indicators[j]),]
-    if (any(KK2$areaID == "Non_Conservation_Area")) {
-      KK2 <- KK2[-which(KK2$areaID == "Non_Conservation_Area"),]
-    }
+    indicator_name <- unique_indicators[j]
+    KK2 <- KK[KK$indicator == indicator_name, ]
+    KK2 <- KK2[KK2$areaID != "Non_Conservation_Area", ]
     
-    for (k in seq_along(KK2$areaID)) { # LOOP THROUGH ALL AREAS THAT HAVE THIS INDICATOR TO SHOW ON MAP
-      message("k = ", k)
-      fill_color <- ifelse(
-        is.na(pillar_ecol_df$score[which(pillar_ecol_df$areaID == KK2$areaID[k] & pillar_ecol_df$indicator == unique_indicators[j] & tolower(pillar_ecol_df$bin) == BINS[i])]),
-        "#EDEDED",
-        flowerPalette[[calc_letter_grade(pillar_ecol_df$score[which(pillar_ecol_df$areaID == KK2$areaID[k] & pillar_ecol_df$indicator == unique_indicators[j] & tolower(pillar_ecol_df$bin) == BINS[i])])]]
-      )
-      
-      border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
-      
-      map <- map %>% 
-        addPolygons(data=MPAs[which(MPAs$NAME_E == KK2$areaID[k]),], fillOpacity = 0.05, weight=2, color=border_color)
-      
-    }
-    map
+    # Text rationale
+    rationale <- unique(KK2$indicator_rationale)
+    
+    # Create leaflet map for this indicator
     map <- leaflet() %>% addTiles()
     
+    for (k in seq_along(KK2$areaID)) {
+      area <- KK2$areaID[k]
+      score <- pillar_ecol_df$score[pillar_ecol_df$areaID == area & pillar_ecol_df$indicator == indicator_name & tolower(pillar_ecol_df$bin) == BINS[i]]
+      
+      fill_color <- ifelse(
+        length(score) == 0 || is.na(score),
+        "#EDEDED",
+        flowerPalette[[calc_letter_grade(score)]]
+      )
+      border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+      
+      map <- map %>%
+        addPolygons(data = MPAs[MPAs$NAME_E == area, ], fillOpacity = 0.05, weight = 2, color = border_color)
+    }
+    
+    # Compose indicator block with bold label, rationale text, and map widget
+    indicator_blocks[[j]] <- tagList(
+      tags$b(paste("Indicator:", indicator_name)),
+      tags$p(rationale),
+      map,
+      tags$hr()
+    )
   }
   
-  } else {
-    cat("There are no indicators for this bin.")
-  }
- 
+  # Compose the whole details block for this bin
+  details_block <- tags$details(
+    tags$summary(tags$strong(paste("Indicator Bin:", bin_upper))),
+    tagList(indicator_blocks)
+  )
   
+  all_details[[length(all_details) + 1]] <- details_block
 }
+
+# Render all the details blocks combined as the chunk output
+tagList(all_details)
+
 
 ```
 ## Discussion
@@ -348,18 +429,7 @@ badGradeTable <- pillar_ecol_df[badGrade, ] |>
   dplyr::ungroup() |>
   dplyr::select("indicator", "score")
 
-
-cat("The following indicators are scoring low or don't have enough data to properly score. Some additional effort should be considered with these indicators: \n")
-
-print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Explore",row.names=FALSE))
-
-
 ```
-
-
-
-
-
 
 
 
