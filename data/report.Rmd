@@ -527,46 +527,48 @@ for (i in seq_along(keeper2)) {
 
 ## Investment Information
 
-```{r,echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
+```{r disclaimer_site, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
 com <- cost_of_mpas[which(cost_of_mpas$area == state$mpas & !(round(cost_of_mpas$percent_sites_in_mpa,0) == 0)),]
 
-if (!(length(com$project_id) == 0)) {
+if (length(com$project_id) != 0) {
+  cat("<p>Disclaimer: The cost information is based on the funding information in the project planning tool. 
+      The amount is based on percentage of samples taken in the area of interest.</p>")
   
-cat("Disclaimer: The cost information is based on the funding information in the project planning tool. The amount is based on percentage of samples taken in the area of interest.\n\n")
   
-om_in_site <- om[which(om$project_id %in% unique(com$project_id)),]
+  om_in_site <- om[which(om$project_id %in% unique(com$project_id)),]
 
-for (i in seq_along(unique(com$project_id))) {
-  p_id <- as.numeric(unique(com$project_id)[i])
-  percentage <- com$percent_sites_in_mpa[which(com$project_id == p_id)]
-  om_in_site$amount[which(om_in_site$project_id == p_id)] <- om_in_site$amount[which(om_in_site$project_id == p_id)]*(percentage/100)
-}
-
-try(dataSPA::plotSPA(om=om_in_site, which="omBar"))
-
-proj_titles <- NULL
-for (i in seq_along(com$project_id)) {
-  proj_titles[i] <- unique(pillar_ecol_df$project_short_title[which(pillar_ecol_df$PPTID == com$project_id[i])])
-}
-
-proj <- unique(com$project_id)
-
-
-cat(paste0("The below investment information is based on the following internal DFO projects that have had samples in ", state$mpas," :", paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; ")))
-
+  for (i in seq_along(unique(com$project_id))) {
+    p_id <- as.numeric(unique(com$project_id)[i])
+    percentage <- com$percent_sites_in_mpa[which(com$project_id == p_id)]
+    om_in_site$amount[which(om_in_site$project_id == p_id)] <- om_in_site$amount[which(om_in_site$project_id == p_id)] * (percentage/100)
+  }
+  
 } else {
-  cat("There is no internal investment information available for this area.")
+  cat("<p>There is no internal investment information available for this area.</p>")
 }
-
-
-
 ```
 
-```{r, echo=FALSE}
-try(dataSPA::plotSPA(om=om_in_site, which="omBar"), silent=TRUE)
-
-
+```{r,results='asis'}
+p <- dataSPA::plotSPA(om = om_in_site, which = "omBar")
+tagList(p)
 ```
+
+```{r cost_projects, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
+
+if (length(com$project_id) != 0) {
+  proj_titles <- sapply(com$project_id, function(pid) {
+    unique(pillar_ecol_df$project_short_title[which(pillar_ecol_df$PPTID == pid)])
+  })
+
+  proj <- unique(com$project_id)
+
+  cat(paste0("<p>The below investment information is based on the following internal DFO projects that have had samples in ",
+             state$mpas, " : ",
+             paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; "),
+             "</p>"))
+}
+```
+
 ## Discussion
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}

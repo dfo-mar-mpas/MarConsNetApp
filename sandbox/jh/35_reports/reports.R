@@ -28,3 +28,4 @@ params$mpas <- "Maritimes"
 input$mpas <- "Maritimes"
 output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names="Maritimes", ".html"))))
 render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
+

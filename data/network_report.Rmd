@@ -345,6 +345,82 @@ tagList(all_details)
 
 
 ```
+
+
+## Investment Information
+
+```{r, echo=FALSE, comment=FALSE, results='asis', message=FALSE, warning=FALSE}
+
+library(htmltools)
+
+cost_of_mpas <- cost_of_mpas[which(cost_of_mpas$area %in% MPAs$NAME_E),]
+
+if (length(cost_of_mpas$project_id) != 0) {
+
+  projects <- unique(cost_of_mpas$project_id)
+  OMs <- list()
+  for (i in seq_along(projects)) {
+    percent_sites_in_network <- sum(cost_of_mpas$percent_sites_in_mpa[which(cost_of_mpas$project_id == projects[i])])
+    OMs[[i]] <- om[which(as.numeric(om$project_id) == as.numeric(projects[i])),]
+  }
+  network_om <- do.call(rbind, OMs)
+  plotly_plot <- try(dataSPA::plotSPA(om=network_om, which="omBar"), silent=TRUE)
+
+  tagList(
+    tags$p("Disclaimer: The cost information is based on the funding information in the project planning tool. The amount is based on percentage of samples taken in the area of interest."),
+    plotly_plot
+  )
+
+} else {
+  tags$p("There is no internal investment information available for this area.")
+}
+
+
+```
+
+```{r, echo=FALSE, comment=FALSE, results='asis', message=FALSE, warning=FALSE}
+
+pie_area <- unique(cost_of_mpas$area)
+  ps <- split(cost_of_mpas, cost_of_mpas$area)
+  
+  adjusted_ps <- list()
+  for (i in seq_along(ps)) {
+    PS <- ps[[i]]
+    adjusted_ps[[i]] <- data.frame(
+      project_id = PS$project_id,
+      amount = rep(NA, length(PS$project_id))
+    )
+    for (j in seq_along(PS$project_id)) {
+      keep <- which(om$project_id == PS$project_id[j])
+      adjusted_ps[[i]]$amount[j] <- sum(om$amount[keep] * PS$percent_sites_in_mpa[j])
+    }
+  }
+  
+  final_funding <- lapply(adjusted_ps, function(x) sum(x$amount))
+  names(final_funding) <- names(ps)
+  bad <- which(unname(final_funding) == 0)
+  
+  df <- data.frame(
+    MPA = names(final_funding)[-bad],
+    Funding = unname(unlist(final_funding))[-bad]
+  ) %>%
+    mutate(Funding_pct = Funding / sum(Funding))
+  
+  # ggplot pie chart
+  gg_pie <- ggplot(df, aes(x = "", y = Funding_pct, fill = MPA)) +
+    geom_col(width = 1) +
+    coord_polar(theta = "y") +
+    scale_fill_brewer(palette = "Set3") +
+    labs(title = "Percentage of Funding by MPA", fill = "MPA") +
+    theme_void()
+  
+  gg_pie
+
+
+```
+
+
+
 ## Discussion
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
