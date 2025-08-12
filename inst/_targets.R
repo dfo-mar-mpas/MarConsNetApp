@@ -205,25 +205,41 @@ list(
                rbind(home, apptabs)
              }),
 
-  tar_target(name = om, # FIXME: need use a real cookie or otherwise update the data
+  tar_target(name=cookie,
+           command={
+             cookie <- read.table(list.files(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets', 'data'), full.names=TRUE,pattern='*txt')[which(grepl("cookie.txt", list.files(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets', 'data'), full.names=TRUE,pattern='*txt')))])$V1
+
+           }),
+
+  tar_target(name = om,
              command = {
-               OM <- dataSPA::getData(type="om", age=3000, cookie="hi",
+               cookie
+               OM <- dataSPA::getData(type="om", age=3000, cookie=cookie,
                                       path = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"))
 
                OM[-(which(OM$activity_type == "Other")),]
 
              }),
 
+  tar_target(name=salary,
+             command={
+               SAL <- dataSPA::getData(type="salary", age=3000, cookie=cookie,
+                                      path = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"))
 
-  tar_target(name = collaborations, # FIXME: need use a real cookie or otherwise update the data
+               SAL[-(which(SAL$activity_type == "Other")),]
+
+             }),
+
+
+  tar_target(name = collaborations,
              command = {
-              cookie <- "cookie"
+              cookie
                col <- dataSPA::getData(type='collaboration', cookie=cookie)
              }),
 
-  tar_target(name = deliverables, # FIXME: need use a real cookie or otherwise update the data
+  tar_target(name = deliverables,
              command = {
-               cookie <- "cookie"
+               cookie
                debug <- 0
                links <- c("https://dmapps/api/ppt/project-years/", "https://dmapps/api/ppt/activities-full/")
 
@@ -347,7 +363,7 @@ list(
 
   tar_target(name = csas,
              command = {
-               cookie <- "cookie" # FIXME: need real cookie to update
+               cookie
 
                links <- c("https://dmapps/api/csas/meetings/")
 
