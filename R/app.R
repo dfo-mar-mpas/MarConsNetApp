@@ -49,11 +49,6 @@ app <- function() {
                store = "MarConsNetTargets/app_targets")
     }
   }
-
-  #regions_js_array <- paste0('[',
-  #                           paste0('"', unique(pillar_ecol_df$region), '"', collapse = ','),
-  #                           ']')
-  #condition <- paste0('!', regions_js_array, '.includes(input.mpas) && input.tabs === "tab_0"')
   condition <- paste0('input.tabs === "tab_0"')
 
 ## FILTERING FOR
@@ -144,6 +139,17 @@ server <- function(input, output, session) {
     req(input$projects)
     length(state$mpas) > 0 && length(state$projects) > 0 && input$tabs == "tab_0" && !(state$mpas %in% unique(pillar_ecol_df$region))
   })
+
+  observe({
+    showModal(modalDialog(
+      title = "Disclaimer",
+      "This is not a finished product. Greyed out data does not suggest a lack of data collected
+       but instead a lack of data that has been incorporated into the app.",
+      easyClose = TRUE,
+      footer = modalButton("I Understand")
+    ))
+  })
+
 
   # Reactive expression to update MPA choices based on selected regions
   mpas_choices <- reactive({
