@@ -368,17 +368,9 @@ if (length(cost_of_mpas$project_id) != 0) {
   }
   network_om <- do.call(rbind, OMs)
   plotly_plot <- try(dataSPA::plotSPA(om=network_om, which="omBar"), silent=TRUE)
-  
-  
-  
-  
+
   # Print statement for O&M
-  
-  
-  
-  
-  
-  
+
   # Now Dealing with Salary
   SALs <- list()
    for (i in seq_along(projects)) {
@@ -408,74 +400,69 @@ if (length(cost_of_mpas$project_id) != 0) {
 
 ```{r, echo=FALSE, comment=FALSE, results='asis', message=FALSE, warning=FALSE}
 
-pie_area <- unique(cost_of_mpas$area)
-  ps <- split(cost_of_mpas, cost_of_mpas$area)
-  
-  adjusted_ps <- list()
-  for (i in seq_along(ps)) {
-    PS <- ps[[i]]
-    adjusted_ps[[i]] <- data.frame(
-      project_id = PS$project_id,
-      amount = rep(NA, length(PS$project_id))
-    )
-    for (j in seq_along(PS$project_id)) {
-      keep <- which(om$project_id == PS$project_id[j])
-      adjusted_ps[[i]]$amount[j] <- sum(om$amount[keep] * PS$percent_sites_in_mpa[j])
-    }
-  }
-  
-  
-  # Adding in the salary information for total cost per protected area
-  adjusted_ps_salary <- list()
-  for (i in seq_along(ps)) {
-    PS <- ps[[i]]
-    adjusted_ps_salary[[i]] <- data.frame(
-      project_id = PS$project_id,
-      amount = rep(NA, length(PS$project_id))
-    )
-    for (j in seq_along(PS$project_id)) {
-      keep <- which(salary$project_id == PS$project_id[j])
-      adjusted_ps_salary[[i]]$amount[j] <- sum(salary$amount_week[keep] * PS$percent_sites_in_mpa[j])
-    }
-  }
-  
-  
-  
-  
-  final_funding <- lapply(adjusted_ps, function(x) sum(x$amount))
-  final_funding_salary <- lapply(adjusted_ps_salary, function(x) sum(x$amount))
-
-  names(final_funding) <- names(ps)
-  names(final_funding_salary) <- names(ps)
-  
-  
-  TOTAL_FUNDING <- NULL
-  for (i in seq_along(final_funding)) {
-    TOTAL_FUNDING[i] <- round(final_funding[[i]]+final_funding_salary[[i]],2)
-  }
-
-  bad <- which(unname(TOTAL_FUNDING) == 0)
-  
-  df <- data.frame(
-    MPA = names(final_funding)[-bad],
-    Funding = unname(unlist(final_funding))[-bad]
-  ) %>%
-    mutate(Funding_pct = Funding / sum(Funding))
-  
-  
-  
-  
-  # TEST
-  mpa_colors <- brewer.pal(n = length(df$MPA), name = "Set3")
-  library(sf)
+library(sf)
 library(dplyr)
 library(leaflet)
 library(RColorBrewer)
 
+pie_area <- unique(cost_of_mpas$area)
+ps <- split(cost_of_mpas, cost_of_mpas$area)
+
+adjusted_ps <- list()
+for (i in seq_along(ps)) {
+  PS <- ps[[i]]
+  adjusted_ps[[i]] <- data.frame(
+    project_id = PS$project_id,
+    amount = rep(NA, length(PS$project_id))
+  )
+  for (j in seq_along(PS$project_id)) {
+    keep <- which(om$project_id == PS$project_id[j])
+    adjusted_ps[[i]]$amount[j] <- sum(om$amount[keep] * PS$percent_sites_in_mpa[j])
+  }
+}
+
+
+# Adding in the salary information for total cost per protected area
+adjusted_ps_salary <- list()
+for (i in seq_along(ps)) {
+  PS <- ps[[i]]
+  adjusted_ps_salary[[i]] <- data.frame(
+    project_id = PS$project_id,
+    amount = rep(NA, length(PS$project_id))
+  )
+  for (j in seq_along(PS$project_id)) {
+    keep <- which(salary$project_id == PS$project_id[j])
+    adjusted_ps_salary[[i]]$amount[j] <- sum(salary$amount_week[keep] * PS$percent_sites_in_mpa[j])
+  }
+}
+
+final_funding <- lapply(adjusted_ps, function(x) sum(x$amount))
+final_funding_salary <- lapply(adjusted_ps_salary, function(x) sum(x$amount))
+
+names(final_funding) <- names(ps)
+names(final_funding_salary) <- names(ps)
+
+
+TOTAL_FUNDING <- NULL
+for (i in seq_along(final_funding)) {
+  TOTAL_FUNDING[i] <- round(final_funding[[i]]+final_funding_salary[[i]],2)
+}
+
+bad <- which(unname(TOTAL_FUNDING) == 0)
+
+df <- data.frame(
+  MPA = names(final_funding)[-bad],
+  Funding = unname(unlist(final_funding))[-bad]
+) %>%
+  mutate(Funding_pct = Funding / sum(Funding))
+
+# CREATING LEAFLET MAP OF SAMPLES
+## Starting with polygon info
+mpa_colors <- brewer.pal(n = length(df$MPA), name = "Set3")
 
 apg <- all_project_geoms[-which(is.na(all_project_geoms$PPTID)),]
 if (any(apg$areaID == "Non_Conservation_Area")) {
-apg <- apg[-which(apg$areaID == "Non_Conservation_Area"),]
+  apg <- apg[-which(apg$areaID == "Non_Conservation_Area"),]
 }
 # Create a new geometry list with rounded coords
 rounded_geoms <- st_sfc(
@@ -495,7 +482,6 @@ st_geometry(apg) <- rounded_geoms
 apg_unique <- apg %>% distinct(geometry, .keep_all = TRUE)
 
 # Getting lat and lng
-
 coords_df <- do.call(rbind, lapply(st_geometry(apg_unique), function(pt) {
   c(lng = pt[1], lat = pt[2])
 }))
@@ -507,8 +493,7 @@ apg_unique <- apg_unique %>%
     lat = coords_df[, "lat"]
   )
 
-# Getting colors
-
+# Getting colors for polygons
 names(mpa_colors) <- df$MPA
 fill_colors <- mpa_colors[df$MPA]
 
@@ -519,24 +504,32 @@ fill_colors <- as.character(fill_colors)
 money_mpas <- MPAs[which(MPAs$NAME_E %in% df$MPA),]
 
 # GETTING PROJECTS
+pptids <- unique(apg_unique$PPTID)
+
 marker_color <- "lightblue"
 
 # Assign FA icons for shapes
-shape_icons <- c("circle", "square", "star", "triangle", "heart")
+#shape_icons <- c("circle", "square", "star", "triangle", "heart") #FIXME: May need more.
+shape_icons <- c("anchor", "ship", "circle", "life-ring", "sailboat", "map-marker", "globe", "compass", "flag", "cloud", "water", "tint", "wave-square", "sun-o", "moon-o", "star", "bolt", "paper-plane", "location-arrow", "road", "truck", "ship-wheel", "life-ring", "circle", "square", "circle-o", "square-o", "dot-circle-o")
+
+
+# Legend work
+shape_map <- setNames(rep(shape_icons, length.out = length(pptids)), pptids)
+
+# Set icons
+apg_unique$map_icons <- NA
+for (i in seq_along(pptids)) {
+  apg_unique$map_icons[which(apg_unique$PPTID == as.numeric(pptids[i]))] <- shape_map[[which(names(shape_map) == pptids[i])]]
+}
 
 icons <- awesomeIcons(
-  icon = shape_icons,
+  icon = apg_unique$map_icons,
   iconColor = "black",
   library = "fa",
   markerColor = marker_color
 )
 
-# Legend work
-pptids <- unique(apg_unique$PPTID)
-shape_map <- setNames(rep(shape_icons, length.out = length(pptids)), pptids)
-
-# Assuming you have a shape_map like this:
-# shape_map <- setNames(c("circle", "star", "square-full"), pptids)
+####### WEDNESDAY JAIM HERE
 
 # Build legend items dynamically:
 legend_items <- paste0(
@@ -572,28 +565,28 @@ map <- leaflet(apg_unique) %>%
     position = "bottomright"
   )
 
-  # END TEST
-  
-  
-  
-  # ggplot pie chart
+# END TEST
+
+
+
+# ggplot pie chart
 gg_pie <- ggplot(df, aes(x = "", y = Funding_pct, fill = MPA)) +
-    geom_col(width = 1) +
-    coord_polar(theta = "y") +
-    scale_fill_manual(values = mpa_colors) +
-    labs(title = "Percentage of Funding by MPA", fill = "Protected Area") +
-    theme_void()
-  
-  #gg_pie
+  geom_col(width = 1) +
+  coord_polar(theta = "y") +
+  scale_fill_manual(values = mpa_colors) +
+  labs(title = "Percentage of Funding by MPA", fill = "Protected Area") +
+  theme_void()
+
+#gg_pie
 temp_file <- tempfile(fileext = ".png")
 ggsave(temp_file, plot = gg_pie, width = 6, height = 4, dpi = 150)
 
 tagList(
   tags$div(style = "display: flex; gap: 20px; align-items: center;",
-    tags$div(style = "flex: 1;",
-      tags$img(src = base64enc::dataURI(file = temp_file, mime = "image/png"), style = "max-width: 100%; height: auto;")
-    ),
-    tags$div(style = "flex: 1;", map)
+           tags$div(style = "flex: 1;",
+                    tags$img(src = base64enc::dataURI(file = temp_file, mime = "image/png"), style = "max-width: 100%; height: auto;")
+           ),
+           tags$div(style = "flex: 1;", map)
   )
 )
 
