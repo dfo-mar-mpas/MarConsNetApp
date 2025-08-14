@@ -565,10 +565,6 @@ map <- leaflet(apg_unique) %>%
     position = "bottomright"
   )
 
-# END TEST
-
-
-
 # ggplot pie chart
 gg_pie <- ggplot(df, aes(x = "", y = Funding_pct, fill = MPA)) +
   geom_col(width = 1) +

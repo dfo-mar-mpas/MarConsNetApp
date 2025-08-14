@@ -3,7 +3,6 @@ rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
 output_dir <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports")
 
 for (i in seq_along(mpas)) {
-  message(i)
   state <- list()
   params <- list()
   input <- list()

@@ -7,9 +7,10 @@ output: html_document
 
 `r params$mpas`
 
-## At-a-glance
 
-```{r, echo=FALSE,comment=NA, results="asis"}
+## Key Findings
+
+```{r, echo=FALSE}
 library(sf)
 library(leaflet)
 library(rgbif)
@@ -17,9 +18,205 @@ library(rvest)
 library(dplyr)
 library(DT)
 
+## PREP FOR KEY FINDINGS
 
+# AREA GRADE
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- state$mpas
+p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
+
+## SUGGESTED FURTHER RESEARCH
+
+summary_table <- data.frame(
+  `Indicator Bin` = character(),
+  `Grade` = character(),
+  `Number of Indicators` = character(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through bins and calculate grades
+for (i in seq_along(unique(p$bin))) {
+  keep <- which(p$bin == unique(p$bin)[i])
+  df <- p[keep, ]
+  
+  grade <- calc_letter_grade(weighted.mean(df$score, df$weight, na.rm = TRUE))
+  
+  if (any(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))) {
+  indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))])
+  } else {
+    indicatorLength <- length(df$indicator)
+  }
+  
+  summary_table[i, ] <- c(unique(p$bin)[i], grade, indicatorLength)
+}
+
+# PERCENT FUNDING FOR THIS AREA
+com <- cost_of_mpas[which(cost_of_mpas$area == state$mpas & !(round(cost_of_mpas$percent_sites_in_mpa,0) == 0)),]
+
+if (length(com$project_id) != 0) {
+proj_titles <- sapply(com$project_id, function(pid) {
+    unique(pillar_ecol_df$project_short_title[which(pillar_ecol_df$PPTID == pid)])
+})
+proj <- unique(com$project_id)
+
+# PERCENT FUNDING
+pie_area <- unique(cost_of_mpas$area)
+ps <- split(cost_of_mpas, cost_of_mpas$area)
+
+adjusted_ps <- list()
+for (i in seq_along(ps)) {
+  PS <- ps[[i]]
+  adjusted_ps[[i]] <- data.frame(
+    project_id = PS$project_id,
+    amount = rep(NA, length(PS$project_id))
+  )
+  for (j in seq_along(PS$project_id)) {
+    keep <- which(om$project_id == PS$project_id[j])
+    adjusted_ps[[i]]$amount[j] <- sum(om$amount[keep] * PS$percent_sites_in_mpa[j])
+  }
+}
+
+final_funding <- lapply(adjusted_ps, function(x) sum(x$amount))
+
+names(final_funding) <- names(ps)
+
+bad <- which(unname(final_funding) == 0)
+
+percent_funding <- data.frame(
+  MPA = names(final_funding)[-bad],
+  Funding = unname(unlist(final_funding))[-bad]
+) %>%
+  mutate(Funding_pct = Funding / sum(Funding))
+
+money_percentage <- round(percent_funding$Funding_pct[which(percent_funding$MPA == state$mpas)]*100, 2)
+
+investment <- paste0("The following DFO projects have sampled in ",
+             state$mpas, " : ",
+             paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; "), " which accounted for ", money_percentage, "% of O&M funding to the protected areas.")
+} else {
+  investment <- paste0("No identified DFO projects have sampled in ", state$mpas, " and therefore there is no identified O&M investment.")
+}
+
+# STATUS OF OBJECTIVES
+
+string <- state$mpas
+keepO <- string
+
+# Get site-level objectives
+S_Objectives <- Objectives_processed[[keepO]]
+
+# Initialize the table
+objective_table_site <- data.frame(
+  Objective = character(),
+  Flower_Plot_Linkage = character(),
+  Rationale = character(),
+  stringsAsFactors = FALSE
+)
+
+
+if (!(length(S_Objectives) == 0)) {
+  filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
+
+  objectives_letter_grades <- NULL
+
+  for (fo in seq_along(filtered_odfS$objectives)) {
+    id <- fo
+    req(input$mpas %in% c("All", unique(pillar_ecol_df$areaID)))
+
+    # Subset rows by MPA
+    if (state$mpas == "All") {
+      c1 <- 1:length(pillar_ecol_df$areaID)
+    } else {
+      c1 <- which(pillar_ecol_df$areaID == state$mpas)
+    }
+
+    # Get flower plot linkage name
+    flower_linkage_name <- odf$flower_plot[which(odf$objectives == S_Objectives[id])]
+
+    # Special handling for environmental representativity
+    if (tolower(flower_linkage_name) == "environmental (representativity)") {
+      c2 <- which(tolower(pillar_ecol_df$bin) == "environmental representativity")
+    } else {
+      c2 <- which(tolower(pillar_ecol_df$bin) == tolower(flower_linkage_name))
+    }
+
+    KEEP <- intersect(c1, c2)
+    ymax <- pillar_ecol_df$score[KEEP]
+    weight <- pillar_ecol_df$weight[KEEP]
+
+    # Fallback match by 'objective' field
+    if (length(ymax) == 0) {
+      c2 <- which(tolower(pillar_ecol_df$objective) == tolower(flower_linkage_name))
+      KEEP <- intersect(c1, c2)
+      ymax <- pillar_ecol_df$score[KEEP]
+      weight <- pillar_ecol_df$weight[KEEP]
+    }
+
+    # Calculate weighted mean
+    ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
+
+    # Convert score to grade → color
+    clc <- as.character(calc_letter_grade(ymax))
+    objectives_letter_grades[id] <- clc
+    finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
+    if (length(finalCol) == 0) finalCol <- "#EDEDED"
+
+    # Add row to site-level table with HTML color styling
+    objective_table_site <- rbind(objective_table_site, data.frame(
+      Objective = sprintf(
+        '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span>',
+        finalCol, S_Objectives[fo]
+      ),
+      Flower_Plot_Linkage = flower_linkage_name,
+      Rationale = NA_character_,
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  status_objectives <- HTML(paste0(
+  "Based on our analysis, the status of the objectives are as follows:<br><br>",
+  paste0(
+    paste(gsub("\n", "", filtered_odfS$objectives),
+          " (", objectives_letter_grades, ")", sep = ""),
+    collapse = "<br><br>"
+  )
+))
+} else {
+  status_objectives <- "No site objective status available."
+}
+
+div(
+  style = "border: 2px solid black; padding: 10px; border-radius: 5px; background-color: #f9f9f9;",
+  tags$p(investment),
+  tags$p(paste0(state$mpas, " has an overall status score of ", area_grade, ".")),
+  tags$p(status_objectives),
+  tags$p(paste0(
+    "No data exists for the following indicators bins: ",
+    paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
+    ". Further research is recommended."
+  ))
+)
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+## At-a-glance
+
+```{r, echo=FALSE,comment=NA, results="asis"}
 if (!(length(Context[[string]]) == 0)) {
 cat(Context[[string]])
 } else {
@@ -111,76 +308,8 @@ DT::datatable(objective_table, escape = FALSE, rownames = FALSE)
 ## Site Conservation Objectives
 
 ```{r, echo=FALSE,comment=NA, results="asis"}
-string <- state$mpas
-keepO <- string
-
-# Get site-level objectives
-S_Objectives <- Objectives_processed[[keepO]]
-
-# Initialize the table
-objective_table_site <- data.frame(
-  Objective = character(),
-  Flower_Plot_Linkage = character(),
-  Rationale = character(),
-  stringsAsFactors = FALSE
-)
 
 if (!(length(S_Objectives) == 0)) {
-  filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
-
-  for (fo in seq_along(filtered_odfS$objectives)) {
-    id <- fo
-    req(input$mpas %in% c("All", unique(pillar_ecol_df$areaID)))
-
-    # Subset rows by MPA
-    if (state$mpas == "All") {
-      c1 <- 1:length(pillar_ecol_df$areaID)
-    } else {
-      c1 <- which(pillar_ecol_df$areaID == state$mpas)
-    }
-
-    # Get flower plot linkage name
-    flower_linkage_name <- odf$flower_plot[which(odf$objectives == S_Objectives[id])]
-
-    # Special handling for environmental representativity
-    if (tolower(flower_linkage_name) == "environmental (representativity)") {
-      c2 <- which(tolower(pillar_ecol_df$bin) == "environmental representativity")
-    } else {
-      c2 <- which(tolower(pillar_ecol_df$bin) == tolower(flower_linkage_name))
-    }
-
-    KEEP <- intersect(c1, c2)
-    ymax <- pillar_ecol_df$score[KEEP]
-    weight <- pillar_ecol_df$weight[KEEP]
-
-    # Fallback match by 'objective' field
-    if (length(ymax) == 0) {
-      c2 <- which(tolower(pillar_ecol_df$objective) == tolower(flower_linkage_name))
-      KEEP <- intersect(c1, c2)
-      ymax <- pillar_ecol_df$score[KEEP]
-      weight <- pillar_ecol_df$weight[KEEP]
-    }
-
-    # Calculate weighted mean
-    ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
-
-    # Convert score to grade → color
-    clc <- as.character(calc_letter_grade(ymax))
-    finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-    if (length(finalCol) == 0) finalCol <- "#EDEDED"
-
-    # Add row to site-level table with HTML color styling
-    objective_table_site <- rbind(objective_table_site, data.frame(
-      Objective = sprintf(
-        '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span>',
-        finalCol, S_Objectives[fo]
-      ),
-      Flower_Plot_Linkage = flower_linkage_name,
-      Rationale = NA_character_,
-      stringsAsFactors = FALSE
-    ))
-  }
-
   # Render the styled DT table
   DT::datatable(
     objective_table_site,
@@ -202,13 +331,8 @@ if (!(length(S_Objectives) == 0)) {
 ```
 
 
-```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
-area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
-
-```
-
 ```{r, echo=FALSE}
+library(htmltools)
 if (state$mpas %in% MPA_report_card$NAME_E) {
   fill_color <- ifelse(
     is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]),
@@ -245,7 +369,7 @@ if (state$mpas %in% MPA_report_card$NAME_E) {
 }
 
 
-map
+tagList(map)
 ```
 
 ## Creature Feature
@@ -387,30 +511,6 @@ As shown above, in `r params$mpas` the over all grade based on our criteria is `
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
 # Create an empty data frame to store results
-summary_table <- data.frame(
-  `Indicator Bin` = character(),
-  `Grade` = character(),
-  `Number of Indicators` = character(),
-  stringsAsFactors = FALSE
-)
-
-# Loop through bins and calculate grades
-for (i in seq_along(unique(p$bin))) {
-  keep <- which(p$bin == unique(p$bin)[i])
-  df <- p[keep, ]
-  
-  grade <- calc_letter_grade(weighted.mean(df$score, df$weight, na.rm = TRUE))
-  
-  if (any(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))) {
-  indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))])
-  } else {
-    indicatorLength <- length(df$indicator)
-  }
-  
-  summary_table[i, ] <- c(unique(p$bin)[i], grade, indicatorLength)
-}
-
-# Print as a table
 print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
 
 
@@ -528,8 +628,6 @@ for (i in seq_along(keeper2)) {
 ## Investment Information
 
 ```{r disclaimer_site, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
-com <- cost_of_mpas[which(cost_of_mpas$area == state$mpas & !(round(cost_of_mpas$percent_sites_in_mpa,0) == 0)),]
-
 if (length(com$project_id) != 0) {
   cat("<p>Disclaimer: The cost information is based on the funding information in the project planning tool. 
       The amount is based on percentage of samples taken in the area of interest.</p>")
@@ -549,19 +647,17 @@ if (length(com$project_id) != 0) {
 ```
 
 ```{r,results='asis'}
-p <- dataSPA::plotSPA(om = om_in_site, which = "omBar")
-tagList(p)
+if (length(com$project_id) != 0) {
+dataSPA_plot <- dataSPA::plotSPA(om = om_in_site, which = "omBar")
+tagList(dataSPA_plot)
+} else {
+  NULL
+}
 ```
 
 ```{r cost_projects, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
 
 if (length(com$project_id) != 0) {
-  proj_titles <- sapply(com$project_id, function(pid) {
-    unique(pillar_ecol_df$project_short_title[which(pillar_ecol_df$PPTID == pid)])
-  })
-
-  proj <- unique(com$project_id)
-
   cat(paste0("<p>The below investment information is based on the following internal DFO projects that have had samples in ",
              state$mpas, " : ",
              paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; "),
@@ -637,7 +733,6 @@ for (i in seq_along(climate_indicators)) {
 }
 
 cat("### Research Recommendations \n")
-
 cat(paste0(
   "The following indicator bins do not have any data: ",
   paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
