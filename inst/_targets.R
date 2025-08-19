@@ -609,6 +609,14 @@ list(
 
 
   ############ data loading ############
+  tar_target(name=data_otn_recievers,
+             command = {
+               geoserver_receivers <- readr::read_csv('https://members.oceantrack.org/geoserver/otn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=otn:stations_receivers&outputFormat=csv', guess_max = 13579)
+               geoserver_receivers
+             }),
+
+
+
   tar_target(name = data_MAR_cumulative_impacts,
              {
                temp_zip <- tempfile(fileext = ".zip")
@@ -1281,6 +1289,153 @@ tar_target(name = data_inaturalist,
                                bin_rationale="FIXME"
                                )
             }),
+
+tar_target(ind_otn_number_of_recievers,
+           command={
+
+             # Looking at number of receivers
+
+             DF <- data_otn_recievers[-which(is.na(data_otn_recievers$stn_lat) | is.na(data_otn_recievers$stn_long)),]
+             df <- DF %>%
+               st_as_sf(coords = c("stn_long", "stn_lat"), crs = 4326) %>%  # create geometry
+               dplyr::select(FID, deploy_date, geometry)
+
+             df_with_areaID <- st_join(df, MPAs %>% dplyr::select(NAME_E), left = TRUE)
+
+             # Rename for clarity
+             df_with_areaID <- df_with_areaID %>%
+               rename(areaID = NAME_E)
+
+             number_receivers_in_mpas <- list()
+
+             for (i in seq_along(unique(df_with_areaID$areaID))) {
+               if (!(is.na(unique(df_with_areaID$areaID)[i]))) {
+               number_receivers_in_mpas[[i]] <- length(which(df_with_areaID$areaID == unique(df_with_areaID$areaID)[i]))
+               } else {
+                 number_receivers_in_mpas[[i]] <- length(which(is.na(df_with_areaID$areaID)))
+
+               }
+             }
+             names(number_receivers_in_mpas) <- unique(df_with_areaID$areaID)
+
+           }),
+
+tar_target(ind_otn,
+           command={
+             tags <- readr::read_csv('https://members.oceantrack.org/geoserver/otn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=otn:animals&outputFormat=csv', guess_max = 13579)
+             tags <- tags %>%
+               group_by(catalognumber) %>%   # group by catalognumber
+               slice(1) %>%                  # keep the first row in each group
+               ungroup()                     # ungroup after slicing
+
+             # 1. Subset obis for just Ocean Tracking Network
+             otn_detection <- data_obis[which(data_obis$rightsHolder == "Ocean Tracking Network, Dalhousie University, Halifax, Nova Scotia otndc@dal.ca" & !(is.na(data_obis$decimalLatitude)) & !(is.na(data_obis$decimalLongitude))),]
+
+
+             # 2. Remove all NA columns
+             bad <- NULL
+             message(1)
+             for (i in seq_along(names(otn_detection))) {
+               message(i)
+               bad[i] <- all(is.na(otn_detection[[names(otn_detection)[i]]]))
+             }
+
+             oo <- otn_detection[, -which(bad)] # Removing all NA columns
+
+             # 3. Further subset to only look at relevant columns
+             ooo <- oo[, c("dataset_id", "id", "aphiaid", 'catalogNumber', 'collectionCode', 'datasetID', "datasetName", 'decimalLatitude', "decimalLongitude", "eventDate", 'eventID', "occurrenceID", 'organismID', 'organismName', 'rightsHolder', 'scientificName', "NAME_E.x", "geometry")]
+
+             # 4.  Remove the ones that say 'release' and 'capture' in occurence ID
+             ooo <- ooo[-which(grepl("release", ooo$occurrenceID)),]
+             ooo <- ooo[-which(grepl("capture", ooo$occurrenceID)),]
+
+             # 5. Only keep obis data that has tags$collectioncode in ooo$occurenceID (e.g. IBFS).
+             ## This is to allow us to find the tag ID for all obis
+
+             keeper <- list()
+             message(2)
+             for (i in seq_along(unique(tags$collectioncode))) {
+               message(i)
+               keeper[[i]] <- which(grepl(unique(tags$collectioncode)[i], ooo$occurrenceID))
+
+             }
+
+             keep <- unlist(keeper)
+             ooo <- ooo[keep,]
+
+
+             #Extracting 'tag' info from occurenceID
+             ## (Trial and error)- tags$catalogNumber gives us the tag ID. It can be grepl in ooo$occurenceID
+
+
+             pattern_dash <- "^.*?(\\d{4}-\\d{2}-\\d{2}T[^_]*_)"
+             pattern_underscore <- "^.*?(\\d{4}_\\d{2}_\\d{2}T[^_]*_)"
+
+             cut1 <- sapply(ooo$occurrenceID, function(x) {
+               if (grepl(pattern_dash, x)) {
+                 sub(pattern_dash, "", x)
+               } else if (grepl(pattern_underscore, x)) {
+                 sub(pattern_underscore, "", x)
+               } else {
+                 sub("^.*?_", "", x)  # remove everything before the first underscore
+               }
+             })
+
+
+             cut2 <- sub("_.*$", "", cut1)
+
+             bad_tags <- ooo$occurrenceID[which(!cut2 %in% tags$catalognumber)]
+             bad <- which(!cut2 %in% tags$catalognumber) # FIXME: this could use more work.
+
+             ## 6. Remove ones that could not get an associated tag
+             ooo <- ooo[-bad,]
+             ooo$tag_id <- cut2[which(cut2 %in% tags$catalognumber)]
+
+             tracking <- split(ooo, ooo$tag_id)
+
+             tracking
+           }),
+
+tar_target(data_otn_proportion_tags_detected_in_multiple_mpas,
+           command={
+
+             otn_areas <- vector("list", length = length(ind_otn))
+             names(otn_areas) <- names(ind_otn)
+             for (i in seq_along(ind_otn)) {
+               message(i)
+               oa <- unique(ind_otn[[i]]$NAME_E.x)
+               if (length(oa) == 1 && oa == "Non_Conservation_Area") {
+                 oa <- NULL
+               }
+
+               if (!(is.null(oa)) && any(oa == "Non_Conservation_Area")) {
+                 oa <- oa[-which(oa == "Non_Conservation_Area")]
+               }
+               otn_areas[[i]] <- oa
+             }
+
+             otn_areas <- Filter(Negate(is.null), otn_areas)
+
+             proportion_in_different_mpa <- data.frame(areaID=unique(unlist(otn_areas)), number_in_mpa=NA, proportion_in_mpa_and_another=NA)
+
+             for (i in seq_along(proportion_in_different_mpa$areaID)) {
+               message(i)
+               keep <- unname(which(sapply(otn_areas, function(x) proportion_in_different_mpa$areaID[i] %in% x)))
+               proportion_in_different_mpa$number_in_mpa[i] <- length(keep)
+
+               if(!any(unname(unlist(lapply(otn_areas, length)))[keep] > 1)) { # Checking if in more than 1 MPA
+                 proportion_in_different_mpa$proportion_in_mpa_and_another[i] <- 0
+               } else {
+                 multiple_mpas <- length(which(unname(unlist(lapply(otn_areas, length)))[keep] > 1))
+
+                 proportion_in_different_mpa$proportion_in_mpa_and_another[i] <- round(multiple_mpas/length(keep)*100,2)
+
+               }
+             }
+
+             proportion_in_different_mpa
+           }
+           ),
 
  tar_target(ind_fish_length,
             command = {
