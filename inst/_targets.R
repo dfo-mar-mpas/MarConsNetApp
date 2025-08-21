@@ -1,21 +1,66 @@
 # Load packages required to define the pipeline:
-library(targets)
-
-if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
-  tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))
-}
+if(!require(librarian)) install.packages("librarian")
+pkgs <- c("sf",
+          "targets",
+          "viridis",
+          "j-harbin/dataSPA",
+          "arcpullr",
+          "ArgoCanada/argoFloats",
+          "raster",
+          "dfo-mar-odis/TBSpayRates",
+          "readxl",
+          "ggplot2",
+          "shinyBS",
+          "Maritimes/Mar.datawrangling",
+          "DT",
+          "magrittr",
+          "RColorBrewer",
+          "dplyr",
+          "tidyr",
+          "stringr",
+          "officer",
+          "RColorBrewer",
+          "car",
+          "purrr",
+          "dfo-mar-mpas/MarConsNetAnalysis",
+          "dfo-mar-mpas/MarConsNetData",
+          "dfo-mar-mpas/MarConsNetApp",
+          "rnaturalearth",
+          "DBI",
+          "duckdb",
+          "rmarkdown",
+          "shiny",
+          "measurements",
+          "mregions2",
+          "patchwork",
+          "units",
+          "dankelley/oceglider",
+          "RCurl",
+          "oce",
+          "gsw",
+          "leaflet",
+          "rgbif",
+          "qs",
+          "qs2")
+shelf(pkgs)
 
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
-tar_option_set(
-  packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
-               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
-               "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units", "oceglider", "RCurl", "oce", "gsw","leaflet",
-              "rgbif"),
-  #controller = crew::crew_controller_local(workers = 2),
-  # imports = c("civi"),
-  format = "qs"
-)
+tar_option_set(packages = basename(pkgs),
+               format = "qs")
+
+
+if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
+  store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets")
+} else if(dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+  store = "//wpnsbio9039519.mar.dfo-mpo.ca/MarConsNet/MarConsNetTargets/app_targets"
+} else if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+  store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+} else {
+  warning("MarConsNet data store not found. Please check the directory paths.")
+  store = getwd()
+}
+tar_config_set(store = store)
+
 
 # sapply(c(list.files("../MarConsNetAnalysis/R/","ind_",full.names = TRUE),
 #          "../MarConsNetAnalysis/R/aggregate_groups.R",
@@ -3065,8 +3110,7 @@ tar_target(plot_files,
               for(i in 1:nrow(data_pillar_ecol_df)){
                 message(i)
                 if(!is.null(data_pillar_ecol_df$plot[[i]])&data_pillar_ecol_df$areaID[[i]]!="Non_Conservation_Area"){
-                filename <-  file.path(Sys.getenv("OneDriveCommercial"),
-                                       "MarConsNetTargets",
+                filename <-  file.path(store,"..",
                                        "data", "plots",
                                        make.names(paste0("plot_",
                                                          data_pillar_ecol_df$areaID[i],
