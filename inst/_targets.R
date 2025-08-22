@@ -1,21 +1,66 @@
 # Load packages required to define the pipeline:
-library(targets)
-
-if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
-  tar_config_set(store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))
-}
+if(!require(librarian)) install.packages("librarian")
+pkgs <- c("sf",
+          "targets",
+          "viridis",
+          "j-harbin/dataSPA",
+          "arcpullr",
+          "ArgoCanada/argoFloats",
+          "raster",
+          "dfo-mar-odis/TBSpayRates",
+          "readxl",
+          "ggplot2",
+          "shinyBS",
+          "Maritimes/Mar.datawrangling",
+          "DT",
+          "magrittr",
+          "RColorBrewer",
+          "dplyr",
+          "tidyr",
+          "stringr",
+          "officer",
+          "RColorBrewer",
+          "car",
+          "purrr",
+          "dfo-mar-mpas/MarConsNetAnalysis",
+          "dfo-mar-mpas/MarConsNetData",
+          "dfo-mar-mpas/MarConsNetApp",
+          "rnaturalearth",
+          "DBI",
+          "duckdb",
+          "rmarkdown",
+          "shiny",
+          "measurements",
+          "mregions2",
+          "patchwork",
+          "units",
+          "dankelley/oceglider",
+          "RCurl",
+          "oce",
+          "gsw",
+          "leaflet",
+          "rgbif",
+          "qs",
+          "qs2")
+shelf(pkgs)
 
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
-tar_option_set(
-  packages = c("MarConsNetApp", "sf", "targets", "viridis", "dataSPA", "arcpullr", "argoFloats", "raster",
-               "TBSpayRates", "readxl", "ggplot2", "shinyBS", "Mar.datawrangling", "DT", "magrittr", "RColorBrewer", "dplyr", "tidyr", "stringr", "officer",
-               "RColorBrewer", "car", "purrr", "MarConsNetAnalysis","MarConsNetData",
-               "rnaturalearth","DBI","duckdb", "rmarkdown", "shiny", "measurements","mregions2","patchwork", "units", "oceglider", "RCurl", "oce", "gsw",
-              "rgbif"),
-  #controller = crew::crew_controller_local(workers = 2),
-  # imports = c("civi"),
-  format = "qs"
-)
+tar_option_set(packages = basename(pkgs),
+               format = "qs")
+
+
+if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
+  store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets")
+} else if(dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+  store = "//wpnsbio9039519.mar.dfo-mpo.ca/MarConsNet/MarConsNetTargets/app_targets"
+} else if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+  store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+} else {
+  warning("MarConsNet data store not found. Please check the directory paths.")
+  store = getwd()
+}
+tar_config_set(store = store)
+
 
 # sapply(c(list.files("../MarConsNetAnalysis/R/","ind_",full.names = TRUE),
 #          "../MarConsNetAnalysis/R/aggregate_groups.R",
@@ -1293,6 +1338,7 @@ tar_target(name = data_inaturalist,
 tar_target(ind_otn_number_of_recievers,
            command={
 
+
              # Looking at number of receivers
 
              DF <- data_otn_recievers[-which(is.na(data_otn_recievers$stn_lat) | is.na(data_otn_recievers$stn_long)),]
@@ -1320,7 +1366,7 @@ tar_target(ind_otn_number_of_recievers,
 
            }),
 
-tar_target(ind_otn,
+tar_target(data_otn_tags,
            command={
              tags <- readr::read_csv('https://members.oceantrack.org/geoserver/otn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=otn:animals&outputFormat=csv', guess_max = 13579)
              tags <- tags %>%
@@ -1391,19 +1437,48 @@ tar_target(ind_otn,
              ooo <- ooo[-bad,]
              ooo$tag_id <- cut2[which(cut2 %in% tags$catalognumber)]
 
-             tracking <- split(ooo, ooo$tag_id)
+             ooo
+             #tracking <- split(ooo, ooo$tag_id)
 
-             tracking
+             #tracking
            }),
 
-tar_target(data_otn_proportion_tags_detected_in_multiple_mpas,
+tar_target(ind_otn_proportion_tags_detected_in_multiple_mpas,
            command={
 
-             otn_areas <- vector("list", length = length(ind_otn))
-             names(otn_areas) <- names(ind_otn)
-             for (i in seq_along(ind_otn)) {
+             tester <- data_otn_tags
+             names(tester)[which(names(tester) == "NAME_E.x")] <- "areaID"
+
+             #names(data_otn_tags)[which(names(data_otn_tags) == "NAME_E.x")] <- "areaID"
+
+             x <- data.frame("areaID"=MPAs$NAME_E)
+             x$indicator <- "Proportion of Tags Detected in More than One MPA"
+             x$type <- "Ocean Tracking Network"
+             x$units <- "%"
+             x$scoring <- "connectivity-proportion"
+             x$PPTID <- NA
+             x$project_short_title <- NA
+             x$climate <- FALSE
+             x$design_target <- FALSE
+             x$data <- NULL
+             x$score <- NA
+             x$status_statement <- NA
+             x$trend_statement <- "There is no relevant trend statement available."
+             x$source <- "Ocean Tracking Network"
+             x$climate_expectation <- "FIXME"
+             x$indicator_rationale <- "The exchange of individuals between conservation sites can support ecosystem resilience, population recovery, genetic exchange, and the maintenance of biodiversity"
+             x$bin_rationale <- NA
+             x$plot <-NULL
+
+             # Doing the score and statement status
+
+             tracking <- split(tester , tester $tag_id)
+
+             otn_areas <- vector("list", length = length(tracking))
+             names(otn_areas) <- names(tracking)
+             for (i in seq_along(tracking)) {
                message(i)
-               oa <- unique(ind_otn[[i]]$NAME_E.x)
+               oa <- unique(tracking[[i]]$areaID)
                if (length(oa) == 1 && oa == "Non_Conservation_Area") {
                  oa <- NULL
                }
@@ -1413,10 +1488,10 @@ tar_target(data_otn_proportion_tags_detected_in_multiple_mpas,
                }
                otn_areas[[i]] <- oa
              }
-
+             otn_areas_old <- otn_areas
              otn_areas <- Filter(Negate(is.null), otn_areas)
 
-             proportion_in_different_mpa <- data.frame(areaID=unique(unlist(otn_areas)), number_in_mpa=NA, proportion_in_mpa_and_another=NA)
+             proportion_in_different_mpa <- data.frame(areaID=unique(unlist(otn_areas)), number_in_mpa=NA, proportion_in_mpa_and_another=NA, connected_MPA=NA)
 
              for (i in seq_along(proportion_in_different_mpa$areaID)) {
                message(i)
@@ -1427,13 +1502,112 @@ tar_target(data_otn_proportion_tags_detected_in_multiple_mpas,
                  proportion_in_different_mpa$proportion_in_mpa_and_another[i] <- 0
                } else {
                  multiple_mpas <- length(which(unname(unlist(lapply(otn_areas, length)))[keep] > 1))
-
                  proportion_in_different_mpa$proportion_in_mpa_and_another[i] <- round(multiple_mpas/length(keep)*100,2)
+                 proportion_in_different_mpa$connected_MPA[i] <- paste0(unique(unlist(unname(otn_areas[keep])))[-which(unique(unlist(unname(otn_areas[keep]))) == proportion_in_different_mpa$areaID[i])], collapse=",")
+               }
+             }
+
+             for (i in seq_along(unique(x$areaID))) {
+               if (any(proportion_in_different_mpa$areaID == unique(x$areaID)[i])) {
+                 x$score[which(x$areaID == unique(x$areaID)[i])] <- proportion_in_different_mpa$proportion_in_mpa_and_another[which(proportion_in_different_mpa$areaID == unique(x$areaID)[i])]
+                 keep <- which(proportion_in_different_mpa$areaID == unique(x$areaID)[i])
+                 connected_mpa <- ifelse(proportion_in_different_mpa$proportion_in_mpa_and_another[keep] == 0, ".",paste0("(", proportion_in_different_mpa$connected_MPA[keep], ")."))
+
+                 ss <- paste0("This protected area has had ",proportion_in_different_mpa$number_in_mpa[keep], " OTN tags detected in the area. Of those, ", proportion_in_different_mpa$proportion_in_mpa_and_another[keep], " % were detected in another MPA ",connected_mpa )
+                 x$status_statement[which(x$areaID == unique(x$areaID)[i])] <- ss
+               } else {
+                 x$score[which(x$areaID == unique(x$areaID)[i])] <- NA
+                 x$status_statement[which(x$areaID == unique(x$areaID)[i])] <- NA
+
+               }
+
+             }
+             # Plotting
+             x$plot <- vector("list", nrow(x))
+             x$data <- vector("list", nrow(x))
+
+             for (i in seq_along(unique(x$areaID))) {
+               message(i)
+               name_of_interest <- unique(x$areaID)[i]
+
+               k1 <- which(!unname(sapply(otn_areas_old, is.null)))
+               k2 <- which(unname(sapply(otn_areas_old, function(xx) name_of_interest %in% xx)))
+               keep <- intersect(k1, k2)
+
+               if (length(keep) > 0) {
+                 # Combine tracking data
+                 df <- do.call(rbind, tracking[keep])
+                 df <- df[df$areaID != "Non_Conservation_Area", ]
+                 df$tag <- as.character(df$tag)
+                 df$eventDate <- as.POSIXct(df$eventDate)
+
+                 if (!inherits(df, "sf")) {
+                   df <- st_as_sf(df, coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+                 }
+
+                 # Land background
+                 land <- ne_countries(scale = "medium", returnclass = "sf")
+
+                 # Relevant MPAs
+                 mpas_sub <- MPAs$geoms[MPAs$NAME_E %in% unique(df$areaID), ]
+
+                 # Split tracks by tag
+                 subset_track <- split(df, df$tag_id)
+                 all_tags <- unique(unlist(lapply(subset_track, function(tt) tt$tag)))
+
+                 # Color palette
+                 pal <- viridis(length(all_tags))
+                 names(pal) <- all_tags
+
+                 # Extract coordinates
+                 df_coords <- df %>%
+                   mutate(
+                     X = st_coordinates(geometry)[,1],
+                     Y = st_coordinates(geometry)[,2]
+                   )
+
+                 df_path <- df_coords %>%
+                   arrange(tag, eventDate)
+
+                 # Determine plot limits based on MPAs or tracking data
+                 combined_geom <- c(st_geometry(mpas_sub), st_geometry(df))
+
+                 # Compute bounding box
+                 bbox <- st_bbox(st_sfc(combined_geom, crs = st_crs(df)))
+
+                 # Create ggplot
+                 map <- ggplot() +
+                   geom_sf(data = land, fill = "grey90", color = "white", size = 0.2) +
+                   geom_sf(data = mpas_sub, fill = "grey60", alpha = 0.3, color = "grey40") +
+                   geom_path(
+                     data = df_path,
+                     aes(x = X, y = Y, group = tag, color = tag),
+                     linewidth = 0.8
+                   ) +
+                   geom_point(
+                     data = df_coords,
+                     aes(x = X, y = Y, color = tag),
+                     size = 1.5
+                   ) +
+                   scale_color_manual(values = pal) +
+                   coord_sf(xlim = c(bbox["xmin"], bbox["xmax"]),
+                            ylim = c(bbox["ymin"], bbox["ymax"])) +  # zoom to region
+                   theme_minimal() +
+                   theme(legend.position = "bottom") +
+                   labs(color = "Tag",
+                        x = "Longitude",
+                        y = "Latitude")
+
+                 # Store results
+                 x$plot[[i]] <- map
+                 x$data[[i]] <- tester[tester$areaID == name_of_interest, c("tag_id", "geometry")]
 
                }
              }
 
-             proportion_in_different_mpa
+x
+
+
            }
            ),
 
@@ -2706,7 +2880,8 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
                              "Connectivity",
                              weights_ratio=1,
                              weights_sum = 1,
-                             ind_placeholder_df
+                             ind_placeholder_df,
+                             ind_otn_proportion_tags_detected_in_multiple_mpas
             )),
  tar_target(bin_habitat_EnvironmentalRepresentativity_df,
             aggregate_groups("bin",
@@ -2935,8 +3110,7 @@ tar_target(plot_files,
               for(i in 1:nrow(data_pillar_ecol_df)){
                 message(i)
                 if(!is.null(data_pillar_ecol_df$plot[[i]])&data_pillar_ecol_df$areaID[[i]]!="Non_Conservation_Area"){
-                filename <-  file.path(Sys.getenv("OneDriveCommercial"),
-                                       "MarConsNetTargets",
+                filename <-  file.path(store,"..",
                                        "data", "plots",
                                        make.names(paste0("plot_",
                                                          data_pillar_ecol_df$areaID[i],
@@ -3033,7 +3207,7 @@ tar_target(cost_of_mpas,
                  combinations <- dd |> distinct(geometry, year) |> nrow()
                } else {
                  # This assumes each unique location was sampled once. This is a caveat and should be documented.
-                 # Representation (JAIM)
+                 # Representation
                  combinations <- dd |> distinct(geoms) |> nrow()
 
                }
