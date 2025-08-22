@@ -926,8 +926,8 @@ server <- function(input, output, session) {
 
     ped <- pillar_ecol_df |>
       filter(areaID == state$mpas) |>
-      dplyr::select(bin, objective, weight) |>
-      unique() |>
+      group_by(bin, objective, weight) |>
+      reframe(weight = sum(weight,na.rm = TRUE)) |>
       arrange(objective,bin) |>
       mutate(angle = (cumsum(weight)-weight/2)/sum(weight)*360)
 
