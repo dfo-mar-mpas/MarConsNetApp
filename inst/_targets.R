@@ -1320,6 +1320,55 @@ tar_target(name = data_inaturalist,
         sptable
       }),
 
+tar_target(data_inseadistance_matrix,
+           calc_in_sea_distance(cellsize = 5000,bioregion=st_union(regions),areas = MPAs[MPAs$NAME_E!="Non_Conservation_Area",])),
+
+tar_target(data_protconn_EL_by_region,
+           command = {
+             mpas <- MPAs |>
+               filter(NAME_E %in% colnames(data_inseadistance_matrix)) |>
+               st_filter(st_buffer(regions,500000)) |>
+               mutate(area=sf::st_area(geoms))
+
+             edgelist <- map(c(regions$NAME_E,mpas$NAME_E[mpas$region==regions$NAME_E]),
+                             function(x) {
+                               ind_ProtConn(distkm = data_inseadistance_matrix[rownames(data_inseadistance_matrix)!=x,colnames(data_inseadistance_matrix)!=x],
+                                            dkm=50,
+                                            bioregion = regions,
+                                            area = mpas[mpas$NAME_E!=x&mpas$region==regions$NAME_E,],
+                                            returns = "EL") |>
+                                 mutate(region = regions$NAME_E,
+                                        areaID = if_else(regions$NAME_E==x,
+                                                         NA,
+                                                         x))
+                             }) |>
+               bind_rows()
+
+             A <- as.numeric(sum(sf::st_area(regions)))
+             prot <- as.numeric(sum(st_area(mpas[mpas$region==regions$NAME_E,])))
+             PCregion <-as.numeric(100*sqrt(sum(edgelist$product[is.na(edgelist$areaID)]))/A)
+
+             summaryEL <- edgelist |>
+               filter(!is.na(areaID)) |>
+               group_by(areaID) |>
+               mutate(PC = as.numeric(100*sqrt(sum(product))/A),
+                 effect =(PCregion-PC)/PCregion) |>
+               ungroup() |>
+               mutate(score = cume_dist(effect)) |>
+               nest(data = names(edgelist))
+
+             summaryEL <- bind_rows(summaryEL,
+                                    data.frame(areaID = regions$NAME_E,
+                                               PC = PCregion,
+                                               effect = NA,
+                                               score = PCregion/prot))
+
+             summaryEL
+
+
+           },
+           pattern = map(regions)),
+
  ##### Indicators #####
 
  # tar_target(ind_placeholder_df,ind_placeholder(areas = all_areas)),
