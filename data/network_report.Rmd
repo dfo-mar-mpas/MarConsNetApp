@@ -42,13 +42,7 @@ cat("</div>")
 ## Network Conservation Objectives
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
-# Initialize empty table
-objective_table <- data.frame(
-  Objective = character(),
-  Flower_Plot_Linkage = character(),
-  Rationale = character(),
-  stringsAsFactors = FALSE
-)
+colored_objectives <- c()
 
 filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
 
@@ -74,35 +68,27 @@ for (fo in seq_along(filtered_odf$objectives)) {
     KEEP <- intersect(c1, c2)
   }
 
-  flower_linkage <- if (length(KEEP) > 0) {
-    unique(pillar_ecol_df$bin[KEEP])[1]
-  } else {
-    NA
-  }
-
   ymax <- pillar_ecol_df$score[KEEP]
   weight <- pillar_ecol_df$weight[KEEP]
   ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
 
-  # Convert score to grade + color
+  # Convert score to grade → color
   clc <- as.character(calc_letter_grade(ymax))
   finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
   if (length(finalCol) == 0) finalCol <- "#EDEDED"
 
-  # Add styled objective label and linkage to the table
-  objective_table <- rbind(objective_table, data.frame(
-    Objective = sprintf(
+  # Store styled objective
+  colored_objectives <- c(
+    colored_objectives,
+    sprintf(
       '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span>',
       finalCol, N_Objectives[fo]
-    ),
-    Flower_Plot_Linkage = flower_linkage,
-    Rationale = NA_character_,
-    stringsAsFactors = FALSE
-  ))
+    )
+  )
 }
 
-# Optional: View in HTML in RMarkdown or render in Shiny
-DT::datatable(objective_table, escape = FALSE, rownames = FALSE)
+# Print just the objectives with color (one per line)
+HTML(paste(colored_objectives, collapse = "<br><br>"))
 
 
 ```

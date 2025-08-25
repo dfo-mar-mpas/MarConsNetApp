@@ -201,16 +201,6 @@ div(
 )
 
 
-
-
-
-
-
-
-
-
-
-
 ```
 
 
@@ -242,13 +232,8 @@ cat("</div>")
 ## Network Conservation Objectives
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
-# Initialize empty table
-objective_table <- data.frame(
-  Objective = character(),
-  Flower_Plot_Linkage = character(),
-  Rationale = character(),
-  stringsAsFactors = FALSE
-)
+# Initialize empty list of colored objectives
+colored_objectives <- c()
 
 filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
 
@@ -274,12 +259,6 @@ for (fo in seq_along(filtered_odf$objectives)) {
     KEEP <- intersect(c1, c2)
   }
 
-  flower_linkage <- if (length(KEEP) > 0) {
-    unique(pillar_ecol_df$bin[KEEP])[1]
-  } else {
-    NA
-  }
-
   ymax <- pillar_ecol_df$score[KEEP]
   weight <- pillar_ecol_df$weight[KEEP]
   ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
@@ -289,20 +268,19 @@ for (fo in seq_along(filtered_odf$objectives)) {
   finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
   if (length(finalCol) == 0) finalCol <- "#EDEDED"
 
-  # Add styled objective label and linkage to the table
-  objective_table <- rbind(objective_table, data.frame(
-    Objective = sprintf(
+  # Store styled objective label
+  colored_objectives <- c(
+    colored_objectives,
+    sprintf(
       '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span>',
       finalCol, N_Objectives[fo]
-    ),
-    Flower_Plot_Linkage = flower_linkage,
-    Rationale = NA_character_,
-    stringsAsFactors = FALSE
-  ))
+    )
+  )
 }
 
-# Optional: View in HTML in RMarkdown or render in Shiny
-DT::datatable(objective_table, escape = FALSE, rownames = FALSE)
+# Display just the objectives (HTML-rendered in Shiny/RMarkdown)
+HTML(paste(colored_objectives, collapse = "<br>"))
+
 
 
 ```
@@ -312,21 +290,22 @@ DT::datatable(objective_table, escape = FALSE, rownames = FALSE)
 ```{r, echo=FALSE,comment=NA, results="asis"}
 
 if (!(length(S_Objectives) == 0)) {
-  # Render the styled DT table
-  DT::datatable(
-    objective_table_site,
-    escape = FALSE,
-    rownames = FALSE,
-    options = list(
-      dom = 't',         # No filter/search box
-      pageLength = 100   # Show all if < 100
-    )
+  
+  
+  site_objectives <- HTML(paste0(
+  "Based on our analysis, the status of the objectives are as follows:<br><br>",
+  paste0(
+    paste(objective_table_site$Objective, sep = ""),
+    collapse = "<br><br>"
   )
+))
 
+  site_objectives
+  
+  
 } else {
   cat("There are no site objectives pulled with our tools for this area.")
 }
-
 
 
 
