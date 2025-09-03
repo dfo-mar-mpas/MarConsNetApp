@@ -59,64 +59,90 @@ app <- function() {
   #all_project_geoms <- all_project_geoms[-which(all_project_geoms$areaID == "Non_Conservation_Area"),]
 
 
-ui <- shiny::fluidPage(
-  shinyjs::useShinyjs(),
-  shiny::tags$head(
-    shiny::tags$style(shiny::HTML("
+  ui <- shiny::fluidPage(
+    shinyjs::useShinyjs(),
+    shiny::tags$head(
+      shiny::tags$style(shiny::HTML("
       .shiny-notification {
         background-color: yellow;
       }
     "))),
-  shiny::titlePanel("Maritimes Conservation Network App"),
-  fluidRow(
-    shiny::column(2, shiny::uiOutput("gohome"))
+    shiny::titlePanel("Maritimes Conservation Network App"),
+    fluidRow(
+      shiny::column(2, shiny::uiOutput("gohome"))
     ),
-  #Makes the tabs hide
-  shiny::tags$style(shiny::HTML("
-    .nav-tabs { display: none; }
+    #Makes the tabs hide
+    tags$style(HTML("
+    #mytabs > .tabbable > .nav.nav-tabs { display: none; }
   ")),
-  shiny::sidebarLayout(
-    shiny::sidebarPanel(
-      shiny::fluidRow(
-      shiny::column(2, actionButton(inputId="about", label="User Guide")),
-      shiny::column(2, offset = 1, shiny::uiOutput("contextButton")),
-      shiny::column(2, shiny::uiOutput("filter_button_ui"))
-      ),
-      br(), br(),
-      shiny::uiOutput("legendUI"),
-      br(),
-      shiny::uiOutput("region"),
-      shiny::uiOutput("mpas"),
-      shiny::uiOutput("projects"),
-      shiny::conditionalPanel(
-        condition = condition,
-      shiny::uiOutput("report_button_ui")),
-      uiOutput("report_ui"),
-      br(),
-      tags$hr(style = "border-top: 2px solid #000; margin-top: 10px; margin-bottom: 10px;"),
-      br(),
-      shiny::uiOutput("networkObjectiveText")
-    ),
-     shiny::mainPanel(
-       shiny::uiOutput("indicatorText"),
-       shiny::uiOutput("DT_ui"),
-       shiny::uiOutput('mytabs'),
-       shiny::uiOutput("conditionalPlot"),
-       shiny::uiOutput("conditionalIndicatorMap"),
-       shiny::uiOutput("whaleDisclaimer"),
-       shiny::fluidRow(shiny::column(width=6, align="left",
-                                     br(),
-                                     shiny::uiOutput("siteObjectiveText"),
-                                     shiny::uiOutput("objectives")),
-                       shiny::column(width=6, align="right",
-                                     br(),
-                                     shiny::uiOutput("conditionalFlower"))
-                       ),
-       shiny::fluidRow(shiny::column(width=6, offset=6, align="right", br(), shiny::uiOutput("flowerType")))
 
-     ) #MAIN
+    # 🔴 START: wrap only the top half in sidebarLayout
+    shiny::sidebarLayout(
+      shiny::sidebarPanel(
+        shiny::fluidRow(
+          shiny::column(2, actionButton(inputId="about", label="User Guide")),
+          shiny::column(2, offset = 1, shiny::uiOutput("contextButton")),
+          shiny::column(2, shiny::uiOutput("filter_button_ui"))
+        ),
+        br(), br(),
+        shiny::uiOutput("legendUI"),
+        br(),
+        shiny::uiOutput("region"),
+        shiny::uiOutput("mpas"),
+        shiny::uiOutput("projects"),
+        shiny::conditionalPanel(
+          condition = condition,
+          shiny::uiOutput("report_button_ui")
+        ),
+        uiOutput("report_ui")
+      ),
+      shiny::mainPanel(
+        shiny::uiOutput("indicatorText"),
+        shiny::uiOutput("DT_ui"),
+        shiny::uiOutput("conditionalPlot"),
+        shiny::uiOutput("conditionalIndicatorMap"),
+        shiny::uiOutput('mytabs'),
+        shiny::uiOutput("whaleDisclaimer")
+      )
+    ),  # 🔴 END: sidebarLayout (top half with gray sidebar)
+
+    # 🔴 NEW: bottom half uses full width (white background)
+    fluidRow(
+      column(
+        width = 12,
+        shiny::fluidRow(
+          shiny::column(width=4, alight='left',
+                        shiny::uiOutput('gbf_objectives')
+                        ),
+          shiny::column(width=4,
+                        br(),
+                        shiny::uiOutput("networkObjectiveText")
+          ),
+          shiny::column(width=4, align='right',
+                        br(),
+                        shiny::uiOutput("siteObjectiveText"),
+                        shiny::uiOutput("objectives")
+          )
+        ),
+        fluidRow(
+          shiny::column(width=6, alight='right',
+          uiOutput('indicator_mode')
+          )
+        ),
+        fluidRow(
+          shiny::column(width=5, align='right',
+          shiny::uiOutput("conditionalFlower")),
+          shiny::column(width=7,
+                        shiny:: uiOutput("ecosystem_table"))
+      ),
+        shiny::uiOutput("threats_home_table")
+        # shiny::fluidRow(
+        #   shiny::column(width=6, offset=6, align="right", br(), shiny::uiOutput("flowerType"))
+        # )
+      )
+    )
   )
-)
+
 
 # Define server logic
 server <- function(input, output, session) {
@@ -167,10 +193,85 @@ server <- function(input, output, session) {
       state[[id]] <- input[[id]]
     })
   })
-  output$mytabs = shiny::renderUI({
-    nTabs = length(APPTABS$flower)+length(pillar_ecol_df$indicator)
-    myTabs = lapply(c(APPTABS$tab, pillar_ecol_df$tab), tabPanel)
+
+
+  output$mytabs <- renderUI({
+    # Build the top-level tabs
+    myTabs <- lapply(c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab), function(tabname) {
+      if (tabname == "tab_0") {
+        # Only tab_0 gets visible subtabs
+        tabPanel(
+          "tab_0",
+          tabsetPanel(
+            id = "tab0_subtabs",
+            tabPanel("Management Effectiveness", "This tab considers only the effectiveness indicators (i.e. those that directly inform objectives)"),
+            tabPanel("Ecosystem Overview", "This tab considers both effectiveness indicators (those that inform objectives) and well as contextual indicators (those that tell us about the ecological status)"),
+            tabPanel("Threats")
+          )
+        )
+      } else {
+        # Other tabs just have their content (no subtabs)
+        tabPanel(tabname)
+      }
+    })
+
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
+  })
+
+
+  output$indicator_mode <- renderUI({
+    req(state$mpas)
+    req(input$tabs)
+    if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
+    radioButtons(
+      inputId = "indicator_mode",
+      label = " ",
+      choices = c(
+        "EBM Framework" = "ebm",
+        "Ecological Themes" = "themes"
+      ),
+      selected = "ebm",
+      inline=TRUE
+    )
+    }
+  })
+
+  output$ecosystem_table <- renderUI({
+    req(input$indicator_mode)
+    if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
+      if (input$indicator_mode == "themes") {
+        # EBM
+        table_theme <- c(rep("Oceanography", 3), rep("Biological", 3), rep("Threats", 3))
+
+      } else {
+        # Ecological Overview
+        table_theme <- c(rep("Biodiversity", 3), rep("Productivity", 3), rep("Habitat", 3))
+      }
+      ddff <- tibble(
+        Theme     = table_theme,
+        Status    = paste("Indicator", 1:9),
+        Source=NA, # Sort by source
+        Readiness = NA,
+        Score = NA,
+        Quality = NA,
+
+        Cost=NA
+      )
+
+      datatable(
+        ddff,
+        rownames = FALSE,
+        extensions = "RowGroup",
+        options = list(
+          rowGroup   = list(dataSrc = 0),                 # group by Theme (col 0)
+          columnDefs = list(list(visible = FALSE, targets = 0)),  # hide Theme column
+          pageLength = 25,
+          dom = "t"
+        )
+      ) %>%
+        formatRound("Score", 2)
+
+    }
   })
 
   output$flowerType <- renderUI({
@@ -391,7 +492,7 @@ server <- function(input, output, session) {
   output$siteObjectiveText <- shiny::renderUI({
     req(input$tabs)
     req(state$mpas)
-    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
       keepO <- which(areas == state$mpas)
       if (!(length(keepO) == 0)) {
         shiny::tags$b("Site Level Conservation Objectives")
@@ -399,9 +500,9 @@ server <- function(input, output, session) {
     }
   })
 
-  output$objectives <- shiny::renderUI({ #JAIM
+  output$objectives <- shiny::renderUI({
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
         keepO <- which(names(Objectives_processed) == state$mpas)
       if (!(length(keepO) == 0)) {
         textO <- Objectives_processed[[keepO]]
@@ -545,6 +646,10 @@ server <- function(input, output, session) {
         }
         binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$indicator[keepind]))
         areaID <- pillar_ecol_df$areaID[keepind]
+
+        # JAIM HERE TO UPDATE TABS
+
+        browser()
 
         ind_tabs <- shiny::tagList(lapply(seq_along(pillar_ecol_df$indicator[keepind]), function(i) {
           tab_id <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$tab[keepind][i]))
@@ -772,6 +877,16 @@ server <- function(input, output, session) {
     }
   })
 
+  output$threats_home_table <- shiny::renderUI({
+    req(input$tabs)
+    if (input$tabs == "tab_0" && input$tab0_subtabs == "Threats") {
+    dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Impacts=NA, Score=NA)
+    DT::datatable(dfdt, escape = FALSE, options = list(
+      pageLength = 100
+    ))
+  }
+  })
+
 
 
   output$conditionalPlot <- shiny::renderUI({
@@ -888,12 +1003,96 @@ server <- function(input, output, session) {
   output$conditionalFlower <- shiny::renderUI({
     req(state$mpas)
     req(input$tabs)
-    if (input$tabs == "tab_0") {
+    if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
       plotOutput("flowerPlot",click="flower_click")
     } else {
       NULL
     }
+  })
 
+
+  # output$ebm_objectives <- render({
+  #   req(state$mpas)
+  #   req(input$tabs)
+  #   if (input$tabs == "tab_0" && !(is.null(input$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
+  #
+  #   emb_targets <- c("Control unintended incidental mortality for all species",
+  #                    "Distribute population component mortality in relation to component biomass",
+  #                    "Minimize unintended introduction and transmission of invasive species",
+  #                    "Control introduction and proliferation of disease/pathogens",
+  #                    "Minimize aquaculture escapes",
+  #                    "Maintain Species Biodiversity",
+  #                    "Maintain Functional Biodiversity",
+  #                    "Maintain Ecosystem Resistance",
+  #                    "Maintain Habitat Diversity",
+  #                    "Keep fishing and other forms of mortality moderate",
+  #                    "Allow sufficient escapement from exploitation for spawning",
+  #                    "Limit disturbing activity in important reproductive areas/seasons",
+  #                    "Control alteration of nutrient concentrations affecting primary production",
+  #                    "Maintain/promote ecosystem structure and functioning",
+  #                    "Habitat required for all species, particularly priority species, is maintained and protected",
+  #                    "Fish habitat that has been degraded is restored",
+  #                    "Pollution is prevented and reduced"
+  #   )
+  #
+  #   tagList(
+  #     h3("Ecosystem Based Management Objectives"),  # This adds the title above the table
+  #     DT::datatable(
+  #       data.frame(Target = emb_targets),
+  #       rownames = FALSE,
+  #       options = list(
+  #         pageLength = 10,
+  #         autoWidth = TRUE
+  #       )
+  #     )
+  #   )
+  #   }
+  #
+  # })
+
+  output$gbf_objectives <- renderUI({
+    req(state$mpas)
+    req(input$tabs)
+
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
+      gbf_targets <- c(
+        "Plan and Manage all Areas To Reduce Biodiversity Loss",
+        "Restore 30% of all Degraded Ecosystems",
+        "Conserve 30% of Land, Waters, and Seas",
+        "Ensure Sustainable Use of Wild Species",
+        "Reduce Pollution Risks to Biodiversity",
+        "Prevent and Mitigate Invasive Alien Species",
+        "Enhance Biodiversity in Agriculture, Aquaculture, and Forestry",
+        "Increase the Area of Protected Areas and Other Effective Area-Based Conservation Measures",
+        "Integrate Biodiversity into Decision-Making",
+        "Ensure Equitable Sharing of Benefits from Genetic Resources",
+        "Increase Financial Resources for Biodiversity",
+        "Enhance Capacity for Biodiversity Implementation",
+        "Ensure Access to and Use of Biodiversity Data",
+        "Ensure Gender Equality in Biodiversity Decision-Making",
+        "Ensure Participation of Indigenous Peoples and Local Communities",
+        "Ensure Full, Equitable, Inclusive, and Gender-Responsive Representation",
+        "Ensure Access to Justice and Information Related to Biodiversity",
+        "Ensure Recognition of Rights of Indigenous Peoples and Local Communities",
+        "Ensure Recognition of Traditional Knowledge",
+        "Ensure Recognition of Rights over Genetic Resources",
+        "Ensure Recognition of Rights over Digital Sequence Information",
+        "Ensure Recognition of Rights over Traditional Knowledge Associated with Genetic Resources",
+        "Ensure Recognition of Rights over Traditional Knowledge Associated with Digital Sequence Information"
+      )
+
+    tagList(
+      h3("Global Biodiversity Targets"),  # This adds the title above the table
+      DT::datatable(
+        data.frame(Target = gbf_targets),
+        rownames = FALSE,
+        options = list(
+          pageLength = 10,
+          autoWidth = TRUE
+        )
+      )
+    )
+    }
   })
 
   output$flowerPlot <- shiny::renderPlot({
@@ -953,7 +1152,7 @@ server <- function(input, output, session) {
 
   output$networkObjectiveText <- shiny::renderUI({
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && "Maritimes" %in% state$region) {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && "Maritimes" %in% state$region && input$tab0_subtabs == "Management Effectiveness") {
       filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
       # Create a div for filtered objectives and bar charts
       objectiveDivs <- lapply(seq_along(filtered_odf$objectives), function(i) {
@@ -970,6 +1169,7 @@ server <- function(input, output, session) {
           # Action link (Objective with new lines handled by HTML)
           shiny::tags$div(
             actionLink(
+              # JAIM JAIM
               inputId = filtered_odf$tab[i],
               label = shiny::HTML(gsub("\n", "<br>", N_Objectives[i]))
             ),
@@ -989,6 +1189,17 @@ server <- function(input, output, session) {
     req(input$tabs)
     if (input$tabs == "tab_0") {
       # Ensure filtered_odf is created inside this condition
+      # JAIM
+      #browser()
+
+      # TEST
+      #n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
+      #objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
+
+
+
+      # END TEST
+
       filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
       for (fo in seq_along(filtered_odf$objectives)) {
         local({
@@ -1053,7 +1264,7 @@ server <- function(input, output, session) {
       if (!(length(keepO) == 0)) {
       S_Objectives <- Objectives_processed[[keepO]]
 
-
+#JAIM
       filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
       for (fo in seq_along(filtered_odfS$objectives)) {
         local({
@@ -1229,7 +1440,6 @@ server <- function(input, output, session) {
               point_keep <- 1:length(APJ$geometry)
 
             }
-            #browser()
 
             if (!("sfc_GEOMETRY" %in% class(APJ$geometry[point_keep]))) {
               if (!(length(point_keep) == 0)) {
