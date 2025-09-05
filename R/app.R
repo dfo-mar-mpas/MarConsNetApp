@@ -584,48 +584,6 @@ server <- function(input, output, session) {
     return(NULL)
   })
 
-  # Adding condition to show the row shows up
-  output$objectives_row <- renderUI({
-    # FRIDAY
-    shiny::fluidRow(
-      shiny::column(
-        width = 3,
-        br(),
-        style = "border-right: 1px solid #ccc;",
-        shiny::uiOutput("gbf_objectives")
-      ),
-      shiny::column(
-        width = 3,
-        br(),
-        style = "border-right: 1px solid #ccc;",
-        shiny::uiOutput("networkObjectiveText")
-      ),
-
-      # Conditionally include "objectives"
-      if (input$tabs == "tab_0" &&
-          !is.null(state$mpas) &&
-          input$tab0_subtabs == "Management Effectiveness") {
-        shiny::column(
-          width = 3,
-          br(),
-          style = "border-right: 1px solid #ccc;",
-          shiny::uiOutput("objectives")
-        )
-      },
-
-      shiny::column(
-        width = 3,
-        br(),
-        shiny::uiOutput("ebm_objectives")
-      )
-    )
-  })
-
-
-
-
-
-
   # Update the button label when clicked
   shiny::observeEvent(input$filter_button, {
     rv$button_label <- ifelse(rv$button_label == "See All Project Data", "Filter Project Data", "See All Project Data")
