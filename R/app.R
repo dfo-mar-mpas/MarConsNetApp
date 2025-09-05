@@ -731,7 +731,6 @@ server <- function(input, output, session) {
         indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"),
                                   "Ecosystem Based Management Objective:",
                                   "Indicator Bin:")
-        CO_label <- ifelse(area %in% unique(pillar_ecol_df$region),
         indicator_bin_label <- ifelse(grepl("Indicator", flower, ignore.case = TRUE), "\n\n", "Indicators:")
 
         binned_indicator_label <- ifelse(grepl("Indicator", flower, ignore.case = TRUE), "\n\n",
@@ -933,9 +932,15 @@ server <- function(input, output, session) {
     req(input$mpas)
     if (input$tabs %in% objective_tabs$tab) {
       ind_ped <- objective_indicators[[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]]
+      # END TEST
+      if (input$mpas %in% MPAs$NAME_E) {
+        #browser() # GEOFF
+
         if (any(ind_ped$areaID == input$mpas)) {
           ind_ped <- ind_ped[which(ind_ped$areaID == input$mpas),]
+          missing_labels <- Ecological$labels[which(!Ecological$labels %in% ind_ped$bin)]
           na_df <- as.data.frame(matrix(NA, nrow = length(missing_labels), ncol = ncol(ind_ped)))
+          names(na_df) <- names(ind_ped)
           na_df$bin <- missing_labels
           na_df$objective <- vapply(
             missing_labels,
@@ -945,6 +950,7 @@ server <- function(input, output, session) {
           na_df$areaID <- state$mpas; na_df$region <- state$region; na_df$indicator <- "placeholder";
           na_df$score <- NA; na_df$weight  <- 1; na_df$climate_expectation <- "FIXME"; na_df$indicator_rationale <- "FIXME";
           na_df$bin_rationale <- "FIXME";na_df$trend_statement <- "TBD"; na_df$status_statement    <- "TBD"; na_df$pillar <- "Ecological"
+          na_df$tab                 <- "tab_1274"
 
           na_df$p <- vector("list", nrow(na_df))
           ind_ped <- rbind(ind_ped, na_df)
@@ -955,7 +961,9 @@ server <- function(input, output, session) {
       if (!(all(is.na(unique(ind_ped$indicator)))) | !(length(ind_ped$indicator) == 0)) {
 
         MarConsNetAnalysis::plot_flowerplot(ind_ped,
+                                            grouping = "objective",
                                             labels = "bin",
+                                            score = "score",
                                             max_score=100,
                                             min_score=0,
                                             title=" "
@@ -974,6 +982,7 @@ server <- function(input, output, session) {
     if (input$tabs %in% objective_tabs$tab) {
       plotOutput("objective_flower")
     } else {
+      NULL
     }
   })
 
