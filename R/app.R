@@ -693,6 +693,7 @@ server <- function(input, output, session) {
     tab_id <- input$tabs
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
       if (!(input$tabs == "tab_0")) {
+        #browser()
         if (input$tabs %in% odf$tab) {
         objective <- gsub("\n", "", odf$objectives[which(odf$tab == tab_id)])
         flower <- odf$flower_plot[which(odf$tab == tab_id)]
@@ -703,7 +704,9 @@ server <- function(input, output, session) {
           flower <- pillar_ecol_df$bin[which(pillar_ecol_df$tab == tab_id)]
           area <- gsub("_", " ", gsub("_CO$", "", pillar_ecol_df$areaID[which(pillar_ecol_df$tab == tab_id)]))
 
-        } else if (!(input$tabs %in% objective_tabs$tab)) {
+        }
+
+        if (!(input$tabs %in% objective_tabs$tab)) {
           objective <- " "
           flower <- APPTABS$flower[which(APPTABS$tab == tab_id)]
           area <- gsub("_", " ", gsub("_CO$", "", APPTABS$place[which(APPTABS$tab == tab_id)]))
@@ -746,6 +749,8 @@ server <- function(input, output, session) {
             keepind <- which(grepl(keep_name, pillar_ecol_df$objectives))
           }
         }
+
+        #browser() # GEOFF
 
         if (input$tabs %in% pillar_ecol_df$tab) {
           keepind <- which(pillar_ecol_df$tab == input$tabs)
