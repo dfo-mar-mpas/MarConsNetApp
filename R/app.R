@@ -931,32 +931,13 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(input$mpas)
     if (input$tabs %in% objective_tabs$tab) {
-      ind_ped <- objective_indicators[[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]]
-      # END TEST
-      if (input$mpas %in% MPAs$NAME_E) {
-        #browser() # GEOFF
-
-        if (any(ind_ped$areaID == input$mpas)) {
-          ind_ped <- ind_ped[which(ind_ped$areaID == input$mpas),]
-          missing_labels <- Ecological$labels[which(!Ecological$labels %in% ind_ped$bin)]
-          na_df <- as.data.frame(matrix(NA, nrow = length(missing_labels), ncol = ncol(ind_ped)))
-          names(na_df) <- names(ind_ped)
-          na_df$bin <- missing_labels
-          na_df$objective <- vapply(
-            missing_labels,
-            function(lbl) Ecological$grouping[Ecological$labels == lbl],
-            character(1)
-          )
-          na_df$areaID <- state$mpas; na_df$region <- state$region; na_df$indicator <- "placeholder";
-          na_df$score <- NA; na_df$weight  <- 1; na_df$climate_expectation <- "FIXME"; na_df$indicator_rationale <- "FIXME";
-          na_df$bin_rationale <- "FIXME";na_df$trend_statement <- "TBD"; na_df$status_statement    <- "TBD"; na_df$pillar <- "Ecological"
-          na_df$tab                 <- "tab_1274"
-
-          na_df$p <- vector("list", nrow(na_df))
-          ind_ped <- rbind(ind_ped, na_df)
-        }
-
+      if (state$mpas %in% MPAs$NAME_E) {
+      ind_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+      } else {
+        ind_ped <- pillar_ecol_df
       }
+      OB <- names(objective_indicators)[[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]]
+      ind_ped$score[which(!grepl(OB, ind_ped$objectives, fixed=TRUE))] <- NA
 
       if (!(all(is.na(unique(ind_ped$indicator)))) | !(length(ind_ped$indicator) == 0)) {
 
