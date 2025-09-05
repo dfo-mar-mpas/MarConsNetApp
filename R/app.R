@@ -251,37 +251,83 @@ server <- function(input, output, session) {
     req(input$indicator_mode)
     if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
       if (input$indicator_mode == "themes") {
-        # EBM
-        table_theme <- c(rep("Oceanography", 3), rep("Biological", 3), rep("Threats", 3))
+        # FIXME
+        #table_theme <- c(rep("Oceanography", 3), rep("Biological", 3), rep("Threats", 3))
+        showModal(
+          modalDialog(
+            title = "Grouping in Progress",
+            "We are working on grouping the indicators under Oceanographic Conditions, Biological, and Threats.",
+            easyClose = TRUE,       # modal closes if user clicks outside or presses Esc
+            footer = modalButton("Close")
+          )
+        )
 
       } else {
+        #browser()
         # Ecological Overview
-        table_theme <- c(rep("Biodiversity", 3), rep("Productivity", 3), rep("Habitat", 3))
+
+      if (state$mpas %in% regions$NAME_E) {
+        table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
+
+      } else {
+        table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
       }
-      ddff <- tibble(
-        Theme     = table_theme,
-        Status    = paste("Indicator", 1:9),
-        Source=NA, # Sort by source
-        Readiness = NA,
-        Score = NA,
-        Quality = NA,
+      if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
+        table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
+      }
 
-        Cost=NA
-      )
+      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight")]
 
+
+      ddff <- table_ped %>%
+        left_join(
+          Ecological %>% dplyr::select(labels, grouping),
+          by = c("bin" = "labels")   # bin in table_ped matches labels in Ecological
+        ) %>%
+        # Add placeholders for readiness, quality, cost
+        mutate(
+          readiness = NA_real_,
+          quality   = NA_real_,
+          cost      = NA_real_
+        ) %>%
+        dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost) %>%
+        arrange(grouping, bin) %>%
+        setNames(toupper(names(.)))
+
+      if (state$mpas %in% regions$NAME_E) {
+
+        ddff_unique <- ddff %>%
+          # calculate weighted score per BIN x INDICATOR
+          rowwise() %>%
+          mutate(
+            SCORE = weighted.mean(
+              x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
+              w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
+              na.rm = TRUE
+            )
+          ) %>%
+          ungroup() %>%
+          distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST)
+
+      } else {
+        ddff_unique <- ddff
+      }
+
+
+
+      # Render datatable
       datatable(
-        ddff,
+        ddff_unique,
         rownames = FALSE,
         extensions = "RowGroup",
         options = list(
-          rowGroup   = list(dataSrc = 0),                 # group by Theme (col 0)
-          columnDefs = list(list(visible = FALSE, targets = 0)),  # hide Theme column
-          pageLength = 25,
-          dom = "t"
+          rowGroup   = list(dataSrc = 0),                       # group by first column: grouping
+          columnDefs = list(list(visible = FALSE, targets = 0)), # hide grouping column
+          pageLength = 100
         )
       ) %>%
-        formatRound("Score", 2)
-
+        formatRound("SCORE", 2)
+      }
     }
   })
 
