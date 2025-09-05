@@ -3127,14 +3127,45 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
 
 tar_target(objective_indicators,
            command={
+             pillar_ecol_df <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)),]
+             obj <- list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE)[which(grepl("objectives.xlsx",list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE) ))]
+             x <-read_excel(obj)
+             x$Objective <- sub("\\.$", "", x$Objective)
+             x$Objective <- sub("\\;$", "", x$Objective)
+
              indicator_objectives <- trimws(unique(unlist(strsplit(pillar_ecol_df$objectives, ";;;"))), 'both')
+             indicator_objectives <- indicator_objectives[-which(indicator_objectives == "NA")]
+
 
              ped_objectives <- vector("list", length=length(indicator_objectives))
 
              for (i in seq_along(ped_objectives)) {
-               ped_objectives[[i]] <- pillar_ecol_df[which(grepl(indicator_objectives[i], pillar_ecol_df$objectives)),]
+               message(i)
+               keep <- which(grepl(indicator_objectives[i], pillar_ecol_df$objectives, fixed = TRUE))
+               if (x$Framework[which(x$Objective == indicator_objectives[i])] %in% MPAs$NAME_E) {
+                 keep2 <- which(pillar_ecol_df$areaID == x$Framework[which(x$Objective == indicator_objectives[i])])
+                 keep <- intersect(keep, keep2)
+               }
+
+               ped_objectives[[i]] <- pillar_ecol_df[keep, ]
+
              }
              names(ped_objectives) <- indicator_objectives
+
+             # Adding objectives that aren't yet accounted for
+
+             new_objectives <- x$Objective[which(!(x$Objective %in% names(ped_objectives)))]
+
+             for (obj_name in new_objectives) {
+               # create a blank NA df with the same columns
+               na_df <- as.data.frame(matrix(NA, nrow = 1, ncol = ncol(pillar_ecol_df)))
+               names(na_df) <- names(pillar_ecol_df)
+
+               # add it to the list with the name
+               ped_objectives[[obj_name]] <- na_df
+             }
+
+
              ped_objectives
 
            }),
