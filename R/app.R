@@ -1293,7 +1293,9 @@ server <- function(input, output, session) {
       links <- character(length(filtered_odf$objectives))
       grades <- NULL
       grade_colors <- NULL
+
       for (i in seq_along(filtered_odf$objectives)) {
+        message(i)
         links[i] <- sprintf(
           '<a href="#%1$s" style="color: black; font-weight: bold; text-decoration: underline"
             onclick="Shiny.setInputValue(&#39;%1$s&#39;, &#39;%2$s&#39;, {priority: &#39;event&#39;});
@@ -1305,25 +1307,31 @@ server <- function(input, output, session) {
         )
 
         # GRADES
-        #browser()
         if (state$mpas %in% MPAs$NAME_E) {
         KEEP <- pillar_ecol_df[which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == state$mpas),]
         } else {
-
           k1 <- which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE))
           k2 <- which(pillar_ecol_df$areaID %in% MPAs$NAME_E)
           keep <- intersect(k1,k2)
           KEEP <- pillar_ecol_df[keep,]
-
         }
 
-        #KEEP <- objective_indicators[[which(names(objective_indicators) == filtered_odf$objectives[i])]]
+        # if (!(state$mpas == "Maritimes") && i == 4) {
+        #   browser()
+        # }
         weight <- KEEP$weight
         ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
 
         grades[i] <- as.character(calc_letter_grade(ymax))
+        if (!(all(is.na(KEEP$score)))) {
         grade_colors[i] <- unname(flowerPalette[which(names(flowerPalette) == grades[i])])
+        } else {
+          grade_colors[i] <- "#EDEDED"
+        }
       }
+
+
+
       dt_data <- data.frame(
         Link = links,
         Grade = grades,
