@@ -263,7 +263,6 @@ server <- function(input, output, session) {
         )
 
       } else {
-        #browser()
         # Ecological Overview
 
       if (state$mpas %in% regions$NAME_E) {
@@ -651,7 +650,6 @@ server <- function(input, output, session) {
     tab_id <- input$tabs
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
       if (!(input$tabs == "tab_0")) {
-        #browser()
         if (input$tabs %in% odf$tab) {
         objective <- gsub("\n", "", odf$objectives[which(odf$tab == tab_id)])
         flower <- odf$flower_plot[which(odf$tab == tab_id)]
@@ -707,8 +705,6 @@ server <- function(input, output, session) {
             keepind <- which(grepl(keep_name, pillar_ecol_df$objectives))
           }
         }
-
-        #browser() # GEOFF
 
         if (input$tabs %in% pillar_ecol_df$tab) {
           keepind <- which(pillar_ecol_df$tab == input$tabs)
@@ -1266,87 +1262,61 @@ server <- function(input, output, session) {
 
   output$networkObjectiveText <- shiny::renderUI({
     req(input$tabs)
+
     if (input$tabs == "tab_0" && !(is.null(state$mpas)) && "Maritimes" %in% state$region && input$tab0_subtabs == "Management Effectiveness") {
       n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
       filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
-      # Create a div for filtered objectives and bar charts
-      objectiveDivs <- lapply(seq_along(filtered_odf$objectives), function(i) {
-        # Objective
-        shiny::tags$div(
-          style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
 
-          # Bar chart
-          shiny::tags$div(
-            plotOutput(paste0("bar", i), height = "100px", width = "400px"),
-            style = "position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.7;"
-          ),
-
-          # Action link (Objective with new lines handled by HTML)
-          shiny::tags$div(
-            actionLink(
-              inputId = filtered_odf$tab[i],
-              label = shiny::HTML(gsub("\n", "<br>", N_Objectives[i]))
-            ),
-            style = "position: absolute; top: 30px; left: 10px; z-index: 2; font-weight: bold; color: white;"
-          )
+      links <- character(length(filtered_odf$objectives))
+      grades <- NULL
+      grade_colors <- NULL
+      for (i in seq_along(filtered_odf$objectives)) {
+        links[i] <- sprintf(
+          '<a href="#%1$s" style="color: black; font-weight: bold; text-decoration: underline"
+            onclick="Shiny.setInputValue(&#39;%1$s&#39;, &#39;%2$s&#39;, {priority: &#39;event&#39;});
+                     $(\'#yourTabsetId a[data-value=&quot;tab_%1$s&quot;]\').tab(&#39;show&#39;);">
+             %2$s
+         </a>',
+          filtered_odf$tab[i],
+          gsub("\n", "<br>", N_Objectives[i])
         )
-      })
-      shiny::tagList(
-        shiny::h3("Maritimes Network Conservation Objectives"),
-        do.call(tagList, objectiveDivs)
+
+        # GRADES
+        KEEP <- objective_indicators[[which(names(objective_indicators) == filtered_odf$objectives[i])]]
+        weight <- KEEP$weight
+        ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
+
+        grades[i] <- as.character(calc_letter_grade(ymax))
+        grade_colors[i] <- unname(flowerPalette[which(names(flowerPalette) == grades[i])])
+      }
+
+      #browser()
+      dt_data <- data.frame(
+        Link = links,
+        Grade = grades,
+        stringsAsFactors = FALSE
       )
 
+      tagList(
+        h3("Maritimes Network Conservation Objectives"),
+        DT::datatable(
+          dt_data,
+          escape = FALSE,
+          rownames = FALSE,
+          options = list(dom = 't', paging = FALSE)
+        ) %>%
+          DT::formatStyle(
+            columns = names(dt_data),
+            target = "row",
+            backgroundColor = DT::styleEqual(dt_data$Grade, grade_colors) # 🔴 map grades -> colors
+          )
+      )
+
+
+
+
     }
   })
-
-  shiny::observeEvent(input$tabs, {
-    # NETWORK
-    req(input$tabs)
-    if (input$tabs == "tab_0") {
-      # Ensure filtered_odf is created inside this condition
-      n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
-      filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
-      for (fo in seq_along(filtered_odf$objectives)) {
-        local({
-          id <- fo
-          output[[paste0("bar", id)]] <- renderPlot({
-            # Ensure bar chart is rendered only when tab_0 is active
-            if (input$tabs == "tab_0") {
-              req(state$mpas %in% unique(pillar_ecol_df$areaID))
-
-              KEEP <- objective_indicators[[which(names(objective_indicators) == filtered_odf$objectives[id])]]
-              ymax <- KEEP$score
-              weight <- KEEP$weight
-
-              ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
-
-
-              # Create data frame for plotting
-              data <- data.frame(
-                x = paste0("Objective ", id),
-                y = ymax
-              )
-
-              clc <- as.character(calc_letter_grade(data$y))
-              finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-
-
-              if (!(length(finalCol) == 0)) {
-              ggplot2::ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
-                ggplot2::geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
-                ggplot2::ylim(0, 100) +
-                ggplot2::theme_void() +
-                ggplot2::coord_flip()+
-                ggplot2::guides(fill = "none")
-              }
-            }
-          })
-        })
-      }
-    }
-  })
-
-
 
 shiny::observeEvent(input$mpas, {
   ## SITE
@@ -1385,8 +1355,6 @@ shiny::observeEvent(input$mpas, {
             finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
 
             if (!(length(finalCol) == 0)) {
-              #browser() #GEOFF
-
               ggplot2::ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
                 ggplot2::geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
                 ggplot2::ylim(0, 100) +
