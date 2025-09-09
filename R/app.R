@@ -1166,7 +1166,7 @@ server <- function(input, output, session) {
     )
 
     tagList(
-      h3("Ecosystem Based Management Objectives"),
+      h3("EBM Objectives"),
       DT::datatable(
         data.frame(Target = emb_targets),
         rownames = FALSE,
@@ -1316,7 +1316,7 @@ server <- function(input, output, session) {
       )
 
       tagList(
-        h3("Maritimes Network Conservation Objectives"),
+        h3("Network Conservation Objectives"),
         DT::datatable(
           dt_data,
           escape = FALSE,
