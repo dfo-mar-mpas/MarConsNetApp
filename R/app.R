@@ -566,17 +566,19 @@ server <- function(input, output, session) {
             filtered_odfS$objectives[i]     # objective text
           )
 
-           KEEP <- objective_indicators[[which(names(objective_indicators) == filtered_odfS$objectives[i])]]
-           weight <- KEEP$weight
-           ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
-           site_grades[i] <- as.character(calc_letter_grade(ymax))
-           if (!(site_grades[i] == "NA")) {
-           site_color[i] <- unname(flowerPalette[which(names(flowerPalette) == site_grades[i])])
-           } else {
-             site_color[i] <- "#EDEDED"
+          #browser()
+
+          KEEP <- pillar_ecol_df[which(grepl(textO[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == state$mpas),]
+
+          weight <- KEEP$weight
+          ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
+          site_grades[i] <- as.character(calc_letter_grade(ymax))
+          if (!(site_grades[i] == "NA")) {
+            site_color[i] <- unname(flowerPalette[which(names(flowerPalette) == site_grades[i])])
+          } else {
+            site_color[i] <- "#EDEDED"
            }
         }
-        #browser()
 
         dt_data <- data.frame(
           Link = links,
@@ -956,6 +958,7 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(input$mpas)
     if (input$tabs %in% objective_tabs$tab) {
+      #browser()
       if (state$mpas %in% MPAs$NAME_E) {
       ind_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
       } else {
@@ -1302,7 +1305,19 @@ server <- function(input, output, session) {
         )
 
         # GRADES
-        KEEP <- objective_indicators[[which(names(objective_indicators) == filtered_odf$objectives[i])]]
+        #browser()
+        if (state$mpas %in% MPAs$NAME_E) {
+        KEEP <- pillar_ecol_df[which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == state$mpas),]
+        } else {
+
+          k1 <- which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE))
+          k2 <- which(pillar_ecol_df$areaID %in% MPAs$NAME_E)
+          keep <- intersect(k1,k2)
+          KEEP <- pillar_ecol_df[keep,]
+
+        }
+
+        #KEEP <- objective_indicators[[which(names(objective_indicators) == filtered_odf$objectives[i])]]
         weight <- KEEP$weight
         ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
 
