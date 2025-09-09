@@ -548,39 +548,59 @@ server <- function(input, output, session) {
         textO <- Objectives_processed[[keepO]]
         textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
         # Create UI elements for objectives with bar charts
-        ## JAIMIE LEE real
-        objectiveDivs <- lapply(seq_along(textO), function(i) {
-          shiny::tags$div(
-            style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
 
-            # Bar chart
-            shiny::tags$div(
-              plotOutput(paste0("site_bar", i), height = "100px", width = "400px"),
-              style = "position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.7;"
-            ),
+        filtered_odfS <- objective_tabs[objective_tabs$objectives %in% textO, ]
 
-            # Action link for the objective
-            shiny::tags$div(
-              actionLink(
-                inputId = objective_tabs$tab[which(objective_tabs$objectives == textO[i])],
-                label = textO[[i]]
-              ),
-              style = "position: absolute; top: 30px; left: 10px; z-index: 2; font-weight: bold; color: white;"
-            )
+        links <- character(length(filtered_odfS$objectives))
+        site_grades <- NULL
+        site_color <- NULL
+
+        for (i in seq_along(filtered_odfS$objectives)) {
+          links[i] <- sprintf(
+            '<a href="#%1$s" style="color: black; font-weight: bold; text-decoration: underline"
+            onclick="Shiny.setInputValue(&#39;%1$s&#39;, &#39;%2$s&#39;, {priority: &#39;event&#39;});
+                     $(\'#yourTabsetId a[data-value=&quot;tab_%1$s&quot;]\').tab(&#39;show&#39;);">
+             %2$s
+         </a>',
+            filtered_odfS$tab[i],           # tab id
+            filtered_odfS$objectives[i]     # objective text
           )
-        })
 
-        return(shiny::tagList(
-          shiny::h3("Site Conservation Objectives"),
-          do.call(tagList, objectiveDivs)
-        ))
+           KEEP <- objective_indicators[[which(names(objective_indicators) == filtered_odfS$objectives[i])]]
+           weight <- KEEP$weight
+           ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
+           site_grades[i] <- as.character(calc_letter_grade(ymax))
+           if (!(site_grades[i] == "NA")) {
+           site_color[i] <- unname(flowerPalette[which(names(flowerPalette) == site_grades[i])])
+           } else {
+             site_color[i] <- "#EDEDED"
+           }
+        }
+        #browser()
 
-        # Display objectives directly without collapsing
-        #return(shiny::tagList(objectiveDivs))
+        dt_data <- data.frame(
+          Link = links,
+          Grade=site_grades,
+          stringsAsFactors = FALSE
+        )
+
+        # Render header + DT table
+        tagList(
+          h3("Site Conservation Objectives"),  # 🔴 header
+          DT::datatable(
+            dt_data,
+            escape = FALSE,      # 🔴 render HTML links
+            rownames = FALSE,
+            options = list(dom = 't', paging = FALSE)
+          ) %>%
+            DT::formatStyle(
+              columns = names(dt_data),
+              target = "row",
+              backgroundColor = DT::styleEqual(dt_data$Grade, site_color))
+        )
+
       }
     }
-
-    return(NULL)
   })
 
   # Update the button label when clicked
@@ -1289,8 +1309,6 @@ server <- function(input, output, session) {
         grades[i] <- as.character(calc_letter_grade(ymax))
         grade_colors[i] <- unname(flowerPalette[which(names(flowerPalette) == grades[i])])
       }
-
-      #browser()
       dt_data <- data.frame(
         Link = links,
         Grade = grades,
@@ -1308,68 +1326,11 @@ server <- function(input, output, session) {
           DT::formatStyle(
             columns = names(dt_data),
             target = "row",
-            backgroundColor = DT::styleEqual(dt_data$Grade, grade_colors) # 🔴 map grades -> colors
+            backgroundColor = DT::styleEqual(dt_data$Grade, grade_colors)
           )
       )
-
-
-
-
     }
   })
-
-shiny::observeEvent(input$mpas, {
-  ## SITE
-  req(input$tabs)
-  req(input$mpas %in% MPAs$NAME_E)
-
-  if (input$tabs == "tab_0" & !(state$mpas == "Maritimes")) {
-    # Ensure filtered_odf is created inside this condition
-    keepO <- state$mpas
-    area <- input$mpas
-    if (!(length(keepO) == 0)) {
-    S_Objectives <- Objectives_processed[[keepO]]
-    s_objectives <- trimws(substr(gsub("\n", "", S_Objectives), 2, nchar(gsub("\n", "", S_Objectives))), 'both')
-    filtered_odfS <- objective_tabs[which(objective_tabs$objectives %in% s_objectives),]
-
-    for (fo in seq_along(filtered_odfS$objectives)) {
-      local({
-        id <- fo
-        output[[paste0("site_bar", id)]] <- renderPlot({
-          # Ensure bar chart is rendered only when tab_0 is active
-          if (input$tabs == "tab_0") {
-            KEEP <- objective_indicators[[which(names(objective_indicators) == filtered_odfS$objectives[id])]]
-            ymax <- KEEP$score
-            weight <- KEEP$weight
-
-            ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
-
-
-            # Create data frame for plotting
-            data <- data.frame(
-              x = paste0("Objective ", id),
-              y = ymax
-            )
-
-            clc <- as.character(calc_letter_grade(data$y))
-            finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-
-            if (!(length(finalCol) == 0)) {
-              ggplot2::ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
-                ggplot2::geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
-                ggplot2::ylim(0, 100) +
-                ggplot2::theme_void() +
-                ggplot2::coord_flip()+
-                ggplot2::guides(fill = "none")
-            }
-          }
-        })
-      })
-    }
-  }
-  }
-})
-
 
   output$gohome <- shiny::renderUI({
     req(input$tabs)
