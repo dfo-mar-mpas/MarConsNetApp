@@ -581,7 +581,7 @@ server <- function(input, output, session) {
         }
 
         dt_data <- data.frame(
-          Link = links,
+          Objective = links,
           Grade=site_grades,
           stringsAsFactors = FALSE
         )
@@ -1171,7 +1171,7 @@ server <- function(input, output, session) {
     tagList(
       h3("EBM Objectives"),
       DT::datatable(
-        data.frame(Target = emb_targets),
+        data.frame(Objective = emb_targets),
         rownames = FALSE,
         options = list(
           pageLength = 10,
@@ -1333,7 +1333,7 @@ server <- function(input, output, session) {
 
 
       dt_data <- data.frame(
-        Link = links,
+        Objective = links,
         Grade = grades,
         stringsAsFactors = FALSE
       )
