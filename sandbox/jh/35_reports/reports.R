@@ -36,6 +36,7 @@ rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
 output_dir <- "C:/Users/HARBINJ/Documents/REPORT_TESTS/"
 
 i <- 44
+mpas <- MPAs$NAME_E
 state <- list()
 params <- list()
 input <- list()
@@ -49,7 +50,7 @@ render(input=rmd_file, output_file = output_file, output_format = "html_document
 
 # ACTUAL
 
-render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//actual.html", output_format = "html_document", params = params)
+render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//NEW_ACTUAL.html", output_format = "html_document", params = params)
 
 
 

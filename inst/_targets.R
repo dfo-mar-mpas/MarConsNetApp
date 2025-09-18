@@ -2201,7 +2201,7 @@ tar_target(ind_stratification,
               data$year <- year
               data <- data[which(!is.na(data$mld)),]
               data <- data[,c("longitude", "latitude", "year", "mld", "depth")]
-              process_indicator(data = data,
+              x <- process_indicator(data = data,
                                 indicator_var_name = "mld",
                                 indicator = "Mixed Layer Depth",
                                 type = "Gliders",
@@ -2219,6 +2219,7 @@ tar_target(ind_stratification,
                                 plot_type = c('time-series','map'),
                                 plot_lm=FALSE,
                                 objectives=NA)
+              x
 
             }),
 
@@ -3249,7 +3250,6 @@ tar_target(objective_tabs,
                              "Key Fish Habitat",
                              weights_ratio = 1,
                              weights_sum = 1,
-                             ind_temperature,
                              ind_SAR_CH_representation
             )),
  tar_target(bin_habitat_ThreatstoHabitat_df,
@@ -3290,8 +3290,7 @@ tar_target(objective_tabs,
                              "Structure and Function",
                              weights_ratio=1,
                              weights_sum = 1,
-                             ind_placeholder_df
-            )),
+                             ind_stratification)),
  tar_target(bin_productivity_ThreatstoProductivity_df,
             aggregate_groups("bin",
                              "Threats to Productivity",
@@ -3299,6 +3298,228 @@ tar_target(objective_tabs,
                              weights_sum = 1,
                              ind_placeholder_df
             )),
+
+
+ ##### Themematic bins
+
+
+
+tar_target(theme_ocean_conditions,
+           command={
+            x <- rbind(
+               ind_oxygen[ , setdiff(names(ind_oxygen), c("data", "plot"))],
+               ind_salinity[ , setdiff(names(ind_salinity), c("data", "plot"))],
+               ind_temperature[ , setdiff(names(ind_temperature), c("data", "plot"))]
+             )
+            x$theme <- "Ocean Conditions"
+            x$weight <- NA
+            for (i in seq_along(x$areaID)) {
+              message(i)
+              X <- x[i,]
+              keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+              x$weight[i] <- pillar_ecol_df$weight[keep]
+            }
+            x
+           }),
+
+tar_target(theme_ocean_structure_and_movement,
+           command={
+             x <- rbind(
+               ind_otn_proportion_tags_detected_in_multiple_mpas[ , setdiff(names(ind_otn_proportion_tags_detected_in_multiple_mpas), c("data", "plot"))],
+               ind_surface_height[ , setdiff(names(ind_surface_height), c("data", "plot"))],
+               ind_stratification[ , setdiff(names(ind_stratification), c("data", "plot"))]
+             )
+             x$theme <- "Ocean Structure and Movement"
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               message(i)
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+             x
+           }),
+
+tar_target(theme_primary_production,
+           command={
+             x <- rbind(
+               ind_nitrate[ , setdiff(names(ind_nitrate), c("data", "plot"))],
+               ind_silicate[ , setdiff(names(ind_silicate), c("data", "plot"))],
+               ind_phosphate[ , setdiff(names(ind_phosphate), c("data", "plot"))],
+               ind_chlorophyll[ , setdiff(names(ind_chlorophyll), c("data", "plot"))],
+               ind_bloom_amplitude[ , setdiff(names(ind_bloom_amplitude), c("data", "plot"))],
+               ind_bloom_timing[ , setdiff(names(ind_bloom_timing), c("data", "plot"))]
+             )
+             x$theme <- "Primary Production"
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+             x
+           }),
+
+tar_target(theme_secondary_production,
+           command={
+             x <- rbind(
+               ind_zooplankton[ , setdiff(names(ind_zooplankton), c("data", "plot"))],
+               ind_zooplankton_community_composition[ , setdiff(names(ind_zooplankton_community_composition), c("data", "plot"))]
+             )
+             x$theme <- "Secondary Production"
+
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               message(i)
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+             x
+           }),
+
+tar_target(theme_marine_mammals_and_other_top_predators,
+           command={
+             x <- rbind(
+               ind_musquash_birds_sample_coverage[ , setdiff(names(ind_musquash_birds_sample_coverage), c("data", "plot"))]
+             )
+             x$theme <- "Marine Mammals and Other Top Predators"
+
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               message(i)
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+
+             x
+             }),
+
+tar_target(theme_trophic_structure_and_function,
+           command={
+             data.frame(
+               areaID = NA,
+               indicator = NA,
+               type = NA,
+               units = NA,
+               scoring = NA,
+               PPTID = NA,
+               project_short_title = NA,
+               climate = NA,
+               design_target = NA,
+               score = NA,
+               status_statement = NA,
+               trend_statement = NA,
+               source = NA,
+               climate_expectation = NA,
+               indicator_rationale = NA,
+               objectives = NA,
+               bin_rationale = NA,
+               theme="Trophic Structure and Function",
+               weight=NA
+             )
+
+           }),
+
+tar_target(theme_benthic_environment,
+           command={
+             data.frame(
+               areaID = NA,
+               indicator = NA,
+               type = NA,
+               units = NA,
+               scoring = NA,
+               PPTID = NA,
+               project_short_title = NA,
+               climate = NA,
+               design_target = NA,
+               score = NA,
+               status_statement = NA,
+               trend_statement = NA,
+               source = NA,
+               climate_expectation = NA,
+               indicator_rationale = NA,
+               objectives = NA,
+               bin_rationale = NA,
+               theme="Benthic Environment",
+               weight=NA
+             )
+           }),
+
+tar_target(theme_fish_and_fishery_resources,
+           command={
+             x <- rbind(
+               ind_fish_length[ , setdiff(names(ind_fish_length), c("data", "plot"))],
+               ind_fish_weight[ , setdiff(names(ind_fish_weight), c("data", "plot"))],
+               ind_haddock_counts[ , setdiff(names(ind_haddock_counts), c("data", "plot"))],
+               ind_haddock_biomass[ , setdiff(names(ind_haddock_biomass), c("data", "plot"))]
+             )
+             x$theme <- "Fish and Fishery Resources"
+
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               message(i)
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+
+             x
+           }),
+
+tar_target(theme_anthropogenic_pressure_and_impacts,
+           command={
+             x <- data.frame(
+               areaID = NA,
+               indicator = NA,
+               type = NA,
+               units = NA,
+               scoring = NA,
+               PPTID = NA,
+               project_short_title = NA,
+               climate = NA,
+               design_target = NA,
+               score = NA,
+               status_statement = NA,
+               trend_statement = NA,
+               source = NA,
+               climate_expectation = NA,
+               indicator_rationale = NA,
+               objectives = NA,
+               bin_rationale = NA,
+               theme="Anthropogenic Pressure And Impacts",
+               weight=NA
+             )
+             x
+           }),
+
+
+tar_target(theme_table,
+           command={
+             rbind(theme_ocean_conditions,
+                   theme_ocean_structure_and_movement,
+                   theme_primary_production,
+                   theme_secondary_production,
+                   theme_marine_mammals_and_other_top_predators,
+                   theme_trophic_structure_and_function,
+                   theme_benthic_environment,
+                   theme_fish_and_fishery_resources,
+                   theme_anthropogenic_pressure_and_impacts)
+
+           }),
+
+
+
+
+
+
+
+
+
+
+
+
 
 
  ##### Ecological Objectives #####

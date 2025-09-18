@@ -23,13 +23,23 @@ pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservati
 }
 
 
+image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
+                                    "MarConsNetTargets","data",
+                                    "plots")
+image_files <- list.files(image_folder, full.names = TRUE)
+
+
 ## PREP FOR KEY FINDINGS
 
 # AREA GRADE
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- state$mpas
 p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
-area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
+
+KEEP <- calc_group_score(df=p,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+area_grade <- as.character(calc_letter_grade(weighted.mean(x=KEEP$score, w=KEEP$weight, na.rm=TRUE)))
 
 ## SUGGESTED FURTHER RESEARCH
 
@@ -44,9 +54,12 @@ summary_table <- data.frame(
 for (i in seq_along(unique(p$bin))) {
   keep <- which(p$bin == unique(p$bin)[i])
   df <- p[keep, ]
-  
-  grade <- calc_letter_grade(weighted.mean(df$score, df$weight, na.rm = TRUE))
-  
+
+  group_df <- calc_group_score(df=df,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+  grade <- as.character(calc_letter_grade(weighted.mean(x=group_df$score, w=group_df$weight, na.rm=TRUE)))
+
   if (any(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))) {
   indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))])
   } else {
@@ -119,11 +132,15 @@ if (!(length(keepO) == 0)) {
   site_color <- NULL
   
   for (i in seq_along(filtered_odfS$objectives)) {
-    KEEP <- pillar_ecol_df[which(grepl(textO[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == state$mpas),]
+    KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+    KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
+
+    KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+    site_grades[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
+
     
-    weight <- KEEP$weight
-    ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
-    site_grades[i] <- as.character(calc_letter_grade(ymax))
     if (!(site_grades[i] == "NA")) {
       site_color[i] <- unname(flowerPalette[which(names(flowerPalette) == site_grades[i])])
     } else {
@@ -351,17 +368,17 @@ grade_colors_network <- NULL
 for (i in seq_along(filtered_odf$objectives)) {
   # GRADES
   if (state$mpas %in% MPAs$NAME_E) {
-    KEEP <- pillar_ecol_df[which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == state$mpas),]
+    KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
   } else {
-    k1 <- which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE))
-    k2 <- which(pillar_ecol_df$areaID %in% MPAs$NAME_E)
-    keep <- intersect(k1,k2)
-    KEEP <- pillar_ecol_df[keep,]
+   KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
   }
-  weight <- KEEP$weight
-  ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
+  KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
+
+  KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+  grades_network[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
   
-  grades_network[i] <- as.character(calc_letter_grade(ymax))
   if (!(all(is.na(KEEP$score)))) {
     grade_colors_network[i] <- unname(flowerPalette[which(names(flowerPalette) == grades_network[i])])
   } else {
@@ -646,11 +663,6 @@ print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
 library(knitr)
 library(leaflet)
 
-image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
-                                    "MarConsNetTargets","data",
-                                    "plots")
-image_files <- list.files(image_folder, full.names = TRUE)
-
 keeper <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas), ]
 
 BINS <- unique(trimws(tolower(unlist(
@@ -763,8 +775,6 @@ THREATS</summary>
 ```{r, echo=FALSE, results='asis'}
 dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
 print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
-
-
 
 ```
 </details>

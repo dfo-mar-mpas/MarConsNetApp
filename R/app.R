@@ -79,7 +79,7 @@ app <- function() {
     #mytabs > .tabbable > .nav.nav-tabs { display: none; }
   ")),
 
-    # 🔴 START: wrap only the top half in sidebarLayout
+
     shiny::sidebarLayout(
       shiny::sidebarPanel(
         shiny::fluidRow(
@@ -216,7 +216,20 @@ server <- function(input, output, session) {
           tabsetPanel(
             id = "tab0_subtabs",
             tabPanel("Management Effectiveness", "This tab considers only the effectiveness indicators (i.e. those that directly inform objectives)"),
-            tabPanel("Ecosystem Overview", "This tab considers both effectiveness indicators (those that inform objectives) and well as contextual indicators (those that tell us about the ecological status)"),
+            tabPanel("Ecosystem Overview",
+                     p(
+                       "Readiness Score Explained: ",
+                       strong("Ready"),
+                       " – Code is developed and data is integrated into the app, ",
+                       strong("Readily Available"),
+                       " – Data is being collected and stored but requires some work to integrate into the app, ",
+                       strong("Not currently collected"),
+                       " – Data is not yet being collected, ",
+                       strong("Conceptual"),
+                       " – There is no means of collecting this type of data."
+                     )
+
+                     ),
             tabPanel("Threats")
           )
         )
@@ -250,19 +263,8 @@ server <- function(input, output, session) {
   output$ecosystem_table <- renderUI({
     req(input$indicator_mode)
     if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
-      if (input$indicator_mode == "themes") {
-        # FIXME
-        #table_theme <- c(rep("Oceanography", 3), rep("Biological", 3), rep("Threats", 3))
-        showModal(
-          modalDialog(
-            title = "Grouping in Progress",
-            "We are working on grouping the indicators under Oceanographic Conditions, Biological, and Threats.",
-            easyClose = TRUE,       # modal closes if user clicks outside or presses Esc
-            footer = modalButton("Close")
-          )
-        )
 
-      } else {
+      if (input$indicator_mode == "ebm") {
         # Ecological Overview
 
       if (state$mpas %in% regions$NAME_E) {
@@ -275,7 +277,7 @@ server <- function(input, output, session) {
         table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
       }
 
-      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight")]
+      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID")]
 
 
       ddff <- table_ped %>%
@@ -289,14 +291,14 @@ server <- function(input, output, session) {
           quality   = NA_real_,
           cost      = NA_real_
         ) %>%
-        dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost) %>%
+        dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost, PPTID) %>%
         arrange(grouping, bin) %>%
         setNames(toupper(names(.)))
 
       if (state$mpas %in% regions$NAME_E) {
+        # FIXME!!!!!
 
         ddff_unique <- ddff %>%
-          # calculate weighted score per BIN x INDICATOR
           rowwise() %>%
           mutate(
             SCORE = weighted.mean(
@@ -306,26 +308,100 @@ server <- function(input, output, session) {
             )
           ) %>%
           ungroup() %>%
-          distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST)
+          distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
 
       } else {
         ddff_unique <- ddff
       }
+      } else {
+        if (state$mpas %in% regions$NAME_E) {
+          table_ped <- theme_table[which(!(theme_table$areaID %in% regions$NAME_E)),]
+
+        } else {
+          table_ped <- theme_table[which(theme_table$areaID == state$mpas),]
+        }
+        if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
+          table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
+        }
+
+        table_ped <- table_ped[,c("theme", "indicator", "source", "score", "weight", "PPTID")]
 
 
 
-      # Render datatable
+        ddff <- table_ped %>%
+          # Add placeholders for readiness, quality, cost
+          mutate(
+            readiness = NA_real_,
+            quality   = NA_real_,
+            cost      = NA_real_
+          ) %>%
+          # Select columns in the desired order
+          dplyr::select(theme, indicator, source, score, readiness, quality, cost, PPTID) %>%
+          # Arrange by theme and indicator
+          arrange(theme, indicator) %>%
+          # Capitalize column names
+          setNames(toupper(names(.)))
+
+        if (state$mpas %in% regions$NAME_E) {
+          # FIXME!!!!!
+
+          ddff_unique <- ddff %>%
+            rowwise() %>%
+            mutate(
+              SCORE = weighted.mean(
+                x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$theme == THEME],
+                w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$theme == THEME],
+                na.rm = TRUE
+              )
+            ) %>%
+            ungroup() %>%
+            distinct(THEME,INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
+
+        } else {
+          ddff_unique <- ddff
+        }
+
+      }
+
+      # TEST
+      if (!(length(ddff_unique$PPTID) == 0)) {
+      for (i in seq_along(unique(ddff_unique$PPTID))) {
+        ppt <- unique(ddff_unique$PPTID)[i]
+        if (is.na(ppt)) {
+          ddff_unique$COST[which(is.na(ddff_unique$PPTID))] <- "External"
+        } else {
+          ddff_unique$COST[which(ddff_unique$PPTID == unique(ddff_unique$PPTID)[i])] <- paste0("$", round(unique(cost_of_mpas$price_per_station[which(cost_of_mpas$project_id == ppt)]),2), "/ sample")
+
+        }
+      }
+      ddff_unique$READINESS <- "Ready"
+
       datatable(
         ddff_unique,
         rownames = FALSE,
         extensions = "RowGroup",
         options = list(
           rowGroup   = list(dataSrc = 0),                       # group by first column: grouping
-          columnDefs = list(list(visible = FALSE, targets = 0)), # hide grouping column
+          columnDefs = list(
+            list(visible = FALSE, targets = 0),
+            list(visible = FALSE, targets = (which(names(ddff_unique) == "PPTID")-1))
+            ), # hide grouping column
           pageLength = 100
         )
       ) %>%
         formatRound("SCORE", 2)
+      } else {
+        showModal(
+          modalDialog(
+            title = "Grouping in Progress",
+            "There is currently no indicators identified for this area.",
+            easyClose = TRUE,       # modal closes if user clicks outside or presses Esc
+            footer = modalButton("Close")
+          )
+        )
+
+
+
       }
     }
   })
@@ -565,14 +641,17 @@ server <- function(input, output, session) {
             filtered_odfS$tab[i],           # tab id
             filtered_odfS$objectives[i]     # objective text
           )
+          # JAIM
+          #browser(3)
+        KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+        KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
-          #browser()
+        KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
+                                 score_var = "score",
+                                 weight_var = "weight")
+        site_grades[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
 
-          KEEP <- pillar_ecol_df[which(grepl(textO[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == state$mpas),]
 
-          weight <- KEEP$weight
-          ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
-          site_grades[i] <- as.character(calc_letter_grade(ymax))
           if (!(site_grades[i] == "NA")) {
             site_color[i] <- unname(flowerPalette[which(names(flowerPalette) == site_grades[i])])
           } else {
@@ -724,7 +803,8 @@ server <- function(input, output, session) {
             keepind <- intersect(keep1,keep2)
 
           } else {
-            keepind <- which(grepl(keep_name, pillar_ecol_df$objectives))
+            #browser("JAIM")
+            keepind <- which(grepl(keep_name, pillar_ecol_df$objectives, fixed=TRUE))
           }
         }
 
@@ -958,16 +1038,17 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(input$mpas)
     if (input$tabs %in% objective_tabs$tab) {
-      #browser()
       if (state$mpas %in% MPAs$NAME_E) {
       ind_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
       } else {
-        ind_ped <- pillar_ecol_df
+        ind_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
       }
       OB <- names(objective_indicators)[[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]]
       ind_ped$score[which(!grepl(OB, ind_ped$objectives, fixed=TRUE))] <- NA
 
       if (!(all(is.na(unique(ind_ped$indicator)))) | !(length(ind_ped$indicator) == 0)) {
+
+        #browser(2)
 
         MarConsNetAnalysis::plot_flowerplot(ind_ped,
                                             grouping = "objective",
@@ -975,8 +1056,7 @@ server <- function(input, output, session) {
                                             score = "score",
                                             max_score=100,
                                             min_score=0,
-                                            title=" "
-        )
+                                            title=" ")
 
       } else {
         NULL
@@ -1307,22 +1387,20 @@ server <- function(input, output, session) {
         )
 
         # GRADES
-        if (state$mpas %in% MPAs$NAME_E) {
-        KEEP <- pillar_ecol_df[which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == state$mpas),]
-        } else {
-          k1 <- which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE))
-          k2 <- which(pillar_ecol_df$areaID %in% MPAs$NAME_E)
-          keep <- intersect(k1,k2)
-          KEEP <- pillar_ecol_df[keep,]
-        }
-
-        # if (!(state$mpas == "Maritimes") && i == 4) {
-        #   browser()
+        # if (i == 3) {
+        # browser(1)
         # }
-        weight <- KEEP$weight
-        ymax <- weighted.mean(KEEP$score, weight, na.rm=TRUE)
+        if (state$mpas %in% MPAs$NAME_E) {
+        KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+        } else {
+          KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
+        }
+        KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
-        grades[i] <- as.character(calc_letter_grade(ymax))
+        KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+        grades[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
         if (!(all(is.na(KEEP$score)))) {
         grade_colors[i] <- unname(flowerPalette[which(names(flowerPalette) == grades[i])])
         } else {
@@ -1337,7 +1415,6 @@ server <- function(input, output, session) {
         Grade = grades,
         stringsAsFactors = FALSE
       )
-
       tagList(
         h3("Network Conservation Objectives"),
         DT::datatable(

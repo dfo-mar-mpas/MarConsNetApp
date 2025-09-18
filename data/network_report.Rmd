@@ -17,13 +17,22 @@ library(rvest)
 library(dplyr)
 library(DT)
 
+image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
+                                    "MarConsNetTargets","data",
+                                    "plots")
+image_files <- list.files(image_folder, full.names = TRUE)
+
+if (any(MPAs$NAME_E == "Non_Conservation_Area")) {
 MPAs <- MPAs[-which(MPAs$NAME_E == "Non_Conservation_Area"),]
+}
 MPAs <- MPAs[which(MPAs$region == state$mpas),]
 
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- state$mpas
 network_context <- data_context(type="network")
 cat(network_context)
+cat("<br>")
+
 ```
 
 
@@ -37,69 +46,10 @@ for (name in names(PALETTE)) {
                color, name))
 }
 cat("</div>")
-```
-
-## Network Conservation Objectives
-
-```{r, echo=FALSE, comment=NA, results="asis"}
-colored_objectives <- c()
-
-filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
-
-for (fo in seq_along(filtered_odf$objectives)) {
-  id <- fo
-  req(state$mpas %in% c("Scotian Shelf", unique(pillar_ecol_df$areaID)))
-
-  if (state$mpas == "Scotian Shelf") {
-    c1 <- 1:length(pillar_ecol_df$areaID)
-  } else {
-    c1 <- which(pillar_ecol_df$areaID == state$mpas)
-  }
-
-  flower_linkage_name <- odf$flower_plot[which(odf$objectives == N_Objectives[id])]
-
-  # Try to match by bin
-  c2 <- which(tolower(pillar_ecol_df$bin) == tolower(flower_linkage_name))
-  KEEP <- intersect(c1, c2)
-
-  # Fallback: match by objective
-  if (length(KEEP) == 0) {
-    c2 <- which(tolower(pillar_ecol_df$objective) == tolower(flower_linkage_name))
-    KEEP <- intersect(c1, c2)
-  }
-
-  ymax <- pillar_ecol_df$score[KEEP]
-  weight <- pillar_ecol_df$weight[KEEP]
-  ymax <- weighted.mean(ymax, weight, na.rm = TRUE)
-
-  # Convert score to grade → color
-  clc <- as.character(calc_letter_grade(ymax))
-  finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-  if (length(finalCol) == 0) finalCol <- "#EDEDED"
-
-  # Store styled objective
-  colored_objectives <- c(
-    colored_objectives,
-    sprintf(
-      '<span style="color:%s; padding:3px; text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;"><b>%s</b></span>',
-      finalCol, N_Objectives[fo]
-    )
-  )
-}
-
-# Print just the objectives with color (one per line)
-HTML(paste(colored_objectives, collapse = "<br><br>"))
-
+cat("<br>")
 
 ```
 
-
-```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
-
-area_grade <- calc_letter_grade(weighted.mean(p$score, p$weight, na.rm=TRUE))
-
-```
 
 ```{r, echo=FALSE, results='asis'}
 
@@ -130,12 +80,189 @@ maps
 cat("FIX ME")
 ```
 
+```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
 
-## Research and Monitoring
+KEEP <- calc_group_score(df=p,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+area_grade <- as.character(calc_letter_grade(weighted.mean(x=KEEP$score, w=KEEP$weight, na.rm=TRUE)))
 
-### Flower Plot
+```
+
+
+
+<details>
+<summary style="
+    font-size: 1.8em;       /* make the text bigger */
+    font-weight: bold;       /* make it bold */
+    padding: 8px 12px;       /* space inside the box */
+    border: 2px solid black; /* draw a box around the header */
+    border-radius: 5px;      /* rounded corners */
+    cursor: pointer;         /* show pointer on hover */
+">
+MANAGEMENT EFFECTIVENESS
+</summary>
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+
+
+cat('<h2>Network Conservation Objectives</h2>\n')
+
+n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
+filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
+
+grades_network <- NULL
+grade_colors_network <- NULL
+
+for (i in seq_along(filtered_odf$objectives)) {
+  # GRADES
+  if (state$mpas %in% MPAs$NAME_E) {
+    KEEP <- pillar_ecol_df[which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == state$mpas),]
+  } else {
+     KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
+  }
+  KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
+
+  KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+  grades_network[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
+  
+  if (!(all(is.na(KEEP$score)))) {
+    grade_colors_network[i] <- unname(flowerPalette[which(names(flowerPalette) == grades_network[i])])
+  } else {
+    grade_colors_network[i] <- "#EDEDED"
+  }
+}
+
+
+
+dt_data_network <- data.frame(
+  Objective = filtered_odf$objectives,
+  Grade = grades_network,
+  stringsAsFactors = FALSE
+)
+
+cat('<table style="border-collapse: collapse; width:100%;">\n')
+cat('<tr><th>Objective</th><th>Grade</th></tr>\n')
+for(i in seq_len(nrow(dt_data_network))) {
+  cat('<tr style="background-color:', grade_colors_network[i], ';">')
+  cat('<td>', dt_data_network$Objective[i], '</td>')
+  cat('<td>', dt_data_network$Grade[i], '</td>')
+  cat('</tr>\n')
+}
+cat('</table>')
+
+cat("<br>")
+cat("<br>")
+
+```
+
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+# SHOWING OBJECTIVE INDICATORS
+
+
+## TEST
+
+# Container to hold all details blocks
+all_details <- list()
+
+keeper <- pillar_ecol_df[-which(pillar_ecol_df$areaID %in% regions$NAME_E),]
+
+for (i in seq_along(n_objectives)) {
+  
+  KK <- keeper[grepl(n_objectives[i], keeper$objectives), ]
+  
+  # Remove NA, placeholder, or missing score
+  KK <- KK[!(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score)), ]
+  
+  if (nrow(KK) == 0) {
+    # If no indicators in this bin, add a simple message block
+    details_block <- tags$details(
+      tags$summary(tags$strong(paste("Objective:", n_objectives[i]))),
+      "There are no indicators for this bin."
+    )
+    all_details[[length(all_details) + 1]] <- details_block
+    next
+  }
+  
+  unique_indicators <- unique(KK$indicator)
+  
+  # For each indicator, collect content & maps
+  indicator_blocks <- list()
+  
+  for (j in seq_along(unique_indicators)) {
+    indicator_name <- unique_indicators[j]
+    KK2 <- KK[KK$indicator == indicator_name, ]
+    KK2 <- KK2[KK2$areaID != "Non_Conservation_Area", ]
+    
+    # Text rationale
+    rationale <- unique(KK2$indicator_rationale)
+    
+    # Create leaflet map for this indicator
+    map <- leaflet() %>% addTiles()
+    
+    for (k in seq_along(KK2$areaID)) {
+      area <- KK2$areaID[k]
+      score <- pillar_ecol_df$score[pillar_ecol_df$areaID == area & pillar_ecol_df$indicator == indicator_name & tolower(pillar_ecol_df$bin) == BINS[i]]
+      
+      fill_color <- ifelse(
+        length(score) == 0 || is.na(score),
+        "#EDEDED",
+        flowerPalette[[calc_letter_grade(score)]]
+      )
+      border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+      
+      map <- map %>%
+        addPolygons(data = MPAs[MPAs$NAME_E == area, ], fillOpacity = 0.05, weight = 2, color = border_color)
+    }
+    
+    # Compose indicator block with bold label, rationale text, and map widget
+    indicator_blocks[[j]] <- tagList(
+      tags$b(paste("Indicator:", indicator_name)),
+      tags$p(rationale),
+      map,
+      tags$hr()
+    )
+  }
+  
+  # Compose the whole details block for this bin
+  details_block <- tags$details(
+    tags$summary(tags$strong(paste("Indicator Bin:", bin_upper))),
+    tagList(indicator_blocks)
+  )
+  
+  all_details[[length(all_details) + 1]] <- details_block
+}
+
+# Render all the details blocks combined as the chunk output
+tagList(all_details)
+
+## END TEST
+
+cat("<br>")
+cat("<br>")
+
+```
+
+
+</details> <details>
+<summary style="
+    font-size: 1.8em;       /* make the text bigger */
+    font-weight: bold;       /* make it bold */
+    padding: 8px 12px;       /* space inside the box */
+    border: 2px solid black; /* draw a box around the header */
+    border-radius: 5px;      /* rounded corners */
+    cursor: pointer;         /* show pointer on hover */
+">
+ECOLOGICAL OVERVIEW
+</summary>
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+cat('<h2>Flower Plot</h2>\n')
+
 plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == "Maritimes"),],
                                             grouping = "objective",
                                             labels = "bin",
@@ -145,8 +272,8 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == "Maritimes"),],
                                             title="Flower plot frame work")
 ```
 
-
 As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
+
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
 # Create an empty data frame to store results
@@ -161,8 +288,10 @@ summary_table <- data.frame(
 for (i in seq_along(unique(p$bin))) {
   keep <- which(p$bin == unique(p$bin)[i])
   df <- p[keep, ]
-  
-  grade <- calc_letter_grade(weighted.mean(df$score, df$weight, na.rm = TRUE))
+  group_df <- calc_group_score(df=df,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+  grade <- as.character(calc_letter_grade(weighted.mean(x=group_df$score, w=group_df$weight, na.rm=TRUE)))
   
   if (any(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))) {
   indicatorLength <- length(unique(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))]))
@@ -181,73 +310,6 @@ print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
 
 
 ```{r, echo=FALSE, comment=NA, results='asis'}
-# library(knitr)
-# library(leaflet)
-# 
-# BINS <- unique(trimws(tolower(unlist(
-#   strsplit(pillar_ecol_df$bin, ";")
-# )), "both"))
-# 
-# keeper <- pillar_ecol_df[-which(pillar_ecol_df$areaID %in% regions$NAME_E),]
-# keeper2 <- NULL
-# 
-# for (i in seq_along(BINS[1:4])) {
-#   #message("i = ", i)
-#   cat(sprintf('<details><summary><strong>Indicator Bin: %s</strong></summary>\n\n', toupper(BINS[i])))
-#   KK <- keeper[which(grepl(BINS[i], trimws(tolower(
-#     keeper$bin
-#   ), "both"))), ]
-#   
-#   # Remove NA and placeholder indicators
-#   
-#   if (any(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))) {
-#     KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))),]
-#   }
-#   
-#   if (!length(KK$objective) == 0) { # Now loop through the indicators in the bin
-#  
-#   
-#   unique_indicators <- unique(KK$indicator)
-#   
-#   for (j in seq_along(unique_indicators)) {
-#     #message("j = ", j)
-#     cat(sprintf("<b>Indicator: %s.</b>\n\n", unique_indicators[j]))
-#     KK2 <- KK[which(KK$indicator == unique_indicators[j]),]
-#     if (any(KK2$areaID == "Non_Conservation_Area")) {
-#       KK2 <- KK2[-which(KK2$areaID == "Non_Conservation_Area"),]
-#     }
-#     cat(paste0(unique(KK2$indicator_rationale), "\n\n"))
-#     
-#      map <- leaflet() %>% addTiles()
-#     
-#     for (k in seq_along(KK2$areaID)) { # LOOP THROUGH ALL AREAS THAT HAVE THIS INDICATOR TO SHOW ON MAP
-#       #message("k = ", k)
-#       fill_color <- ifelse(
-#         is.na(pillar_ecol_df$score[which(pillar_ecol_df$areaID == KK2$areaID[k] & pillar_ecol_df$indicator == unique_indicators[j] & tolower(pillar_ecol_df$bin) == BINS[i])]),
-#         "#EDEDED",
-#         flowerPalette[[calc_letter_grade(pillar_ecol_df$score[which(pillar_ecol_df$areaID == KK2$areaID[k] & pillar_ecol_df$indicator == unique_indicators[j] & tolower(pillar_ecol_df$bin) == BINS[i])])]]
-#       )
-#       
-#       border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
-#       
-#       map <- map %>% 
-#         addPolygons(data=MPAs[which(MPAs$NAME_E == KK2$areaID[k]),], fillOpacity = 0.05, weight=2, color=border_color)
-#       
-#     }
-#  
-#      print(map, browse = FALSE)
-# 
-#     
-#   }
-#   
-#   } else {
-#     cat("There are no indicators for this bin.")
-#   }
-#  
-#   cat("</details>\n\n")
-# }
-
-
 library(leaflet)
 library(htmltools)
 
@@ -332,6 +394,23 @@ tagList(all_details)
 
 ```
 
+</details> <details>
+<summary style="
+    font-size: 1.8em;       /* make the text bigger */
+    font-weight: bold;       /* make it bold */
+    padding: 8px 12px;       /* space inside the box */
+    border: 2px solid black; /* draw a box around the header */
+    border-radius: 5px;      /* rounded corners */
+    cursor: pointer;         /* show pointer on hover */
+">
+THREATS
+</summary>
+```{r, echo=FALSE, results='asis'}
+dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
+print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
+
+```
+</details>
 
 ## Investment Information
 
@@ -344,7 +423,7 @@ cost_of_mpas <- cost_of_mpas[which(cost_of_mpas$area %in% MPAs$NAME_E),]
 if (length(cost_of_mpas$project_id) != 0) {
 
   projects <- unique(cost_of_mpas$project_id)
-  
+
   # Dealing with O&M First
   OMs <- list()
   for (i in seq_along(projects)) {
