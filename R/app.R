@@ -108,9 +108,9 @@ app <- function() {
         shiny::uiOutput('mytabs'),
         shiny::uiOutput("whaleDisclaimer")
       )
-    ),  # 🔴 END: sidebarLayout (top half with gray sidebar)
+    ),
 
-    # 🔴 NEW: bottom half uses full width (white background)
+    # NEW: bottom half uses full width (white background)
     fluidRow(
       column(
         width = 12,
@@ -137,7 +137,7 @@ app <- function() {
           )
         ),
         fluidRow(
-          shiny::column(width=6, alight='right',
+          shiny::column(width=12,align='right',
           uiOutput('indicator_mode')
           )
         ),
@@ -249,7 +249,7 @@ server <- function(input, output, session) {
     if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
     radioButtons(
       inputId = "indicator_mode",
-      label = " ",
+      label = "Select table view:",
       choices = c(
         "EBM Framework" = "ebm",
         "Ecological Themes" = "themes"
@@ -1093,10 +1093,16 @@ server <- function(input, output, session) {
   output$threats_home_table <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && input$tab0_subtabs == "Threats") {
-    dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
-    DT::datatable(dfdt, escape = FALSE, options = list(
-      pageLength = 100
-    ))
+
+
+      # KYLO
+
+
+
+    #dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
+    #DT::datatable(dfdt, escape = FALSE, options = list(
+    #  pageLength = 100
+    #))
   }
   })
 
