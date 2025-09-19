@@ -261,10 +261,15 @@ server <- function(input, output, session) {
   })
 
   output$ecosystem_table <- renderUI({
-    req(input$indicator_mode)
-    if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
+    req(input$tab0_subtabs)
+    if (input$tabs == "tab_0" &&
+        input$tab0_subtabs %in% c("Ecosystem Overview", "Threats")) {
 
-      if (input$indicator_mode == "ebm") {
+      if (input$tab0_subtabs == "Ecosystem Overview") {
+        req(input$indicator_mode)
+      }
+
+      if ((input$tab0_subtabs == "Ecosystem Overview" && input$indicator_mode == "ebm") | input$tab0_subtabs == "Threats") {
         # Ecological Overview
 
       if (state$mpas %in% regions$NAME_E) {
@@ -363,7 +368,6 @@ server <- function(input, output, session) {
 
       }
 
-      # TEST
       if (!(length(ddff_unique$PPTID) == 0)) {
       for (i in seq_along(unique(ddff_unique$PPTID))) {
         ppt <- unique(ddff_unique$PPTID)[i]
@@ -375,6 +379,10 @@ server <- function(input, output, session) {
         }
       }
       ddff_unique$READINESS <- "Ready"
+
+      if (input$tab0_subtabs == "Threats") {
+        ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
+      }
 
       datatable(
         ddff_unique,
