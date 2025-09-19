@@ -43,6 +43,7 @@ for (obj_name in new_objectives) {
 objective_indicators <- ped_objectives
 
 # NEXT
+tar_load(pillar_ecol_df)
 ot <- data.frame(objectives=names(objective_indicators), tab=NA)
 
 max(sort(as.numeric(sub(".*_", "", pillar_ecol_df$tab))))
@@ -118,5 +119,7 @@ theme_trophic_structure_and_function <- data.frame(
              )
 
 theme_table <- rbind(theme_primary_production, theme_secondary_production, theme_trophic_structure_and_function)
+tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate", "cost_of_mpas", "salary"))
+
 source("R/app.R"); app()
 

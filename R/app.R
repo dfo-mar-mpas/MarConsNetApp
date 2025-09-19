@@ -53,6 +53,8 @@ app <- function() {
 
 ## FILTERING FOR
 
+  options(shiny.error = browser)
+
   old_pillar_ecol_df <- pillar_ecol_df
   old_all_project_geoms <- all_project_geoms
   pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
@@ -776,7 +778,11 @@ server <- function(input, output, session) {
           flower <- APPTABS$flower[which(APPTABS$tab == tab_id)]
           area <- gsub("_", " ", gsub("_CO$", "", APPTABS$place[which(APPTABS$tab == tab_id)]))
 
+          # if (input$tabs %in% pillar_ecol_df$tab) {
+          #   browser()
+          # }
 
+          if (!(length(flower) == 0)) {
         if (flower %in% c("Productivity", "Habitat", "Biodiversity")) {
           labels <- Ecological$labels[which(Ecological$grouping == flower)]
 
@@ -801,6 +807,9 @@ server <- function(input, output, session) {
         keepind <- intersect(ki1, ki2)
         keepind <- keepind[!(is.na(pillar_ecol_df$indicator[keepind]))]
         keepind <- keepind[pillar_ecol_df$indicator[keepind]!="placeholder"]
+        } else {
+          keepind <- which(pillar_ecol_df$tab == tab_id)
+        }
         } else {
           keep_name <- names(objective_indicators)[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]
           area <- state$mpas
@@ -1122,6 +1131,7 @@ server <- function(input, output, session) {
     if (input$tabs == "tab_0") {
       leaflet::leafletOutput("map")
     } else if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
+      #browser()
         currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
 
