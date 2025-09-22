@@ -107,6 +107,7 @@ app <- function() {
         shiny::uiOutput("DT_ui"),
         shiny::uiOutput("conditionalPlot"),
         shiny::uiOutput("conditionalIndicatorMap"),
+        shiny::uiOutput("score_disclaimer"),
         shiny::uiOutput('mytabs'),
         shiny::uiOutput("whaleDisclaimer")
       )
@@ -150,9 +151,6 @@ app <- function() {
                         shiny:: uiOutput("ecosystem_table"))
       ),
         shiny::uiOutput("threats_home_table")
-        # shiny::fluidRow(
-        #   shiny::column(width=6, offset=6, align="right", br(), shiny::uiOutput("flowerType"))
-        # )
       )
     )
   )
@@ -259,6 +257,13 @@ server <- function(input, output, session) {
       selected = "ebm",
       inline=TRUE
     )
+    }
+  })
+
+  output$score_disclaimer <- renderUI({
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      renderText("* Polygons on map are color-coded according to overall ecological score")
     }
   })
 
