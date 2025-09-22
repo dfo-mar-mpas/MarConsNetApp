@@ -811,16 +811,16 @@ server <- function(input, output, session) {
           keepind <- which(pillar_ecol_df$tab == tab_id)
         }
         } else {
+          #browser("ROX")
           keep_name <- names(objective_indicators)[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]
           area <- state$mpas
 
           if (area %in% MPAs$NAME_E) {
-            keep1 <- which(grepl(keep_name, pillar_ecol_df$objectives))
+            keep1 <- which(grepl(keep_name, pillar_ecol_df$objectives, fixed=TRUE))
             keep2 <- which(pillar_ecol_df$areaID == area)
             keepind <- intersect(keep1,keep2)
 
           } else {
-            #browser("JAIM")
             keepind <- which(grepl(keep_name, pillar_ecol_df$objectives, fixed=TRUE))
           }
         }
