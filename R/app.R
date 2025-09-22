@@ -926,7 +926,8 @@ server <- function(input, output, session) {
             indicatorGrade = pillar_ecol_df$score[keepind],
             Source=pillar_ecol_df$source[keepind],
             indicatorProject = pillar_ecol_df$PPTID[keepind],
-            indicatorScore = pillar_ecol_df$scoring[keepind]
+            indicatorScore = pillar_ecol_df$scoring[keepind],
+            Rationale=pillar_ecol_df$indicator_rationale[keepind]
           ))
         } else {
           return(list(
@@ -945,7 +946,8 @@ server <- function(input, output, session) {
             indicatorGrade = pillar_ecol_df$score[keepind],
             Source=pillar_ecol_df$source[keepind],
             indicatorProject = pillar_ecol_df$PPTID[keepind],
-            indicatorScore = pillar_ecol_df$scoring[keepind]
+            indicatorScore = pillar_ecol_df$scoring[keepind],
+            Rationale=pillar_ecol_df$indicator_rationale[keepind]
           ))
         }
       }
@@ -995,6 +997,7 @@ server <- function(input, output, session) {
 
       dfdt <- data.frame(
         Indicator = formatted_indicators[good],
+        Rationale=info$Rationale[good],
         areaID=info$areaID[good],
         Status = info$indicatorStatus[good],
         Trend = info$indicatorTrend[good],
@@ -1012,7 +1015,7 @@ server <- function(input, output, session) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
 
         dfdt$Grade <- sapply(dfdt$Score, calc_letter_grade)
-
+#browser()
         # NEW 2025/07/07
         if (any(is.na(dfdt$Trend))) {
         dfdt <- dfdt[-(which(is.na(dfdt$Trend))),]
