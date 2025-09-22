@@ -106,7 +106,6 @@ MANAGEMENT EFFECTIVENESS
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
 
-
 cat('<h2>Network Conservation Objectives</h2>\n')
 
 n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
@@ -182,13 +181,13 @@ for (i in seq_along(n_objectives)) {
     # If no indicators in this bin, add a simple message block
     details_block <- tags$details(
       tags$summary(tags$strong(paste("Objective:", n_objectives[i]))),
-      "There are no indicators for this bin."
+      "There are no indicators for this objecive."
     )
     all_details[[length(all_details) + 1]] <- details_block
     next
   }
   
-  unique_indicators <- unique(KK$indicator)
+  unique_indicators <- unique(KK$indicator) # ROXANNE 
   
   # For each indicator, collect content & maps
   indicator_blocks <- list()
@@ -206,7 +205,7 @@ for (i in seq_along(n_objectives)) {
     
     for (k in seq_along(KK2$areaID)) {
       area <- KK2$areaID[k]
-      score <- pillar_ecol_df$score[pillar_ecol_df$areaID == area & pillar_ecol_df$indicator == indicator_name & tolower(pillar_ecol_df$bin) == BINS[i]]
+      score <- pillar_ecol_df$score[pillar_ecol_df$areaID == area & pillar_ecol_df$indicator == indicator_name]
       
       fill_color <- ifelse(
         length(score) == 0 || is.na(score),
@@ -230,7 +229,7 @@ for (i in seq_along(n_objectives)) {
   
   # Compose the whole details block for this bin
   details_block <- tags$details(
-    tags$summary(tags$strong(paste("Indicator Bin:", bin_upper))),
+    tags$summary(tags$strong(paste("Objective:", n_objectives[i]))),
     tagList(indicator_blocks)
   )
   
@@ -271,6 +270,119 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == "Maritimes"),],
                                             min_score=0,
                                             title="Flower plot frame work")
 ```
+
+
+
+
+
+```{r, echo=FALSE, results='asis'}
+# dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
+# print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
+
+if (state$mpas %in% regions$NAME_E) {
+  table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
+  
+} else {
+  table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+}
+if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
+  table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
+}
+
+table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID")]
+
+
+ddff <- table_ped %>%
+  left_join(
+    Ecological %>% dplyr::select(labels, grouping),
+    by = c("bin" = "labels")   # bin in table_ped matches labels in Ecological
+  ) %>%
+  # Add placeholders for readiness, quality, cost
+  mutate(
+    readiness = NA_real_,
+    quality   = NA_real_,
+    cost      = NA_real_
+  ) %>%
+  dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost, PPTID) %>%
+  arrange(grouping, bin) %>%
+  setNames(toupper(names(.)))
+
+if (state$mpas %in% regions$NAME_E) {
+  # FIXME!!!!!
+  
+  ddff_unique <- ddff %>%
+    rowwise() %>%
+    mutate(
+      SCORE = weighted.mean(
+        x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
+        w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
+        na.rm = TRUE
+      )
+    ) %>%
+    ungroup() %>%
+    distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
+  
+} else {
+  ddff_unique <- ddff
+}
+if (!(length(ddff_unique$PPTID) == 0)) {
+  
+  for (i in seq_along(unique(ddff_unique$PPTID))) {
+    ppt <- unique(ddff_unique$PPTID)[i]
+    if (is.na(ppt)) {
+      ddff_unique$COST[which(is.na(ddff_unique$PPTID))] <- "External"
+    } else {
+      ddff_unique$COST[which(ddff_unique$PPTID == unique(ddff_unique$PPTID)[i])] <- paste0("$", round(unique(cost_of_mpas$price_per_station[which(cost_of_mpas$project_id == ppt)]),2), "/ sample")
+      
+    }
+  }
+  ddff_unique$READINESS <- "Ready"
+  
+  # if (input$tab0_subtabs == "Threats") {
+  #   ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
+  # }
+  
+  
+  
+  # example: add table headers
+  cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
+  cat('<thead><tr>',
+      paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
+      '</tr></thead>\n')
+  cat('<tbody>\n')
+  
+  for (i in seq_len(nrow(ddff_unique))) {
+    # if you want row coloring, define here
+    grade <- calc_letter_grade(ddff_unique$SCORE[i])   # your function
+    if (!(is.na(grade))) {
+      if (!(grade == "NA")) {
+        row_color <- flowerPalette[[grade]]
+      } else {
+        row_color <= 'white'
+      }
+    } else {
+      row_color <= 'white'
+    }
+    
+    # lookup the color for that grade
+    
+    cat('<tr style="background-color:', row_color, ';">')
+    cat('<td>', ddff_unique$GROUPING[i], '</td>')
+    cat('<td>', ddff_unique$BIN[i], '</td>')
+    cat('<td>', ddff_unique$INDICATOR[i], '</td>')
+    cat('<td>', ddff_unique$SOURCE[i], '</td>')
+    cat('<td>', sprintf("%.2f", ddff_unique$SCORE[i]), '</td>')
+    cat('<td>', ddff_unique$READINESS[i], '</td>')
+    cat('<td>', ddff_unique$QUALITY[i], '</td>')
+    cat('<td>', ddff_unique$COST[i], '</td>')
+    cat('</tr>\n')
+  }
+  
+  cat('</tbody></table>')
+}
+
+```
+
 
 As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
 
@@ -406,8 +518,51 @@ tagList(all_details)
 THREATS
 </summary>
 ```{r, echo=FALSE, results='asis'}
-dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
-print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
+# dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
+# print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
+
+if (!(length(ddff_unique$PPTID) == 0)) {
+  
+  ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
+
+  
+  
+  # example: add table headers
+  cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
+  cat('<thead><tr>',
+      paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
+      '</tr></thead>\n')
+  cat('<tbody>\n')
+  
+  for (i in seq_len(nrow(ddff_unique))) {
+    # if you want row coloring, define here
+    grade <- calc_letter_grade(ddff_unique$SCORE[i])   # your function
+    if (!(is.na(grade))) {
+      if (!(grade == "NA")) {
+        row_color <- flowerPalette[[grade]]
+      } else {
+        row_color <= 'white'
+      }
+    } else {
+      row_color <= 'white'
+    }
+    
+    # lookup the color for that grade
+    
+    cat('<tr style="background-color:', row_color, ';">')
+    cat('<td>', ddff_unique$GROUPING[i], '</td>')
+    cat('<td>', ddff_unique$BIN[i], '</td>')
+    cat('<td>', ddff_unique$INDICATOR[i], '</td>')
+    cat('<td>', ddff_unique$SOURCE[i], '</td>')
+    cat('<td>', sprintf("%.2f", ddff_unique$SCORE[i]), '</td>')
+    cat('<td>', ddff_unique$READINESS[i], '</td>')
+    cat('<td>', ddff_unique$QUALITY[i], '</td>')
+    cat('<td>', ddff_unique$COST[i], '</td>')
+    cat('</tr>\n')
+  }
+  
+  cat('</tbody></table>')
+}
 
 ```
 </details>
