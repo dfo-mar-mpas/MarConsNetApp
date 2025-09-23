@@ -48,13 +48,12 @@ shelf(pkgs)
 tar_option_set(packages = basename(pkgs),
                format = "qs")
 
-
-if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
+if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+  store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+} else if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
   store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets")
 } else if(dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
   store = "//wpnsbio9039519.mar.dfo-mpo.ca/MarConsNet/MarConsNetTargets/app_targets"
-} else if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
-  store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
 } else {
   warning("MarConsNet data store not found. Please check the directory paths.")
   store = getwd()
@@ -984,6 +983,12 @@ list(
 
 
  tar_target(rv_rawdata_env,{
+
+   # TEST (HERE JAIM)
+   library(Mar.datawrangling)
+   get_data('rv', extract_user = "HARBINJ", extract_computer = "WLNSBIO90210")
+
+   # END TEST
    temp <- new.env()
 
    get_data(db = 'rv',

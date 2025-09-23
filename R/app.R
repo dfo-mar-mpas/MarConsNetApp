@@ -326,6 +326,7 @@ server <- function(input, output, session) {
         ddff_unique <- ddff
       }
       } else {
+        #browser()
         if (state$mpas %in% regions$NAME_E) {
           table_ped <- theme_table[which(!(theme_table$areaID %in% regions$NAME_E)),]
 
@@ -381,7 +382,7 @@ server <- function(input, output, session) {
         if (is.na(ppt)) {
           ddff_unique$COST[which(is.na(ddff_unique$PPTID))] <- "External"
         } else {
-          ddff_unique$COST[which(ddff_unique$PPTID == unique(ddff_unique$PPTID)[i])] <- paste0("$", round(unique(cost_of_mpas$price_per_station[which(cost_of_mpas$project_id == ppt)]),2), "/ sample")
+          ddff_unique$COST[which(ddff_unique$PPTID == unique(ddff_unique$PPTID)[i])] <- paste0("$", round(unique(cost_of_mpas$price_per_station[which(cost_of_mpas$project_id == ppt)]),2), "/ source sample")
 
         }
       }
@@ -391,21 +392,39 @@ server <- function(input, output, session) {
         ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
       }
 
+      if (input$indicator_mode == "ebm") {
+      ddff_display <- ddff_unique %>%
+        arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
+        group_by(GROUPING, SOURCE) %>%
+        mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
+        ungroup()
+      } else {
+        ddff_display <- ddff_unique %>%
+          arrange(THEME, SOURCE) %>%                # make sure sources are together within grouping
+          group_by(THEME, SOURCE) %>%
+          mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
+          ungroup()
+      }
+
+      # Render datatable
       datatable(
-        ddff_unique,
+        ddff_display,
         rownames = FALSE,
         extensions = "RowGroup",
         options = list(
-          rowGroup   = list(dataSrc = 0),                       # group by first column: grouping
+          rowGroup = list(dataSrc = 0),                        # group by GROUPING
           columnDefs = list(
-            list(visible = FALSE, targets = 0),
-            list(visible = FALSE, targets = (which(names(ddff_unique) == "PPTID")-1))
-            ), # hide grouping column
+            list(visible = FALSE, targets = 0),               # hide GROUPING column
+            list(visible = FALSE, targets = (which(names(ddff_display) == "PPTID") - 1))
+          ),
           pageLength = 100
         )
       ) %>%
         formatRound("SCORE", 2)
+
+
       } else {
+
         showModal(
           modalDialog(
             title = "Grouping in Progress",
@@ -783,10 +802,6 @@ server <- function(input, output, session) {
           flower <- APPTABS$flower[which(APPTABS$tab == tab_id)]
           area <- gsub("_", " ", gsub("_CO$", "", APPTABS$place[which(APPTABS$tab == tab_id)]))
 
-          # if (input$tabs %in% pillar_ecol_df$tab) {
-          #   browser()
-          # }
-
           if (!(length(flower) == 0)) {
         if (flower %in% c("Productivity", "Habitat", "Biodiversity")) {
           labels <- Ecological$labels[which(Ecological$grouping == flower)]
@@ -816,7 +831,6 @@ server <- function(input, output, session) {
           keepind <- which(pillar_ecol_df$tab == tab_id)
         }
         } else {
-          #browser("ROX")
           keep_name <- names(objective_indicators)[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]
           area <- state$mpas
 
@@ -1020,7 +1034,6 @@ server <- function(input, output, session) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
 
         dfdt$Grade <- sapply(dfdt$Score, calc_letter_grade)
-#browser()
         # NEW 2025/07/07
         if (any(is.na(dfdt$Trend))) {
         dfdt <- dfdt[-(which(is.na(dfdt$Trend))),]
@@ -1072,9 +1085,6 @@ server <- function(input, output, session) {
       ind_ped$score[which(!grepl(OB, ind_ped$objectives, fixed=TRUE))] <- NA
 
       if (!(all(is.na(unique(ind_ped$indicator)))) | !(length(ind_ped$indicator) == 0)) {
-
-        #browser(2)
-
         MarConsNetAnalysis::plot_flowerplot(ind_ped,
                                             grouping = "objective",
                                             labels = "bin",
@@ -1139,7 +1149,6 @@ server <- function(input, output, session) {
     if (input$tabs == "tab_0") {
       leaflet::leafletOutput("map")
     } else if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
-      #browser()
         currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
 
@@ -1419,9 +1428,6 @@ server <- function(input, output, session) {
         )
 
         # GRADES
-        # if (i == 3) {
-        # browser(1)
-        # }
         if (state$mpas %in% MPAs$NAME_E) {
         KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
         } else {
