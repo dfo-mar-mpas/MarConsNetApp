@@ -22,6 +22,13 @@ if (any(pillar_ecol_df$areaID == "Non_Conservation_Area")) {
 pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
 }
 
+if (any(pillar_ecol_df$status_statement == "No features are represented.")) {
+    pillar_ecol_df$status_statement[pillar_ecol_df$status_statement == "No features are represented."] <- paste0(
+          "No features are represented. ** Note: a score will still be assigned if multiple MPAs are 'tied' for the lowest rank. ",
+          "For example, if no features are represented but an MPA has a score of 50, this indicates that 50% of MPAs share the 'least represented' status."
+        )
+}
+
 
 image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
                                     "MarConsNetTargets","data",
@@ -650,9 +657,6 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),],
 
 
 ```{r, echo=FALSE, results='asis'}
-# dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
-# print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
-
 if (state$mpas %in% regions$NAME_E) {
   table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
   
@@ -714,15 +718,13 @@ if (!(length(ddff_unique$PPTID) == 0)) {
   }
   ddff_unique$READINESS <- "Ready"
   
-# NEW
    ddff_display <- ddff_unique %>%
         arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
         group_by(GROUPING, SOURCE) %>%
         mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
         ungroup()
   
-  # END NEW
-  
+
   # example: add table headers
   cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
   cat('<thead><tr>',
@@ -891,9 +893,6 @@ for (i in seq_along(keeper2)) {
 THREATS</summary>
 
 ```{r, echo=FALSE, results='asis'}
-# dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
-# print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
-
 if (!(length(ddff_unique$PPTID) == 0)) {
   
   ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]

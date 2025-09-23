@@ -388,7 +388,6 @@ server <- function(input, output, session) {
       ddff_unique$READINESS <- "Ready"
 
       if (input$tab0_subtabs == "Threats") {
-        #browser()
         ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
 
       }
@@ -1035,6 +1034,16 @@ server <- function(input, output, session) {
         Method=info$indicatorScore[good],
         stringsAsFactors = FALSE
       )
+
+      if (any(dfdt$Status == "No features are represented.")) {
+        dfdt$Status[dfdt$Status == "No features are represented."] <- paste0(
+          "No features are represented. ** Note: a score will still be assigned if multiple MPAs are 'tied' for the lowest rank. ",
+          "For example, if no features are represented but an MPA has a score of 50, this indicates that 50% of MPAs share the 'least represented' status."
+        )
+
+      }
+
+      #browser()
     }
 
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
@@ -1133,23 +1142,6 @@ server <- function(input, output, session) {
       NULL
     }
   })
-
-  output$threats_home_table <- shiny::renderUI({
-    req(input$tabs)
-    if (input$tabs == "tab_0" && input$tab0_subtabs == "Threats") {
-
-
-      # KYLO
-
-
-
-    #dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
-    #DT::datatable(dfdt, escape = FALSE, options = list(
-    #  pageLength = 100
-    #))
-  }
-  })
-
 
 
   output$conditionalPlot <- shiny::renderUI({

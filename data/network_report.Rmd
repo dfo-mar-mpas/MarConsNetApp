@@ -17,6 +17,13 @@ library(rvest)
 library(dplyr)
 library(DT)
 
+if (any(pillar_ecol_df$status_statement == "No features are represented.")) {
+    pillar_ecol_df$status_statement[pillar_ecol_df$status_statement == "No features are represented."] <- paste0(
+          "No features are represented. ** Note: a score will still be assigned if multiple MPAs are 'tied' for the lowest rank. ",
+          "For example, if no features are represented but an MPA has a score of 50, this indicates that 50% of MPAs share the 'least represented' status."
+        )
+}
+
 image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
                                     "MarConsNetTargets","data",
                                     "plots")
