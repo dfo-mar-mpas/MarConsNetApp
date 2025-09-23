@@ -326,7 +326,6 @@ server <- function(input, output, session) {
         ddff_unique <- ddff
       }
       } else {
-        #browser()
         if (state$mpas %in% regions$NAME_E) {
           table_ped <- theme_table[which(!(theme_table$areaID %in% regions$NAME_E)),]
 
@@ -389,21 +388,32 @@ server <- function(input, output, session) {
       ddff_unique$READINESS <- "Ready"
 
       if (input$tab0_subtabs == "Threats") {
+        #browser()
         ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
-      }
 
-      if (input$indicator_mode == "ebm") {
-      ddff_display <- ddff_unique %>%
-        arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
-        group_by(GROUPING, SOURCE) %>%
-        mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
-        ungroup()
+      }
+      if (!(input$tab0_subtabs == "Threats")) {
+        if (input$indicator_mode == "ebm") {
+          ddff_display <- ddff_unique %>%
+            arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
+            group_by(GROUPING, SOURCE) %>%
+            mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
+            ungroup()
+        } else {
+          ddff_display <- ddff_unique %>%
+            arrange(THEME, SOURCE) %>%                # make sure sources are together within grouping
+            group_by(THEME, SOURCE) %>%
+            mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
+            ungroup()
+        }
       } else {
+        # Threats
         ddff_display <- ddff_unique %>%
-          arrange(THEME, SOURCE) %>%                # make sure sources are together within grouping
-          group_by(THEME, SOURCE) %>%
+          arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
+          group_by(GROUPING, SOURCE) %>%
           mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
           ungroup()
+
       }
 
       # Render datatable
@@ -675,8 +685,7 @@ server <- function(input, output, session) {
             filtered_odfS$tab[i],           # tab id
             filtered_odfS$objectives[i]     # objective text
           )
-          # JAIM
-          #browser(3)
+
         KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
         KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
