@@ -172,7 +172,7 @@ keeper <- pillar_ecol_df[-which(pillar_ecol_df$areaID %in% regions$NAME_E),]
 
 for (i in seq_along(n_objectives)) {
   
-  KK <- keeper[grepl(n_objectives[i], keeper$objectives), ]
+  KK <- keeper[grepl(n_objectives[i], keeper$objectives,fixed=TRUE), ]
   
   # Remove NA, placeholder, or missing score
   KK <- KK[!(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score)), ]
@@ -337,13 +337,7 @@ if (!(length(ddff_unique$PPTID) == 0)) {
     }
   }
   ddff_unique$READINESS <- "Ready"
-  
-  # if (input$tab0_subtabs == "Threats") {
-  #   ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
-  # }
-  
-  
-  
+
   # example: add table headers
   cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
   cat('<thead><tr>',
