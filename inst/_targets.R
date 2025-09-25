@@ -50,6 +50,9 @@ tar_option_set(packages = basename(pkgs),
 
 if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
   store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+} else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
+  # Accessing 'beast' via Windows
+  store <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
 } else if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
   store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets")
 } else if(dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
@@ -983,20 +986,22 @@ list(
 
 
  tar_target(rv_rawdata_env,{
-
-   # TEST (HERE JAIM)
    library(Mar.datawrangling)
-   get_data('rv', extract_user = "HARBINJ", extract_computer = "WLNSBIO90210")
+   .pkgenv <- new.env(parent = emptyenv())
 
-   # END TEST
-   temp <- new.env()
+   get_pesd_dw_dir <- function() {
+     file.path("C:", "DFO-MPO", "PESDData","MarDatawrangling")
+   }
 
-   get_data(db = 'rv',
-            data.dir = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data","rv"),
-            env = temp
-   )
+   get_ds_all <- function() {
+     .pkgenv$ds_all
+   }
 
-   temp
+   pwd <-  read.table(paste0(store, "/objects/oracle.txt"))$V1
+
+
+   get_data('rv', extract_user = "DAIGLER", extract_computer = "WLNSBIO90210", cxn = DBI::dbConnect(odbc::odbc(), dsn = "PTRAN", uid = "DAIGLER", pwd = pwd), reextract.override = T)
+
  }
  ),
 
