@@ -3700,10 +3700,18 @@ tar_target(name=project_widget_choices,
 tar_target(plot_files,
             command = {
               allplotnames <- NULL
+
+              if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+                STORE = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+              } else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
+                # Accessing 'beast' via Windows
+                STORE <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+              }
+
               for(i in 1:nrow(data_pillar_ecol_df)){
                 message(i)
                 if(!is.null(data_pillar_ecol_df$plot[[i]])&data_pillar_ecol_df$areaID[[i]]!="Non_Conservation_Area"){
-                filename <-  file.path(store,"..",
+                filename <-  file.path(STORE,"..",
                                        "data", "plots",
                                        make.names(paste0("plot_",
                                                          data_pillar_ecol_df$areaID[i],
