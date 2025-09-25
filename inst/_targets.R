@@ -1003,7 +1003,7 @@ list(
      .pkgenv$ds_all
    }
 
-   pwd <-  read.table(paste0(store, "/objects/oracle.txt"))$V1
+   pwd <-  read.table("\\\\wpnsbio9039519.mar.dfo-mpo.ca\\sambashare\\MarConsNet\\MarConsNetTargets\\app_targets/objects/oracle.txt")$V1
 
 
    get_data('rv', extract_user = "DAIGLER", extract_computer = "WLNSBIO90210", cxn = DBI::dbConnect(odbc::odbc(), dsn = "PTRAN", uid = "DAIGLER", pwd = pwd), reextract.override = T)
