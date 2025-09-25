@@ -41,26 +41,32 @@ pkgs <- c("sf",
           "leaflet",
           "rgbif",
           "qs",
-          "qs2")
+          "qs2",
+          "odbc")
 shelf(pkgs)
 
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
 tar_option_set(packages = basename(pkgs),
                format = "qs")
 
-if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
-  store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
-} else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
-  # Accessing 'beast' via Windows
-  store <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
-} else if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
-  store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets")
-} else if(dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
-  store = "//wpnsbio9039519.mar.dfo-mpo.ca/MarConsNet/MarConsNetTargets/app_targets"
-} else {
-  warning("MarConsNet data store not found. Please check the directory paths.")
-  store = getwd()
-}
+# if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+#   store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+# } else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
+#   # Accessing 'beast' via Windows
+#   store <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+# } else if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
+#   store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets")
+# } else if(dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+#   store = "//wpnsbio9039519.mar.dfo-mpo.ca/MarConsNet/MarConsNetTargets/app_targets"
+# } else {
+#   warning("MarConsNet data store not found. Please check the directory paths.")
+#   store = getwd()
+# }
+
+store <- Sys.getenv("MARCONSNET_TARGETS_PATH")
+if (!nzchar(store)) stop("MARCONSNET_TARGETS_PATH is not set!")
+
+
 tar_config_set(store = store)
 
 
