@@ -53,70 +53,108 @@ app <- function() {
 
 ## FILTERING FOR
 
+  options(shiny.error = browser)
+
   old_pillar_ecol_df <- pillar_ecol_df
   old_all_project_geoms <- all_project_geoms
   pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
   #all_project_geoms <- all_project_geoms[-which(all_project_geoms$areaID == "Non_Conservation_Area"),]
 
+  obj <- list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE)[which(grepl("objectives.xlsx",list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE) ))]
+  obj_excel <-read_excel(obj)
 
-ui <- shiny::fluidPage(
-  shinyjs::useShinyjs(),
-  shiny::tags$head(
-    shiny::tags$style(shiny::HTML("
+
+  ui <- shiny::fluidPage(
+    shinyjs::useShinyjs(),
+    shiny::tags$head(
+      shiny::tags$style(shiny::HTML("
       .shiny-notification {
         background-color: yellow;
       }
     "))),
-  shiny::titlePanel("Maritimes Conservation Network App"),
-  fluidRow(
-    shiny::column(2, shiny::uiOutput("gohome"))
+    shiny::titlePanel("Maritimes Conservation Network App"),
+    fluidRow(
+      shiny::column(2, shiny::uiOutput("gohome"))
     ),
-  #Makes the tabs hide
-  shiny::tags$style(shiny::HTML("
-    .nav-tabs { display: none; }
+    #Makes the tabs hide
+    tags$style(HTML("
+    #mytabs > .tabbable > .nav.nav-tabs { display: none; }
   ")),
-  shiny::sidebarLayout(
-    shiny::sidebarPanel(
-      shiny::fluidRow(
-      shiny::column(2, actionButton(inputId="about", label="User Guide")),
-      shiny::column(2, offset = 1, shiny::uiOutput("contextButton")),
-      shiny::column(2, shiny::uiOutput("filter_button_ui"))
-      ),
-      br(), br(),
-      shiny::uiOutput("legendUI"),
-      br(),
-      shiny::uiOutput("region"),
-      shiny::uiOutput("mpas"),
-      shiny::uiOutput("projects"),
-      shiny::conditionalPanel(
-        condition = condition,
-      shiny::uiOutput("report_button_ui")),
-      uiOutput("report_ui"),
-      br(),
-      tags$hr(style = "border-top: 2px solid #000; margin-top: 10px; margin-bottom: 10px;"),
-      br(),
-      shiny::uiOutput("networkObjectiveText")
-    ),
-     shiny::mainPanel(
-       shiny::uiOutput("indicatorText"),
-       shiny::uiOutput("DT_ui"),
-       shiny::uiOutput('mytabs'),
-       shiny::uiOutput("conditionalPlot"),
-       shiny::uiOutput("conditionalIndicatorMap"),
-       shiny::uiOutput("whaleDisclaimer"),
-       shiny::fluidRow(shiny::column(width=6, align="left",
-                                     br(),
-                                     shiny::uiOutput("siteObjectiveText"),
-                                     shiny::uiOutput("objectives")),
-                       shiny::column(width=6, align="right",
-                                     br(),
-                                     shiny::uiOutput("conditionalFlower"))
-                       ),
-       shiny::fluidRow(shiny::column(width=6, offset=6, align="right", br(), shiny::uiOutput("flowerType")))
 
-     ) #MAIN
+
+    shiny::sidebarLayout(
+      shiny::sidebarPanel(
+        shiny::fluidRow(
+          shiny::column(2, actionButton(inputId="about", label="User Guide")),
+          shiny::column(2, offset = 1, shiny::uiOutput("contextButton")),
+          shiny::column(2, shiny::uiOutput("filter_button_ui"))
+        ),
+        shiny::uiOutput("conditional_ind_Flower"),
+        br(), br(),
+        shiny::uiOutput("legendUI"),
+        br(),
+        shiny::uiOutput("region"),
+        shiny::uiOutput("mpas"),
+        shiny::uiOutput("projects"),
+        shiny::conditionalPanel(
+          condition = condition,
+          shiny::uiOutput("report_button_ui")
+        ),
+        uiOutput("report_ui")
+      ),
+      shiny::mainPanel(
+        shiny::uiOutput("indicatorText"),
+        shiny::uiOutput("DT_ui"),
+        shiny::uiOutput("conditionalPlot"),
+        shiny::uiOutput("conditionalIndicatorMap"),
+        shiny::uiOutput("score_disclaimer"),
+        shiny::uiOutput('mytabs'),
+        shiny::uiOutput("whaleDisclaimer")
+      )
+    ),
+
+    # NEW: bottom half uses full width (white background)
+    fluidRow(
+      column(
+        width = 12,
+        shiny::fluidRow(
+          shiny::column(width=3,
+                        br(),
+                        style = "border-right: 1px solid #ccc;",
+                        shiny::uiOutput('gbf_objectives')
+                        ),
+          shiny::column(width=3,
+                        br(),
+                        style = "border-left: 1px solid #ccc;",
+                        style = "border-right: 1px solid #ccc;",
+                        shiny::uiOutput("ebm_objectives")
+          ),
+          shiny::column(width=3,
+                        br(),
+                        style = "border-right: 1px solid #ccc;",
+                        shiny::uiOutput("networkObjectiveText")
+          ),
+          shiny::column(width=3,
+                        br(),
+                        shiny::uiOutput("objectives")
+          )
+        ),
+        fluidRow(
+          shiny::column(width=12,align='right',
+          uiOutput('indicator_mode')
+          )
+        ),
+        fluidRow(
+          shiny::column(width=5, align='right',
+          shiny::uiOutput("conditionalFlower")),
+          shiny::column(width=7,
+                        shiny:: uiOutput("ecosystem_table"))
+      ),
+        shiny::uiOutput("threats_home_table")
+      )
+    )
   )
-)
+
 
 # Define server logic
 server <- function(input, output, session) {
@@ -143,8 +181,7 @@ server <- function(input, output, session) {
   observe({
     showModal(modalDialog(
       title = "Disclaimer",
-      "This is not a finished product. Greyed out data does not suggest a lack of data collected
-       but instead a lack of data that has been incorporated into the app.",
+      "This app is under development. The scores shown do not represent a finalized or authoritative assessment of status. Apparent data gaps may reflect datasets that have not yet been incorporated into the app, and do not necessarily indicate that data were not collected.",
       easyClose = TRUE,
       footer = modalButton("I Understand")
     ))
@@ -167,10 +204,249 @@ server <- function(input, output, session) {
       state[[id]] <- input[[id]]
     })
   })
-  output$mytabs = shiny::renderUI({
-    nTabs = length(APPTABS$flower)+length(pillar_ecol_df$indicator)
-    myTabs = lapply(c(APPTABS$tab, pillar_ecol_df$tab), tabPanel)
+
+
+  output$mytabs <- renderUI({
+    # Build the top-level tabs
+    myTabs <- lapply(c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab), function(tabname) {
+      if (tabname == "tab_0") {
+        # Only tab_0 gets visible subtabs
+        tabPanel(
+          "tab_0",
+          tabsetPanel(
+            id = "tab0_subtabs",
+            tabPanel("Management Effectiveness", "This tab considers only the effectiveness indicators (i.e. those that directly inform objectives)"),
+            tabPanel("Ecosystem Overview",
+                     p(
+                       "Readiness Score Explained: ",
+                       strong("Ready"),
+                       " – Code is developed and data is integrated into the app, ",
+                       strong("Readily Available"),
+                       " – Data is being collected and stored but requires some work to integrate into the app, ",
+                       strong("Not currently collected"),
+                       " – Data is not yet being collected, ",
+                       strong("Conceptual"),
+                       " – There is no means of collecting this type of data."
+                     )
+
+                     ),
+            tabPanel("Threats")
+          )
+        )
+      } else {
+        # Other tabs just have their content (no subtabs)
+        tabPanel(tabname)
+      }
+    })
+
     do.call(tabsetPanel, c(myTabs, id = "tabs"))
+  })
+
+
+  output$indicator_mode <- renderUI({
+    req(state$mpas)
+    req(input$tabs)
+    if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
+    radioButtons(
+      inputId = "indicator_mode",
+      label = "Select table view:",
+      choices = c(
+        "EBM Framework" = "ebm",
+        "Ecological Themes" = "themes"
+      ),
+      selected = "ebm",
+      inline=TRUE
+    )
+    }
+  })
+
+  output$score_disclaimer <- renderUI({
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      renderText("* Polygons on map are color-coded according to overall ecological score")
+    }
+  })
+
+  output$ecosystem_table <- renderUI({
+    req(input$tab0_subtabs)
+    if (input$tabs == "tab_0" &&
+        input$tab0_subtabs %in% c("Ecosystem Overview", "Threats")) {
+
+      if (input$tab0_subtabs == "Ecosystem Overview") {
+        req(input$indicator_mode)
+      }
+
+      if ((input$tab0_subtabs == "Ecosystem Overview" && input$indicator_mode == "ebm") | input$tab0_subtabs == "Threats") {
+        # Ecological Overview
+
+      if (state$mpas %in% regions$NAME_E) {
+        table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
+
+      } else {
+        table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+      }
+      if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
+        table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
+      }
+
+      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID")]
+
+
+      ddff <- table_ped %>%
+        left_join(
+          Ecological %>% dplyr::select(labels, grouping),
+          by = c("bin" = "labels")   # bin in table_ped matches labels in Ecological
+        ) %>%
+        # Add placeholders for readiness, quality, cost
+        mutate(
+          readiness = NA_real_,
+          quality   = NA_real_,
+          cost      = NA_real_
+        ) %>%
+        dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost, PPTID) %>%
+        arrange(grouping, bin) %>%
+        setNames(toupper(names(.)))
+
+      if (state$mpas %in% regions$NAME_E) {
+        # FIXME!!!!!
+
+        ddff_unique <- ddff %>%
+          rowwise() %>%
+          mutate(
+            SCORE = weighted.mean(
+              x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
+              w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
+              na.rm = TRUE
+            )
+          ) %>%
+          ungroup() %>%
+          distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
+
+      } else {
+        ddff_unique <- ddff
+      }
+      } else {
+        if (state$mpas %in% regions$NAME_E) {
+          table_ped <- theme_table[which(!(theme_table$areaID %in% regions$NAME_E)),]
+
+        } else {
+          table_ped <- theme_table[which(theme_table$areaID == state$mpas),]
+        }
+        if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
+          table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
+        }
+
+        table_ped <- table_ped[,c("theme", "indicator", "source", "score", "weight", "PPTID")]
+
+
+
+        ddff <- table_ped %>%
+          # Add placeholders for readiness, quality, cost
+          mutate(
+            readiness = NA_real_,
+            quality   = NA_real_,
+            cost      = NA_real_
+          ) %>%
+          # Select columns in the desired order
+          dplyr::select(theme, indicator, source, score, readiness, quality, cost, PPTID) %>%
+          # Arrange by theme and indicator
+          arrange(theme, indicator) %>%
+          # Capitalize column names
+          setNames(toupper(names(.)))
+
+        if (state$mpas %in% regions$NAME_E) {
+          # FIXME!!!!!
+
+          ddff_unique <- ddff %>%
+            rowwise() %>%
+            mutate(
+              SCORE = weighted.mean(
+                x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$theme == THEME],
+                w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$theme == THEME],
+                na.rm = TRUE
+              )
+            ) %>%
+            ungroup() %>%
+            distinct(THEME,INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
+
+        } else {
+          ddff_unique <- ddff
+        }
+
+      }
+
+      if (!(length(ddff_unique$PPTID) == 0)) {
+      for (i in seq_along(unique(ddff_unique$PPTID))) {
+        ppt <- unique(ddff_unique$PPTID)[i]
+        if (is.na(ppt)) {
+          ddff_unique$COST[which(is.na(ddff_unique$PPTID))] <- "External"
+        } else {
+          ddff_unique$COST[which(ddff_unique$PPTID == unique(ddff_unique$PPTID)[i])] <- paste0("$", round(unique(cost_of_mpas$price_per_station[which(cost_of_mpas$project_id == ppt)]),2), "/ source sample")
+
+        }
+      }
+      ddff_unique$READINESS <- "Ready"
+
+      if (input$tab0_subtabs == "Threats") {
+        ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
+
+      }
+      if (!(input$tab0_subtabs == "Threats")) {
+        if (input$indicator_mode == "ebm") {
+          ddff_display <- ddff_unique %>%
+            arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
+            group_by(GROUPING, SOURCE) %>%
+            mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
+            ungroup()
+        } else {
+          ddff_display <- ddff_unique %>%
+            arrange(THEME, SOURCE) %>%                # make sure sources are together within grouping
+            group_by(THEME, SOURCE) %>%
+            mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
+            ungroup()
+        }
+      } else {
+        # Threats
+        ddff_display <- ddff_unique %>%
+          arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
+          group_by(GROUPING, SOURCE) %>%
+          mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
+          ungroup()
+
+      }
+
+      # Render datatable
+      datatable(
+        ddff_display,
+        rownames = FALSE,
+        extensions = "RowGroup",
+        options = list(
+          rowGroup = list(dataSrc = 0),                        # group by GROUPING
+          columnDefs = list(
+            list(visible = FALSE, targets = 0),               # hide GROUPING column
+            list(visible = FALSE, targets = (which(names(ddff_display) == "PPTID") - 1))
+          ),
+          pageLength = 100
+        )
+      ) %>%
+        formatRound("SCORE", 2)
+
+
+      } else {
+
+        showModal(
+          modalDialog(
+            title = "Grouping in Progress",
+            "There is currently no indicators identified for this area.",
+            easyClose = TRUE,       # modal closes if user clicks outside or presses Esc
+            footer = modalButton("Close")
+          )
+        )
+
+
+
+      }
+    }
   })
 
   output$flowerType <- renderUI({
@@ -378,63 +654,77 @@ server <- function(input, output, session) {
         output$report_ui <- renderUI({
           tags$iframe(src = "report.html", width = "100%", height = "600px")
         })
-      # } else {
-      #
-      #
-      #
-      #
-      #   showNotification("The required Rmd file does not exist.", type = "error")
-      # }
+
     }
   })
 
-  output$siteObjectiveText <- shiny::renderUI({
-    req(input$tabs)
-    req(state$mpas)
-    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
-      keepO <- which(areas == state$mpas)
-      if (!(length(keepO) == 0)) {
-        shiny::tags$b("Site Level Conservation Objectives")
-      }
-    }
-  })
 
-  output$objectives <- shiny::renderUI({ #JAIM
+  output$objectives <- shiny::renderUI({
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
         keepO <- which(names(Objectives_processed) == state$mpas)
       if (!(length(keepO) == 0)) {
         textO <- Objectives_processed[[keepO]]
+        textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
         # Create UI elements for objectives with bar charts
-        objectiveDivs <- lapply(seq_along(textO), function(i) {
-          shiny::tags$div(
-            style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
 
-            # Bar chart
-            shiny::tags$div(
-              plotOutput(paste0("site_bar", i), height = "100px", width = "400px"),
-              style = "position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.7;"
-            ),
+        filtered_odfS <- objective_tabs[objective_tabs$objectives %in% textO, ]
 
-            # Action link for the objective
-            shiny::tags$div(
-              actionLink(
-                inputId = odf$tab[which(odf$objectives == textO[[i]])],
-                label = textO[[i]]
-              ),
-              style = "position: absolute; top: 30px; left: 10px; z-index: 2; font-weight: bold; color: white;"
-            )
+        links <- character(length(filtered_odfS$objectives))
+        site_grades <- NULL
+        site_color <- NULL
+
+        for (i in seq_along(filtered_odfS$objectives)) {
+          links[i] <- sprintf(
+            '<a href="#%1$s" style="color: black; font-weight: bold; text-decoration: underline"
+            onclick="Shiny.setInputValue(&#39;%1$s&#39;, &#39;%2$s&#39;, {priority: &#39;event&#39;});
+                     $(\'#yourTabsetId a[data-value=&quot;tab_%1$s&quot;]\').tab(&#39;show&#39;);">
+             %2$s
+         </a>',
+            filtered_odfS$tab[i],           # tab id
+            filtered_odfS$objectives[i]     # objective text
           )
-        })
 
-        # Display objectives directly without collapsing
-        return(shiny::tagList(objectiveDivs))
+        KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+        KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
+
+        KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
+                                 score_var = "score",
+                                 weight_var = "weight")
+        site_grades[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
+
+
+          if (!(site_grades[i] == "NA")) {
+            site_color[i] <- unname(flowerPalette[which(names(flowerPalette) == site_grades[i])])
+          } else {
+            site_color[i] <- "#EDEDED"
+           }
+        }
+
+        dt_data <- data.frame(
+          Objective = links,
+          Grade=site_grades,
+          stringsAsFactors = FALSE
+        )
+
+        # Render header + DT table
+        tagList(
+          h3("Site Conservation Objectives"),  # 🔴 header
+          DT::datatable(
+            dt_data,
+            escape = FALSE,      # 🔴 render HTML links
+            rownames = FALSE,
+            options = list(dom = 't', paging = FALSE)
+          ) %>%
+            DT::formatStyle(
+              columns = names(dt_data),
+              target = "row",
+              backgroundColor = DT::styleEqual(dt_data$Grade, site_color))
+        )
+
       }
     }
-
-    return(NULL)
   })
-
 
   # Update the button label when clicked
   shiny::observeEvent(input$filter_button, {
@@ -480,13 +770,17 @@ server <- function(input, output, session) {
   })
 
   # Dynmaically coding in which actionLink is selected will update the tab
-  for (i in 0:(length(unique(APPTABS$tab))+length(pillar_ecol_df$indicator))) {
+  for (i in 0:(length(unique(APPTABS$tab))+length(pillar_ecol_df$indicator) + length(objective_tabs$tab))) {
     local({
       tab_id <- paste0("tab_", i)
       shiny::observeEvent(input[[tab_id]], {
-        selected_tab <- unique(APPTABS$tab[which(APPTABS$tab == tab_id)])
-        if (length(selected_tab) == 0) {
+        if (tab_id %in% APPTABS$tab) {
+          selected_tab <- unique(APPTABS$tab[which(APPTABS$tab == tab_id)])
+        } else if (tab_id %in% pillar_ecol_df$tab) {
           selected_tab <- unique(pillar_ecol_df$tab[which(pillar_ecol_df$tab == tab_id)])
+
+        } else {
+          selected_tab <- unique(objective_tabs$tab[which(objective_tabs$tab == tab_id)])
         }
         shiny::updateTabsetPanel(session, "tabs", selected = selected_tab)
       })
@@ -497,7 +791,7 @@ server <- function(input, output, session) {
   calculated_info <- shiny::reactive({
     req(input$tabs)
     tab_id <- input$tabs
-    if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
+    if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
       if (!(input$tabs == "tab_0")) {
         if (input$tabs %in% odf$tab) {
         objective <- gsub("\n", "", odf$objectives[which(odf$tab == tab_id)])
@@ -505,16 +799,18 @@ server <- function(input, output, session) {
         area <- gsub("_", " ", gsub("_CO$", "", odf$area[which(odf$tab == tab_id)]))
 
         } else if (input$tabs %in% pillar_ecol_df$tab) {
-          objective <- "This flower plot subset is not associated with any network or site level objectives for this location subset."
+          objective <- " "
           flower <- pillar_ecol_df$bin[which(pillar_ecol_df$tab == tab_id)]
           area <- gsub("_", " ", gsub("_CO$", "", pillar_ecol_df$areaID[which(pillar_ecol_df$tab == tab_id)]))
 
-        } else {
-          objective <- "This flower plot subset is not associated with any network or site level objectives for this location subset."
-          flower <- APPTABS$flower[which(APPTABS$tab == tab_id)]
-          area <- gsub("_", " ", gsub("_CO$", "", APPTABS$place[which(APPTABS$tab == tab_id)]))
         }
 
+        if (!(input$tabs %in% objective_tabs$tab)) {
+          objective <- " "
+          flower <- APPTABS$flower[which(APPTABS$tab == tab_id)]
+          area <- gsub("_", " ", gsub("_CO$", "", APPTABS$place[which(APPTABS$tab == tab_id)]))
+
+          if (!(length(flower) == 0)) {
         if (flower %in% c("Productivity", "Habitat", "Biodiversity")) {
           labels <- Ecological$labels[which(Ecological$grouping == flower)]
 
@@ -539,6 +835,22 @@ server <- function(input, output, session) {
         keepind <- intersect(ki1, ki2)
         keepind <- keepind[!(is.na(pillar_ecol_df$indicator[keepind]))]
         keepind <- keepind[pillar_ecol_df$indicator[keepind]!="placeholder"]
+        } else {
+          keepind <- which(pillar_ecol_df$tab == tab_id)
+        }
+        } else {
+          keep_name <- names(objective_indicators)[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]
+          area <- state$mpas
+
+          if (area %in% MPAs$NAME_E) {
+            keep1 <- which(grepl(keep_name, pillar_ecol_df$objectives, fixed=TRUE))
+            keep2 <- which(pillar_ecol_df$areaID == area)
+            keepind <- intersect(keep1,keep2)
+
+          } else {
+            keepind <- which(grepl(keep_name, pillar_ecol_df$objectives, fixed=TRUE))
+          }
+        }
 
         if (input$tabs %in% pillar_ecol_df$tab) {
           keepind <- which(pillar_ecol_df$tab == input$tabs)
@@ -566,15 +878,24 @@ server <- function(input, output, session) {
         #PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case = TRUE) & grepl(flower, om$tags, ignore.case = TRUE))]))
         PPTtitles <- unlist(lapply(PPTProjects, function(x) unique(om$project_title[which(om$project_id == x)])))
 
+        if (exists("flower")) {
         indicator_label <- ifelse(flower %in% c("Biodiversity", "Productivity", "Habitat"),
                                   "Ecosystem Based Management Objective:",
                                   "Indicator Bin:")
-        CO_label <- ifelse(area %in% unique(pillar_ecol_df$region),
-                           "Network Level Conservation Objective:",
-                           "Site Level Conservation Objective:")
         indicator_bin_label <- ifelse(grepl("Indicator", flower, ignore.case = TRUE), "\n\n", "Indicators:")
+
         binned_indicator_label <- ifelse(grepl("Indicator", flower, ignore.case = TRUE), "\n\n",
                                          paste0(binned_ind, collapse = "<br>"))
+
+        } else {
+          indicator_label <- " "
+          objective <- keep_name
+          flower <- " "
+          indicator_bin_label <- " "
+
+        }
+        CO_label <- "Objective"
+
 
         if (!(length(PPTProjects) == 0) & !all(is.na(PPTProjects)|PPTProjects=="NA")) {
           urls <- paste0("https://dmapps/en/ppt/projects/", PPTProjects, "/view/")
@@ -632,8 +953,8 @@ server <- function(input, output, session) {
             indicatorGrade = pillar_ecol_df$score[keepind],
             Source=pillar_ecol_df$source[keepind],
             indicatorProject = pillar_ecol_df$PPTID[keepind],
-            indicatorScore = pillar_ecol_df$scoring[keepind]
-            #formatted_projects = formatted_projects_grouped
+            indicatorScore = pillar_ecol_df$scoring[keepind],
+            Rationale=pillar_ecol_df$indicator_rationale[keepind]
           ))
         } else {
           return(list(
@@ -652,12 +973,13 @@ server <- function(input, output, session) {
             indicatorGrade = pillar_ecol_df$score[keepind],
             Source=pillar_ecol_df$source[keepind],
             indicatorProject = pillar_ecol_df$PPTID[keepind],
-            indicatorScore = pillar_ecol_df$scoring[keepind]
-            #formatted_projects = "There are no projects for this selection."
+            indicatorScore = pillar_ecol_df$scoring[keepind],
+            Rationale=pillar_ecol_df$indicator_rationale[keepind]
           ))
         }
       }
     }
+
   })
 
 
@@ -702,6 +1024,7 @@ server <- function(input, output, session) {
 
       dfdt <- data.frame(
         Indicator = formatted_indicators[good],
+        Rationale=info$Rationale[good],
         areaID=info$areaID[good],
         Status = info$indicatorStatus[good],
         Trend = info$indicatorTrend[good],
@@ -711,15 +1034,24 @@ server <- function(input, output, session) {
         Method=info$indicatorScore[good],
         stringsAsFactors = FALSE
       )
+
+      if (any(dfdt$Status == "No features are represented.")) {
+        dfdt$Status[dfdt$Status == "No features are represented."] <- paste0(
+          "No features are represented. ** Note: a score will still be assigned if multiple MPAs are 'tied' for the lowest rank. ",
+          "For example, if no features are represented but an MPA has a score of 50, this indicates that 50% of MPAs share the 'least represented' status."
+        )
+
+      }
+
+      #browser()
     }
 
-    if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
+    if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
       if (!(input$tabs == "tab_0")) {
         if (!(length(info$indicator_names) == 1 && info$indicator_names == "<a href=")) {
         # Assuming dfdt is your data frame, and indicatorGrade corresponds to the grade in 'Status' column
 
         dfdt$Grade <- sapply(dfdt$Score, calc_letter_grade)
-
         # NEW 2025/07/07
         if (any(is.na(dfdt$Trend))) {
         dfdt <- dfdt[-(which(is.na(dfdt$Trend))),]
@@ -758,11 +1090,50 @@ server <- function(input, output, session) {
     }
   })
 
+  output$objective_flower <- shiny::renderPlot({
+    req(input$tabs)
+    req(input$mpas)
+    if (input$tabs %in% objective_tabs$tab) {
+      if (state$mpas %in% MPAs$NAME_E) {
+      ind_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+      } else {
+        ind_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
+      }
+      OB <- names(objective_indicators)[[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]]
+      ind_ped$score[which(!grepl(OB, ind_ped$objectives, fixed=TRUE))] <- NA
+
+      if (!(all(is.na(unique(ind_ped$indicator)))) | !(length(ind_ped$indicator) == 0)) {
+        MarConsNetAnalysis::plot_flowerplot(ind_ped,
+                                            grouping = "objective",
+                                            labels = "bin",
+                                            score = "score",
+                                            max_score=100,
+                                            min_score=0,
+                                            title=" ")
+
+      } else {
+        NULL
+      }
+    }
+
+  })
+
+  output$conditional_ind_Flower <- shiny::renderUI({
+    req(state$mpas)
+    req(input$tabs)
+    if (input$tabs %in% objective_tabs$tab) {
+      plotOutput("objective_flower")
+    } else {
+      NULL
+    }
+  })
+
+
 
   output$DT_ui <- shiny::renderUI({
     req(input$tabs)
     if (!(input$tabs == "tab_0")) {
-      if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
+      if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
       DT::dataTableOutput("DT")
       } else {
         NULL
@@ -771,7 +1142,6 @@ server <- function(input, output, session) {
       NULL
     }
   })
-
 
 
   output$conditionalPlot <- shiny::renderUI({
@@ -888,12 +1258,96 @@ server <- function(input, output, session) {
   output$conditionalFlower <- shiny::renderUI({
     req(state$mpas)
     req(input$tabs)
-    if (input$tabs == "tab_0") {
+    if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
       plotOutput("flowerPlot",click="flower_click")
     } else {
       NULL
     }
+  })
 
+
+  output$ebm_objectives <- renderUI({
+    req(state$mpas)
+    req(input$tabs)
+    if (input$tabs == "tab_0" && !(is.null(input$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
+
+    emb_targets <- c("Control unintended incidental mortality for all species",
+                     "Distribute population component mortality in relation to component biomass",
+                     "Minimize unintended introduction and transmission of invasive species",
+                     "Control introduction and proliferation of disease/pathogens",
+                     "Minimize aquaculture escapes",
+                     "Maintain Species Biodiversity",
+                     "Maintain Functional Biodiversity",
+                     "Maintain Ecosystem Resistance",
+                     "Maintain Habitat Diversity",
+                     "Keep fishing and other forms of mortality moderate",
+                     "Allow sufficient escapement from exploitation for spawning",
+                     "Limit disturbing activity in important reproductive areas/seasons",
+                     "Control alteration of nutrient concentrations affecting primary production",
+                     "Maintain/promote ecosystem structure and functioning",
+                     "Habitat required for all species, particularly priority species, is maintained and protected",
+                     "Fish habitat that has been degraded is restored",
+                     "Pollution is prevented and reduced"
+    )
+
+    tagList(
+      h3("EBM Objectives"),
+      DT::datatable(
+        data.frame(Objective = emb_targets),
+        rownames = FALSE,
+        options = list(
+          pageLength = 10,
+          autoWidth = TRUE
+        )
+      )
+    )
+    }
+
+  })
+
+  output$gbf_objectives <- renderUI({
+    req(state$mpas)
+    req(input$tabs)
+
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
+      gbf_targets <- c(
+        "Plan and Manage all Areas To Reduce Biodiversity Loss",
+        "Restore 30% of all Degraded Ecosystems",
+        "Conserve 30% of Land, Waters, and Seas",
+        "Ensure Sustainable Use of Wild Species",
+        "Reduce Pollution Risks to Biodiversity",
+        "Prevent and Mitigate Invasive Alien Species",
+        "Enhance Biodiversity in Agriculture, Aquaculture, and Forestry",
+        "Increase the Area of Protected Areas and Other Effective Area-Based Conservation Measures",
+        "Integrate Biodiversity into Decision-Making",
+        "Ensure Equitable Sharing of Benefits from Genetic Resources",
+        "Increase Financial Resources for Biodiversity",
+        "Enhance Capacity for Biodiversity Implementation",
+        "Ensure Access to and Use of Biodiversity Data",
+        "Ensure Gender Equality in Biodiversity Decision-Making",
+        "Ensure Participation of Indigenous Peoples and Local Communities",
+        "Ensure Full, Equitable, Inclusive, and Gender-Responsive Representation",
+        "Ensure Access to Justice and Information Related to Biodiversity",
+        "Ensure Recognition of Rights of Indigenous Peoples and Local Communities",
+        "Ensure Recognition of Traditional Knowledge",
+        "Ensure Recognition of Rights over Genetic Resources",
+        "Ensure Recognition of Rights over Digital Sequence Information",
+        "Ensure Recognition of Rights over Traditional Knowledge Associated with Genetic Resources",
+        "Ensure Recognition of Rights over Traditional Knowledge Associated with Digital Sequence Information"
+      )
+
+    tagList(
+      h3("Global Biodiversity Targets"),  # This adds the title above the table
+      DT::datatable(
+        data.frame(Target = gbf_targets),
+        rownames = FALSE,
+        options = list(
+          pageLength = 10,
+          autoWidth = TRUE
+        )
+      )
+    )
+    }
   })
 
   output$flowerPlot <- shiny::renderPlot({
@@ -953,168 +1407,67 @@ server <- function(input, output, session) {
 
   output$networkObjectiveText <- shiny::renderUI({
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && "Maritimes" %in% state$region) {
-      filtered_odf <- odf[odf$objectives %in% gsub("<br>", "", N_Objectives), ]
-      # Create a div for filtered objectives and bar charts
-      objectiveDivs <- lapply(seq_along(filtered_odf$objectives), function(i) {
-        # Objective
-        shiny::tags$div(
-          style = "position: relative; height: 100px; width: 400px; margin-bottom: 20px;",
 
-          # Bar chart
-          shiny::tags$div(
-            plotOutput(paste0("bar", i), height = "100px", width = "400px"),
-            style = "position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.7;"
-          ),
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && "Maritimes" %in% state$region && input$tab0_subtabs == "Management Effectiveness") {
+      n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
+      filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
 
-          # Action link (Objective with new lines handled by HTML)
-          shiny::tags$div(
-            actionLink(
-              inputId = filtered_odf$tab[i],
-              label = shiny::HTML(gsub("\n", "<br>", N_Objectives[i]))
-            ),
-            style = "position: absolute; top: 30px; left: 10px; z-index: 2; font-weight: bold; color: white;"
-          )
+      links <- character(length(filtered_odf$objectives))
+      grades <- NULL
+      grade_colors <- NULL
+
+      for (i in seq_along(filtered_odf$objectives)) {
+        message(i)
+        links[i] <- sprintf(
+          '<a href="#%1$s" style="color: black; font-weight: bold; text-decoration: underline"
+            onclick="Shiny.setInputValue(&#39;%1$s&#39;, &#39;%2$s&#39;, {priority: &#39;event&#39;});
+                     $(\'#yourTabsetId a[data-value=&quot;tab_%1$s&quot;]\').tab(&#39;show&#39;);">
+             %2$s
+         </a>',
+          filtered_odf$tab[i],
+          gsub("\n", "<br>", N_Objectives[i])
         )
-      })
-      shiny::tagList(
-        shiny::h3("Maritimes Network Conservation Objectives"),
-        do.call(tagList, objectiveDivs)
+
+        # GRADES
+        if (state$mpas %in% MPAs$NAME_E) {
+        KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+        } else {
+          KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
+        }
+        KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
+
+        KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+        grades[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
+        if (!(all(is.na(KEEP$score)))) {
+        grade_colors[i] <- unname(flowerPalette[which(names(flowerPalette) == grades[i])])
+        } else {
+          grade_colors[i] <- "#EDEDED"
+        }
+      }
+
+
+
+      dt_data <- data.frame(
+        Objective = links,
+        Grade = grades,
+        stringsAsFactors = FALSE
       )
-
-    }
-  })
-
-  shiny::observeEvent(input$tabs, {
-    req(input$tabs)
-    if (input$tabs == "tab_0") {
-      # Ensure filtered_odf is created inside this condition
-      filtered_odf <- odf[odf$objectives %in% N_Objectives, ]
-      for (fo in seq_along(filtered_odf$objectives)) {
-        local({
-          id <- fo
-          output[[paste0("bar", id)]] <- renderPlot({
-            # Ensure bar chart is rendered only when tab_0 is active
-            if (input$tabs == "tab_0") {
-              req(state$mpas %in% unique(pillar_ecol_df$areaID))
-              if (state$mpas == "Maritimes") {
-                c1 <- 1:length(pillar_ecol_df$areaID)
-              } else {
-                c1 <- which(pillar_ecol_df$areaID == state$mpas)
-              }
-
-              c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
-              KEEP <- intersect(c1,c2)
-              ymax <- pillar_ecol_df$score[KEEP]
-              weight <- pillar_ecol_df$weight[KEEP]
-              if (length(ymax) == 0) {
-                # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
-                c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
-                KEEP <- intersect(c1,c2)
-                ymax <- pillar_ecol_df$score[KEEP]
-                weight <- pillar_ecol_df$weight[KEEP]
-              }
-
-              #ymax <- ymax[-which(ymax == 0)]
-              ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
-
-
-              # Create data frame for plotting
-              data <- data.frame(
-                x = paste0("Objective ", id),
-                y = ymax
-              )
-
-              clc <- as.character(calc_letter_grade(data$y))
-              finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-
-              if (!(length(finalCol) == 0)) {
-
-              ggplot2::ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
-                ggplot2::geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
-                ggplot2::ylim(0, 100) +
-                ggplot2::theme_void() +
-                ggplot2::coord_flip()+
-                ggplot2::guides(fill = "none")
-              }
-            }
-          })
-        })
-      }
-    }
-  })
-
-  shiny::observeEvent(state$mpas, {
-    req(input$tabs)
-    req(state$mpas)
-    if (input$tabs == "tab_0" & !(state$mpas == "Maritimes")) {
-      # Ensure filtered_odf is created inside this condition
-      keepO <- state$mpas
-      if (!(length(keepO) == 0)) {
-      S_Objectives <- Objectives_processed[[keepO]]
-
-
-      filtered_odfS <- odf[odf$objectives %in% S_Objectives, ]
-      for (fo in seq_along(filtered_odfS$objectives)) {
-        local({
-          id <- fo
-          output[[paste0("site_bar", id)]] <- renderPlot({
-            # Ensure bar chart is rendered only when tab_0 is active
-            if (input$tabs == "tab_0") {
-              req(state$mpas %in% c("Maritimes", unique(pillar_ecol_df$areaID)))
-              # Ensure ymax is properly filtered and has a single value
-              if (state$mpas == "Maritimes") {
-                c1 <- 1:length(pillar_ecol_df$areaID)
-              } else {
-                c1 <- which(pillar_ecol_df$areaID == state$mpas)
-              }
-
-              if (tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]) == "environmental (representativity)") {
-                c2 <- which(tolower(pillar_ecol_df$bin) == "environmental representativity")
-
-              } else {
-                c2 <- which(tolower(pillar_ecol_df$bin) == tolower(odf$flower_plot[which(odf$objectives == S_Objectives[id])]))
-              }
-
-
-              KEEP <- intersect(c1,c2)
-              ymax <- pillar_ecol_df$score[KEEP]
-              weight <- pillar_ecol_df$weight[KEEP]
-
-              # Handling empty or multiple ymax cases
-              if (length(ymax) == 0) {
-                # This means it's a ecological objective (i.e. biodiversity, productivity, habitat)
-                c2 <- which(tolower(pillar_ecol_df$objective) == tolower(odf$flower_plot[which(odf$objectives == N_Objectives[id])]))
-                KEEP <- intersect(c1,c2)
-                ymax <- pillar_ecol_df$score[KEEP]
-                weight <- pillar_ecol_df$weight[KEEP]
-              }
-              ymax <- weighted.mean(ymax, weight, na.rm=TRUE)
-              #ymax <- weighted.mean(ymax, na.rm=TRUE)
-              # Create data frame for plotting
-              data <- data.frame(
-                x = paste0("Objective ", id),
-                y = ymax
-              )
-              clc <- as.character(calc_letter_grade(data$y))
-              finalCol <- unname(flowerPalette[which(names(flowerPalette) == clc)])
-              #print(finalCol)
-              #print(clc)
-
-              if (!(length(finalCol) == 0)) {
-
-                ggplot2::ggplot(data, aes(x = x, y = y)) +  # Use calc_letter_grade to map y values
-                  ggplot2::geom_bar(stat = "identity", fill=finalCol) +  # No need to specify fill color here, as it's dynamically set above
-                  ggplot2::ylim(0, 100) +
-                  ggplot2::theme_void() +
-                  ggplot2::coord_flip()+
-                  ggplot2::guides(fill = "none")
-              }
-            }
-          })
-        })
-      }
-    } # HERE
+      tagList(
+        h3("Network Conservation Objectives"),
+        DT::datatable(
+          dt_data,
+          escape = FALSE,
+          rownames = FALSE,
+          options = list(dom = 't', paging = FALSE)
+        ) %>%
+          DT::formatStyle(
+            columns = names(dt_data),
+            target = "row",
+            backgroundColor = DT::styleEqual(dt_data$Grade, grade_colors)
+          )
+      )
     }
   })
 
@@ -1229,7 +1582,6 @@ server <- function(input, output, session) {
               point_keep <- 1:length(APJ$geometry)
 
             }
-            #browser()
 
             if (!("sfc_GEOMETRY" %in% class(APJ$geometry[point_keep]))) {
               if (!(length(point_keep) == 0)) {

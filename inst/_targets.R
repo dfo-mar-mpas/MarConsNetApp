@@ -41,24 +41,32 @@ pkgs <- c("sf",
           "leaflet",
           "rgbif",
           "qs",
-          "qs2")
+          "qs2",
+          "odbc")
 shelf(pkgs)
 
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
 tar_option_set(packages = basename(pkgs),
                format = "qs")
 
-
-if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
+if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+  store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+} else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
+  # Accessing 'beast' via Windows
+  store <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+} else if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
   store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets")
 } else if(dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
   store = "//wpnsbio9039519.mar.dfo-mpo.ca/MarConsNet/MarConsNetTargets/app_targets"
-} else if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
-  store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
 } else {
   warning("MarConsNet data store not found. Please check the directory paths.")
   store = getwd()
 }
+
+#store <- Sys.getenv("MARCONSNET_TARGETS_PATH")
+if (!nzchar(store)) stop("MARCONSNET_TARGETS_PATH is not set!")
+
+
 tar_config_set(store = store)
 
 
@@ -983,37 +991,50 @@ list(
             ds_all),
 
 
- tar_target(rv_rawdata_env,{
-   temp <- new.env()
+ tar_target(rv_rawdata_env,{ # Environment
+   # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
+   library(Mar.datawrangling)
+   .pkgenv <- new.env(parent = emptyenv())
 
-   get_data(db = 'rv',
-            data.dir = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data","rv"),
-            env = temp
-   )
+   get_pesd_dw_dir <- function() {
+     file.path("C:", "DFO-MPO", "PESDData","MarDatawrangling")
+   }
 
-   temp
+   get_ds_all <- function() {
+     .pkgenv$ds_all
+   }
+
+   pwd <-  read.table("\\\\wpnsbio9039519.mar.dfo-mpo.ca\\sambashare\\MarConsNet\\MarConsNetTargets\\app_targets/objects/oracle.txt")$V1
+
+
+   get_data('rv', extract_user = "DAIGLER", extract_computer = "WLNSBIO90210", cxn = DBI::dbConnect(odbc::odbc(), dsn = "PTRAN", uid = "DAIGLER", pwd = pwd), reextract.override = T, env=.pkgenv)
+   .pkgenv
  }
  ),
 
  tar_target(rv_data,{
+   # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
+
    # for whatever reason, we need to run:
    # tar_invalidate(c("ds_all","rv_rawdata_env"))
    # before re-running this target
+
    temp <- rv_rawdata_env
    ds_all # mentioned here because otherwise it won't be available for self_filter
 
-   temp$GSINF <- rv_rawdata_env$GSINF |>
+
+   GSINF <- temp$GSINF |>
      filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
      st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
               crs = 4326,
               remove = FALSE) |>
      st_filter(regions[regions$NAME_E=="Maritimes",]) |>
-     st_join(MPAs |> select(NAME_E), left=TRUE) |>
+     st_join(MPAs |> dplyr::select(NAME_E), left=TRUE) |>
      as.data.frame() |>
-     select(-geometry)
+     dplyr::select(-geometry)
 
 
-   self_filter(env = temp)
+   self_filter(env=temp)
 
    summarize_catches('rv',env = temp)
  }
@@ -1026,7 +1047,7 @@ list(
    temp <- rv_rawdata_env
    ds_all # mentioned here because otherwise it won't be available for self_filter
 
-   temp$GSINF <- rv_rawdata_env$GSINF |>
+   temp$GSINF <- temp$GSINF |>
      filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
      st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
               crs = 4326,
@@ -1513,7 +1534,7 @@ tar_target(ind_otn_proportion_tags_detected_in_multiple_mpas,
              x$units <- "%"
              x$scoring <- "connectivity-proportion"
              x$PPTID <- NA
-             x$project_short_title <- NA
+             x$project_short_title <- "Ocean Tracking Network Project"
              x$climate <- FALSE
              x$design_target <- FALSE
              x$data <- NULL
@@ -1522,9 +1543,15 @@ tar_target(ind_otn_proportion_tags_detected_in_multiple_mpas,
              x$trend_statement <- "There is no relevant trend statement available."
              x$source <- "Ocean Tracking Network"
              x$climate_expectation <- "FIXME"
+             x$objectives = paste0(c(
+               "Minimize harmful impacts from human activities on cetacean populations and their habitats",
+               "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+               "Contribute to the recovery and conservation of depleted species"
+             ), collapse=" ;;; ")
              x$indicator_rationale <- "The exchange of individuals between conservation sites can support ecosystem resilience, population recovery, genetic exchange, and the maintenance of biodiversity"
              x$bin_rationale <- NA
              x$plot <-NULL
+
 
              # Doing the score and statement status
 
@@ -1691,6 +1718,12 @@ x
                                indicator_rationale="FIXME",
                                bin_rationale="FIXME",
                                plot_type = c("violin", "map"),
+                               objectives= c(
+                                 "Maintain productivity of harvested species",
+                                 "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+                                 "Allow sufficient escapement from exploitation for spawning",
+                                 "Contribute to the recovery and conservation of depleted species"
+                               ),
                                plot_lm=FALSE)
               }
  ),
@@ -1949,7 +1982,13 @@ x
                                project_short_title = "RV Survey",
                                areas = MPAs,
                                plot_type = c("violin", "map"),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Maintain productivity of harvested species",
+                                 "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+                                 "Allow sufficient escapement from exploitation for spawning",
+                                 "Contribute to the recovery and conservation of depleted species"
+                               ))
             }
 ),
 
@@ -1977,7 +2016,15 @@ x
                                project_short_title = "RV Survey",
                                areas = MPAs,
                                plot_type = c("violin", "map"),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+                                 "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+                                 "Maintain productivity of harvested species",
+                                 "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+                                 "Allow sufficient escapement from exploitation for spawning",
+                                 "Contribute to the recovery and conservation of depleted species"
+                               ))
             }),
 
  tar_target(ind_haddock_biomass,
@@ -2004,7 +2051,16 @@ x
                                project_short_title = "RV Survey",
                                areas = MPAs,
                                plot_type = c("violin", "map"),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+                                 "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+                                 "Maintain productivity of harvested species",
+                                 "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+                                 "Allow sufficient escapement from exploitation for spawning",
+                                 "Contribute to the recovery and conservation of depleted species"
+                               )
+              )
             }),
 
 
@@ -2029,7 +2085,13 @@ x
                                project_short_title = "AZMP",
                                areas = MPAs,
                                plot_type=c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Functional Biodiversity",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
             }),
 
 
@@ -2045,7 +2107,7 @@ tar_target(ind_zooplankton_community_composition,
              data <- data[-which(is.na(data$relative_biomass)),]
 
 
-             x <- process_indicator(data = data,
+             process_indicator(data = data,
                                     indicator = "Zooplankton Community Composition",
                                     indicator_var_name = "relative_biomass",
                                     type = "Zooplankton Net Tows",
@@ -2060,7 +2122,13 @@ tar_target(ind_zooplankton_community_composition,
                                     other_nest_variables = c("zooplankton_meso_dry_weight","log_biomass", "biomass", "relative_biomass", "station", "taxa"),
                                     areas = MPAs,
                                     plot_type=c('community-composition', 'map'),
-                                    plot_lm=FALSE)
+                                    plot_lm=FALSE,
+                               objectives = c(
+                                 "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Functional Biodiversity",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }),
 
 
@@ -2087,7 +2155,8 @@ tar_target(ind_zooplankton_community_composition,
                                bin_rationale="FIXME",
                                areas = MPAs,
                                plot_type=c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives=NA)
             }),
 
  tar_target(ind_nitrate,
@@ -2110,7 +2179,13 @@ tar_target(ind_zooplankton_community_composition,
                                other_nest_variables="depth",
                                areas = MPAs,
                                plot_type = c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Control alteration of nutrient concentrations affecting primary production",
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
             }),
 
 tar_target(ind_oxygen,
@@ -2137,7 +2212,12 @@ tar_target(ind_oxygen,
                                other_nest_variables="depth",
                                areas = MPAs,
                                plot_type = c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
 
            }),
 
@@ -2149,7 +2229,7 @@ tar_target(ind_stratification,
               data$year <- year
               data <- data[which(!is.na(data$mld)),]
               data <- data[,c("longitude", "latitude", "year", "mld", "depth")]
-              process_indicator(data = data,
+              x <- process_indicator(data = data,
                                 indicator_var_name = "mld",
                                 indicator = "Mixed Layer Depth",
                                 type = "Gliders",
@@ -2165,7 +2245,9 @@ tar_target(ind_stratification,
                                 other_nest_variables="depth",
                                 areas = MPAs,
                                 plot_type = c('time-series','map'),
-                                plot_lm=FALSE)
+                                plot_lm=FALSE,
+                                objectives=NA)
+              x
 
             }),
 
@@ -2192,7 +2274,13 @@ tar_target(ind_silicate,
                                other_nest_variables="depth",
                                areas = MPAs,
                                plot_type = c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Control alteration of nutrient concentrations affecting primary production",
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }),
 
 tar_target(ind_phosphate,
@@ -2215,7 +2303,13 @@ tar_target(ind_phosphate,
                                other_nest_variables="depth",
                                areas = MPAs[-(which(MPAs$NAME_E =="Musquash Estuary Marine Protected Area")),],
                                plot_type = c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Control alteration of nutrient concentrations affecting primary production",
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }),
 
 
@@ -2239,7 +2333,12 @@ tar_target(ind_phosphate,
                                indicator_rationale="Salinity changes can impact ocean biological functions and may produce community shifts including trophic cascades (e.g., Röthig et al. 2023). Changes in salinity can also adversely affect the temperature tolerance of aquatic organisms (e.g., Farias et al. 2024)",
                                bin_rationale="FIXME",
                                plot_type=c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
             }),
 
  tar_target(ind_temperature,
@@ -2263,7 +2362,12 @@ tar_target(ind_phosphate,
                                indicator_rationale="Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
                                bin_rationale="FIXME",
                                plot_type=c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
             }),
 
  tar_target(ind_chlorophyll,
@@ -2287,7 +2391,12 @@ tar_target(ind_phosphate,
                                indicator_rationale="Chlorophyll a measurements are typically used as a proxy for primary production at the ocean surface, which, in turn, can influence ocean bottom conditions through benthic/pelagic coupling.",
                                bin_rationale="FIXME",
                                plot_type=c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Functional Biodiversity",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
             }),
 
  tar_target(ind_bloom_amplitude,
@@ -2330,7 +2439,12 @@ tar_target(ind_phosphate,
                                project_short_title = "AZMP",
                                areas = MPAs,
                                plot_type = c("time-series","map"),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Functional Biodiversity",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
             }
  ),
 
@@ -2373,7 +2487,12 @@ tar_target(ind_bloom_timing,
                                project_short_title = "AZMP",
                                areas = MPAs,
                                plot_type = c("time-series","map"),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Functional Biodiversity",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }
 ),
 
@@ -2399,7 +2518,7 @@ tar_target(name=ind_phytoplankton,
 
 
 
-             x <- process_indicator(data = data,
+             process_indicator(data = data,
                                indicator = "Abundance of Phytoplankton (Diatoms, Dinoflagellates,Flagellates)",
                                indicator_var_name = "sum_phytoplankton",
                                type = "Continuous Plankton Recorder",
@@ -2413,7 +2532,13 @@ tar_target(name=ind_phytoplankton,
                                project_short_title = "AZMP",
                                areas = MPAs,
                                plot_type=c('time-series','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Functional Biodiversity",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
 
 
            }),
@@ -2435,7 +2560,18 @@ tar_target(name=ind_phytoplankton,
                                project_short_title = "Biogenic Habitat",
                                areas = MPAs[MPAs$region %in% c("Quebec","Gulf"),],
                                plot_type='map',
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Protect cold-water corals",
+                                 "Protect cold-water corals and deep water frontier area",
+                                 "Protect Vazella pourtalesi glass sponges",
+                                 "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel",
+                                 "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+                                 "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
+                                 "Protect unique, rare, or sensitive ecological features",
+                                 "Protect representative examples of identified ecosystem and habitat types",
+                                 "Habitat required for all species, particularly priority species, is maintained and protected"
+                               ))
             }),
 
 tar_target(name = ind_ebsa_representation,
@@ -2454,7 +2590,17 @@ tar_target(name = ind_ebsa_representation,
                                project_short_title = "Biogenic Habitat",
                                areas = MPAs,
                                plot_type='map',
-                               plot_lm=FALSE
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Protect cold-water corals",
+                                 "Protect cold-water corals and deep water frontier area",
+                                 "Protect Vazella pourtalesi glass sponges",
+                                 "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+                                 "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
+                                 "Protect unique, rare, or sensitive ecological features",
+                                 "Protect representative examples of identified ecosystem and habitat types",
+                                 "Habitat required for all species, particularly priority species, is maintained and protected"
+                               )
                                )
            }),
 
@@ -2482,7 +2628,16 @@ tar_target(name = ind_SAR_CH_representation,
                                project_short_title = "SAR CH Habitat",
                                areas = MPAs,
                                plot_type='map',
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Ensure the conservation and protection of threatened or endangered species",
+                                 "Protect cold-water corals",
+                                 "Protect cold-water corals and deep water frontier area",
+                                 "Protect Vazella pourtalesi glass sponges",
+                                 "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+                                 "Protect unique, rare, or sensitive ecological features",
+                                 "Habitat required for all species, particularly priority species, is maintained and protected"
+                               ))
            }),
 
 tar_target(name = ind_species_representation,
@@ -2510,7 +2665,14 @@ tar_target(name = ind_species_representation,
                                indicator_rationale="FIXME",
                                areas = MPAs,
                                plot_type='map-species',
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Maintain Species Biodiversity",
+                                 "Maintain Functional Biodiversity",
+                                 "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                                 "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }),
 
   tar_target(name = ind_MAR_cum_impact,
@@ -2530,7 +2692,24 @@ tar_target(name = ind_species_representation,
                                  project_short_title = "Cumulative Impacts",
                                  areas = MPAs[MPAs$region=="Maritimes",],
                                  plot_type='map',
-                                 plot_lm=FALSE)
+                                 plot_lm=FALSE,
+                                 objectives = c(
+                                   "Minimize harmful impacts from human activities on cetacean populations and their habitats",
+                                   "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
+                                   "Manage human activities to minimize impacts on other commercial and non-commercial living resources",
+                                   "Control unintended incidental mortality for all species",
+                                   "Distribute population component mortality in relation to component biomass",
+                                   "Minimize unintended introduction and transmission of invasive species",
+                                   "Control introduction and proliferation of disease/pathogens",
+                                   "Minimize aquaculture escapes",
+                                   "Pollution is prevented and reduced",
+                                   "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel",
+                                   "Protect Black Dogfish from human induced mortality (e.g., bycatch in the commercial fishery) in the Laurentian Channel",
+                                   "Protect Smooth Skate from human induced mortality (e.g., bycatch in the commercial fishery) in the Laurentian Channel",
+                                   "Protect Porbeagle sharks from human induced mortality (e.g., bycatch in the commercial fishery, seismic activities) in the Laurentian Channel",
+                                   "Promote the survival and recovery of Northern Wolffish by minimizing risk of harm from human activities (e.g., bycatch in the commercial fishery) in the Laurentian Channel",
+                                   "Promote the survival and recovery of Leatherback Sea Turtles by minimizing risk of harm from human activities (e.g., entanglement in commercial fishing gear, seismic activities) in the Laurentian Channel"
+                                 ))
              }),
 
 tar_target(name = ind_MAR_biofouling_AIS,
@@ -2556,7 +2735,11 @@ tar_target(name = ind_MAR_biofouling_AIS,
                                project_short_title = "Biofouling AIS",
                                areas = MPAs[MPAs$region=="Maritimes",],
                                plot_type='map',
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Minimize unintended introduction and transmission of invasive species",
+                                 "Prevent and Mitigate Invasive Alien Species"
+                               ))
            }),
 
  tar_target(name = ind_musquash_infaunal_diversity,
@@ -2596,7 +2779,14 @@ tar_target(name = ind_MAR_biofouling_AIS,
                                 project_short_title = "Musquash benthic monitoring",
                                 areas = MPAs,
                                 plot_type='map-species',
-                                plot_lm=FALSE)
+                                plot_lm=FALSE,
+                                objectives = c(
+                                  "Maintain Species Biodiversity",
+                                  "Maintain Functional Biodiversity",
+                                  "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                                  "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
+                                  "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                                ))
               x
             }),
  tar_target(name = ind_musquash_nekton_diversity,
@@ -2620,7 +2810,14 @@ tar_target(name = ind_MAR_biofouling_AIS,
                               project_short_title = "ECW Nekton Project",
                               areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                               plot_type='map',
-                              plot_lm=FALSE)
+                              plot_lm=FALSE,
+                              objectives = c(
+                                "Maintain Species Biodiversity",
+                                "Maintain Functional Biodiversity",
+                                "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                                "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
+                                "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                              ))
             }),
 
 tar_target(name=ind_musquash_ph,
@@ -2636,7 +2833,7 @@ tar_target(name=ind_musquash_ph,
                                scoring = "desired state: increase",
                                PPTID = NA,
                                source="Eastern Charlotte Waterways",
-                               project_short_title = NA,
+                               project_short_title = "ECW Project",
                                climate = TRUE,
                                climate_expectation="FIXME",
                                indicator_rationale="FIXME",
@@ -2645,7 +2842,12 @@ tar_target(name=ind_musquash_ph,
                                plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE,
                                latitude='Lat',
-                               longitude='Lon')
+                               longitude='Lon',
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
 
            }
            ),
@@ -2672,7 +2874,12 @@ tar_target(name=ind_musquash_dissolved_oxygen,
                                plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE,
                                latitude='Lat',
-                               longitude='Lon')
+                               longitude='Lon',
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }
 ),
 
@@ -2699,7 +2906,13 @@ tar_target(name=ind_musquash_phosphate,
                                plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE,
                                latitude='Lat',
-                               longitude='Lon')
+                               longitude='Lon',
+                               objectives = c(
+                                 "Control alteration of nutrient concentrations affecting primary production",
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }
 ),
 
@@ -2726,7 +2939,12 @@ tar_target(name=ind_musquash_secchi,
                                plot_type=c('time-series-no-line','map'),
                                plot_lm=FALSE,
                                latitude='Lat',
-                               longitude='Lon')
+                               longitude='Lon',
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Functional Biodiversity",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }
 ),
 
@@ -2750,7 +2968,12 @@ tar_target(name=ind_musquash_coliform,
                                climate = TRUE,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                                plot_type=c('time-series-no-line','map'),
-                               plot_lm=FALSE)
+                               plot_lm=FALSE,
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Pollution is prevented and reduced",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }
 ),
 
@@ -2759,7 +2982,6 @@ tar_target(name=ind_musquash_coliform,
 
 tar_target(ind_nitrate_inside_outside,
            command={
-
              control_polygons
              MPAs
              data <- data_azmp_Discrete_Occupations_Sections  |>
@@ -2782,7 +3004,13 @@ tar_target(ind_nitrate_inside_outside,
                                     areas = MPAs,
                                     plot_type = c('outside-comparison','map'),
                                     plot_lm=FALSE,
-                                    control_polygon=control_polygons)
+                                    control_polygon=control_polygons,
+                                    objectives = c(
+                                      "Control alteration of nutrient concentrations affecting primary production",
+                                      "Maintain/promote ecosystem structure and functioning",
+                                      "Maintain Ecosystem Resistance",
+                                      "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                                    ))
              x
            }),
 
@@ -2796,7 +3024,7 @@ tar_target(ind_musquash_phosphate_inside_outside,
                rename(phosphate= `tot P (mg/L)`) |>
                dplyr::select(Lon, Lat, phosphate, year)
 
-             process_indicator(data = data,
+             x <- process_indicator(data = data,
                                indicator_var_name = "phosphate",
                                indicator = "Nutrient Conditions (Phosphate) Inside Outside Comparison",
                                type = "Discrete Occupations Sections",
@@ -2814,7 +3042,14 @@ tar_target(ind_musquash_phosphate_inside_outside,
                                plot_lm=FALSE,
                                latitude='Lat',
                                longitude="Lon",
-                               control_polygon=control_polygons)
+                               control_polygon=control_polygons,
+                               objectives = c(
+                                 "Control alteration of nutrient concentrations affecting primary production",
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Maintain Ecosystem Resistance",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
+             x
            }),
 
 tar_target(ind_musquash_coliform_inside_outside,
@@ -2827,7 +3062,11 @@ tar_target(ind_musquash_coliform_inside_outside,
              data <- data_musquash_coliform |>
                dplyr::select(latitude, longitude, MPN, year)
 
-             process_indicator(data = data,
+             data <- st_as_sf(data,
+                                 coords = c("longitude", "latitude"),
+                                 crs = 4326)
+
+             x <- process_indicator(data = data,
                                indicator_var_name = "MPN",
                                indicator = "Coliform Inside Outside Comparison",
                                type = "Discrete Occupations Sections",
@@ -2843,7 +3082,12 @@ tar_target(ind_musquash_coliform_inside_outside,
                                areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                                plot_type=c('outside-comparison','map'),
                                plot_lm=FALSE,
-                               control_polygon=control_polygons)
+                               control_polygon=control_polygons,
+                               objectives = c(
+                                 "Maintain/promote ecosystem structure and functioning",
+                                 "Pollution is prevented and reduced",
+                                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                               ))
            }),
 
 tar_target(ind_musquash_birds_sample_coverage, command = {
@@ -2883,6 +3127,11 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
       ),
       climate_expectation = "FIXME",
       indicator_rationale = "Seabirds are outside the scope of DFO mandate and so are not assessed here; however, indicators have been developed and are monitored by the Canadian Wildlife Service of Environment and Climate Change Canada.",
+      objectives = paste0(c(
+        "Maintain Species Biodiversity",
+        "Maintain Functional Biodiversity",
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      ), collapse=" ;;; "),
       bin_rationale = "FIXME"
     )
 
@@ -2927,6 +3176,70 @@ tar_target(ind_protconn,
                       indicator_rationale = "The exchange of individuals between conservation sites can support ecosystem resilience, population recovery, genetic exchange, and the maintenance of biodiversity",
                       bin_rationale = "FIXME")
            }),
+
+
+tar_target(objective_indicators,
+           command={
+             pillar_ecol_df <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)),]
+             obj <- list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE)[which(grepl("objectives.xlsx",list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE) ))]
+             x <-read_excel(obj)
+             x$Objective <- sub("\\.$", "", x$Objective)
+             x$Objective <- sub("\\;$", "", x$Objective)
+
+             indicator_objectives <- trimws(unique(unlist(strsplit(pillar_ecol_df$objectives, ";;;"))), 'both')
+             indicator_objectives <- indicator_objectives[-which(indicator_objectives == "NA")]
+
+
+             ped_objectives <- vector("list", length=length(indicator_objectives))
+
+             for (i in seq_along(ped_objectives)) {
+               message(i)
+               keep <- which(grepl(indicator_objectives[i], pillar_ecol_df$objectives, fixed = TRUE))
+               if (x$Framework[which(x$Objective == indicator_objectives[i])] %in% MPAs$NAME_E) {
+                 keep2 <- which(pillar_ecol_df$areaID == x$Framework[which(x$Objective == indicator_objectives[i])])
+                 keep <- intersect(keep, keep2)
+               }
+
+               ped_objectives[[i]] <- pillar_ecol_df[keep, ]
+
+             }
+             names(ped_objectives) <- indicator_objectives
+
+             # Adding objectives that aren't yet accounted for
+
+             new_objectives <- x$Objective[which(!(x$Objective %in% names(ped_objectives)))]
+
+             for (obj_name in new_objectives) {
+               # create a blank NA df with the same columns
+               na_df <- as.data.frame(matrix(NA, nrow = 1, ncol = ncol(pillar_ecol_df)))
+               names(na_df) <- names(pillar_ecol_df)
+
+               # add it to the list with the name
+               ped_objectives[[obj_name]] <- na_df
+             }
+
+
+             ped_objectives
+
+           }),
+
+tar_target(objective_tabs,
+           # FOR TABS, THERE ARE APPTABS, WHICH ARE FOR FLOWER, PILLAR_ECOL_DF WHICH ARE FOR INDICATORS, AND OBJECTIVE_TABS
+           # WHICH ARE FOR OBJECTIVES
+           command={
+
+           ot <- data.frame(objectives=names(objective_indicators), tab=NA)
+
+           max(sort(as.numeric(sub(".*_", "", pillar_ecol_df$tab))))
+           start <- max(sort(as.numeric(sub(".*_", "", pillar_ecol_df$tab))))+1
+           end <- start+(length(ot$objectives)-1)
+           tabs <- start:end
+           ot$tab <- paste0("tab_", tabs)
+
+           ot
+
+           }
+           ),
 
 
  ##### Indicator Bins #####
@@ -2989,7 +3302,6 @@ tar_target(ind_protconn,
                              "Key Fish Habitat",
                              weights_ratio = 1,
                              weights_sum = 1,
-                             ind_temperature,
                              ind_SAR_CH_representation
             )),
  tar_target(bin_habitat_ThreatstoHabitat_df,
@@ -3030,8 +3342,7 @@ tar_target(ind_protconn,
                              "Structure and Function",
                              weights_ratio=1,
                              weights_sum = 1,
-                             ind_placeholder_df
-            )),
+                             ind_stratification)),
  tar_target(bin_productivity_ThreatstoProductivity_df,
             aggregate_groups("bin",
                              "Threats to Productivity",
@@ -3039,6 +3350,228 @@ tar_target(ind_protconn,
                              weights_sum = 1,
                              ind_placeholder_df
             )),
+
+
+ ##### Themematic bins
+
+
+
+tar_target(theme_ocean_conditions,
+           command={
+            x <- rbind(
+               ind_oxygen[ , setdiff(names(ind_oxygen), c("data", "plot"))],
+               ind_salinity[ , setdiff(names(ind_salinity), c("data", "plot"))],
+               ind_temperature[ , setdiff(names(ind_temperature), c("data", "plot"))]
+             )
+            x$theme <- "Ocean Conditions"
+            x$weight <- NA
+            for (i in seq_along(x$areaID)) {
+              message(i)
+              X <- x[i,]
+              keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+              x$weight[i] <- pillar_ecol_df$weight[keep]
+            }
+            x
+           }),
+
+tar_target(theme_ocean_structure_and_movement,
+           command={
+             x <- rbind(
+               ind_otn_proportion_tags_detected_in_multiple_mpas[ , setdiff(names(ind_otn_proportion_tags_detected_in_multiple_mpas), c("data", "plot"))],
+               ind_surface_height[ , setdiff(names(ind_surface_height), c("data", "plot"))],
+               ind_stratification[ , setdiff(names(ind_stratification), c("data", "plot"))]
+             )
+             x$theme <- "Ocean Structure and Movement"
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               message(i)
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+             x
+           }),
+
+tar_target(theme_primary_production,
+           command={
+             x <- rbind(
+               ind_nitrate[ , setdiff(names(ind_nitrate), c("data", "plot"))],
+               ind_silicate[ , setdiff(names(ind_silicate), c("data", "plot"))],
+               ind_phosphate[ , setdiff(names(ind_phosphate), c("data", "plot"))],
+               ind_chlorophyll[ , setdiff(names(ind_chlorophyll), c("data", "plot"))],
+               ind_bloom_amplitude[ , setdiff(names(ind_bloom_amplitude), c("data", "plot"))],
+               ind_bloom_timing[ , setdiff(names(ind_bloom_timing), c("data", "plot"))]
+             )
+             x$theme <- "Primary Production"
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+             x
+           }),
+
+tar_target(theme_secondary_production,
+           command={
+             x <- rbind(
+               ind_zooplankton[ , setdiff(names(ind_zooplankton), c("data", "plot"))],
+               ind_zooplankton_community_composition[ , setdiff(names(ind_zooplankton_community_composition), c("data", "plot"))]
+             )
+             x$theme <- "Secondary Production"
+
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               message(i)
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+             x
+           }),
+
+tar_target(theme_marine_mammals_and_other_top_predators,
+           command={
+             x <- rbind(
+               ind_musquash_birds_sample_coverage[ , setdiff(names(ind_musquash_birds_sample_coverage), c("data", "plot"))]
+             )
+             x$theme <- "Marine Mammals and Other Top Predators"
+
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               message(i)
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+
+             x
+             }),
+
+tar_target(theme_trophic_structure_and_function,
+           command={
+             data.frame(
+               areaID = NA,
+               indicator = NA,
+               type = NA,
+               units = NA,
+               scoring = NA,
+               PPTID = NA,
+               project_short_title = NA,
+               climate = NA,
+               design_target = NA,
+               score = NA,
+               status_statement = NA,
+               trend_statement = NA,
+               source = NA,
+               climate_expectation = NA,
+               indicator_rationale = NA,
+               objectives = NA,
+               bin_rationale = NA,
+               theme="Trophic Structure and Function",
+               weight=NA
+             )
+
+           }),
+
+tar_target(theme_benthic_environment,
+           command={
+             data.frame(
+               areaID = NA,
+               indicator = NA,
+               type = NA,
+               units = NA,
+               scoring = NA,
+               PPTID = NA,
+               project_short_title = NA,
+               climate = NA,
+               design_target = NA,
+               score = NA,
+               status_statement = NA,
+               trend_statement = NA,
+               source = NA,
+               climate_expectation = NA,
+               indicator_rationale = NA,
+               objectives = NA,
+               bin_rationale = NA,
+               theme="Benthic Environment",
+               weight=NA
+             )
+           }),
+
+tar_target(theme_fish_and_fishery_resources,
+           command={
+             x <- rbind(
+               ind_fish_length[ , setdiff(names(ind_fish_length), c("data", "plot"))],
+               ind_fish_weight[ , setdiff(names(ind_fish_weight), c("data", "plot"))],
+               ind_haddock_counts[ , setdiff(names(ind_haddock_counts), c("data", "plot"))],
+               ind_haddock_biomass[ , setdiff(names(ind_haddock_biomass), c("data", "plot"))]
+             )
+             x$theme <- "Fish and Fishery Resources"
+
+             x$weight <- NA
+             for (i in seq_along(x$areaID)) {
+               message(i)
+               X <- x[i,]
+               keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+               x$weight[i] <- pillar_ecol_df$weight[keep]
+             }
+
+             x
+           }),
+
+tar_target(theme_anthropogenic_pressure_and_impacts,
+           command={
+             x <- data.frame(
+               areaID = NA,
+               indicator = NA,
+               type = NA,
+               units = NA,
+               scoring = NA,
+               PPTID = NA,
+               project_short_title = NA,
+               climate = NA,
+               design_target = NA,
+               score = NA,
+               status_statement = NA,
+               trend_statement = NA,
+               source = NA,
+               climate_expectation = NA,
+               indicator_rationale = NA,
+               objectives = NA,
+               bin_rationale = NA,
+               theme="Anthropogenic Pressure And Impacts",
+               weight=NA
+             )
+             x
+           }),
+
+
+tar_target(theme_table,
+           command={
+             rbind(theme_ocean_conditions,
+                   theme_ocean_structure_and_movement,
+                   theme_primary_production,
+                   theme_secondary_production,
+                   theme_marine_mammals_and_other_top_predators,
+                   theme_trophic_structure_and_function,
+                   theme_benthic_environment,
+                   theme_fish_and_fishery_resources,
+                   theme_anthropogenic_pressure_and_impacts)
+
+           }),
+
+
+
+
+
+
+
+
+
+
+
+
 
 
  ##### Ecological Objectives #####
@@ -3183,14 +3716,38 @@ tar_target(name = pillar_ecol_df,
 
              }),
 
+tar_target(name=project_widget_choices,
+           command={
+            distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID", "source")])
+
+             if (any(is.na(distinct_rows$project_short_title))) {
+               bad <- which(is.na(distinct_rows$project_short_title))
+               for (i in bad) {
+                 message(paste0("for " , i, " source = ", distinct_rows$source[i]))
+                 distinct_rows$project_short_title[i] <- distinct_rows$source[i]
+               }
+             }
+
+           unique(paste0(distinct_rows$project_short_title, " (", ifelse(is.na(distinct_rows$PPTID),distinct_rows$source,distinct_rows$PPTID), ")"))
+
+           }),
+
 
 tar_target(plot_files,
             command = {
               allplotnames <- NULL
+
+              if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+                STORE = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+              } else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
+                # Accessing 'beast' via Windows
+                STORE <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+              }
+
               for(i in 1:nrow(data_pillar_ecol_df)){
                 message(i)
                 if(!is.null(data_pillar_ecol_df$plot[[i]])&data_pillar_ecol_df$areaID[[i]]!="Non_Conservation_Area"){
-                filename <-  file.path(store,"..",
+                filename <-  file.path(STORE,"..",
                                        "data", "plots",
                                        make.names(paste0("plot_",
                                                          data_pillar_ecol_df$areaID[i],
