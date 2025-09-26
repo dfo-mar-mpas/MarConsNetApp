@@ -991,7 +991,8 @@ list(
             ds_all),
 
 
- tar_target(rv_rawdata_env,{
+ tar_target(rv_rawdata_env,{ # Environment
+   # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
    library(Mar.datawrangling)
    .pkgenv <- new.env(parent = emptyenv())
 
@@ -1006,30 +1007,34 @@ list(
    pwd <-  read.table("\\\\wpnsbio9039519.mar.dfo-mpo.ca\\sambashare\\MarConsNet\\MarConsNetTargets\\app_targets/objects/oracle.txt")$V1
 
 
-   get_data('rv', extract_user = "DAIGLER", extract_computer = "WLNSBIO90210", cxn = DBI::dbConnect(odbc::odbc(), dsn = "PTRAN", uid = "DAIGLER", pwd = pwd), reextract.override = T)
-
+   get_data('rv', extract_user = "DAIGLER", extract_computer = "WLNSBIO90210", cxn = DBI::dbConnect(odbc::odbc(), dsn = "PTRAN", uid = "DAIGLER", pwd = pwd), reextract.override = T, env=.pkgenv)
+   .pkgenv
  }
  ),
 
  tar_target(rv_data,{
+   # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
+
    # for whatever reason, we need to run:
    # tar_invalidate(c("ds_all","rv_rawdata_env"))
    # before re-running this target
+
    temp <- rv_rawdata_env
    ds_all # mentioned here because otherwise it won't be available for self_filter
 
-   temp$GSINF <- rv_rawdata_env$GSINF |>
+
+   GSINF <- temp$GSINF |>
      filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
      st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
               crs = 4326,
               remove = FALSE) |>
      st_filter(regions[regions$NAME_E=="Maritimes",]) |>
-     st_join(MPAs |> select(NAME_E), left=TRUE) |>
+     st_join(MPAs |> dplyr::select(NAME_E), left=TRUE) |>
      as.data.frame() |>
-     select(-geometry)
+     dplyr::select(-geometry)
 
 
-   self_filter(env = temp)
+   self_filter(env=temp)
 
    summarize_catches('rv',env = temp)
  }
@@ -1042,7 +1047,7 @@ list(
    temp <- rv_rawdata_env
    ds_all # mentioned here because otherwise it won't be available for self_filter
 
-   temp$GSINF <- rv_rawdata_env$GSINF |>
+   temp$GSINF <- temp$GSINF |>
      filter(!is.na(LONGITUDE),!is.na(LATITUDE)) |>
      st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
               crs = 4326,
