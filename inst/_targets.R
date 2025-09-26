@@ -1257,27 +1257,37 @@ list(
       )
   }),
 
-tar_target(name = rawdata_inaturalist_by_mpa,
+tar_target(name = rawdata_inaturalist_download,
   command = {
-    mpa <- MPAs[-which(MPAs$NAME_E == "Non_Conservation_Area"),]
-    rgbif::occ_search(
-        geometry = st_as_text(st_as_sfc(st_bbox(mpa))),
-        institutionCode = "iNaturalist",
-        limit = 100000
-      )
-  },
-  pattern = map(MPAs)),
+    d <- 5000
+
+    simplegeom <- st_simplify(st_buffer(MPAs[MPAs$NAME_E != "Non_Conservation_Area",],d),dTolerance = d) |>
+      st_make_valid() |>
+      st_union() |>
+      st_as_text()
+
+    occ_download(
+      pred_within(simplegeom),
+      pred_in("institutionCode", "iNaturalist"),
+      pred("hasCoordinate", TRUE),
+      pred("hasGeospatialIssue", FALSE),
+      format = "SIMPLE_CSV"
+    )
+
+  }),
 
 tar_target(name = data_inaturalist,
-  command = {
-    rawdata_inaturalist_by_mpa |>
-    map_dfr( ~.x$data)|>
-    st_as_sf(
-      coords = c("decimalLongitude", "decimalLatitude"),
-      crs = 4326,
-      remove = FALSE
-    )
-  }),
+           command = {
+             occ_download_wait(rawdata_inaturalist_download)
+             x <- occ_download_get(rawdata_inaturalist_download)
+             occ_download_import(x) |>
+               st_as_sf(
+                 coords = c("decimalLongitude", "decimalLatitude"),
+                 crs = 4326,
+                 remove = FALSE
+               ) |>
+               st_join(MPAs[, "NAME_E"], join = st_within)
+           }),
 
 
   tar_target(name = creature_feature,
