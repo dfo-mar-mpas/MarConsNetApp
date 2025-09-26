@@ -1995,6 +1995,10 @@ x
                        year = YEAR)  |>
                 dplyr::select(longitude, latitude, year, haddock_counts)
 
+              if (any(is.na(data$latitude) | is.na(data$longitude))) {
+                data <- data[-which(is.na(data$latitude) | is.na(data$longitude)),]
+              }
+
               process_indicator(data = data,
                                indicator_var_name = "haddock_counts",
                                indicator = "Haddock Number per Tow",
@@ -2029,6 +2033,10 @@ x
                        haddock_biomass = TOTWGT,
                        year = YEAR)  |>
                 dplyr::select(longitude, latitude, year, haddock_biomass)
+
+              if (any(is.na(data$latitude) | is.na(data$longitude))) {
+               data <- data[-which(is.na(data$latitude) | is.na(data$longitude)),]
+              }
 
               process_indicator(data = data,
                                indicator_var_name = "haddock_biomass",
@@ -3347,7 +3355,7 @@ tar_target(theme_ocean_structure_and_movement,
            command={
              x <- rbind(
                ind_otn_proportion_tags_detected_in_multiple_mpas[ , setdiff(names(ind_otn_proportion_tags_detected_in_multiple_mpas), c("data", "plot"))],
-               ind_surface_height[ , setdiff(names(ind_surface_height), c("data", "plot"))],
+               ind_surface_height[ , setdiff(names(ind_surface_heights), c("data", "plot"))],
                ind_stratification[ , setdiff(names(ind_stratification), c("data", "plot"))]
              )
              x$theme <- "Ocean Structure and Movement"
