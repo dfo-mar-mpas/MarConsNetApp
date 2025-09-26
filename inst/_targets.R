@@ -1348,26 +1348,33 @@ tar_target(data_protconn_EL_by_region,
              prot <- as.numeric(sum(st_area(mpas[mpas$region==regions$NAME_E,])))
              PCregion <-as.numeric(100*sqrt(sum(edgelist$product[is.na(edgelist$areaID)]))/A)
 
+
+             # for sites:
              summaryEL <- edgelist |>
                filter(!is.na(areaID)) |>
                group_by(areaID) |>
                mutate(PC = as.numeric(100*sqrt(sum(product))/A),
                  effect =(PCregion-PC)/PCregion) |>
                ungroup() |>
-               mutate(score = cume_dist(effect)) |>
-               nest(data = names(edgelist))
+               mutate(score = cume_dist(effect))
 
+             #adding the region
              summaryEL <- bind_rows(summaryEL,
-                                    data.frame(areaID = regions$NAME_E,
+                                    edgelist |>
+                                      filter(is.na(areaID)) |>
+                                    mutate(areaID = regions$NAME_E,
                                                PC = PCregion,
                                                effect = NA,
-                                               score = PCregion/prot))
+                                               score = PCregion/prot)) |>
+               mutate(region = regions$NAME_E)
 
-             summaryEL
+             summaryEL|>
+               nest(data = c(names(edgelist)[names(edgelist)!="areaID"],"region"))
 
 
            },
            pattern = map(regions)),
+
 
  ##### Indicators #####
 
@@ -2896,6 +2903,30 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
 
     ind
   }),
+
+tar_target(ind_protconn,
+           command = {
+             bind_rows(data_protconn_EL_by_region) |>
+               mutate(,
+                      indicator = "ProtConn (50km median negative binomial dispersal)",
+                      type = "Model",
+                      units = NA,
+                      scoring = "custom",
+                      PPTID = NA,
+                      source = NA,
+                      project_short_title = "ProtConn",
+                      climate = FALSE,
+                      design_target = FALSE,
+                      status_statement = paste0(
+                        ""
+                      ),
+                      trend_statement = paste0(
+                        ""
+                      ),
+                      climate_expectation = "FIXME",
+                      indicator_rationale = "The exchange of individuals between conservation sites can support ecosystem resilience, population recovery, genetic exchange, and the maintenance of biodiversity",
+                      bin_rationale = "FIXME")
+           }),
 
 
  ##### Indicator Bins #####
