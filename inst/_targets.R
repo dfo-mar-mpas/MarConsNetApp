@@ -42,7 +42,8 @@ pkgs <- c("sf",
           "rgbif",
           "qs",
           "qs2",
-          "odbc")
+          "odbc",
+          "rvest")
 shelf(pkgs)
 
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
@@ -1293,60 +1294,69 @@ tar_target(name = data_inaturalist,
   tar_target(name = creature_feature,
     command = {
       sptable <- data_inaturalist |>
-      st_as_sf(
-        coords = c("decimalLongitude", "decimalLatitude"),
-        crs = 4326,
-        remove = FALSE
-      ) |>
-      st_join(MPAs)
-      st_filter(!is.na(NAME_E)) |>
-      as.data.frame() |>
-      filter(!is.na(speciesKey),
-      kingdom != "Plantae"|genus == "Zostera", # remove plants except eelgrass
-      class!="Mammalia"|family %in% c("Phocidae","Otarioidea"), #remove mammals except seals
-      class!="Reptilia"|family %in% c("Cheloniidae","Dermochelyidae"),# remove reptiles except sea turtles
-      phylum!="Basidiomycota",phylum!="Ascomycota") |> # remove mushrooms and lichens
-      group_by(speciesKey,scientificName,kingdom, phylum, class,NAME_E) |>
-      reframe(n=n(),
-      exampleurl = references[1],
-      rightsHolder = rightsHolder[1]) |>
-      # arrange(desc(n)) |>
-      # head(10) |>
-      rowwise() |>
-      mutate(commonname = NA,
-        imageurl = {
-          url <- try(read_html(exampleurl) |>
-          html_node('meta[property="og:image"]') |>
-          html_attr('content'))
+        filter(!is.na(NAME_E)&NAME_E!="Non_Conservation_Area") |>
+        as.data.frame() |>
+        filter(!is.na(speciesKey),
+               kingdom != "Plantae"|genus == "Zostera", # remove plants except eelgrass
+               class!="Mammalia"|family %in% c("Phocidae","Otarioidea"), #remove mammals except seals
+               class!="Reptilia"|family %in% c("Cheloniidae","Dermochelyidae"),# remove reptiles except sea turtles
+               phylum!="Basidiomycota",phylum!="Ascomycota", # remove mushrooms and lichens
+               !(class %in% c("Insecta", "Arachnida")) # remove all insects and spiders
+        ) |>
+        group_by(speciesKey,scientificName,kingdom, phylum, class,NAME_E) |>
+        reframe(n=n(),
+                exampleurl = occurrenceID[1],
+                rightsHolder = rightsHolder[1]) |>
+        mutate(commonname = NA,
+               imageurl = NA,
+               image_column = NA)
+
+
+      for(i in 1:nrow(sptable)){
+        print(paste(i,sptable$scientificName[i]))
+        sptable$imageurl[i] <- {
+          url <- try(read_html(sptable$exampleurl[i]) |>
+                       html_node('meta[property="og:image"]') |>
+                       html_attr('content'))
           if (inherits(url, "try-error")) {
             NA
           } else {
             url
           }
-        },
-        image_column = paste0(
-          '<a href="', exampleurl, '" target="_blank">',
-          '<img src="', imageurl, '" style="max-height: 100px; max-width: 100px; object-fit: cover;"/>',
-          '<br>',rightsHolder,'</br>',
-          '</a>'
-        ))
-
-        for(i in 1:nrow(sptable)){
-          spnames <- try(name_usage(sptable$speciesKey[i], data = "vernacularNames")[[2]] )
-          if(nrow(spnames)>0|| !inherits(spnames, "try-error")) {
-            cn <- spnames |>
-            as.data.frame() |>
-            filter(language == "eng") |>
-            pull(vernacularName) |>
-            table() |>
-            sort(decreasing = TRUE) |>
-            head(1) |>
-            names()
-            if(!is.null(cn)){
-              sptable$commonname[i] <- cn
-            }
-          }
         }
+
+        sptable$image_column[i] <- paste0(
+          '<a href="', sptable$exampleurl[i], '" target="_blank">',
+          '<img src="', sptable$imageurl[i], '" style="max-height: 100px; max-width: 100px; object-fit: cover;"/>',
+          '<br>',sptable$rightsHolder[i],'</br>',
+          '</a>'
+        )
+
+
+
+        if(is.na(sptable$commonname[i])){
+          spnames <- try(name_usage(sptable$speciesKey[i], data = "vernacularNames")[[2]] )
+          if(!inherits(spnames, "try-error")) {
+            if(nrow(spnames)>0){
+              cn <- spnames |>
+                as.data.frame() |>
+                filter(language == "eng") |>
+                pull(vernacularName) |>
+                table() |>
+                sort(decreasing = TRUE) |>
+                head(1) |>
+                names()
+              if(!is.null(cn)){
+                sptable$commonname[sptable$speciesKey[i]==sptable$speciesKey] <- cn
+              }
+            }
+
+          }
+          closeAllConnections()
+          Sys.sleep(1) # to avoid overloading the server
+        }
+
+      }
 
         sptable
       }),
