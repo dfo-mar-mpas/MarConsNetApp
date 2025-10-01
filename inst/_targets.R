@@ -1257,27 +1257,37 @@ list(
       )
   }),
 
-tar_target(name = rawdata_inaturalist_by_mpa,
+tar_target(name = rawdata_inaturalist_download,
   command = {
-    mpa <- MPAs[-which(MPAs$NAME_E == "Non_Conservation_Area"),]
-    rgbif::occ_search(
-        geometry = st_as_text(st_as_sfc(st_bbox(mpa))),
-        institutionCode = "iNaturalist",
-        limit = 100000
-      )
-  },
-  pattern = map(MPAs)),
+    d <- 5000
+
+    simplegeom <- st_simplify(st_buffer(MPAs[MPAs$NAME_E != "Non_Conservation_Area",],d),dTolerance = d) |>
+      st_make_valid() |>
+      st_union() |>
+      st_as_text()
+
+    occ_download(
+      pred_within(simplegeom),
+      pred_in("institutionCode", "iNaturalist"),
+      pred("hasCoordinate", TRUE),
+      pred("hasGeospatialIssue", FALSE),
+      format = "SIMPLE_CSV"
+    )
+
+  }),
 
 tar_target(name = data_inaturalist,
-  command = {
-    rawdata_inaturalist_by_mpa |>
-    map_dfr( ~.x$data)|>
-    st_as_sf(
-      coords = c("decimalLongitude", "decimalLatitude"),
-      crs = 4326,
-      remove = FALSE
-    )
-  }),
+           command = {
+             occ_download_wait(rawdata_inaturalist_download)
+             x <- occ_download_get(rawdata_inaturalist_download)
+             occ_download_import(x) |>
+               st_as_sf(
+                 coords = c("decimalLongitude", "decimalLatitude"),
+                 crs = 4326,
+                 remove = FALSE
+               ) |>
+               st_join(MPAs[, "NAME_E"], join = st_within)
+           }),
 
 
   tar_target(name = creature_feature,
@@ -1369,26 +1379,33 @@ tar_target(data_protconn_EL_by_region,
              prot <- as.numeric(sum(st_area(mpas[mpas$region==regions$NAME_E,])))
              PCregion <-as.numeric(100*sqrt(sum(edgelist$product[is.na(edgelist$areaID)]))/A)
 
+
+             # for sites:
              summaryEL <- edgelist |>
                filter(!is.na(areaID)) |>
                group_by(areaID) |>
                mutate(PC = as.numeric(100*sqrt(sum(product))/A),
                  effect =(PCregion-PC)/PCregion) |>
                ungroup() |>
-               mutate(score = cume_dist(effect)) |>
-               nest(data = names(edgelist))
+               mutate(score = cume_dist(effect))
 
+             #adding the region
              summaryEL <- bind_rows(summaryEL,
-                                    data.frame(areaID = regions$NAME_E,
+                                    edgelist |>
+                                      filter(is.na(areaID)) |>
+                                    mutate(areaID = regions$NAME_E,
                                                PC = PCregion,
                                                effect = NA,
-                                               score = PCregion/prot))
+                                               score = PCregion/prot)) |>
+               mutate(region = regions$NAME_E)
 
-             summaryEL
+             summaryEL|>
+               nest(data = c(names(edgelist)[names(edgelist)!="areaID"],"region"))
 
 
            },
            pattern = map(regions)),
+
 
  ##### Indicators #####
 
@@ -3166,6 +3183,30 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
 
     as_tibble(ind)
   }),
+
+tar_target(ind_protconn,
+           command = {
+             bind_rows(data_protconn_EL_by_region) |>
+               mutate(,
+                      indicator = "ProtConn (50km median negative binomial dispersal)",
+                      type = "Model",
+                      units = NA,
+                      scoring = "custom",
+                      PPTID = NA,
+                      source = NA,
+                      project_short_title = "ProtConn",
+                      climate = FALSE,
+                      design_target = FALSE,
+                      status_statement = paste0(
+                        ""
+                      ),
+                      trend_statement = paste0(
+                        ""
+                      ),
+                      climate_expectation = "FIXME",
+                      indicator_rationale = "The exchange of individuals between conservation sites can support ecosystem resilience, population recovery, genetic exchange, and the maintenance of biodiversity",
+                      bin_rationale = "FIXME")
+           }),
 
 
 tar_target(objective_indicators,
