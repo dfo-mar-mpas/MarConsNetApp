@@ -51,6 +51,13 @@ app <- function() {
   }
   condition <- paste0('input.tabs === "tab_0"')
 
+  if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+    STORE = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+  } else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
+    # Accessing 'beast' via Windows
+    STORE <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+  }
+
 ## FILTERING FOR
 
   options(shiny.error = browser)
@@ -60,7 +67,7 @@ app <- function() {
   pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
   #all_project_geoms <- all_project_geoms[-which(all_project_geoms$areaID == "Non_Conservation_Area"),]
 
-  obj <- list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE)[which(grepl("objectives.xlsx",list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE) ))]
+  obj <- paste0(STORE,"/data/objectives.xlsx")
   obj_excel <-read_excel(obj)
 
 
@@ -610,7 +617,12 @@ server <- function(input, output, session) {
   } else {
     reporturl <- paste0("/",basename(getwd()),"/htmlfiles/")
   }
-  shiny::addResourcePath("htmlfiles", file.path(onedrive,"data", "reports"))
+
+  # if (exists("onedrive")) {
+  # shiny::addResourcePath("htmlfiles", file.path(onedrive,"data", "reports"))
+  # } else {
+    shiny::addResourcePath("htmlfiles", file.path(STORE,"data", "reports"))
+ # }
 
 
   # Check if the static HTML file exists
