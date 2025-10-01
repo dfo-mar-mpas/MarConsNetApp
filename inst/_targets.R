@@ -643,9 +643,9 @@ list(
                      O$tab[i] <- APPTABS$tab[keep]
                      O$link[i] <- APPTABS$link[keep]
                    } else {
-                     k <- which(data_pillar_ecol_df$indicators == trimws(gsub("-", "", gsub("\n", "", O$objectives[i]))), "right")
-                     O$tab[i] <- data_pillar_ecol_df$tab[k]
-                     O$link[i] <- data_pillar_ecol_df$link[k]
+                     k <- which(pillar_ecol_df$indicators == trimws(gsub("-", "", gsub("\n", "", O$objectives[i]))), "right")
+                     O$tab[i] <- pillar_ecol_df$tab[k]
+                     O$link[i] <- pillar_ecol_df$link[k]
 
                    }
                  } else {
@@ -1419,18 +1419,18 @@ tar_target(data_protconn_EL_by_region,
 
  ##### Indicators #####
 
- # tar_target(ind_placeholder_df,ind_placeholder(areas = all_areas)),
- tar_target(ind_placeholder_df,
-            command = {
-             process_indicator(data = NA,
-                               indicator = "placeholder",
-                               areas = MPAs,
-                               plot_type = c('time-series','map'),
-                               climate_expectation="FIXME",
-                               indicator_rationale="FIXME",
-                               bin_rationale="FIXME"
-                               )
-            }),
+  tar_target(ind_placeholder_df,ind_placeholder(areas = MPAs)),
+ # tar_target(ind_placeholder_df,
+ #            command = {
+ #             process_indicator(data = NA,
+ #                               indicator = "placeholder",
+ #                               areas = MPAs,
+ #                               plot_type = c('time-series','map'),
+ #                               climate_expectation="FIXME",
+ #                               indicator_rationale="FIXME",
+ #                               bin_rationale="FIXME"
+ #                               )
+ #            }),
 
 tar_target(ind_otn_number_of_recievers,
            command={
@@ -1705,10 +1705,22 @@ tar_target(ind_otn_proportion_tags_detected_in_multiple_mpas,
                  x$plot[[i]] <- map
                  x$data[[i]] <- tester[tester$areaID == name_of_interest, c("tag_id", "geometry")]
 
+                 desired_order <- c(
+                   "areaID", "indicator", "type", "units", "scoring",
+                   "PPTID", "project_short_title", "climate", "design_target", "data",
+                   "score", "status_statement", "trend_statement", "source", "climate_expectation",
+                   "indicator_rationale", "objectives", "bin_rationale", "plot"
+                 )
+
+                 x <- x[ , desired_order]
+
+
+
+
                }
              }
 
-x
+as_tibble(x)
 
 
            }
@@ -2022,6 +2034,10 @@ x
                        year = YEAR)  |>
                 dplyr::select(longitude, latitude, year, haddock_counts)
 
+              if (any(is.na(data$latitude) | is.na(data$longitude))) {
+                data <- data[-which(is.na(data$latitude) | is.na(data$longitude)),]
+              }
+
               process_indicator(data = data,
                                indicator_var_name = "haddock_counts",
                                indicator = "Haddock Number per Tow",
@@ -2056,6 +2072,10 @@ x
                        haddock_biomass = TOTWGT,
                        year = YEAR)  |>
                 dplyr::select(longitude, latitude, year, haddock_biomass)
+
+              if (any(is.na(data$latitude) | is.na(data$longitude))) {
+               data <- data[-which(is.na(data$latitude) | is.na(data$longitude)),]
+              }
 
               process_indicator(data = data,
                                indicator_var_name = "haddock_biomass",
@@ -2366,7 +2386,7 @@ tar_target(ind_phosphate,
               data <- data_azmp_Discrete_Occupations_Sections  |>
                 dplyr::select(longitude, latitude, year, depth, temperature)
 
-              process_indicator(data = data,
+              x <- process_indicator(data = data,
                                indicator_var_name = "temperature",
                                indicator = "Temperature",
                                type = "Discrete Occupations Sections",
@@ -2388,6 +2408,7 @@ tar_target(ind_phosphate,
                                  "Maintain Ecosystem Resistance",
                                  "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                ))
+              x
             }),
 
  tar_target(ind_chlorophyll,
@@ -3155,7 +3176,7 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
       bin_rationale = "FIXME"
     )
 
-    ind$p <- list(
+    ind$plot <- list(
       ggplot(as.data.frame(sc[-1]), aes(x = N, y = means * 100)) +
         geom_line() +
         geom_ribbon(
@@ -3170,7 +3191,7 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
         theme_classic()
     )
 
-    ind
+    as_tibble(ind)
   }),
 
 tar_target(ind_protconn,
@@ -3200,27 +3221,34 @@ tar_target(ind_protconn,
 
 tar_target(objective_indicators,
            command={
-             pillar_ecol_df <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)),]
-             obj <- list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE)[which(grepl("objectives.xlsx",list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE) ))]
-             x <-read_excel(obj)
-             x$Objective <- sub("\\.$", "", x$Objective)
-             x$Objective <- sub("\\;$", "", x$Objective)
+             #cat(paste0("The length of pillar_ecol is ", length(pillar_ecol_df$bin)))
+             ped <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)),]
+             if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
+               STORE = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+             } else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
+               # Accessing 'beast' via Windows
+               STORE <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+             }
+             obj <- paste0(STORE,"/data/objectives.xlsx")
+             #obj <- list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE)[which(grepl("objectives.xlsx",list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE) ))]
+              x <-read_excel(obj)
+              x$Objective <- sub("\\.$", "", x$Objective)
+              x$Objective <- sub("\\;$", "", x$Objective)
 
-             indicator_objectives <- trimws(unique(unlist(strsplit(pillar_ecol_df$objectives, ";;;"))), 'both')
-             indicator_objectives <- indicator_objectives[-which(indicator_objectives == "NA")]
+              indicator_objectives <- trimws(unique(unlist(strsplit(ped$objectives, ";;;"))), 'both')
+              indicator_objectives <- indicator_objectives[-which(indicator_objectives == "NA")]
 
-
-             ped_objectives <- vector("list", length=length(indicator_objectives))
+              ped_objectives <- vector("list", length=length(indicator_objectives))
 
              for (i in seq_along(ped_objectives)) {
                message(i)
-               keep <- which(grepl(indicator_objectives[i], pillar_ecol_df$objectives, fixed = TRUE))
+               keep <- which(grepl(indicator_objectives[i], ped$objectives, fixed = TRUE))
                if (x$Framework[which(x$Objective == indicator_objectives[i])] %in% MPAs$NAME_E) {
-                 keep2 <- which(pillar_ecol_df$areaID == x$Framework[which(x$Objective == indicator_objectives[i])])
+                 keep2 <- which(ped$areaID == x$Framework[which(x$Objective == indicator_objectives[i])])
                  keep <- intersect(keep, keep2)
                }
 
-               ped_objectives[[i]] <- pillar_ecol_df[keep, ]
+               ped_objectives[[i]] <- ped[keep, ]
 
              }
              names(ped_objectives) <- indicator_objectives
@@ -3231,8 +3259,8 @@ tar_target(objective_indicators,
 
              for (obj_name in new_objectives) {
                # create a blank NA df with the same columns
-               na_df <- as.data.frame(matrix(NA, nrow = 1, ncol = ncol(pillar_ecol_df)))
-               names(na_df) <- names(pillar_ecol_df)
+               na_df <- as.data.frame(matrix(NA, nrow = 1, ncol = ncol(ped)))
+               names(na_df) <- names(ped)
 
                # add it to the list with the name
                ped_objectives[[obj_name]] <- na_df
@@ -3247,11 +3275,10 @@ tar_target(objective_tabs,
            # FOR TABS, THERE ARE APPTABS, WHICH ARE FOR FLOWER, PILLAR_ECOL_DF WHICH ARE FOR INDICATORS, AND OBJECTIVE_TABS
            # WHICH ARE FOR OBJECTIVES
            command={
-
+            ped <- pillar_ecol_df
            ot <- data.frame(objectives=names(objective_indicators), tab=NA)
 
-           max(sort(as.numeric(sub(".*_", "", pillar_ecol_df$tab))))
-           start <- max(sort(as.numeric(sub(".*_", "", pillar_ecol_df$tab))))+1
+           start <- max(sort(as.numeric(sub(".*_", "", ped$tab))))+1
            end <- start+(length(ot$objectives)-1)
            tabs <- start:end
            ot$tab <- paste0("tab_", tabs)
@@ -3287,7 +3314,8 @@ tar_target(objective_tabs,
                              ind_musquash_nekton_diversity,
                              ind_musquash_birds_sample_coverage
 
-            )),
+            )
+            ),
  tar_target(bin_habitat_Connectivity_df,
             aggregate_groups("bin",
                              "Connectivity",
@@ -3767,8 +3795,8 @@ tar_target(plot_files,
               for(i in 1:nrow(data_pillar_ecol_df)){
                 message(i)
                 if(!is.null(data_pillar_ecol_df$plot[[i]])&data_pillar_ecol_df$areaID[[i]]!="Non_Conservation_Area"){
-                filename <-  file.path(STORE,"..",
-                                       "data", "plots",
+                filename <-  file.path(STORE,
+                                       "data", "plot",
                                        make.names(paste0("plot_",
                                                          data_pillar_ecol_df$areaID[i],
                                                          "_",
