@@ -1299,9 +1299,9 @@ tar_target(name = data_inaturalist,
         filter(!is.na(speciesKey),
                kingdom != "Plantae"|genus == "Zostera", # remove plants except eelgrass
                class!="Mammalia"|family %in% c("Phocidae","Otarioidea"), #remove mammals except seals
-               class!="Reptilia"|family %in% c("Cheloniidae","Dermochelyidae"),# remove reptiles except sea turtles
+               class!="Testudines"|family %in% c("Cheloniidae","Dermochelyidae"),# remove reptiles except sea turtles
                phylum!="Basidiomycota",phylum!="Ascomycota", # remove mushrooms and lichens
-               !(class %in% c("Insecta", "Arachnida")) # remove all insects and spiders
+               !(class %in% c("Insecta", "Arachnida", "Squamata","Amphibia")) # remove all insects, spiders, amphibians, and snakes
         ) |>
         group_by(speciesKey,scientificName,kingdom, phylum, class,NAME_E) |>
         reframe(n=n(),
