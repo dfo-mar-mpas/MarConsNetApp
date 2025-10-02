@@ -1307,11 +1307,12 @@ tar_target(name = data_inaturalist,
         reframe(n=n(),
                 exampleurl = occurrenceID[1],
                 rightsHolder = rightsHolder[1]) |>
-        mutate(commonname = NA,
-               imageurl = NA,
-               image_column = NA)
+        mutate(commonname = NA_character_,
+               imageurl = NA_character_,
+               image_column = NA_character_)
 
 
+      conns_before <- showConnections()
       for(i in 1:nrow(sptable)){
         print(paste(i,sptable$scientificName[i]))
         sptable$imageurl[i] <- {
@@ -1319,7 +1320,7 @@ tar_target(name = data_inaturalist,
                        html_node('meta[property="og:image"]') |>
                        html_attr('content'))
           if (inherits(url, "try-error")) {
-            NA
+            NA_character_
           } else {
             url
           }
@@ -1352,13 +1353,19 @@ tar_target(name = data_inaturalist,
             }
 
           }
-          closeAllConnections()
+          conns_after <- showConnections()
+          new_conns <- setdiff(rownames(conns_after), rownames(conns_before))
+          for(conn in new_conns) {
+            try(close(getConnection(as.integer(conn))), silent = TRUE)
+          }
+          # closeAllConnections()
           Sys.sleep(1) # to avoid overloading the server
         }
 
       }
 
-        sptable
+
+      sptable
       }),
 
 tar_target(data_inseadistance_matrix,
