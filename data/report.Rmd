@@ -17,12 +17,13 @@ library(rgbif)
 library(rvest)
 library(dplyr)
 library(DT)
+library(webshot2)
 
 if (any(pillar_ecol_df$areaID == "Non_Conservation_Area")) {
 pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
 }
 
-if (any(pillar_ecol_df$status_statement == "No features are represented.")) {
+if (any(pillar_ecol_df$status_statement == "No features are represented.", na.rm = TRUE)) {
     pillar_ecol_df$status_statement[pillar_ecol_df$status_statement == "No features are represented."] <- paste0(
           "No features are represented. ** Note: a score will still be assigned if multiple MPAs are 'tied' for the lowest rank. ",
           "For example, if no features are represented but an MPA has a score of 50, this indicates that 50% of MPAs share the 'least represented' status."
@@ -40,8 +41,8 @@ image_files <- list.files(image_folder, full.names = TRUE)
 
 # AREA GRADE
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
-string <- state$mpas
-p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+string <- params$mpas
+p <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
 
 KEEP <- calc_group_score(df=p,grouping_var = "bin",
                                score_var = "score",
@@ -77,7 +78,7 @@ for (i in seq_along(unique(p$bin))) {
 }
 
 # PERCENT FUNDING FOR THIS AREA
-com <- cost_of_mpas[which(cost_of_mpas$area == state$mpas & !(round(cost_of_mpas$percent_sites_in_mpa,0) == 0)),]
+com <- cost_of_mpas[which(cost_of_mpas$area == params$mpas & !(round(cost_of_mpas$percent_sites_in_mpa,0) == 0)),]
 
 if (length(com$project_id) != 0) {
 proj_titles <- sapply(com$project_id, function(pid) {
@@ -114,18 +115,18 @@ percent_funding <- data.frame( #old df
 ) %>%
   mutate(Funding_pct = Funding / sum(Funding))
 
-money_percentage <- round(percent_funding$Funding_pct[which(percent_funding$MPA == state$mpas)]*100, 2)
+money_percentage <- round(percent_funding$Funding_pct[which(percent_funding$MPA == params$mpas)]*100, 2)
 
 investment <- paste0("The following DFO projects have sampled in ",
-             state$mpas, " : ",
+             params$mpas, " : ",
              paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; "), " which accounted for ", money_percentage, "% of O&M funding to the protected areas.")
 } else {
-  investment <- paste0("No identified DFO projects have sampled in ", state$mpas, " and therefore there is no identified O&M investment.")
+  investment <- paste0("No identified DFO projects have sampled in ", params$mpas, " and therefore there is no identified O&M investment.")
 }
 
 # STATUS OF OBJECTIVES
 
-keepO <- which(names(Objectives_processed) == state$mpas)
+keepO <- which(names(Objectives_processed) == params$mpas)
 S_Objectives <- Objectives_processed[[keepO]]
 if (!(length(S_Objectives) == 0)) {
 if (!(length(keepO) == 0)) {
@@ -139,7 +140,7 @@ if (!(length(keepO) == 0)) {
   site_color <- NULL
   
   for (i in seq_along(filtered_odfS$objectives)) {
-    KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+    KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
     KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
     KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
@@ -171,7 +172,7 @@ if (!(length(keepO) == 0)) {
 div(
   style = "border: 2px solid black; padding: 10px; border-radius: 5px; background-color: #f9f9f9;",
   tags$p(investment),
-  tags$p(paste0(state$mpas, " has an overall ecological status score of ", area_grade, ".")),
+  tags$p(paste0(params$mpas, " has an overall ecological status score of ", area_grade, ".")),
   tags$p(status_objectives),
   tags$p(paste0(
     "No data exists for the following indicators bins: ",
@@ -216,15 +217,15 @@ maps <- leaflet() %>%
   addTiles()
 
 fill_color <- ifelse(
-  is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]),
+  is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == params$mpas)]),
   "#EDEDED",
-  flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == state$mpas)]]]
+  flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == params$mpas)]]]
 )
 
 border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
 
 maps <- maps %>% 
-  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == state$mpas)], fillOpacity = 0.05, weight=2, color=border_color)
+  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == params$mpas)], fillOpacity = 0.05, weight=2, color=border_color)
 
 maps
 
@@ -320,8 +321,8 @@ grade_colors_network <- NULL
 
 for (i in seq_along(filtered_odf$objectives)) {
   # GRADES
-  if (state$mpas %in% MPAs$NAME_E) {
-    KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+  if (params$mpas %in% MPAs$NAME_E) {
+    KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
   } else {
    KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
   }
@@ -369,10 +370,10 @@ cat("<br>")
 for (i in seq_along(n_objectives)) {
   cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n\n', toupper(n_objectives[i])))
   k1 <- which(grepl(n_objectives[i], pillar_ecol_df$objectives, fixed=TRUE))
-  if (state$mpas %in% regions$NAME_E) {
+  if (params$mpas %in% regions$NAME_E) {
     k2 <- k1
   } else {
-    k2 <- which(pillar_ecol_df$areaID == state$mpas)
+    k2 <- which(pillar_ecol_df$areaID == params$mpas)
   }
   keep <- intersect(k1,k2)
   if (!(length(keep) == 0)) {
@@ -400,7 +401,7 @@ for (i in seq_along(n_objectives)) {
     
     
     # FINDING PLOT
-      keep1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
+      keep1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
       keep2 <- which(grepl(make.names(pillar_ecol_df$indicator[keep[j]]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
       KEEP <- intersect(keep1,keep2)
       
@@ -491,10 +492,10 @@ if (!(length(S_Objectives) == 0)) {
 for (i in seq_along(textO)) {
 cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n\n', toupper(textO[i])))
   k1 <- which(grepl(textO[i], pillar_ecol_df$objectives, fixed=TRUE))
-  if (state$mpas %in% regions$NAME_E) {
+  if (params$mpas %in% regions$NAME_E) {
     k2 <- k1
   } else {
-    k2 <- which(pillar_ecol_df$areaID == state$mpas)
+    k2 <- which(pillar_ecol_df$areaID == params$mpas)
   }
   keep <- intersect(k1,k2)
   if (!(length(keep) == 0)) {
@@ -523,7 +524,7 @@ cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n
     
     
     # FINDING PLOT
-      keep1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
+      keep1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
       keep2 <- which(grepl(make.names(pillar_ecol_df$indicator[keep[j]]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
       KEEP <- intersect(keep1,keep2)
       
@@ -588,7 +589,7 @@ ECOLOGICAL OVERVIEW
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
 cat('<h2>Flower Plot</h2>\n')  # 🔴 header
 
-plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),],
+plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),],
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "score",
@@ -603,11 +604,11 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),],
 
 
 ```{r, echo=FALSE, results='asis'}
-if (state$mpas %in% regions$NAME_E) {
+if (params$mpas %in% regions$NAME_E) {
   table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
   
 } else {
-  table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+  table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
 }
 if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
   table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
@@ -631,7 +632,7 @@ ddff <- table_ped %>%
   arrange(grouping, bin) %>%
   setNames(toupper(names(.)))
 
-if (state$mpas %in% regions$NAME_E) {
+if (params$mpas %in% regions$NAME_E) {
   # FIXME!!!!!
   
   ddff_unique <- ddff %>%
@@ -729,7 +730,7 @@ print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
 library(knitr)
 library(leaflet)
 
-keeper <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas), ]
+keeper <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas), ]
 
 BINS <- unique(trimws(tolower(unlist(
   strsplit(keeper$bin, ";")
@@ -776,7 +777,7 @@ for (i in seq_along(keeper2)) {
     
     
     # FINDING PLOT
-      k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
+      k1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
       k2 <- which(grepl(make.names(keeper2[[i]]$Indicator[j]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
       KEEP <- intersect(k1,k2)
       
@@ -807,7 +808,7 @@ for (i in seq_along(keeper2)) {
   pillar_ecol_df$scoring[
     which(
       pillar_ecol_df$indicator == keeper2[[i]]$Indicator[j] &
-      pillar_ecol_df$areaID == state$mpas
+      pillar_ecol_df$areaID == params$mpas
     )
   ]
 ))
@@ -940,7 +941,7 @@ webshot(tmp_html, file = tmp_png, vwidth = 1000, vheight = 1000)
 
 if (length(com$project_id) != 0) {
   cat(paste0("<p>The investment information is based on the following internal DFO projects that have had samples in ",
-             state$mpas, " : ",
+             params$mpas, " : ",
              paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; "),
              "</p>"))
 }
@@ -983,7 +984,7 @@ apg_unique <- apg_unique %>%
 
 # Getting colors for polygons
 
-money_mpas <- MPAs[which(MPAs$NAME_E %in% state$mpas),]
+money_mpas <- MPAs[which(MPAs$NAME_E %in% params$mpas),]
 
 # GETTING PROJECTS
 pptids <- unique(apg_unique$PPTID)
@@ -1024,11 +1025,11 @@ legend_html <- paste0(
 )
 
 
-map <- leaflet(apg_unique[which(apg_unique$areaID == state$mpas),]) %>%
+map <- leaflet(apg_unique[which(apg_unique$areaID == params$mpas),]) %>%
     addTiles() %>%
     addPolygons(
         data = money_mpas$geoms,
-        fillColor = ifelse(money_mpas$NAME_E == state$mpas, fill_color, "lightgray"),
+        fillColor = ifelse(money_mpas$NAME_E == params$mpas, fill_color, "lightgray"),
         fillOpacity = 0.9,
         color = "grey30",
         weight = 6,
@@ -1053,21 +1054,21 @@ saveWidget(map, tmp_html, selfcontained = TRUE)
 tmp_png <- tempfile(fileext = ".png")
 
 # Take a snapshot of the HTML widget
-#webshot(tmp_html, file = tmp_png, vwidth = 1000, vheight = 1000,quiet=TRUE)
+webshot(tmp_html, file = tmp_png, vwidth = 1000, vheight = 1000)
 
 
 
 # ggplot pie chart
 percent_funding <- percent_funding %>%
   mutate(
-    fill_col = ifelse(MPA == state$mpas, fill_color, "gray"),
-    legend_label = ifelse(MPA == state$mpas, MPA, "Other Protected Areas")  # ⬅ RED DOT: legend_label matches what we want in the legend
+    fill_col = ifelse(MPA == params$mpas, fill_color, "gray"),
+    legend_label = ifelse(MPA == params$mpas, MPA, "Other Protected Areas")  # ⬅ RED DOT: legend_label matches what we want in the legend
   )
 
 # Named vector for scale_fill_manual
 fill_values <- setNames(
   c(fill_color, "gray"),
-  c(state$mpas, "Other Protected Areas")  # ⬅ RED DOT: name matches legend_label exactly
+  c(params$mpas, "Other Protected Areas")  # ⬅ RED DOT: name matches legend_label exactly
 )
 
 # Plot
@@ -1097,8 +1098,7 @@ tagList(
            # Leaflet map snapshot
            tags$div(style = "flex: 1;",
                     tags$img(
-                      src = base64enc::dataURI(file = webshot(tmp_html, file = tmp_png, vwidth = 1000, vheight = 1000)
-, mime = "image/png"),  # ⬅ RED CHANGE: insert PNG of map
+                      src = base64enc::dataURI(file = tmp_png, mime = "image/png"),  # ⬅ RED CHANGE: insert PNG of map
                       style = "max-width: 100%; height: auto;"                      # ⬅ RED CHANGE: style for map image
                     )
            )
@@ -1116,15 +1116,15 @@ tagList(
 
 cat("### Climate Change\n")
 
-climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == state$mpa)])
+climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == params$mpas)])
 
 for (i in seq_along(climate_indicators)) {
-  indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == state$mpas)
+  indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == params$mpas)
   
   if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df$trend_statement[indicator_keep]))) {
     
     excel_keep <- which(climate$Indicator == climate_indicators[i])
-    pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == state$mpas)
+    pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == params$mpas)
     
     cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
     
@@ -1186,7 +1186,7 @@ cat(paste0(
 cat("\n\n")
 
 # Bad grade table
-badGrade <- which(pillar_ecol_df$areaID == state$mpas & (!(is.na(pillar_ecol_df$indicator))) & (!(pillar_ecol_df$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df$indicator))) & (pillar_ecol_df$score < 51 | is.na(pillar_ecol_df$score)))
+badGrade <- which(pillar_ecol_df$areaID == params$mpas & (!(is.na(pillar_ecol_df$indicator))) & (!(pillar_ecol_df$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df$indicator))) & (pillar_ecol_df$score < 51 | is.na(pillar_ecol_df$score)))
 
 badGradeTable <- pillar_ecol_df[badGrade, ] |> 
   dplyr::group_by(bin) |>
@@ -1212,7 +1212,7 @@ print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Ex
 
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
-project_subset <- pillar_ecol_df$PPTID[which(pillar_ecol_df$areaID == state$mpas)]
+project_subset <- pillar_ecol_df$PPTID[which(pillar_ecol_df$areaID == params$mpas)]
 if (!(length(project_subset) == 0)) {
 p_subset <- unique(trimws(unlist(strsplit(project_subset, ";")), "both"))
 }
@@ -1301,19 +1301,19 @@ if (length(deliv_keep > 0)) {
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
 # Which ones to keep
-csas_keep <- which(grepl(paste(state$mpas, collapse = "|"), csas$title)) # state$mpas
-if (state$mpas == "Western and Emerald Banks Marine Refuge") {
+csas_keep <- which(grepl(paste(params$mpas, collapse = "|"), csas$title)) # params$mpas
+if (params$mpas == "Western and Emerald Banks Marine Refuge") {
 csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
-} else if (state$mpas ==  "St. Anns Bank Marine Protected Area") {
+} else if (params$mpas ==  "St. Anns Bank Marine Protected Area") {
   csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))
-} else if (state$mpas == "Musquash Estuary Marine Protected Area") {
+} else if (params$mpas == "Musquash Estuary Marine Protected Area") {
   csas_keep <- c(csas_keep, which(grepl("Musquash", csas$title, ignore.case=TRUE)))
 }
 
 if (length(csas_keep) > 0) {
   CSAS <- csas[csas_keep,]
   names(CSAS) <- c("Title", "Date")
-  print(knitr::kable(CSAS, caption = paste0("CSAS Processes for " , state$mpas),row.names=FALSE))
+  print(knitr::kable(CSAS, caption = paste0("CSAS Processes for " , params$mpas),row.names=FALSE))
 } else {
   cat("There have been no identified relevant CSAS meetings in the CSAS DMapps related to this area.")
 }
