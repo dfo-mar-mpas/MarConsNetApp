@@ -30,6 +30,7 @@
 #' @importFrom stringr str_extract_all
 #' @importFrom magrittr %>%
 #' @importFrom dplyr arrange
+#' @importFrom targets tar_load
 #'
 #' @export
 #' @examples
@@ -606,23 +607,18 @@ server <- function(input, output, session) {
     }
   })
 
-  if(STORE != "MarConsNetTargets"){
-    reporturl <- "/htmlfiles/"
-  } else {
-    reporturl <- paste0("/",basename(getwd()),"/htmlfiles/")
-  }
 
-  # if (exists("STORE")) {
-  # shiny::addResourcePath("htmlfiles", file.path(STORE,"data", "reports"))
-  # } else {
-    shiny::addResourcePath("htmlfiles", file.path(STORE,"data", "reports"))
- # }
 
+
+  reporturl <- paste0("/",basename(getwd()),"/htmlfiles/")
+  reportpath <- file.path(STORE,"data", "reports")
+
+  shiny::addResourcePath("htmlfiles", reportpath)
 
   # Check if the static HTML file exists
   observe({
     req(state$mpas)
-    static_file_path <- paste0(file.path(STORE,"data", "reports"), "/", make.names(paste0(state$mpas,".html")))
+    static_file_path <- file.path(reportpath, make.names(paste0(state$mpas,".html")))
     if (file.exists(static_file_path)) {
       # Show a link to the existing file
       output$report_button_ui <- renderUI({
