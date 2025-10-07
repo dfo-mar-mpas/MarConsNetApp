@@ -16,20 +16,21 @@
 #'  sidebarPanel mainPanel plotOutput column reactiveValues reactive
 #'   observeEvent renderUI selectInput actionButton actionLink showModal
 #'    modalDialog HTML updateTabsetPanel tagList
-#'     showNotification shinyApp
+#'     showNotification shinyApp br
 #' @importFrom shinyjs useShinyjs
 #' @importFrom DT renderDT dataTableOutput datatable formatStyle styleEqual
 #' @importFrom leaflet leafletOutput renderLeaflet leaflet addTiles addPolygons
 #'  addCircleMarkers  addLegend
-#' @importFrom MarConsNetAnalysis plot_flowerplot
+#' @importFrom MarConsNetAnalysis plot_flowerplot calc_group_score calc_letter_grade
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
-#' @importFrom ggplot2 ggplot geom_bar ylim theme_void coord_flip guides
 #' @importFrom viridis viridis
 #' @importFrom sf st_as_sf st_within st_coordinates st_crs
 #' @importFrom dataSPA subsetSPA
 #' @importFrom stringr str_extract_all
 #' @importFrom magrittr %>%
-#' @importFrom dplyr arrange
+#' @importFrom dplyr arrange if_else filter select mutate left_join distinct group_by summarize reframe ungroup sym rowwise row_number
+#' @importFrom targets tar_load
+#' @importFrom readxl read_excel
 #'
 #' @export
 #' @examples
