@@ -3791,12 +3791,7 @@ tar_target(plot_files,
             command = {
               allplotnames <- NULL
 
-              if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
-                STORE = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
-              } else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
-                # Accessing 'beast' via Windows
-                STORE <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
-              }
+              STORE <- path_to_store()
 
               for(i in 1:nrow(data_pillar_ecol_df)){
                 message(i)
