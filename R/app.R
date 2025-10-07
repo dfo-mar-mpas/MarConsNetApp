@@ -1164,6 +1164,10 @@ server <- function(input, output, session) {
                                     "plots")
           image_files <- list.files(image_folder, full.names = TRUE)
 
+          if (length(image_files) == 0) {
+            image_files <- list.files(file.path(STORE, "data", "plot"), full.names = TRUE)
+          }
+
 
           k2 <- which(grepl(make.names(pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
 
@@ -1175,6 +1179,9 @@ server <- function(input, output, session) {
           }
 
           KEEP <- intersect(k1,k2)
+
+          #browser()
+
 
           image_files <- image_files[KEEP]
 
