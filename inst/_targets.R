@@ -1358,7 +1358,6 @@ tar_target(name = data_inaturalist,
           for(conn in new_conns) {
             try(close(getConnection(as.integer(conn))), silent = TRUE)
           }
-          # closeAllConnections()
           Sys.sleep(1) # to avoid overloading the server
         }
 

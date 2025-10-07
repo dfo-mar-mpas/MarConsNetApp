@@ -40,23 +40,17 @@
 # Define UI
 
 app <- function() {
-  if(dir.exists(Sys.getenv("OneDriveCommercial"))){
-    onedrive <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets")
-  } else {
-    onedrive <- "MarConsNetTargets"
-    if(!exists("APPTABS")){
-      tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological"),
-               store = "MarConsNetTargets/app_targets")
-    }
-  }
-  condition <- paste0('input.tabs === "tab_0"')
 
-  if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
-    STORE = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
-  } else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
-    # Accessing 'beast' via Windows
-    STORE <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+  # find the path to the targets data store
+  STORE <- path_to_store()
+
+  # load targets if necessary
+  if(!exists("APPTABS")){
+    tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators"),
+             store = STORE)
   }
+
+  condition <- paste0('input.tabs === "tab_0"')
 
 ## FILTERING FOR
 
@@ -576,7 +570,7 @@ server <- function(input, output, session) {
                renderImage({
                  # Path to your image outside the 'www' folder
                  list(
-                   src = paste0(onedrive, "/data/visual_flow.png"),
+                   src = paste0(STORE, "/data/visual_flow.png"),
                    contentType = "image/png",
                    width = "580px",
                    height = "auto"
@@ -612,14 +606,14 @@ server <- function(input, output, session) {
     }
   })
 
-  if(onedrive != "MarConsNetTargets"){
+  if(STORE != "MarConsNetTargets"){
     reporturl <- "/htmlfiles/"
   } else {
     reporturl <- paste0("/",basename(getwd()),"/htmlfiles/")
   }
 
-  # if (exists("onedrive")) {
-  # shiny::addResourcePath("htmlfiles", file.path(onedrive,"data", "reports"))
+  # if (exists("STORE")) {
+  # shiny::addResourcePath("htmlfiles", file.path(STORE,"data", "reports"))
   # } else {
     shiny::addResourcePath("htmlfiles", file.path(STORE,"data", "reports"))
  # }
@@ -628,7 +622,7 @@ server <- function(input, output, session) {
   # Check if the static HTML file exists
   observe({
     req(state$mpas)
-    static_file_path <- paste0(file.path(onedrive,"data", "reports"), "/", make.names(paste0(state$mpas,".html")))
+    static_file_path <- paste0(file.path(STORE,"data", "reports"), "/", make.names(paste0(state$mpas,".html")))
     if (file.exists(static_file_path)) {
       # Show a link to the existing file
       output$report_button_ui <- renderUI({
@@ -660,7 +654,7 @@ server <- function(input, output, session) {
         params <- list(
           mpas = state$mpas
         )
-        output_dir <- file.path(onedrive,"data", "reports")
+        output_dir <- file.path(STORE,"data", "reports")
         output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=state$mpas, ".html"))))
         render(rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
         output$report_ui <- renderUI({
@@ -1165,7 +1159,7 @@ server <- function(input, output, session) {
         currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
 
-          image_folder <- file.path(onedrive,
+          image_folder <- file.path(STORE,
                                     "data",
                                     "plots")
           image_files <- list.files(image_folder, full.names = TRUE)
