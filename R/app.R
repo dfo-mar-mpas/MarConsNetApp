@@ -32,6 +32,7 @@
 #' @importFrom targets tar_load
 #' @importFrom readxl read_excel
 #'
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -44,6 +45,9 @@ app <- function() {
 
   # find the path to the targets data store
   STORE <- path_to_store()
+
+  reportpath <- file.path(STORE, "data", "reports")
+  shiny::addResourcePath("htmlfiles", reportpath)
 
   # load targets if necessary
   if(!exists("APPTABS")){
@@ -609,12 +613,6 @@ server <- function(input, output, session) {
 
 
 
-
-  reporturl <- paste0("/",basename(getwd()),"/htmlfiles/")
-  reportpath <- file.path(STORE,"data", "reports")
-
-  shiny::addResourcePath("htmlfiles", reportpath)
-
   # Check if the static HTML file exists
   observe({
     req(state$mpas)
@@ -623,7 +621,7 @@ server <- function(input, output, session) {
       # Show a link to the existing file
       output$report_button_ui <- renderUI({
         tags$a(
-          href = paste0(reporturl,make.names(paste0(state$mpas, ".html"))),
+          href = paste0("htmlfiles/",make.names(paste0(state$mpas, ".html"))),
           target = "_blank",
           class = "btn btn-primary",
           "Report"
