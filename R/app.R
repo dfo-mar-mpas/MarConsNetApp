@@ -1550,7 +1550,11 @@ server <- function(input, output, session) {
 
           for (i in seq_along(input$projects)) {
             if (!(projectIds[i] == "NA")) {
-            k1 <- which(APJ_filtered$PPTID == projectIds[i])
+              if (suppressWarnings(is.na(as.numeric(projectIds[i])))) {
+                k1 <- which(APJ_filtered$PPTID %in% unique(pillar_ecol_df$PPTID[which(pillar_ecol_df$type == projectIds[i])]))
+              } else {
+                k1 <- which(APJ_filtered$PPTID == projectIds[i])
+              }
             } else {
               k1 <- which(is.na(APJ_filtered$PPTID))
             }
