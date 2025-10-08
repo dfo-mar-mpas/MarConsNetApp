@@ -31,9 +31,7 @@ if (any(pillar_ecol_df$status_statement == "No features are represented.", na.rm
 }
 
 
-image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
-                                    "MarConsNetTargets","data",
-                                    "plots")
+image_folder <- file.path(path_to_store(),"data","plot")
 image_files <- list.files(image_folder, full.names = TRUE)
 
 
@@ -62,14 +60,14 @@ summary_table <- data.frame(
 for (i in seq_along(unique(p$bin))) {
   keep <- which(p$bin == unique(p$bin)[i])
   df <- p[keep, ]
-
+  
   group_df <- calc_group_score(df=df,grouping_var = "bin",
                                score_var = "score",
                                weight_var = "weight")
   grade <- as.character(calc_letter_grade(weighted.mean(x=group_df$score, w=group_df$weight, na.rm=TRUE)))
-
+  
   if (any(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))) {
-  indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))])
+    indicatorLength <- length(df$indicator[-which(is.na(df$indicator) | df$indicator == "placeholder" | is.na(df$score))])
   } else {
     indicatorLength <- length(df$indicator)
   }
@@ -81,45 +79,45 @@ for (i in seq_along(unique(p$bin))) {
 com <- cost_of_mpas[which(cost_of_mpas$area == params$mpas & !(round(cost_of_mpas$percent_sites_in_mpa,0) == 0)),]
 
 if (length(com$project_id) != 0) {
-proj_titles <- sapply(com$project_id, function(pid) {
+  proj_titles <- sapply(com$project_id, function(pid) {
     unique(pillar_ecol_df$project_short_title[which(pillar_ecol_df$PPTID == pid)])
-})
-proj <- unique(com$project_id)
-
-# PERCENT FUNDING
-pie_area <- unique(cost_of_mpas$area)
-ps <- split(cost_of_mpas, cost_of_mpas$area)
-
-adjusted_ps <- list()
-for (i in seq_along(ps)) {
-  PS <- ps[[i]]
-  adjusted_ps[[i]] <- data.frame(
-    project_id = PS$project_id,
-    amount = rep(NA, length(PS$project_id))
-  )
-  for (j in seq_along(PS$project_id)) {
-    keep <- which(om$project_id == PS$project_id[j])
-    adjusted_ps[[i]]$amount[j] <- sum(om$amount[keep] * PS$percent_sites_in_mpa[j])
+  })
+  proj <- unique(com$project_id)
+  
+  # PERCENT FUNDING
+  pie_area <- unique(cost_of_mpas$area)
+  ps <- split(cost_of_mpas, cost_of_mpas$area)
+  
+  adjusted_ps <- list()
+  for (i in seq_along(ps)) {
+    PS <- ps[[i]]
+    adjusted_ps[[i]] <- data.frame(
+      project_id = PS$project_id,
+      amount = rep(NA, length(PS$project_id))
+    )
+    for (j in seq_along(PS$project_id)) {
+      keep <- which(om$project_id == PS$project_id[j])
+      adjusted_ps[[i]]$amount[j] <- sum(om$amount[keep] * PS$percent_sites_in_mpa[j])
+    }
   }
-}
-
-final_funding <- lapply(adjusted_ps, function(x) sum(x$amount))
-
-names(final_funding) <- names(ps)
-
-bad <- which(unname(final_funding) == 0)
-
-percent_funding <- data.frame( #old df
-  MPA = names(final_funding)[-bad],
-  Funding = unname(unlist(final_funding))[-bad]
-) %>%
-  mutate(Funding_pct = Funding / sum(Funding))
-
-money_percentage <- round(percent_funding$Funding_pct[which(percent_funding$MPA == params$mpas)]*100, 2)
-
-investment <- paste0("The following DFO projects have sampled in ",
-             params$mpas, " : ",
-             paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; "), " which accounted for ", money_percentage, "% of O&M funding to the protected areas.")
+  
+  final_funding <- lapply(adjusted_ps, function(x) sum(x$amount))
+  
+  names(final_funding) <- names(ps)
+  
+  bad <- which(unname(final_funding) == 0)
+  
+  percent_funding <- data.frame( #old df
+    MPA = names(final_funding)[-bad],
+    Funding = unname(unlist(final_funding))[-bad]
+  ) %>%
+    mutate(Funding_pct = Funding / sum(Funding))
+  
+  money_percentage <- round(percent_funding$Funding_pct[which(percent_funding$MPA == params$mpas)]*100, 2)
+  
+  investment <- paste0("The following DFO projects have sampled in ",
+                       params$mpas, " : ",
+                       paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; "), " which accounted for ", money_percentage, "% of O&M funding to the protected areas.")
 } else {
   investment <- paste0("No identified DFO projects have sampled in ", params$mpas, " and therefore there is no identified O&M investment.")
 }
@@ -129,42 +127,42 @@ investment <- paste0("The following DFO projects have sampled in ",
 keepO <- which(names(Objectives_processed) == params$mpas)
 S_Objectives <- Objectives_processed[[keepO]]
 if (!(length(S_Objectives) == 0)) {
-if (!(length(keepO) == 0)) {
-  textO <- Objectives_processed[[keepO]]
-  textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
-  # Create UI elements for objectives with bar charts
-  
-  filtered_odfS <- objective_tabs[objective_tabs$objectives %in% textO, ]
-  
-  site_grades <- NULL
-  site_color <- NULL
-  
-  for (i in seq_along(filtered_odfS$objectives)) {
-    KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
-    KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
-
-    KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
-                               score_var = "score",
-                               weight_var = "weight")
-    site_grades[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
-
+  if (!(length(keepO) == 0)) {
+    textO <- Objectives_processed[[keepO]]
+    textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
+    # Create UI elements for objectives with bar charts
     
-    if (!(site_grades[i] == "NA")) {
-      site_color[i] <- unname(flowerPalette[which(names(flowerPalette) == site_grades[i])])
-    } else {
-      site_color[i] <- "#EDEDED"
+    filtered_odfS <- objective_tabs[objective_tabs$objectives %in% textO, ]
+    
+    site_grades <- NULL
+    site_color <- NULL
+    
+    for (i in seq_along(filtered_odfS$objectives)) {
+      KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
+      KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
+      
+      KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
+                                  score_var = "score",
+                                  weight_var = "weight")
+      site_grades[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
+      
+      
+      if (!(site_grades[i] == "NA")) {
+        site_color[i] <- unname(flowerPalette[which(names(flowerPalette) == site_grades[i])])
+      } else {
+        site_color[i] <- "#EDEDED"
+      }
     }
   }
-}
-
+  
   status_objectives <- HTML(paste0(
-  "Based on our analysis, the status of the objectives are as follows:<br><br>",
-  paste0(
-    paste(gsub("\n", "", filtered_odfS$objectives),
-          " (", site_grades, ")", sep = ""),
-    collapse = "<br><br>"
-  )
-))
+    "Based on our analysis, the status of the objectives are as follows:<br><br>",
+    paste0(
+      paste(gsub("\n", "", filtered_odfS$objectives),
+            " (", site_grades, ")", sep = ""),
+      collapse = "<br><br>"
+    )
+  ))
 } else {
   status_objectives <- "No site objective status available."
 }
@@ -971,7 +969,8 @@ st_geometry(apg) <- rounded_geoms
 # Now find unique geometries
 apg_unique <- apg %>% distinct(geometry, .keep_all = TRUE)
 
-# Getting lat and lng
+if(any(apg_unique$areaID == params$mpas)){
+  # Getting lat and lng
 coords_df <- do.call(rbind, lapply(st_geometry(apg_unique), function(pt) {
   c(lng = pt[1], lat = pt[2])
 }))
@@ -1105,6 +1104,11 @@ tagList(
            )
   )
 )
+} else {
+  cat("There is no information on projects in this area.")
+}
+
+
 
 
 
