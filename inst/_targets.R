@@ -492,22 +492,28 @@ list(
                Objectives_processed
                MPA_report_card
                collaborations
+               creature_feature
 
-               mpas <- MPAs$NAME_E
+               # mpas <- MPAs$NAME_E
+               mpas <- names(Objectives_processed)
                rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
-               output_dir <- file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data", "reports")
+               output_dir <- file.path(path_to_store(),"data","reports")
 
                for (i in seq_along(mpas)) {
                  message(i)
-                 state <- list()
                  params <- list()
-                 input <- list()
-                 state$mpas <- mpas[i]
                  params$mpas <- mpas[i]
-                 input$mpas <- mpas[i]
-                 output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=mpas[i], ".html"))))
+                 output_file <- paste0(output_dir,"/", make.names(paste0(names=mpas[i], ".html")))
                  render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
                }
+
+               # network level
+               rmd_file <- system.file("data", "network_report.Rmd", package = "MarConsNetApp")
+
+               params <- list()
+               params$mpas <- "Maritimes"
+               output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=params$mpas, ".html"))))
+               render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
              }),
 
 
