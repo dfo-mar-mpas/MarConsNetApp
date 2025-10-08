@@ -17,25 +17,23 @@ library(rvest)
 library(dplyr)
 library(DT)
 
-if (any(pillar_ecol_df$status_statement == "No features are represented.")) {
+if (any(pillar_ecol_df$status_statement == "No features are represented.",na.rm = TRUE)) {
     pillar_ecol_df$status_statement[pillar_ecol_df$status_statement == "No features are represented."] <- paste0(
           "No features are represented. ** Note: a score will still be assigned if multiple MPAs are 'tied' for the lowest rank. ",
           "For example, if no features are represented but an MPA has a score of 50, this indicates that 50% of MPAs share the 'least represented' status."
         )
 }
 
-image_folder <- file.path(Sys.getenv("OneDriveCommercial"),
-                                    "MarConsNetTargets","data",
-                                    "plots")
+image_folder <- file.path(path_to_store(),"data","plot")
 image_files <- list.files(image_folder, full.names = TRUE)
 
 if (any(MPAs$NAME_E == "Non_Conservation_Area")) {
 MPAs <- MPAs[-which(MPAs$NAME_E == "Non_Conservation_Area"),]
 }
-MPAs <- MPAs[which(MPAs$region == state$mpas),]
+MPAs <- MPAs[which(MPAs$region == params$mpas),]
 
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
-string <- state$mpas
+string <- params$mpas
 network_context <- data_context(type="network")
 cat(network_context)
 cat("<br>")
@@ -84,11 +82,76 @@ maps
 ## Creature Feature
 
 ```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
-cat("FIX ME")
+try({
+  
+  
+  datatable(
+    creature_feature |> 
+      group_by(speciesKey,scientificName,kingdom,phylum,class,commonname) |>
+      filter(NAME_E %in% MPAs$NAME_E) |> 
+      reframe(n = sum(n),
+              NAME_E = paste(unique(NAME_E), collapse = "; "),
+              exampleurl = exampleurl[1],
+              imageurl = imageurl[1],
+              image_column = image_column[1]) |> 
+      arrange(desc(n)) |>
+      dplyr::select(commonname, image_column, scientificName, n, kingdom, phylum, class),
+
+    # Disable sorting for the image column
+    options = list(
+      # Show 5 entries by default
+      pageLength = 5,
+
+      # Enable column-specific filtering
+      initComplete = JS(
+        "function(settings, json) {
+          this.api().columns([1, 3, 4, 5, 6, 7]).every(function() {
+            var column = this;
+            var select = $('<select><option value=\"\"></option></select>')
+              .appendTo($(column.footer()).empty())
+              .on('change', function() {
+                var val = $.fn.dataTable.util.escapeRegex(
+                  $(this).val()
+                );
+
+                column
+                  .search(val ? '^' + val + '$' : '', true, false)
+                  .draw();
+              });
+
+            column.data().unique().sort().each(function(d, j) {
+              select.append('<option value=\"' + d + '\">' + d + '</option>')
+            });
+          });
+        }"
+      )
+    ),
+
+    # Specify column names
+    colnames = c(
+      "Common Name",
+      "Example Image",
+      "Scientific Name",
+      "iNaturalist Observations",
+      "Kingdom",
+      "Phylum",
+      "Class"
+    ),
+
+    # Escape HTML to allow image rendering
+    escape = FALSE,
+
+    # Add some styling
+    class = 'cell-border stripe hover',
+
+    # Add footer for filtering
+    filter = "bottom"
+  )
+})
 ```
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-p <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+p <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
 
 KEEP <- calc_group_score(df=p,grouping_var = "bin",
                                score_var = "score",
@@ -123,8 +186,8 @@ grade_colors_network <- NULL
 
 for (i in seq_along(filtered_odf$objectives)) {
   # GRADES
-  if (state$mpas %in% MPAs$NAME_E) {
-    KEEP <- pillar_ecol_df[which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == state$mpas),]
+  if (params$mpas %in% MPAs$NAME_E) {
+    KEEP <- pillar_ecol_df[which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == params$mpas),]
   } else {
      KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
   }
@@ -286,11 +349,11 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == "Maritimes"),],
 # dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
 # print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
 
-if (state$mpas %in% regions$NAME_E) {
+if (params$mpas %in% regions$NAME_E) {
   table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
   
 } else {
-  table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+  table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
 }
 if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
   table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
@@ -314,7 +377,7 @@ ddff <- table_ped %>%
   arrange(grouping, bin) %>%
   setNames(toupper(names(.)))
 
-if (state$mpas %in% regions$NAME_E) {
+if (params$mpas %in% regions$NAME_E) {
   # FIXME!!!!!
   
   ddff_unique <- ddff %>%
@@ -831,15 +894,15 @@ tagList(
 
 cat("### Climate Change\n")
 
-climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == state$mpa)])
+climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == params$mpa)])
 
 for (i in seq_along(climate_indicators)) {
-  indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == state$mpas)
+  indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == params$mpas)
   
   if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df$trend_statement[indicator_keep]))) {
     
     excel_keep <- which(climate$Indicator == climate_indicators[i])
-    pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == state$mpas)
+    pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == params$mpas)
     
     cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
     
@@ -902,7 +965,7 @@ cat(paste0(
 cat("\n\n")
 
 # Bad grade table
-badGrade <- which(pillar_ecol_df$areaID == state$mpas & (!(is.na(pillar_ecol_df$indicator))) & (!(pillar_ecol_df$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df$indicator))) & (pillar_ecol_df$score < 51 | is.na(pillar_ecol_df$score)))
+badGrade <- which(pillar_ecol_df$areaID == params$mpas & (!(is.na(pillar_ecol_df$indicator))) & (!(pillar_ecol_df$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df$indicator))) & (pillar_ecol_df$score < 51 | is.na(pillar_ecol_df$score)))
 
 badGradeTable <- pillar_ecol_df[badGrade, ] |> 
   dplyr::group_by(bin) |>
@@ -917,7 +980,7 @@ badGradeTable <- pillar_ecol_df[badGrade, ] |>
 
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
-project_subset <- pillar_ecol_df$PPTID[which(pillar_ecol_df$areaID == state$mpas)]
+project_subset <- pillar_ecol_df$PPTID[which(pillar_ecol_df$areaID == params$mpas)]
 if (!(length(project_subset) == 0)) {
 p_subset <- unique(trimws(unlist(strsplit(project_subset, ";")), "both"))
 }
@@ -1006,19 +1069,19 @@ if (length(deliv_keep > 0)) {
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
 # Which ones to keep
-csas_keep <- which(grepl(paste(state$mpas, collapse = "|"), csas$title)) # state$mpas
-if (state$mpas == "Western and Emerald Banks Marine Refuge") {
+csas_keep <- which(grepl(paste(params$mpas, collapse = "|"), csas$title)) # params$mpas
+if (params$mpas == "Western and Emerald Banks Marine Refuge") {
 csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
-} else if (state$mpas ==  "St. Anns Bank Marine Protected Area") {
+} else if (params$mpas ==  "St. Anns Bank Marine Protected Area") {
   csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))
-} else if (state$mpas == "Musquash Estuary Marine Protected Area") {
+} else if (params$mpas == "Musquash Estuary Marine Protected Area") {
   csas_keep <- c(csas_keep, which(grepl("Musquash", csas$title, ignore.case=TRUE)))
 }
 
 if (length(csas_keep) > 0) {
   CSAS <- csas[csas_keep,]
   names(CSAS) <- c("Title", "Date")
-  print(knitr::kable(CSAS, caption = paste0("CSAS Processes for " , state$mpas),row.names=FALSE))
+  print(knitr::kable(CSAS, caption = paste0("CSAS Processes for " , params$mpas),row.names=FALSE))
 } else {
   cat("There have been no identified relevant CSAS meetings in the CSAS DMapps related to this area.")
 }
@@ -1027,4 +1090,5 @@ if (length(csas_keep) > 0) {
 
 
 ```
+
 
