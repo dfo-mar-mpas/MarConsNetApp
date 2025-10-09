@@ -18,7 +18,7 @@
 #'    modalDialog HTML updateTabsetPanel tagList
 #'     showNotification shinyApp br
 #' @importFrom shinyjs useShinyjs
-#' @importFrom DT renderDT dataTableOutput datatable formatStyle styleEqual
+#' @importFrom DT renderDT dataTableOutput datatable formatStyle styleEqual formatRound
 #' @importFrom leaflet leafletOutput renderLeaflet leaflet addTiles addPolygons
 #'  addCircleMarkers  addLegend
 #' @importFrom MarConsNetAnalysis plot_flowerplot calc_group_score calc_letter_grade
@@ -1035,7 +1035,7 @@ server <- function(input, output, session) {
         stringsAsFactors = FALSE
       )
 
-      if (any(dfdt$Status == "No features are represented.")) {
+      if (any(dfdt$Status == "No features are represented.",na.rm=TRUE)) {
         dfdt$Status[dfdt$Status == "No features are represented."] <- paste0(
           "No features are represented. ** Note: a score will still be assigned if multiple MPAs are 'tied' for the lowest rank. ",
           "For example, if no features are represented but an MPA has a score of 50, this indicates that 50% of MPAs share the 'least represented' status."
