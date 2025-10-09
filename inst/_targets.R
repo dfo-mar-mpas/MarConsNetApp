@@ -262,7 +262,7 @@ list(
 
   tar_target(name=cookie,
            command={
-             cookie <- read.table(list.files(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets', 'data'), full.names=TRUE,pattern='*txt')[which(grepl("cookie.txt", list.files(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets', 'data'), full.names=TRUE,pattern='*txt')))])$V1
+             cookie <- read.table(file.path(path_to_store(),"..","data","cookie.txt"))$V1
 
            }),
 
