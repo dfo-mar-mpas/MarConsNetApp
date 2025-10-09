@@ -6,6 +6,7 @@ pkgs <- c("sf",
           "j-harbin/dataSPA",
           "arcpullr",
           "ArgoCanada/argoFloats",
+          "casaultb/azmpdata",
           "raster",
           "dfo-mar-odis/TBSpayRates",
           "readxl",
@@ -3231,6 +3232,13 @@ tar_target(ind_protconn,
            }),
 
 
+
+tar_target(name = ind_sst,
+           command = {
+             ind_placeholder(ind_name="Sea Surface Temperature", areas = MPAs)
+           }), # Environmental Representativity
+
+
 tar_target(objective_indicators,
            command={
              #cat(paste0("The length of pillar_ecol is ", length(pillar_ecol_df$bin)))
@@ -3355,7 +3363,8 @@ tar_target(objective_tabs,
                              ind_musquash_phosphate,
                              ind_musquash_secchi,
                              ind_oxygen,
-                             ind_musquash_coliform
+                             ind_musquash_coliform,
+                             ind_sst
                              )),
  tar_target(bin_habitat_KeyFishHabitat_df,
             aggregate_groups("bin",
