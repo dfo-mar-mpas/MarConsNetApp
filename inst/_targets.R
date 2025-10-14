@@ -494,7 +494,10 @@ list(
                MPA_report_card
                collaborations
                creature_feature
+               cost_of_mpas
+               om
 
+               #TODO https://github.com/dfo-mar-mpas/MarConsNetApp/issues/184
                # mpas <- MPAs$NAME_E
                mpas <- names(Objectives_processed)
                rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
