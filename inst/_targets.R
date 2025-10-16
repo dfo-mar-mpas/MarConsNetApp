@@ -1587,6 +1587,7 @@ tar_target(ind_otn_proportion_tags_detected_in_multiple_mpas,
              x$indicator_rationale <- "The exchange of individuals between conservation sites can support ecosystem resilience, population recovery, genetic exchange, and the maintenance of biodiversity"
              x$bin_rationale <- NA
              x$plot <-NULL
+             x$readiness <- "Ready"
 
 
              # Doing the score and statement status
@@ -3206,6 +3207,7 @@ tar_target(ind_musquash_birds_sample_coverage, command = {
         ) +
         theme_classic()
     )
+    ind$readiness <- 'Ready'
 
     as_tibble(ind)
   }),
@@ -3231,7 +3233,8 @@ tar_target(ind_protconn,
                       ),
                       climate_expectation = "FIXME",
                       indicator_rationale = "The exchange of individuals between conservation sites can support ecosystem resilience, population recovery, genetic exchange, and the maintenance of biodiversity",
-                      bin_rationale = "FIXME")
+                      bin_rationale = "FIXME",
+                      readiness="Ready")
            }),
 
 
