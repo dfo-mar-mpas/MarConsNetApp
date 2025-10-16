@@ -233,6 +233,8 @@ server <- function(input, output, session) {
                        " – Data is not yet being collected, ",
                        strong("Conceptual"),
                        " – There is no means of collecting this type of data."
+                       strong("Unknown"),
+                       " – More work needed to determine readiness score."
                      )
 
                      ),
