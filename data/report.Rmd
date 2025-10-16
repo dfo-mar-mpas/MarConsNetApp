@@ -570,15 +570,15 @@ cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n
   } else {
     cat("There are no indicators in this area that support this objective")
   }
+  cat("</details>\n\n")
+    cat("<br>")
+    cat("<br>")
 }
-    cat("</details>\n\n")
-    cat("<br>")
-    cat("<br>")
+    
 
 
 }
 ```
-
 </details> <details>
 <summary style="
     font-size: 1.8em;       /* make the text bigger */
@@ -603,10 +603,6 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),],
                                             min_score=0,
                                             title="Flower plot frame work")
 ```
-
-
-
-
 
 
 ```{r, echo=FALSE, results='asis'}
