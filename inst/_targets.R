@@ -3238,7 +3238,7 @@ tar_target(ind_protconn,
 
 tar_target(name = ind_sst,
            command = {
-             ind_placeholder(ind_name="Sea Surface Temperature", areas = MPAs)
+             ind_placeholder(ind_name="Sea Surface Temperature", areas = MPAs, readiness = "Readily Available", source = "AZMP")
            }), # Environmental Representativity
 
 
