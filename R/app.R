@@ -232,7 +232,7 @@ server <- function(input, output, session) {
                        strong("Not currently collected"),
                        " – Data is not yet being collected, ",
                        strong("Conceptual"),
-                       " – There is no means of collecting this type of data."
+                       " – There is no means of collecting this type of data.",
                        strong("Unknown"),
                        " – More work needed to determine readiness score."
                      )
