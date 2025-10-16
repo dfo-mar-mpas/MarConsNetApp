@@ -121,7 +121,7 @@ if (length(com$project_id) != 0) {
 }
 
 # STATUS OF OBJECTIVES
-
+if (string %in% names(Objectives_processed)) {
 keepO <- which(names(Objectives_processed) == params$mpas)
 S_Objectives <- Objectives_processed[[keepO]]
 if (!(length(S_Objectives) == 0)) {
@@ -163,6 +163,9 @@ if (!(length(S_Objectives) == 0)) {
   ))
 } else {
   status_objectives <- "No site objective status available."
+}
+} else {
+   status_objectives <- "No site objective status available."
 }
 
 div(
@@ -453,7 +456,7 @@ for (i in seq_along(n_objectives)) {
 ```{r, echo=FALSE,comment=NA, results="asis"}
 cat('<h2>Site Conservation Objectives</h2>\n')  # 🔴 header
 
-
+if (exists("S_Objectives")) {
 if (!(length(S_Objectives) == 0)) {
   
   dt_data <- data.frame(
@@ -479,6 +482,10 @@ if (!(length(S_Objectives) == 0)) {
 } else {
   cat("There are no site objectives pulled with our tools for this area.")
 }
+} else {
+  cat("There are no site objectives pulled with our tools for this area.")
+
+}
 
 
 
@@ -486,6 +493,7 @@ if (!(length(S_Objectives) == 0)) {
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
+if (exists("textO")) {
 for (i in seq_along(textO)) {
 cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n\n', toupper(textO[i])))
   k1 <- which(grepl(textO[i], pillar_ecol_df$objectives, fixed=TRUE))
@@ -562,6 +570,7 @@ cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n
   } else {
     cat("There are no indicators in this area that support this objective")
   }
+}
     cat("</details>\n\n")
     cat("<br>")
     cat("<br>")
@@ -1255,6 +1264,7 @@ if (any(p_subset %in% collaborations$project_id)) {
   } else {
   cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. /n/n"))  
   }
+  if (!(length(year_keep) == 0)) {
   if (!(length(which((!(1:length(collab_subset$project_id)%in% year_keep))))) == 0) {
     
     cat("The following past partnerships/collaborations have been identified and contributed to this site: \n\n")
@@ -1272,6 +1282,11 @@ if (any(p_subset %in% collaborations$project_id)) {
     
   } else {
     cat("There are no partnerships/collaborations identified from previous years. \n\n")
+  }
+  } else {
+        cat("There are no partnerships/collaborations identified from previous years. \n\n")
+
+    
   }
 } else {
     cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool. \n\n")

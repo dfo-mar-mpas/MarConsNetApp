@@ -36,7 +36,7 @@ mpas <- MPAs$NAME_E
 rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
 output_dir <- "C:/Users/HARBINJ/Documents/REPORT_TESTS/"
 
-i <- 44
+i <- 3
 mpas <- MPAs$NAME_E
 state <- list()
 params <- list()
