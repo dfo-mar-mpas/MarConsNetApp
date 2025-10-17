@@ -688,7 +688,7 @@ if (!(length(ddff_unique$PPTID) == 0)) {
   
 
   # example: add table headers
-  cat('<h4 style="text-align:center; margin-bottom:10px;">Table 3: Ecological Overview Summary</h3>\n')
+  cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Ecological Overview Summary</h3>\n')
   cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
   cat('<thead><tr>',
       paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
