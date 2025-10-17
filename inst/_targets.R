@@ -501,7 +501,7 @@ list(
                # mpas <- MPAs$NAME_E
                mpas <- names(Objectives_processed)
                rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
-               output_dir <- file.path(path_to_store(),"data","reports")
+               output_dir <- file.path(dirname(path_to_store()),"data","reports")
 
                for (i in seq_along(mpas)) {
                  message(i)
@@ -3812,7 +3812,7 @@ tar_target(plot_files,
             command = {
               allplotnames <- NULL
 
-              STORE <- path_to_store()
+              STORE <- dirname(path_to_store())
 
               for(i in 1:nrow(data_pillar_ecol_df)){
                 message(i)
