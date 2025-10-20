@@ -309,7 +309,8 @@ MANAGEMENT EFFECTIVENESS
 </summary>
 
 ```{r, echo=FALSE, results='asis', warning=FALSE}
-cat('<h2>Network Conservation Objectives</h2>\n')
+cat('<h3>Network Conservation Objectives</h2>\n')
+cat('Select each objective to see information on relevant indicators.\n')
 
 n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
 filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
@@ -346,23 +347,21 @@ dt_data_network <- data.frame(
   stringsAsFactors = FALSE
 )
 
-cat('<h4 style="text-align:left; margin-bottom:10px;">Table 2: Network Objective Effectiveness Summary</h3>\n')
-cat('<table style="border-collapse: collapse; width:100%; border: 2px solid black; font-size: 1.1em;">\n')
-cat('<tr><th style="border: 2px solid black; padding: 6px;">Objective</th><th style="border: 2px solid black; padding: 6px;">Grade</th></tr>\n')
-
-for(i in seq_len(nrow(dt_data_network))) {
-  cat('<tr style="background-color:', grade_colors_network[i], ';">')
-  cat('<td style="border: 2px solid black; padding: 6px;">', dt_data_network$Objective[i], '</td>')
-  cat('<td style="border: 2px solid black; padding: 6px;">', dt_data_network$Grade[i], '</td>')
-  cat('</tr>\n')
-}
-
-cat('</table>')
+# cat('<h4 style="text-align:left; margin-bottom:10px;">Table 2: Network Objective Effectiveness Summary</h3>\n')
+# cat('<table style="border-collapse: collapse; width:100%; border: 2px solid black; font-size: 1.1em;">\n')
+# cat('<tr><th style="border: 2px solid black; padding: 6px;">Objective</th><th style="border: 2px solid black; padding: 6px;">Grade</th></tr>\n')
+# 
+# for(i in seq_len(nrow(dt_data_network))) {
+#   cat('<tr style="background-color:', grade_colors_network[i], ';">')
+#   cat('<td style="border: 2px solid black; padding: 6px;">', dt_data_network$Objective[i], '</td>')
+#   cat('<td style="border: 2px solid black; padding: 6px;">', dt_data_network$Grade[i], '</td>')
+#   cat('</tr>\n')
+# }
+# 
+# cat('</table>')
 
 
 cat("<br>")
-cat("<br>")
-
 
 ```
 
@@ -370,7 +369,24 @@ cat("<br>")
 
 ```{r, echo=FALSE, comment=NA, results='asis', warning=FALSE}
 for (i in seq_along(n_objectives)) {
-  cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n\n', toupper(n_objectives[i])))
+cat(sprintf(
+  '<details>
+     <summary style="
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.2em;
+        padding: 4px 8px;
+        background-color: %s;
+        border: 1px solid #90c0ff;
+        border-radius: 4px;
+        margin-bottom: 5px;">
+        <u>OBJECTIVE: %s (%s)</u>
+     </summary>\n\n',
+  grade_colors_network[i],        # background color
+  toupper(n_objectives[i]),       # objective text
+  grades_network[i]               # grade to display
+))
+  
   k1 <- which(grepl(n_objectives[i], pillar_ecol_df$objectives, fixed=TRUE))
   if (params$mpas %in% regions$NAME_E) {
     k2 <- k1
@@ -383,6 +399,10 @@ for (i in seq_along(n_objectives)) {
     objective_flower <- pillar_ecol_df[k2,]
     objective_flower$score[which(!(grepl(n_objectives[i], objective_flower$objectives, fixed=TRUE)))] <- NA
     
+    cat("The objective has the following score: \n")
+    cat("<br>")
+
+    
     p <- MarConsNetAnalysis::plot_flowerplot(objective_flower,
                                             grouping = "objective",
                                             labels = "bin",
@@ -392,9 +412,14 @@ for (i in seq_along(n_objectives)) {
                                             title=" ")
     print(p)
     cat("<br>")
-
-
     
+    cat("Below highlights the list of indicators used to inform each objective: \n")
+    cat("<br>")
+    cat("<br>")
+
+
+
+
   for (j in seq_along(keep)) {
     cat(sprintf("<b>Indicator: %s.</b>\n\n", pillar_ecol_df$indicator[keep[j]]))
     
@@ -423,8 +448,6 @@ for (i in seq_along(n_objectives)) {
       } else {
         trendy <- pillar_ecol_df$trend_statement[keep[j]]
       }
-      
-      
       
       table_df <- data.frame("Rationale"=pillar_ecol_df$indicator_rationale[keep[j]],
                              "Status"=pillar_ecol_df$status_statement[keep[j]],
@@ -458,7 +481,8 @@ for (i in seq_along(n_objectives)) {
 
 
 ```{r, echo=FALSE,comment=NA, results="asis", warning=FALSE}
-cat('<h2>Site Conservation Objectives</h2>\n')  # 🔴 header
+cat('<h3>Site Conservation Objectives</h2>\n')  # 🔴 header
+cat('Select each objective to see information on relevant indicators.\n')
 
 if (exists("S_Objectives")) {
 if (!(length(S_Objectives) == 0)) {
@@ -469,19 +493,20 @@ if (!(length(S_Objectives) == 0)) {
     stringsAsFactors = FALSE
   )
   
-  cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Site Objective Effectiveness Summary</h3>\n')
-
-cat('<table style="border-collapse: collapse; width:100%; border: 2px solid black; font-size: 1.1em;">\n')
-cat('<tr><th style="border: 2px solid black; padding: 6px;">Objective</th><th style="border: 2px solid black; padding: 6px;">Grade</th></tr>\n')
-
-for (i in seq_len(nrow(dt_data))) {
-  cat('<tr style="background-color:', site_color[i], ';">')
-  cat('<td style="border: 2px solid black; padding: 6px;">', dt_data$Objective[i], '</td>')
-  cat('<td style="border: 2px solid black; padding: 6px;">', dt_data$Grade[i], '</td>')
-  cat('</tr>\n')
-}
-
-cat('</table>\n')
+#   cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Site Objective Effectiveness Summary</h3>\n')
+# 
+# cat('<table style="border-collapse: collapse; width:100%; border: 2px solid black; font-size: 1.1em;">\n')
+# cat('<tr><th style="border: 2px solid black; padding: 6px;">Objective</th><th style="border: 2px solid black; padding: 6px;">Grade</th></tr>\n')
+# 
+# for (i in seq_len(nrow(dt_data))) {
+#   cat('<tr style="background-color:', site_color[i], ';">')
+#   cat('<td style="border: 2px solid black; padding: 6px;">', dt_data$Objective[i], '</td>')
+#   cat('<td style="border: 2px solid black; padding: 6px;">', dt_data$Grade[i], '</td>')
+#   cat('</tr>\n')
+# }
+# 
+# cat('</table>\n')
+  
 cat('<br>\n')
 
 } else {
@@ -500,7 +525,26 @@ cat('<br>\n')
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
 if (exists("textO")) {
 for (i in seq_along(textO)) {
-cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n\n', toupper(textO[i])))
+  
+cat(sprintf(
+  '<details>
+     <summary style="
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.2em;
+        padding: 4px 8px;
+        background-color: %s;
+        border: 1px solid #90c0ff;
+        border-radius: 4px;
+        margin-bottom: 5px;">
+        <u>OBJECTIVE: %s (%s)</u>
+     </summary>\n\n',
+  site_color[i],        # background color
+  toupper(textO[i]),       # objective text
+  dt_data$Grade[i]               # grade to display
+))
+  
+#cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n\n', toupper(textO[i])))
   k1 <- which(grepl(textO[i], pillar_ecol_df$objectives, fixed=TRUE))
   if (params$mpas %in% regions$NAME_E) {
     k2 <- k1
@@ -514,6 +558,11 @@ cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n
     objective_flower <- pillar_ecol_df[k2,]
     objective_flower$score[which(!(grepl(textO[i], objective_flower$objectives, fixed=TRUE)))] <- NA
     
+    cat("The objective has the following score: \n")
+    cat("<br>")
+
+
+    
     pp <- MarConsNetAnalysis::plot_flowerplot(objective_flower,
                                             grouping = "objective",
                                             labels = "bin",
@@ -522,7 +571,12 @@ cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n
                                             min_score=0,
                                             title=" ")
     print(pp)
+    
+    cat("Below highlights the list of indicators used to inform each objective: \n")
+
     cat("<br>")
+    cat("<br>")
+
 
     
     # end flower plot
@@ -588,6 +642,7 @@ cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n
   cat("</details>\n\n")
 }
     
+cat('<br>\n')
 
 
 }
