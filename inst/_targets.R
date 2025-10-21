@@ -1781,9 +1781,8 @@ as_tibble(x)
             command= {
               reDownload <- FALSE
               options(timeout = 700)
-              dataDir <- tempdir()
-              list.files(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data', 'gliders'))
-              ftpUrl <- read.table(list.files(file.path(Sys.getenv("OneDriveCommercial"),'MarConsNetTargets','data', 'gliders'), full.names=TRUE))$V1
+              dataDir <- file.path(dirname(path_to_store()),'data', 'gliders')
+              ftpUrl <- read.table(file.path(dirname(path_to_store()),'data', 'gliders',"url.txt"))$V1
               dirs <- getURL(paste(ftpUrl,'', sep ="/"), ftp.use.epsv = FALSE, dirlistonly = TRUE)
               dirnames <- strsplit(dirs, "\r*\n")[[1]]
               okdir <- grepl('^GLD\\w+$', dirnames) # just in case something else gets put there
