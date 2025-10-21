@@ -501,7 +501,7 @@ list(
                # mpas <- MPAs$NAME_E
                mpas <- names(Objectives_processed)
                rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
-               output_dir <- file.path(path_to_store(),"data","reports")
+               output_dir <- file.path(dirname(path_to_store()),"data","reports")
 
                for (i in seq_along(mpas)) {
                  message(i)

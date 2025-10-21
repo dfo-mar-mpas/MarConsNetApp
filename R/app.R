@@ -46,7 +46,7 @@ app <- function() {
   # find the path to the targets data store
   STORE <- path_to_store()
 
-  reportpath <- file.path(STORE, "data", "reports")
+  reportpath <- file.path(dirname(STORE), "data", "reports")
   shiny::addResourcePath("htmlfiles", reportpath)
 
   # load targets if necessary
@@ -66,7 +66,7 @@ app <- function() {
   pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
   #all_project_geoms <- all_project_geoms[-which(all_project_geoms$areaID == "Non_Conservation_Area"),]
 
-  obj <- paste0(STORE,"/data/objectives.xlsx")
+  obj <- paste0(dirname(STORE),"/data/objectives.xlsx")
   obj_excel <-read_excel(obj)
 
 
@@ -312,7 +312,7 @@ server <- function(input, output, session) {
           cost      = NA_real_
         ) %>%
         dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost, PPTID) %>%
-        arrange(grouping, bin) %>%
+        dplyr::arrange(grouping, bin) %>%
         setNames(toupper(names(.)))
 
       if (state$mpas %in% regions$NAME_E) {
@@ -358,7 +358,7 @@ server <- function(input, output, session) {
           # Select columns in the desired order
           dplyr::select(theme, indicator, source, score, readiness, quality, cost, PPTID) %>%
           # Arrange by theme and indicator
-          arrange(theme, indicator) %>%
+          dplyr::arrange(theme, indicator) %>%
           # Capitalize column names
           setNames(toupper(names(.)))
 
@@ -402,13 +402,13 @@ server <- function(input, output, session) {
       if (!(input$tab0_subtabs == "Threats")) {
         if (input$indicator_mode == "ebm") {
           ddff_display <- ddff_unique %>%
-            arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
+            dplyr::arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
             group_by(GROUPING, SOURCE) %>%
             mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
             ungroup()
         } else {
           ddff_display <- ddff_unique %>%
-            arrange(THEME, SOURCE) %>%                # make sure sources are together within grouping
+            dplyr::arrange(THEME, SOURCE) %>%                # make sure sources are together within grouping
             group_by(THEME, SOURCE) %>%
             mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
             ungroup()
@@ -416,7 +416,7 @@ server <- function(input, output, session) {
       } else {
         # Threats
         ddff_display <- ddff_unique %>%
-          arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
+          dplyr::arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
           group_by(GROUPING, SOURCE) %>%
           mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
           ungroup()
@@ -577,7 +577,7 @@ server <- function(input, output, session) {
                renderImage({
                  # Path to your image outside the 'www' folder
                  list(
-                   src = paste0(STORE, "/data/visual_flow.png"),
+                   src = paste0(dirname(STORE), "/data/visual_flow.png"),
                    contentType = "image/png",
                    width = "580px",
                    height = "auto"
@@ -650,7 +650,7 @@ server <- function(input, output, session) {
         params <- list(
           mpas = state$mpas
         )
-        output_dir <- file.path(STORE,"data", "reports")
+        output_dir <- file.path(dirname(STORE),"data", "reports")
         output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=state$mpas, ".html"))))
         render(rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
         output$report_ui <- renderUI({
@@ -1155,13 +1155,13 @@ server <- function(input, output, session) {
         currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
 
-          image_folder <- file.path(STORE,
+          image_folder <- file.path(dirname(STORE),
                                     "data",
                                     "plots")
           image_files <- list.files(image_folder, full.names = TRUE)
 
           if (length(image_files) == 0) {
-            image_files <- list.files(file.path(STORE, "data", "plot"), full.names = TRUE)
+            image_files <- list.files(file.path(dirname(STORE), "data", "plot"), full.names = TRUE)
           }
 
 
@@ -1391,7 +1391,7 @@ server <- function(input, output, session) {
       filter(areaID == state$mpas) |>
       group_by(bin, objective, weight) |>
       reframe(weight = sum(weight,na.rm = TRUE)) |>
-      arrange(objective,bin) |>
+      dplyr::arrange(objective,bin) |>
       mutate(angle = (cumsum(weight)-weight/2)/sum(weight)*360)
 
     clickangle <- 90-atan2(y,x)*180/pi
