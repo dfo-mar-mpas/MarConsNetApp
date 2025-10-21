@@ -312,7 +312,7 @@ server <- function(input, output, session) {
           cost      = NA_real_
         ) %>%
         dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost, PPTID) %>%
-        arrange(grouping, bin) %>%
+        dplyr::arrange(grouping, bin) %>%
         setNames(toupper(names(.)))
 
       if (state$mpas %in% regions$NAME_E) {
@@ -358,7 +358,7 @@ server <- function(input, output, session) {
           # Select columns in the desired order
           dplyr::select(theme, indicator, source, score, readiness, quality, cost, PPTID) %>%
           # Arrange by theme and indicator
-          arrange(theme, indicator) %>%
+          dplyr::arrange(theme, indicator) %>%
           # Capitalize column names
           setNames(toupper(names(.)))
 
@@ -402,13 +402,13 @@ server <- function(input, output, session) {
       if (!(input$tab0_subtabs == "Threats")) {
         if (input$indicator_mode == "ebm") {
           ddff_display <- ddff_unique %>%
-            arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
+            dplyr::arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
             group_by(GROUPING, SOURCE) %>%
             mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
             ungroup()
         } else {
           ddff_display <- ddff_unique %>%
-            arrange(THEME, SOURCE) %>%                # make sure sources are together within grouping
+            dplyr::arrange(THEME, SOURCE) %>%                # make sure sources are together within grouping
             group_by(THEME, SOURCE) %>%
             mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
             ungroup()
@@ -416,7 +416,7 @@ server <- function(input, output, session) {
       } else {
         # Threats
         ddff_display <- ddff_unique %>%
-          arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
+          dplyr::arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
           group_by(GROUPING, SOURCE) %>%
           mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
           ungroup()
@@ -1391,7 +1391,7 @@ server <- function(input, output, session) {
       filter(areaID == state$mpas) |>
       group_by(bin, objective, weight) |>
       reframe(weight = sum(weight,na.rm = TRUE)) |>
-      arrange(objective,bin) |>
+      dplyr::arrange(objective,bin) |>
       mutate(angle = (cumsum(weight)-weight/2)/sum(weight)*360)
 
     clickangle <- 90-atan2(y,x)*180/pi
