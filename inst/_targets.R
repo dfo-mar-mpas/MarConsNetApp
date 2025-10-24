@@ -1794,18 +1794,16 @@ as_tibble(x)
                 cat(paste('Check directory', dir), sep = '\n')
                 # check that subdir exists
                 pathcheck <- paste(ftpUrl, dir, '', sep = '/')
-                glddircontents <- getURL(url = pathcheck, ftp.use.epsv = FALSE, dirlistonly = TRUE)
+                glddircontents <- try(getURL(url = pathcheck, ftp.use.epsv = FALSE, dirlistonly = TRUE), silent=TRUE)
                 glddircontents <- strsplit(glddircontents, "\r*\n")[[1]]
-                hasSubdir <- any(grepl(pattern = subdir,
-                                       x = glddircontents))
-                if(hasSubdir){
-                  path <- paste(ftpUrl,
-                                dir,
-                                subdir,
-                                '', # to add '/' at end
-                                sep = '/')
-                  files <- getURL(url = path,
-                                  ftp.use.epsv = FALSE, dirlistonly = TRUE)
+                path <- paste(ftpUrl,
+                              dir,
+                              subdir,
+                              '', # to add '/' at end
+                              sep = '/')
+                files <- try(getURL(url = path,
+                                    ftp.use.epsv = FALSE, dirlistonly = TRUE),silent = TRUE)
+                if(!inherits(files, "try-error")){
                   filenames <- strsplit(files, "\r*\n")[[1]]
                   cat(paste('    Found', length(filenames), 'files'), sep = '\n')
                   if(length(filenames) != 0){ # meaning data was able to be processed
@@ -1820,6 +1818,7 @@ as_tibble(x)
                                                             mode = 'wb'), silent=TRUE)
                       } else {
                         cat(paste('        ', destfile, 'exists locally.'), sep = '\n')
+                        Sys.sleep(15)
                       }
                     } # closes f
                   } # closes length(filenames)
