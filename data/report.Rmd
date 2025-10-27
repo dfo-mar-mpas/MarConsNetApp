@@ -1,6 +1,8 @@
 ---
 title: " "
-output: html_document
+output:
+  html_document:
+    toc: true
 ---
 
 # Conservation Area: **`r params$mpas`**
@@ -315,6 +317,8 @@ MANAGEMENT EFFECTIVENESS
 </summary>
 
 ```{r, echo=FALSE, results='asis', warning=FALSE}
+cat("<br>")
+cat('Management effectiveness analyses if conservation objectives are being met\n\n')
 cat('<h3>Network Conservation Objectives</h2>\n')
 cat('Click each objective to see information on relevant indicators.\n')
 
@@ -369,7 +373,7 @@ cat(sprintf(
         padding: 4px 8px;
         border-radius: 4px;
         margin-bottom: 5px;">
-        <u>OBJECTIVE: %s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
+        <u>%s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
      </summary>\n\n',
   toupper(n_objectives[i]),      # objective text
   grade_colors_network[i],       # background color only for grade
@@ -639,6 +643,9 @@ ECOLOGICAL OVERVIEW
 
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+cat("<br>")
+cat('Ecological overview analyses the health of the overall ecosystem\n\n')
+
 plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),],
                                             grouping = "objective",
                                             labels = "bin",
@@ -716,44 +723,6 @@ if (!(length(ddff_unique$PPTID) == 0)) {
         group_by(GROUPING, SOURCE) %>%
         mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
         ungroup()
-  
-
-  # example: add table headers
-  # cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Ecological Overview Summary</h3>\n')
-  # cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
-  # cat('<thead><tr>',
-  #     paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
-  #     '</tr></thead>\n')
-  # cat('<tbody>\n')
-  # 
-  # for (i in seq_len(nrow(ddff_display))) {
-  #   # if you want row coloring, define here
-  #   grade <- calc_letter_grade(ddff_display$SCORE[i])   # your function
-  #   if (!(is.na(grade))) {
-  #     if (!(grade == "NA")) {
-  #       row_color <- flowerPalette[[grade]]
-  #     } else {
-  #       row_color <= 'white'
-  #     }
-  #   } else {
-  #     row_color <= 'white'
-  #   }
-  #   
-  #   # lookup the color for that grade
-  #   
-  #   cat('<tr style="background-color:', row_color, ';">')
-  #   cat('<td>', ddff_display$GROUPING[i], '</td>')
-  #   cat('<td>', ddff_display$BIN[i], '</td>')
-  #   cat('<td>', ddff_display$INDICATOR[i], '</td>')
-  #   cat('<td>', ddff_display$SOURCE[i], '</td>')
-  #   cat('<td>', sprintf("%.2f", ddff_display$SCORE[i]), '</td>')
-  #   cat('<td>', ddff_display$READINESS[i], '</td>')
-  #   cat('<td>', ddff_display$QUALITY[i], '</td>')
-  #   cat('<td>', ddff_display$COST[i], '</td>')
-  #   cat('</tr>\n')
-  # }
-  # 
-  # cat('</tbody></table>')
    
    cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Ecological Overview Summary</h4>\n')
 cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
@@ -802,20 +771,6 @@ cat('</tbody></table>')
 ```
 
 
-```{r, echo=FALSE, comment=NA, results='asis'}
-cat('<h3>Research and Monitoring Area</h2>\n')
-```
-
-As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
-
-```{r, echo=FALSE, comment=NA, results="asis"}
-# Create an empty data frame to store results
-print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
-
-
-```
-
-
 ```{r, echo=FALSE, comment=NA, results="asis",warning=FALSE}
 library(knitr)
 library(leaflet)
@@ -851,6 +806,7 @@ for (i in seq_along(BINS)) {
     Rationale=KK$indicator_rationale,
     Scheme=KK$scoring,
     Title=KK$project_short_title,
+    weight = KK$weight,
     stringsAsFactors = FALSE
   )
   
@@ -861,7 +817,44 @@ names(keeper2) <- BINS
 cat('Click each indicator to see information on relevant indicators.\n')
 
 for (i in seq_along(keeper2)) {
-  cat(sprintf('<details><summary><strong>INDICATOR BIN: %s</strong></summary>\n\n', toupper(BINS[i])))
+  # TEST
+  if (!(length(keeper2[[i]]$Trend) == 0)) {
+  keeper2[[i]]$bin <- names(keeper2)[i]
+  GRADE <- calc_group_score(df=keeper2[[i]],grouping_var = "bin",
+                               score_var = "Grade",
+                               weight_var = "weight")
+  BIN_GRADE <- as.character(calc_letter_grade(weighted.mean(x=GRADE$score, w=GRADE$weight, na.rm=TRUE)))
+  GRADE_COLOR <- unname(flowerPalette[BIN_GRADE])
+  } else {
+    BIN_GRADE <- NA
+    GRADE_COLOR <- "EDEDED"
+  }
+
+  cat(sprintf(
+  '<details>
+     <summary style="
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.2em;
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-bottom: 5px;">
+        <u>%s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
+     </summary>\n\n',
+  toupper(BINS[i]),      # objective text
+  GRADE_COLOR,       # background color only for grade
+  BIN_GRADE              # grade to display
+))
+  # END TEST
+  
+  
+  #cat(sprintf('<details><summary><strong>INDICATOR BIN: %s</strong></summary>\n\n', toupper(BINS[i])))
+  
+  # TEST
+  
+  
+  # END TEST
+  
   
   if (!(length(keeper2[[i]]$Indicator) == 0)) {
   for (j in seq_along(keeper2[[i]]$Indicator)) {
@@ -933,8 +926,12 @@ for (i in seq_along(keeper2)) {
 ">
 THREATS</summary>
 
-```{r, echo=FALSE, results='asis'}
+```{r threats, echo=FALSE, results='asis'}
+cat("<br>")
+cat(paste0("Table: Threat indicators in ", string, "\n"))
+
 if (!(length(ddff_unique$PPTID) == 0)) {
+  #browser()
   
   ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
   
@@ -943,44 +940,85 @@ if (!(length(ddff_unique$PPTID) == 0)) {
         group_by(GROUPING, SOURCE) %>%
         mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
         ungroup()
+  
+  cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
+cat('<thead><tr>',
+    paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST", "GRADE"), '</th>', collapse=""),
+    '</tr></thead>\n')
+cat('<tbody>\n')
+
+for (i in seq_len(nrow(ddff_threats))) {
+  
+  # Compute grade
+  grade <- calc_letter_grade(ddff_threats$SCORE[i])
+  
+  # Determine grade color (default white if NA)
+  if (!is.na(grade) && grade != "NA") {
+    grade_color <- flowerPalette[[grade]]
+  } else {
+    grade_color <- "white"
+  }
+  
+  # Start row (no row background color)
+  cat('<tr>')
+  
+  # Regular cells (force white background to prevent accidental coloring)
+  cat('<td style="background-color:white;">', ddff_threats$GROUPING[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$BIN[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$INDICATOR[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$SOURCE[i], '</td>')
+  cat('<td style="background-color:white;">', sprintf("%.2f", ddff_threats$SCORE[i]), '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$READINESS[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$QUALITY[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$COST[i], '</td>')
+  
+  # ✅ Grade column — last, colored cell, blank inside (or replace "" with grade letter)
+  cat(sprintf('<td style="background-color:%s; font-weight:bold; text-align:center;">%s</td>',
+              grade_color,
+              ""))  # leave blank, or use grade to display the letter
+
+  cat('</tr>\n')
+}
+
+cat('</tbody></table>')
 
   
   
   # example: add table headers
-  cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
-  cat('<thead><tr>',
-      paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
-      '</tr></thead>\n')
-  cat('<tbody>\n')
-  
-  for (i in seq_len(nrow(ddff_threats))) {
-    # if you want row coloring, define here
-    grade <- calc_letter_grade(ddff_threats$SCORE[i])   # your function
-    if (!(is.na(grade))) {
-      if (!(grade == "NA")) {
-        row_color <- flowerPalette[[grade]]
-      } else {
-        row_color <= 'white'
-      }
-    } else {
-      row_color <= 'white'
-    }
-    
-    # lookup the color for that grade
-    
-    cat('<tr style="background-color:', row_color, ';">')
-    cat('<td>', ddff_threats$GROUPING[i], '</td>')
-    cat('<td>', ddff_threats$BIN[i], '</td>')
-    cat('<td>', ddff_threats$INDICATOR[i], '</td>')
-    cat('<td>', ddff_threats$SOURCE[i], '</td>')
-    cat('<td>', sprintf("%.2f", ddff_threats$SCORE[i]), '</td>')
-    cat('<td>', ddff_threats$READINESS[i], '</td>')
-    cat('<td>', ddff_threats$QUALITY[i], '</td>')
-    cat('<td>', ddff_threats$COST[i], '</td>')
-    cat('</tr>\n')
-  }
-  
-  cat('</tbody></table>')
+  # cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
+  # cat('<thead><tr>',
+  #     paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
+  #     '</tr></thead>\n')
+  # cat('<tbody>\n')
+  # 
+  # for (i in seq_len(nrow(ddff_threats))) {
+  #   # if you want row coloring, define here
+  #   grade <- calc_letter_grade(ddff_threats$SCORE[i])   # your function
+  #   if (!(is.na(grade))) {
+  #     if (!(grade == "NA")) {
+  #       row_color <- flowerPalette[[grade]]
+  #     } else {
+  #       row_color <= 'white'
+  #     }
+  #   } else {
+  #     row_color <= 'white'
+  #   }
+  #   
+  #   # lookup the color for that grade
+  #   
+  #   cat('<tr style="background-color:', row_color, ';">')
+  #   cat('<td>', ddff_threats$GROUPING[i], '</td>')
+  #   cat('<td>', ddff_threats$BIN[i], '</td>')
+  #   cat('<td>', ddff_threats$INDICATOR[i], '</td>')
+  #   cat('<td>', ddff_threats$SOURCE[i], '</td>')
+  #   cat('<td>', sprintf("%.2f", ddff_threats$SCORE[i]), '</td>')
+  #   cat('<td>', ddff_threats$READINESS[i], '</td>')
+  #   cat('<td>', ddff_threats$QUALITY[i], '</td>')
+  #   cat('<td>', ddff_threats$COST[i], '</td>')
+  #   cat('</tr>\n')
+  # }
+  # 
+  # cat('</tbody></table>')
 }
 
 ```
