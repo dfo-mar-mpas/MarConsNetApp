@@ -47,6 +47,8 @@ pkgs <- c("sf",
           "rvest")
 shelf(pkgs)
 
+source("R/process_geom_data.R")
+
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
 tar_option_set(packages = basename(pkgs),
                format = "qs")
@@ -3677,7 +3679,7 @@ tar_target(theme_table,
 
  ##### Ecological Pillar and other end products #####
 
- tar_target(data_pillar_ecol_df,
+ tar_target(pillar_ecol_df,
             {
             APPTABS
             regions
@@ -3687,11 +3689,15 @@ tar_target(theme_table,
                                        "Ecological",
                                        weights_ratio=NA,
                                        weights_sum = NA,
-                                       ecol_obj_biodiversity_df,
-                                       ecol_obj_habitat_df,
-                                       ecol_obj_productivity_df) |>
+                                       dplyr::select(ecol_obj_biodiversity_df,-data,-plot),
+                                       dplyr::select(ecol_obj_habitat_df,-data,-plot),
+                                       dplyr::select(ecol_obj_productivity_df,-data,-plot)) |>
                 mutate(PPTID = as.character(PPTID)) |>
                 left_join(dplyr::select(as.data.frame(MPAs), NAME_E, region), by = c("areaID"="NAME_E"))
+
+            rm(ecol_obj_biodiversity_df)
+            rm(ecol_obj_habitat_df)
+            rm(ecol_obj_productivity_df)
 
               ##### Make a filtered version for summarizing (excludes Non_Conservation_Area)
               pedf_filtered <- pedf |> filter(areaID != "Non_Conservation_Area")
@@ -3747,63 +3753,58 @@ tar_target(theme_table,
 
  }),
 
-tar_target(name = pillar_ecol_df,
-           command = select(data_pillar_ecol_df,-data,-plot)),
 
+  # Process each objective separately
+  tar_target(biodiversity_geoms, {
+    ecol_obj_biodiversity_df |>
+      filter(!map_lgl(data, is.null)) |>
+      mutate(data = map(data, process_geom_data)) |>
+      dplyr::select(data, type, project_short_title, PPTID, areaID, source,
+                    climate_expectation, indicator_rationale, bin_rationale) |>
+      unnest(cols = data) |>
+      st_as_sf()
+  }),
 
- tar_target(all_project_geoms,
-             command = {
+  tar_target(habitat_geoms, {
+    ecol_obj_habitat_df |>
+      filter(!map_lgl(data, is.null)) |>
+      mutate(data = map(data, process_geom_data)) |>
+      dplyr::select(data, type, project_short_title, PPTID, areaID, source,
+                    climate_expectation, indicator_rationale, bin_rationale) |>
+      unnest(cols = data) |>
+      st_as_sf()
+  }),
 
-                data_pillar_ecol_df |>
-                 filter(!map_lgl(data, is.null)) |>
-                 mutate(data = map(data,function(x){
-                   # browser()
-                   if(!inherits(x,"sf")) x <- st_as_sf(x)
+  tar_target(productivity_geoms, {
+    ecol_obj_productivity_df |>
+      filter(!map_lgl(data, is.null)) |>
+      mutate(data = map(data, process_geom_data)) |>
+      dplyr::select(data, type, project_short_title, PPTID, areaID, source,
+                    climate_expectation, indicator_rationale, bin_rationale) |>
+      unnest(cols = data) |>
+      st_as_sf()
+  }),
 
-                   if("geoms" %in% names(x)) {
-                     x <- x |>
-                       mutate(geometry = geoms) |>
-                       as.data.frame() |>
-                       dplyr::select(-geoms) |>
-                       st_as_sf()
-                   }
+  # Combine only the processed results
+  tar_target(all_project_geoms, {
+    rbind(biodiversity_geoms, habitat_geoms, productivity_geoms)
+  }),
 
-                   if(!("year" %in% names(x))) {
-                     x <- x |>
-                       mutate(year = NA)
-                   }
+  tar_target(name=project_widget_choices,
+             command={
+               distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID", "source")])
 
-                   x <- x |>
-                     mutate(year=as.numeric(year))
+               if (any(is.na(distinct_rows$project_short_title))) {
+                 bad <- which(is.na(distinct_rows$project_short_title))
+                 for (i in bad) {
+                   message(paste0("for " , i, " source = ", distinct_rows$source[i]))
+                   distinct_rows$project_short_title[i] <- distinct_rows$source[i]
+                 }
+               }
 
-                   x |>
-                     st_cast("GEOMETRY") |>
-                     dplyr::select(year,geometry) |>
-                     st_as_sf() |>
-                     unique()
-                 })
-                 ) |>
-                 dplyr::select(data,type, project_short_title, PPTID,areaID, source, climate_expectation, indicator_rationale, bin_rationale)|>
-                 unnest(cols = data) |>
-                 st_as_sf()
+               unique(paste0(distinct_rows$project_short_title, " (", ifelse(is.na(distinct_rows$PPTID),distinct_rows$source,distinct_rows$PPTID), ")"))
 
              }),
-
-tar_target(name=project_widget_choices,
-           command={
-            distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID", "source")])
-
-             if (any(is.na(distinct_rows$project_short_title))) {
-               bad <- which(is.na(distinct_rows$project_short_title))
-               for (i in bad) {
-                 message(paste0("for " , i, " source = ", distinct_rows$source[i]))
-                 distinct_rows$project_short_title[i] <- distinct_rows$source[i]
-               }
-             }
-
-           unique(paste0(distinct_rows$project_short_title, " (", ifelse(is.na(distinct_rows$PPTID),distinct_rows$source,distinct_rows$PPTID), ")"))
-
-           }),
 
 
 tar_target(plot_files,
@@ -3853,11 +3854,9 @@ tar_target(plot_files,
 tar_target(name = MPA_report_card,
            command = {
 
-             d_pedf <- data_pillar_ecol_df[-which(data_pillar_ecol_df$areaID == "Non_Conservation_Area"),]
-
-             mrc <- left_join(MPAs,d_pedf |>
-                                            dplyr::select(-data,-plot) |>
-                                            filter(indicator %in% MPAs$NAME_E) |>
+             mrc <- left_join(MPAs,pillar_ecol_df |>
+                                            filter(indicator %in% MPAs$NAME_E,
+                                                   areaID != "Non_Conservation_Area") |>
                                             calc_group_score(grouping_var = "indicator") |>
                                             mutate(grade = if_else(is.nan(score),
                                                                    NA,
