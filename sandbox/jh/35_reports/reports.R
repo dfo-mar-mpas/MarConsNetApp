@@ -54,7 +54,7 @@ render(input=rmd_file, output_file = output_file, output_format = "html_document
 render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/network_report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//NEW_NETWORK.html", output_format = "html_document", params = params)
 
 # SITE
-render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//NEW_SITE.html", output_format = "html_document", params = params)
+render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//DEVELOPING.html", output_format = "html_document", params = params)
 
 
 

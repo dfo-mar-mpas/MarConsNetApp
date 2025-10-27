@@ -8,7 +8,7 @@ output: html_document
 
 ## Key Findings
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 library(sf)
 library(leaflet)
 library(rgbif)
@@ -29,7 +29,7 @@ if (any(pillar_ecol_df$status_statement == "No features are represented.", na.rm
 }
 
 
-image_folder <- file.path(suppressMessages(path_to_store()),"data","plot")
+image_folder <- file.path(sub("/[^/]*$", "", path_to_store()), "data", "plot")
 image_files <- list.files(image_folder, full.names = TRUE)
 
 
@@ -171,10 +171,10 @@ if (!(length(S_Objectives) == 0)) {
 div(
   style = "border: 2px solid black; padding: 10px; border-radius: 5px; background-color: #f9f9f9;",
   tags$p(investment),
-  tags$p(paste0(params$mpas, " has an overall ecological status score of ", area_grade, ".")),
   tags$p(status_objectives),
+  tags$p(paste0(params$mpas, " has an overall ecological status score of ", area_grade, ".")),
   tags$p(paste0(
-    "No data exists for the following indicators bins: ",
+    "It should be noted that no data exists for the following ecological bins: ",
     paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
     ". Further research is recommended."
   ))
@@ -228,12 +228,18 @@ maps <- maps %>%
 
 maps
 
+cat("<br>")
+cat(paste0("Figure 1: Location of ", string, " color coded for overall ecological status score"))
+
 ```
 
 
 ## Creature Feature
 
 ```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
+cat(paste0("Table 1: Species detected in ", string, " according to iNaturalist"))
+cat("<br>")
+
 try({
   datatable(
     creature_feature |>
@@ -294,7 +300,7 @@ try({
 })
 ```
 
-
+## Results
 
 <details>
 <summary style="
@@ -310,7 +316,7 @@ MANAGEMENT EFFECTIVENESS
 
 ```{r, echo=FALSE, results='asis', warning=FALSE}
 cat('<h3>Network Conservation Objectives</h2>\n')
-cat('Select each objective to see information on relevant indicators.\n')
+cat('Click each objective to see information on relevant indicators.\n')
 
 n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
 filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
@@ -346,21 +352,6 @@ dt_data_network <- data.frame(
   Grade = grades_network,
   stringsAsFactors = FALSE
 )
-
-# cat('<h4 style="text-align:left; margin-bottom:10px;">Table 2: Network Objective Effectiveness Summary</h3>\n')
-# cat('<table style="border-collapse: collapse; width:100%; border: 2px solid black; font-size: 1.1em;">\n')
-# cat('<tr><th style="border: 2px solid black; padding: 6px;">Objective</th><th style="border: 2px solid black; padding: 6px;">Grade</th></tr>\n')
-# 
-# for(i in seq_len(nrow(dt_data_network))) {
-#   cat('<tr style="background-color:', grade_colors_network[i], ';">')
-#   cat('<td style="border: 2px solid black; padding: 6px;">', dt_data_network$Objective[i], '</td>')
-#   cat('<td style="border: 2px solid black; padding: 6px;">', dt_data_network$Grade[i], '</td>')
-#   cat('</tr>\n')
-# }
-# 
-# cat('</table>')
-
-
 cat("<br>")
 
 ```
@@ -376,16 +367,16 @@ cat(sprintf(
         font-weight: bold;
         font-size: 1.2em;
         padding: 4px 8px;
-        background-color: %s;
-        border: 1px solid #90c0ff;
         border-radius: 4px;
         margin-bottom: 5px;">
-        <u>OBJECTIVE: %s (%s)</u>
+        <u>OBJECTIVE: %s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
      </summary>\n\n',
-  grade_colors_network[i],        # background color
-  toupper(n_objectives[i]),       # objective text
-  grades_network[i]               # grade to display
-))
+  toupper(n_objectives[i]),      # objective text
+  grade_colors_network[i],       # background color only for grade
+  grades_network[i]              # grade to display
+)) 
+  
+  
   
   k1 <- which(grepl(n_objectives[i], pillar_ecol_df$objectives, fixed=TRUE))
   if (params$mpas %in% regions$NAME_E) {
@@ -494,19 +485,7 @@ if (!(length(S_Objectives) == 0)) {
   )
   
 #   cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Site Objective Effectiveness Summary</h3>\n')
-# 
-# cat('<table style="border-collapse: collapse; width:100%; border: 2px solid black; font-size: 1.1em;">\n')
-# cat('<tr><th style="border: 2px solid black; padding: 6px;">Objective</th><th style="border: 2px solid black; padding: 6px;">Grade</th></tr>\n')
-# 
-# for (i in seq_len(nrow(dt_data))) {
-#   cat('<tr style="background-color:', site_color[i], ';">')
-#   cat('<td style="border: 2px solid black; padding: 6px;">', dt_data$Objective[i], '</td>')
-#   cat('<td style="border: 2px solid black; padding: 6px;">', dt_data$Grade[i], '</td>')
-#   cat('</tr>\n')
-# }
-# 
-# cat('</table>\n')
-  
+
 cat('<br>\n')
 
 } else {
@@ -533,16 +512,15 @@ cat(sprintf(
         font-weight: bold;
         font-size: 1.2em;
         padding: 4px 8px;
-        background-color: %s;
-        border: 1px solid #90c0ff;
         border-radius: 4px;
         margin-bottom: 5px;">
-        <u>OBJECTIVE: %s (%s)</u>
+        <u>OBJECTIVE: %s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
      </summary>\n\n',
-  site_color[i],        # background color
-  toupper(textO[i]),       # objective text
-  dt_data$Grade[i]               # grade to display
+  toupper(textO[i]),        # objective text
+  site_color[i],            # background color only for grade
+  dt_data$Grade[i]          # grade to display
 ))
+
   
 #cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n\n', toupper(textO[i])))
   k1 <- which(grepl(textO[i], pillar_ecol_df$objectives, fixed=TRUE))
@@ -661,8 +639,6 @@ ECOLOGICAL OVERVIEW
 
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-cat('<h2>Flower Plot</h2>\n')  # 🔴 header
-
 plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),],
                                             grouping = "objective",
                                             labels = "bin",
@@ -743,48 +719,91 @@ if (!(length(ddff_unique$PPTID) == 0)) {
   
 
   # example: add table headers
-  cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Ecological Overview Summary</h3>\n')
-  cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
-  cat('<thead><tr>',
-      paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
-      '</tr></thead>\n')
-  cat('<tbody>\n')
+  # cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Ecological Overview Summary</h3>\n')
+  # cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
+  # cat('<thead><tr>',
+  #     paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
+  #     '</tr></thead>\n')
+  # cat('<tbody>\n')
+  # 
+  # for (i in seq_len(nrow(ddff_display))) {
+  #   # if you want row coloring, define here
+  #   grade <- calc_letter_grade(ddff_display$SCORE[i])   # your function
+  #   if (!(is.na(grade))) {
+  #     if (!(grade == "NA")) {
+  #       row_color <- flowerPalette[[grade]]
+  #     } else {
+  #       row_color <= 'white'
+  #     }
+  #   } else {
+  #     row_color <= 'white'
+  #   }
+  #   
+  #   # lookup the color for that grade
+  #   
+  #   cat('<tr style="background-color:', row_color, ';">')
+  #   cat('<td>', ddff_display$GROUPING[i], '</td>')
+  #   cat('<td>', ddff_display$BIN[i], '</td>')
+  #   cat('<td>', ddff_display$INDICATOR[i], '</td>')
+  #   cat('<td>', ddff_display$SOURCE[i], '</td>')
+  #   cat('<td>', sprintf("%.2f", ddff_display$SCORE[i]), '</td>')
+  #   cat('<td>', ddff_display$READINESS[i], '</td>')
+  #   cat('<td>', ddff_display$QUALITY[i], '</td>')
+  #   cat('<td>', ddff_display$COST[i], '</td>')
+  #   cat('</tr>\n')
+  # }
+  # 
+  # cat('</tbody></table>')
+   
+   cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Ecological Overview Summary</h4>\n')
+cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
+cat('<thead><tr>',
+    paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "GRADE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
+    '</tr></thead>\n')
+cat('<tbody>\n')
+
+for (i in seq_len(nrow(ddff_display))) {
   
-  for (i in seq_len(nrow(ddff_display))) {
-    # if you want row coloring, define here
-    grade <- calc_letter_grade(ddff_display$SCORE[i])   # your function
-    if (!(is.na(grade))) {
-      if (!(grade == "NA")) {
-        row_color <- flowerPalette[[grade]]
-      } else {
-        row_color <= 'white'
-      }
-    } else {
-      row_color <= 'white'
-    }
-    
-    # lookup the color for that grade
-    
-    cat('<tr style="background-color:', row_color, ';">')
-    cat('<td>', ddff_display$GROUPING[i], '</td>')
-    cat('<td>', ddff_display$BIN[i], '</td>')
-    cat('<td>', ddff_display$INDICATOR[i], '</td>')
-    cat('<td>', ddff_display$SOURCE[i], '</td>')
-    cat('<td>', sprintf("%.2f", ddff_display$SCORE[i]), '</td>')
-    cat('<td>', ddff_display$READINESS[i], '</td>')
-    cat('<td>', ddff_display$QUALITY[i], '</td>')
-    cat('<td>', ddff_display$COST[i], '</td>')
-    cat('</tr>\n')
+  # Compute grade
+  grade <- calc_letter_grade(ddff_display$SCORE[i])
+  
+  # Determine cell color (blank or color)
+  if (!is.na(grade) && grade != "NA") {
+    grade_color <- flowerPalette[[grade]]
+  } else {
+    grade_color <- "white"
   }
-  
-  cat('</tbody></table>')
+
+  # Start row (no background color!)
+  cat('<tr>')
+
+  cat('<td>', ddff_display$GROUPING[i], '</td>')
+  cat('<td>', ddff_display$BIN[i], '</td>')
+  cat('<td>', ddff_display$INDICATOR[i], '</td>')
+  cat('<td>', ddff_display$SOURCE[i], '</td>')
+  cat('<td>', sprintf("%.2f", ddff_display$SCORE[i]), '</td>')
+
+  # ✅ Grade column — blank cell but color-coded background
+  cat(sprintf('<td style="background-color:%s; font-weight:bold; text-align:center;">%s</td>',
+              grade_color,
+              ""))  # empty string, but could be grade if you want to show it
+
+  cat('<td>', ddff_display$READINESS[i], '</td>')
+  cat('<td>', ddff_display$QUALITY[i], '</td>')
+  cat('<td>', ddff_display$COST[i], '</td>')
+
+  cat('</tr>\n')
+}
+
+cat('</tbody></table>')
+
 }
 
 ```
 
 
 ```{r, echo=FALSE, comment=NA, results='asis'}
-cat('<h2>Research and Monitoring Area</h2>\n')
+cat('<h3>Research and Monitoring Area</h2>\n')
 ```
 
 As shown above, in `r params$mpas` the over all grade based on our criteria is `r area_grade` with each bin having the following grade:
@@ -839,8 +858,10 @@ for (i in seq_along(BINS)) {
 
 names(keeper2) <- BINS
 
+cat('Click each indicator to see information on relevant indicators.\n')
+
 for (i in seq_along(keeper2)) {
-  cat(sprintf('<details><summary><strong>Indicator Bin: %s</strong></summary>\n\n', toupper(BINS[i])))
+  cat(sprintf('<details><summary><strong>INDICATOR BIN: %s</strong></summary>\n\n', toupper(BINS[i])))
   
   if (!(length(keeper2[[i]]$Indicator) == 0)) {
   for (j in seq_along(keeper2[[i]]$Indicator)) {
@@ -1287,7 +1308,7 @@ print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Ex
 
 
 
-## Collaborations and partnerships
+### Collaborations and partnerships
 
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
