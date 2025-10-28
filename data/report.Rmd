@@ -136,10 +136,12 @@ if (!(length(S_Objectives) == 0)) {
     
     site_grades <- NULL
     site_color <- NULL
+    number_of_indicators <- NULL
     
     for (i in seq_along(filtered_odfS$objectives)) {
       KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
       KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
+      number_of_indicators[i] <- length(KEEP$indicator[KEEP$indicator != "placeholder" & !is.na(KEEP$score)])
       
       KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
                                   score_var = "score",
@@ -200,7 +202,13 @@ cat(Context[[string]])
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
+cat("The entirety of this report follows this legend:\n\n")
+
 cat("<div style='display: flex; gap: 10px;'>")
+cat("<br>")
+
+
+
 PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
 for (name in names(PALETTE)) {
   color <- PALETTE[name]
@@ -406,7 +414,10 @@ cat(sprintf(
                                             min_score=0,
                                             title=" ")
     print(p)
+    
     cat("<br>")
+      cat("<br>")
+
     
     cat("Below highlights the list of indicators used to inform each objective: \n")
     cat("<br>")
@@ -981,44 +992,6 @@ for (i in seq_len(nrow(ddff_threats))) {
 }
 
 cat('</tbody></table>')
-
-  
-  
-  # example: add table headers
-  # cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
-  # cat('<thead><tr>',
-  #     paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
-  #     '</tr></thead>\n')
-  # cat('<tbody>\n')
-  # 
-  # for (i in seq_len(nrow(ddff_threats))) {
-  #   # if you want row coloring, define here
-  #   grade <- calc_letter_grade(ddff_threats$SCORE[i])   # your function
-  #   if (!(is.na(grade))) {
-  #     if (!(grade == "NA")) {
-  #       row_color <- flowerPalette[[grade]]
-  #     } else {
-  #       row_color <= 'white'
-  #     }
-  #   } else {
-  #     row_color <= 'white'
-  #   }
-  #   
-  #   # lookup the color for that grade
-  #   
-  #   cat('<tr style="background-color:', row_color, ';">')
-  #   cat('<td>', ddff_threats$GROUPING[i], '</td>')
-  #   cat('<td>', ddff_threats$BIN[i], '</td>')
-  #   cat('<td>', ddff_threats$INDICATOR[i], '</td>')
-  #   cat('<td>', ddff_threats$SOURCE[i], '</td>')
-  #   cat('<td>', sprintf("%.2f", ddff_threats$SCORE[i]), '</td>')
-  #   cat('<td>', ddff_threats$READINESS[i], '</td>')
-  #   cat('<td>', ddff_threats$QUALITY[i], '</td>')
-  #   cat('<td>', ddff_threats$COST[i], '</td>')
-  #   cat('</tr>\n')
-  # }
-  # 
-  # cat('</tbody></table>')
 }
 
 ```
@@ -1250,9 +1223,54 @@ tagList(
 
 ## Discussion
 
-```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
+```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis", message=FALSE}
+
+cat("### Status\n")
+
+cat(paste0("In ", string, " there is an overall ecological status score of ", area_grade, ". This is based on a total of ", length(unique(ddff_display$INDICATOR)), " indicators. Of these ", length(unique(ddff_display$INDICATOR)), " indicators, ", length(which(ddff_display$SCORE>49)), " indicators are receiving a 'pass' score of 50 or greater. "))
+
+if (area_grade %in% c("A", "B", "C")) {
+  cat(paste0("This suggests that the MPA is maintaining a healthy environmental condition."))
+} else if (area_grade == "NA") {
+  cat(paste0("Insufficient data are available to assess ecological condition, highlighting the need for monitoring to better understand and manage the MPA’s environmental health"))
+} else {
+  cat(paste0("This indicates that ecological conditions are below expectations, highlighting the need for targeted management actions to improce ecosystem health."))
+}
+
+# Code for print statement
+obj_ex <- read_excel(file.path(dirname(path_to_store()), "data", "objectives.xlsx"))
+
+now_what <- NULL
+for (i in seq_along(textO)) {
+  msg <- paste0(textO[i], 
+    " had a score of ", site_grades[i], 
+    ", that is based on ", number_of_indicators[i], " indicators. "
+  )
+  
+  # Conditional addition
+  if (site_grades[i] %in% c("A", "B", "C")) {
+    msg <- paste0(msg, obj_ex$Success[which(obj_ex$Objective == textO[i])])
+  } else if (site_grades[i] == "NA") {
+    msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
+  } else {
+    msg <- paste0(msg, obj_ex$Continue_Work[which(obj_ex$Objective == textO[i])], "\n\n")
+
+  }
+  
+  now_what[i] <- msg
+}
+
+# END CODE
+cat("<br>")
+cat(paste0("From a management perspective,"))
+cat("<br>")
+cat(now_what)
+cat("<br>")
+cat("<br>")
+
 
 cat("### Climate Change\n")
+cat("<br>")
 
 climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == params$mpas)])
 
@@ -1338,13 +1356,6 @@ print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Ex
 
 
 ```
-
-
-
-
-
-
-
 
 ### Collaborations and partnerships
 
@@ -1461,9 +1472,5 @@ if (length(csas_keep) > 0) {
 } else {
   cat("There have been no identified relevant CSAS meetings in the CSAS DMapps related to this area.")
 }
-
-
-
-
 ```
 
