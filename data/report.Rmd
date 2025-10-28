@@ -383,7 +383,8 @@ cat(sprintf(
      </summary>\n\n',
   toupper(n_objectives[i]),      # objective text
   grade_colors_network[i],       # background color only for grade
-  grades_network[i]              # grade to display
+  ifelse(!(grades_network[i] == "NA"), grades_network[i], "  ") 
+  #grades_network[i]              # grade to display
 )) 
   
   
@@ -530,11 +531,11 @@ cat(sprintf(
         padding: 4px 8px;
         border-radius: 4px;
         margin-bottom: 5px;">
-        <u>OBJECTIVE: %s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
+        <u>%s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
      </summary>\n\n',
   toupper(textO[i]),        # objective text
   site_color[i],            # background color only for grade
-  dt_data$Grade[i]          # grade to display
+  ifelse(!(dt_data$Grade[i] == "NA"), dt_data$Grade[i], "  ")          # grade to display
 ))
 
   
@@ -755,7 +756,7 @@ for (i in seq_len(nrow(ddff_display))) {
   if (!is.na(grade) && grade != "NA") {
     grade_color <- flowerPalette[[grade]]
   } else {
-    grade_color <- "white"
+    grade_color <- "#EDEDED"
   }
 
   # Start row (no background color!)
@@ -842,7 +843,7 @@ for (i in seq_along(keeper2)) {
   GRADE_COLOR <- unname(flowerPalette[BIN_GRADE])
   } else {
     BIN_GRADE <- NA
-    GRADE_COLOR <- "EDEDED"
+    GRADE_COLOR <- "#EDEDED"
   }
 
   cat(sprintf(
@@ -858,7 +859,8 @@ for (i in seq_along(keeper2)) {
      </summary>\n\n',
   toupper(BINS[i]),      # objective text
   GRADE_COLOR,       # background color only for grade
-  BIN_GRADE              # grade to display
+  ifelse(!(is.na(BIN_GRADE)), BIN_GRADE, "  ")
+  #BIN_GRADE              # grade to display
 ))
 
   
@@ -966,7 +968,7 @@ for (i in seq_len(nrow(ddff_threats))) {
   if (!is.na(grade) && grade != "NA") {
     grade_color <- flowerPalette[[grade]]
   } else {
-    grade_color <- "white"
+    grade_color <- "#EDEDED"
   }
   
   # Start row (no row background color)
@@ -1260,12 +1262,12 @@ for (i in seq_along(textO)) {
 }
 
 # END CODE
-cat("<br>")
+cat("\n\n")
 cat(paste0("From a management perspective,"))
-cat("<br>")
+cat("\n\n")
 cat(now_what)
-cat("<br>")
-cat("<br>")
+cat("\n\n")
+
 
 
 cat("### Climate Change\n")
