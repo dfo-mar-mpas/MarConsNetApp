@@ -47,8 +47,6 @@ pkgs <- c("sf",
           "rvest")
 shelf(pkgs)
 
-source("R/process_geom_data.R")
-
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
 tar_option_set(packages = basename(pkgs),
                format = "qs")
@@ -3806,30 +3804,20 @@ tar_target(theme_table,
 
              }),
 
+tar_target(plot_files_biodiversity,
+           command = save_plots(dplyr::select(ecol_obj_biodiversity_df,-data))),
+
+tar_target(plot_files_habitat,
+           command = save_plots(dplyr::select(ecol_obj_habitat_df,-data))),
+
+tar_target(plot_files_productivity,
+           command = save_plots(dplyr::select(ecol_obj_productivity_df,-data))),
 
 tar_target(plot_files,
-            command = {
-              allplotnames <- NULL
-
-              STORE <- dirname(path_to_store())
-
-              for(i in 1:nrow(data_pillar_ecol_df)){
-                message(i)
-                if(!is.null(data_pillar_ecol_df$plot[[i]])&data_pillar_ecol_df$areaID[[i]]!="Non_Conservation_Area"){
-                filename <-  file.path(STORE,
-                                       "data", "plot",
-                                       make.names(paste0("plot_",
-                                                         data_pillar_ecol_df$areaID[i],
-                                                         "_",
-                                                         data_pillar_ecol_df$indicator[i],
-                                                         ".png")))
-
-                allplotnames <- c(allplotnames,filename)
-                ggsave(filename,data_pillar_ecol_df$plot[[i]])
-                }
-              }
-              allplotnames
-            }),
+            command = c(plot_files_biodiversity,
+                        plot_files_habitat,
+                        plot_files_productivity)
+            ),
 
  tar_target(climate_change,
             command= {

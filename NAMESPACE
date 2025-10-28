@@ -3,6 +3,8 @@
 export(app)
 export(newLine)
 export(path_to_store)
+export(process_geom_data)
+export(save_plots)
 importFrom(DT,dataTableOutput)
 importFrom(DT,datatable)
 importFrom(DT,formatRound)
