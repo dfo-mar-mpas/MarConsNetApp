@@ -3240,7 +3240,7 @@ tar_target(ind_protconn,
 
 tar_target(name = ind_sst,
            command = {
-             ind_placeholder(ind_name="Sea Surface Temperature", areas = MPAs, readiness = "Readily Available", source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities."))
+             ind_placeholder(ind_name="Sea Surface Temperature", areas = MPAs, readiness = "Readily Available", source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"))
            }), # Environmental Representativity
 
 
