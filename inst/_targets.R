@@ -3901,7 +3901,7 @@ tar_target(cost_of_mpas,
                all_project_geoms_single_obs_per_row |>
                  group_by(PPTID,areaID ) |>
                  reframe(sites=n()) |>
-                 complete(PPTID, areaID = MPAs$NAME_E[MPAs$NAME_E!="Non_Conservation_Area"],fill=list(sites = 0)) |>
+                 tidyr::complete(PPTID, areaID = MPAs$NAME_E[MPAs$NAME_E!="Non_Conservation_Area"],fill=list(sites = 0)) |>
                  left_join(project_samples_total,by="PPTID") |>
                  mutate(percent_sites_in_mpa = sites/totalsites) |>
                  rename(area=areaID,
