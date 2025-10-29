@@ -1,6 +1,6 @@
 #' Save plots
 #'
-#' @param df one of the objective dataframes. Must contain columns: data, plot, areaID, indicator
+#' @param df one of the objective dataframes. Must contain columns: plot, areaID, indicator
 #' @param STORE path to store (default as the dirname(path_to_store()))
 #'
 #' @returns character vector of filenames where plots were saved
@@ -18,8 +18,8 @@
 #'  save_plots(df)
 #'  }
 save_plots <- function(df, STORE = dirname(path_to_store())){
-  if(!all(c("data","plot","areaID","indicator") %in% names(df))){
-    stop("Data frame must contain columns: data, plot, areaID, indicator")
+  if(!all(c("plot","areaID","indicator") %in% names(df))){
+    stop("Data frame must contain columns: plot, areaID, indicator")
   }
   allplotnames <- NULL
 
