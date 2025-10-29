@@ -2,6 +2,7 @@
 title: " "
 output:
   html_document:
+    self_contained: true
     toc: true
 ---
 
@@ -18,6 +19,15 @@ library(rvest)
 library(dplyr)
 library(DT)
 library(webshot2)
+library(base64enc)
+
+embed_image <- function(file_path, width = 600) {
+    mime <- paste0("image/", tools::file_ext(file_path))
+    data_uri <- base64enc::dataURI(file = file_path, mime = mime)
+    sprintf('<img src="%s" width="%s"/>\n\n', data_uri, width)
+    #sprintf('<img src="%s" width="%s"/>', data_uri, width)
+
+}
 
 if (any(pillar_ecol_df$areaID == "Non_Conservation_Area")) {
 pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
@@ -441,8 +451,8 @@ cat(sprintf(
     # END PLOT
       if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
-        #cat("![](", plot_file[p], ")\n\n", sep = "")
-         cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
+         #cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
+        cat(embed_image(plot_file[p]))
       }
       } else {
         cat("There is no image available for this indicator as it was not sampled in this area.")
@@ -593,8 +603,9 @@ cat(sprintf(
     # END PLOT
       if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
-        #cat("![](", plot_file[p], ")\n\n", sep = "")
-         cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
+         #cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
+         cat(embed_image(plot_file[p]))
+
       }
       } else {
         cat("There is no image available for this indicator as it was not sampled in this area.")
@@ -882,8 +893,9 @@ for (i in seq_along(keeper2)) {
     # END PLOT
       if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
-        #cat("![](", plot_file[p], ")\n\n", sep = "")
-         cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
+         #cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
+         cat(embed_image(plot_file[p]))
+
       }
       } else {
         cat("There is no image available for this indicator as it was not sampled in this area.")
@@ -1358,6 +1370,9 @@ print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Ex
 
 ```
 
+## Outreach and engagement
+
+
 ### Collaborations and partnerships
 
 
@@ -1431,7 +1446,6 @@ if (any(p_subset %in% collaborations$project_id)) {
 }
 ```
 
-## Outreach and engagement
 
 ### Deliverables
 
