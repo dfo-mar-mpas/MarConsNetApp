@@ -496,6 +496,7 @@ list(
                creature_feature
                cost_of_mpas
                om
+               objective_tabs
 
                #TODO https://github.com/dfo-mar-mpas/MarConsNetApp/issues/184
                # mpas <- MPAs$NAME_E
