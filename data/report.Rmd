@@ -1,13 +1,12 @@
 ---
-title: " "
+title: "Conservation Area: `r params$mpas`"
 output:
   html_document:
     self_contained: true
     toc: true
+    toc_depth: 3
+    toc_float: false
 ---
-
-# Conservation Area: **`r params$mpas`**
-
 
 ## Key Findings
 
@@ -28,6 +27,8 @@ embed_image <- function(file_path, width = 600) {
     #sprintf('<img src="%s" width="%s"/>', data_uri, width)
 
 }
+
+pillar_ecol_df <- pillar_ecol_df[order(pillar_ecol_df$indicator),]
 
 if (any(pillar_ecol_df$areaID == "Non_Conservation_Area")) {
 pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
@@ -202,9 +203,9 @@ div(
 
 ## At-a-glance
 
-```{r, echo=FALSE,comment=NA, results="asis"}
+```{r, echo=FALSE,comment=NA, results='asis'}
 if (!(length(Context[[string]]) == 0)) {
-cat(Context[[string]])
+cat(paste(Context[[string]], collapse = "<br>"), "\n")
 } else {
   cat("There is no available context for this area.")
 }
@@ -394,7 +395,6 @@ cat(sprintf(
   toupper(n_objectives[i]),      # objective text
   grade_colors_network[i],       # background color only for grade
   ifelse(!(grades_network[i] == "NA"), grades_network[i], "  ") 
-  #grades_network[i]              # grade to display
 )) 
   
   
@@ -679,7 +679,7 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),],
                                             score = "score",
                                             max_score=100,
                                             min_score=0,
-                                            title="Flower plot frame work")
+                                            title="Flower plot framework")
 ```
 
 
@@ -1243,11 +1243,15 @@ cat("### Status\n")
 cat(paste0("In ", string, " there is an overall ecological status score of ", area_grade, ". This is based on a total of ", length(unique(ddff_display$INDICATOR)), " indicators. Of these ", length(unique(ddff_display$INDICATOR)), " indicators, ", length(which(ddff_display$SCORE>49)), " indicators are receiving a 'pass' score of 50 or greater. "))
 
 if (area_grade %in% c("A", "B", "C")) {
-  cat(paste0("This suggests that the MPA is maintaining a healthy environmental condition."))
+  cat(paste0("The results suggest that the MPA is maintaining a healthy environmental condition."))
 } else if (area_grade == "NA") {
   cat(paste0("Insufficient data are available to assess ecological condition, highlighting the need for monitoring to better understand and manage the MPA’s environmental health"))
 } else {
   cat(paste0("This indicates that ecological conditions are below expectations, highlighting the need for targeted management actions to improce ecosystem health."))
+}
+
+if (length(unique(ddff_display$INDICATOR)) < 5) {
+  cat(paste0("Though, it should be noted that additional work should be considered to add more indicators in this area."))
 }
 
 # Code for print statement
@@ -1266,14 +1270,18 @@ for (i in seq_along(textO)) {
   } else if (site_grades[i] == "NA") {
     msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
   } else {
-    msg <- paste0(msg, obj_ex$Continue_Work[which(obj_ex$Objective == textO[i])], "\n\n")
+    msg <- paste0(msg, obj_ex$Continue_Work[which(obj_ex$Objective == textO[i])])
 
   }
+  
+  if (number_of_indicators[i] < 5) {
+    msg <- paste0(msg, "Additional work should also be considered to add more indicators to support this objective.")
+  }
+  msg <- paste0(msg, '\n\n')
   
   now_what[i] <- msg
 }
 
-# END CODE
 cat("\n\n")
 cat(paste0("From a management perspective,"))
 cat("\n\n")
@@ -1394,8 +1402,6 @@ if (any(p_subset %in% collaborations$project_id)) {
   
   ## For collaborations, I need to obtain the year. This would allow me to say 'for this year, x collaborations happened, but in previous years for this project, Y collaborations have happened).
   
-  #last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
-  
   year_keep <- which(collab_subset$fiscal_year == last_year)
   
   if (!(length(year_keep) == 0)) {
@@ -1410,17 +1416,21 @@ if (any(p_subset %in% collaborations$project_id)) {
       rc$Year[i] <- paste0(sort(unique(recent_col[keeping,]$Year)), collapse= ", ")
     }
     cat(paste0("The following collaborations/partnerships were identified for ", last_year, " for projects that contributed to this site:"))
-    cat("\n\n")
+    cat("<br>")
 
     print(knitr::kable(rc, caption = "Recent Collaborations and Partnerships",row.names=FALSE))
     cat("\n\n")
   } else {
-  cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. /n/n"))  
+  cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. "))
+  cat("<br>")
+
   }
   if (!(length(year_keep) == 0)) {
   if (!(length(which((!(1:length(collab_subset$project_id)%in% year_keep))))) == 0) {
     
-    cat("The following past partnerships/collaborations have been identified and contributed to this site: \n\n")
+    cat("The following past partnerships/collaborations have been identified and contributed to this site:")
+    cat("<br>")
+
     past_coll <- collab_subset[-year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
     names(past_coll) <- c("Project ID", "Organization", "Year")
     organizations <- unique(past_coll$Organization)
@@ -1434,15 +1444,21 @@ if (any(p_subset %in% collaborations$project_id)) {
     print(knitr::kable(pc, caption = "Past Collaborations and Partnerships",row.names=FALSE))
     
   } else {
-    cat("There are no partnerships/collaborations identified from previous years. \n\n")
+    cat("There are no partnerships/collaborations identified from previous years.")
+    cat("<br>")
+
   }
   } else {
-        cat("There are no partnerships/collaborations identified from previous years. \n\n")
+        cat("There are no partnerships/collaborations identified from previous years.")
+        cat("<br>")
+
 
     
   }
 } else {
-    cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool. \n\n")
+    cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool.")
+    cat("<br>")
+
 }
 ```
 
