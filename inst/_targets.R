@@ -3870,123 +3870,44 @@ tar_target(cost_of_mpas,
            # This is because all of our indicators like this use external open data.
 
            command={
-             om
-             MPAs
-             dped <- data_pillar_ecol_df[-which(data_pillar_ecol_df$indicator %in% MPAs$NAME_E),]
-             message('made it')
-             MPA <- MPAs[-which(MPAs$NAME_E %in% "Non_Conservation_Area"),]
+             project_costs <- om |>
+               group_by(project_id) |>
+               reframe(totalamount = sum(amount))
 
-             OM <- om |>
-               dplyr::select(project_id, fiscal_year, amount, funding_source_display, category_type)
-
-             ppt <- dped %>%
-               group_by(PPTID)
-
-             # Ignoring external data for now
-             if (any(is.na(ppt$PPTID))) {
-               ppt <- ppt[-which(is.na(ppt$PPTID)),]
-             }
-
-             ppt <- split(ppt, ppt$PPTID)
-
-             OM$number_of_project_stations <- NA
-
-             for (i in seq_along(ppt)) {
-               PPT <- ppt[[i]]
-               d <- PPT$data
-               dd <- bind_rows(d)
-               if ("year" %in% names(dd)) {
-                 combinations <- dd |> distinct(geometry, year) |> nrow()
-               } else {
-                 # This assumes each unique location was sampled once. This is a caveat and should be documented.
-                 # Representation
-                 combinations <- dd |> distinct(geoms) |> nrow()
-
-               }
-               OM$number_of_project_stations[which(OM$project_id == as.numeric(names(ppt)[i]))] <- combinations # FIXME: Note, need to get the same to see if they happened at different times
-             }
-
-             # NOW I HAVE THE NUMBER OF STATIONS
-
-             OM <- OM[which(OM$project_id %in% names(ppt)),]
-             OM <- split(OM, OM$project_id)
-
-             price_per_station <- list()
-             for (i in seq_along(OM)) {
-               price_per_station[[i]] <- sum(OM[[i]]$amount) / unique(OM[[i]]$number_of_project_stations)
-             }
-             names(price_per_station) <- names(OM)
-
-             # Now that we have price per station we can determine how many unique stations (and time) are within the MPA
-
-             # I HAVE NUMBER OF STATIONS AND COST PER STATION
-
-             percent_sites_in_mpa <- vector("list", length(MPA$NAME_E))
-             names(percent_sites_in_mpa) <- MPA$NAME_E
-
-             for (i in seq_along(MPA$NAME_E)) {
-               message(paste0("i = ", i))
-
-               # TEST
-               if (!(length(ppt) == 0)) {
-                 percent_sites_in_mpa[[i]] <- data.frame(project_id=names(price_per_station), percent_sites_in_mpa=rep(NA,length(names(price_per_station))), price_per_station=rep(NA, length(names(price_per_station))), area=MPA$NAME_E[i])
-
-               } else {
-                 percent_sites_in_mpa[[i]] <- data.frame(project_id=NA, percent_sites_in_mpa=NA, price_per_station=NA, area=MPA$NAME_E[i])
-                 next
-               }
-
-               mpa_name <- MPA$NAME_E[i]
-               for (j in seq_along(names(price_per_station))) {
-                 message(paste0("j = ", j))
-                 pps <- names(price_per_station)[j]
+             all_project_geoms_single_obs_per_row <- all_project_geoms |>
+               filter(!is.na(PPTID),
+                      areaID!="Non_Conservation_Area") |>
+               transform(gtype = as.character(st_geometry_type(geometry))) |>
+               (\(x) {
+                 rbind(
+                   x[x$gtype == "MULTIPOINT", ] |> st_cast("POINT"),
+                   x[x$gtype == "MULTILINESTRING", ] |> st_cast("LINESTRING"),
+                   x[x$gtype == "MULTIPOLYGON", ] |> st_cast("POLYGON"),
+                   x[!grepl("^MULTI", x$gtype), ]
+                 )
+               })() |>
+               subset(select = -gtype) |>
+               distinct()
 
 
-                 ddff_list <- dped$data[
-                   dped$PPTID == pps &
-                     dped$areaID == mpa_name
-                 ]
 
-                 if (any(!vapply(ddff_list, is.null, logical(1)))) {
+               project_samples_total <- all_project_geoms_single_obs_per_row |>
+                 group_by(PPTID) |>
+                 reframe(totalsites=n()) |>
+                 left_join(project_costs,by = c("PPTID"="project_id")) |>
+                 mutate(price_per_station = totalamount/totalsites)
 
-                   if ("year" %in% unique(unlist(lapply(ddff_list, names)))) {
-                     result <- bind_rows(ddff_list) |>
-                       dplyr::select(year, geometry)
-                   } else {
-                     result <- bind_rows(ddff_list) |>
-                       dplyr::select(geoms)
-                   }
-                 } else {
-                   result <- NULL
-                 }
-                 if (!(is.null(result))) {
-                   if ("year" %in% names(result)) {
-                     sites_in_mpa <- result |> distinct(geometry, year) |> nrow() # This is the number of unique stations in the MPA
-                   } else {
-                     sites_in_mpa <- result |> distinct(geoms) |> nrow()
-                   }
+               # cost_of_mpas
+               all_project_geoms_single_obs_per_row |>
+                 group_by(PPTID,areaID ) |>
+                 reframe(sites=n()) |>
+                 complete(PPTID, areaID = MPAs$NAME_E[MPAs$NAME_E!="Non_Conservation_Area"],fill=list(sites = 0)) |>
+                 left_join(project_samples_total,by="PPTID") |>
+                 mutate(percent_sites_in_mpa = sites/totalsites) |>
+                 rename(area=areaID,
+                        project_id=PPTID) |>
+                 dplyr::select(project_id, area, percent_sites_in_mpa, price_per_station)
 
-                   # Find percentage of stations in the MPA
-                   total_sites <- unique(OM[[which(names(OM) == pps)]]$number_of_project_stations)
-
-                   percent_sites_in_mpa[[i]]$percent_sites_in_mpa[j] <- sites_in_mpa/total_sites*100
-                   percent_sites_in_mpa[[i]]$price_per_station[j] <- price_per_station[[which(names(price_per_station) == pps)]]
-
-                 } else {
-                   percent_sites_in_mpa[[i]]$percent_sites_in_mpa[j] <- 0
-                   percent_sites_in_mpa[[i]]$price_per_station[j] <- price_per_station[[which(names(price_per_station) == pps)]]
-
-
-                 }
-               }
-             }
-
-             x <- do.call(rbind, percent_sites_in_mpa)
-             rownames(x) <- NULL
-             if (any(is.na(x$project_id))) {
-               x <- x[-which(is.na(x$project_id)),] # These are like placeholders, outside data, etc.
-             }
-             x
            }
 ),
 
