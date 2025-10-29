@@ -3248,13 +3248,8 @@ tar_target(objective_indicators,
            command={
              #cat(paste0("The length of pillar_ecol is ", length(pillar_ecol_df$bin)))
              ped <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)),]
-             if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
-               STORE = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
-             } else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
-               # Accessing 'beast' via Windows
-               STORE <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
-             }
-             obj <- paste0(STORE,"/data/objectives.xlsx")
+
+             obj <- paste0(dirname(path_to_store()),"/data/objectives.xlsx")
              #obj <- list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE)[which(grepl("objectives.xlsx",list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE) ))]
               x <-read_excel(obj)
               x$Objective <- sub("\\.$", "", x$Objective)
