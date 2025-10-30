@@ -87,7 +87,7 @@ for (i in seq_along(unique(p$bin))) {
 }
 
 # PERCENT FUNDING FOR THIS AREA
-com <- cost_of_mpas[which(cost_of_mpas$area == params$mpas & !(round(cost_of_mpas$percent_sites_in_mpa,0) == 0)),]
+com <- cost_of_mpas[which(cost_of_mpas$area == params$mpas & !(cost_of_mpas$percent_sites_in_mpa < 0.0000001)),]
 
 if (length(com$project_id) != 0) {
   proj_titles <- sapply(com$project_id, function(pid) {
@@ -153,7 +153,7 @@ if (!(length(S_Objectives) == 0)) {
       KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
       KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
       number_of_indicators[i] <- length(KEEP$indicator[KEEP$indicator != "placeholder" & !is.na(KEEP$score)])
-      
+
       KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
                                   score_var = "score",
                                   weight_var = "weight")
@@ -1265,17 +1265,21 @@ for (i in seq_along(textO)) {
   )
   
   # Conditional addition
-  if (site_grades[i] %in% c("A", "B", "C")) {
-    msg <- paste0(msg, obj_ex$Success[which(obj_ex$Objective == textO[i])])
-  } else if (site_grades[i] == "NA") {
+  if (length(site_grades)<1){
     msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
+  } else if( site_grades[i] == "NA") {
+    msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
+  } else if (site_grades[i] %in% c("A", "B", "C")) {
+    msg <- paste0(msg, obj_ex$Success[which(obj_ex$Objective == textO[i])])
   } else {
     msg <- paste0(msg, obj_ex$Continue_Work[which(obj_ex$Objective == textO[i])])
-
+    
   }
   
-  if (number_of_indicators[i] < 5) {
-    msg <- paste0(msg, "Additional work should also be considered to add more indicators to support this objective.")
+  if ( !is.null(number_of_indicators[i])){
+    if (number_of_indicators[i] < 5) {
+      msg <- paste0(msg, "Additional work should also be considered to add more indicators to support this objective.")
+    }
   }
   msg <- paste0(msg, '\n\n')
   
@@ -1300,12 +1304,12 @@ for (i in seq_along(climate_indicators)) {
   
   if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df$trend_statement[indicator_keep]))) {
     
-    excel_keep <- which(climate$Indicator == climate_indicators[i])
+    excel_keep <- which(climate_change$Indicator == climate_indicators[i])
     pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == params$mpas)
     
     cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
     
-    cat(climate$Context[excel_keep], "\n\n")
+    cat(climate_change$Context[excel_keep], "\n\n")
     cat("In our analysis, ")
     cat(pillar_ecol_df$trend_statement[indicator_keep])
     
