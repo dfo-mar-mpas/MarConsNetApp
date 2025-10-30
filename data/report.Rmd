@@ -1304,12 +1304,12 @@ for (i in seq_along(climate_indicators)) {
   
   if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df$trend_statement[indicator_keep]))) {
     
-    excel_keep <- which(climate$Indicator == climate_indicators[i])
+    excel_keep <- which(climate_change$Indicator == climate_indicators[i])
     pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == params$mpas)
     
     cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
     
-    cat(climate$Context[excel_keep], "\n\n")
+    cat(climate_change$Context[excel_keep], "\n\n")
     cat("In our analysis, ")
     cat(pillar_ecol_df$trend_statement[indicator_keep])
     

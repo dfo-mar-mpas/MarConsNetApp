@@ -502,6 +502,7 @@ list(
                all_project_geoms
                deliverables
                csas
+               climate_change
 
                #TODO https://github.com/dfo-mar-mpas/MarConsNetApp/issues/184
                # mpas <- MPAs$NAME_E
