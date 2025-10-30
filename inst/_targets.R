@@ -497,6 +497,10 @@ list(
                cost_of_mpas
                om
                objective_tabs
+               regions
+               Ecological
+               all_project_geoms
+               deliverables
 
                #TODO https://github.com/dfo-mar-mpas/MarConsNetApp/issues/184
                # mpas <- MPAs$NAME_E
