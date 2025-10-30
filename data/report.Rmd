@@ -87,7 +87,7 @@ for (i in seq_along(unique(p$bin))) {
 }
 
 # PERCENT FUNDING FOR THIS AREA
-com <- cost_of_mpas[which(cost_of_mpas$area == params$mpas & !(round(cost_of_mpas$percent_sites_in_mpa,0) == 0)),]
+com <- cost_of_mpas[which(cost_of_mpas$area == params$mpas & !(cost_of_mpas$percent_sites_in_mpa < 0.0000001)),]
 
 if (length(com$project_id) != 0) {
   proj_titles <- sapply(com$project_id, function(pid) {
