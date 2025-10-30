@@ -3250,16 +3250,24 @@ tar_target(name = ind_sst,
            }), # Environmental Representativity
 
 
+tar_target(objectives.csv,
+           command = "data/objectives.csv",
+           format = "file"
+           ),
+
+tar_target(objectives_df,
+           command = {
+             read.csv(objectives.csv, stringsAsFactors = FALSE)
+           }
+           ),
+
 tar_target(objective_indicators,
            command={
              #cat(paste0("The length of pillar_ecol is ", length(pillar_ecol_df$bin)))
              ped <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)),]
 
-             obj <- paste0(dirname(path_to_store()),"/data/objectives.xlsx")
-             #obj <- list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE)[which(grepl("objectives.xlsx",list.files(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data"), full.names = TRUE) ))]
-              x <-read_excel(obj)
-              x$Objective <- sub("\\.$", "", x$Objective)
-              x$Objective <- sub("\\;$", "", x$Objective)
+              objectives_df$Objective <- sub("\\.$", "", objectives_df$Objective)
+              objectives_df$Objective <- sub("\\;$", "", objectives_df$Objective)
 
               indicator_objectives <- trimws(unique(unlist(strsplit(ped$objectives, ";;;"))), 'both')
               indicator_objectives <- indicator_objectives[-which(indicator_objectives == "NA")]
@@ -3269,8 +3277,8 @@ tar_target(objective_indicators,
              for (i in seq_along(ped_objectives)) {
                message(i)
                keep <- which(grepl(indicator_objectives[i], ped$objectives, fixed = TRUE))
-               if (x$Framework[which(x$Objective == indicator_objectives[i])] %in% MPAs$NAME_E) {
-                 keep2 <- which(ped$areaID == x$Framework[which(x$Objective == indicator_objectives[i])])
+               if (objectives_df$Framework[which(objectives_df$Objective == indicator_objectives[i])] %in% MPAs$NAME_E) {
+                 keep2 <- which(ped$areaID == objectives_df$Framework[which(objectives_df$Objective == indicator_objectives[i])])
                  keep <- intersect(keep, keep2)
                }
 
@@ -3281,7 +3289,7 @@ tar_target(objective_indicators,
 
              # Adding objectives that aren't yet accounted for
 
-             new_objectives <- x$Objective[which(!(x$Objective %in% names(ped_objectives)))]
+             new_objectives <- objectives_df$Objective[which(!(objectives_df$Objective %in% names(ped_objectives)))]
 
              for (obj_name in new_objectives) {
                # create a blank NA df with the same columns
