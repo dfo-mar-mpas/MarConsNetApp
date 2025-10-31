@@ -245,24 +245,13 @@ list(
                                     place=unique(c(MPAs$region,MPAs$NAME_E))) |>
                  mutate(tab = paste0("tab_", 1:length(flower)),
                         link = paste0("link_", 1:length(flower)))
-               # mytabs <- NULL
-               # for (i in seq_along(MPAs$NAME_E)) {
-               #   df <- ftabs
-               #   df$place <- MPAs$NAME_E[i]
-               #   mytabs[[i]] <- df
-               # }
-
-               # MYTABS <- do.call(rbind, mytabs)
-               # apptabs <- rbind(ftabs, MYTABS)
-               # apptabs$tab <- paste0("tab_", seq_along(1:length(apptabs$flower)))
-               # apptabs$link <- paste0("link_", seq_along(1:length(apptabs$flower)))
                home <- data.frame(flower="home", place="home", tab="tab_0", link="link_0")
                rbind(home, apptabs)
              }),
 
   tar_target(name=cookie,
            command={
-             cookie <- read.table(file.path(path_to_store(),"..","data","cookie.txt"))$V1
+             read.table(file.path(path_to_store(),"..","data","cookie.txt"))$V1
 
            }),
 
@@ -488,7 +477,7 @@ list(
                pillar_ecol_df
                Context
                flowerPalette
-               odf
+               objective_tabs
                N_Objectives
                Objectives_processed
                MPA_report_card
@@ -604,79 +593,6 @@ list(
 
              }
              ),
-
-  tar_target(name = odf,
-             command = {
-               O <- data.frame(
-                 objectives = c(0, unlist(Objectives_processed, use.names = FALSE), N_Objectives)
-               )
-               O$flower_plot <- 0
-               O$area <- 0
-               get_first_four_words <- function(texts) { # 7 words
-                 lapply(texts, function(text) {
-                   words <- strsplit(text, " ")[[1]] # Split each string into words
-                   first_four_words <- paste(words[1:min(7, length(words))], collapse = " ") # Concatenate the first four words (or fewer if there are not enough words)
-                   return(first_four_words)
-                 })
-               }
-
-               for (i in seq_along(O$objectives)) {
-                 message(i)
-                 ob <- gsub("[-\n]", "", O$objectives[i])
-                 if (ob == "promote the recovery of atrisk whales and wolffish") {
-                   ob <- "promote the recovery of at-risk whales and"
-                 }
-                 if (!(O$objectives[i] == "0")) {
-                   keep <- which(tolower(get_first_four_words(fp$label_Objective)) == tolower(get_first_four_words(ob)[[1]]))
-                   if (length(keep) > 1) {
-                     browser()
-                   }
-                   if (!(length(keep) == 0)) {
-                     O$flower_plot[i] <- fp$Flowerplot_connection[keep]
-                     O$area[i] <- fp$label_Framework[keep]
-                   } else {
-                     message("i is also wrong (check fp) ", i)
-                   }
-                 } else {
-                   O$flower_plot[i] <- "flower_0"
-                   O$area[i] <= "area_0"
-                 }
-               }
-
-               O$tab <- 0
-               O$link <- 0
-               for (i in seq_along(O$objectives)) {
-                 message("i = ", i)
-                 if (!(i == 1)) {
-                   if (!(grepl("Indicator", O$flower_plot[i]))) {
-                     k1 <- which(APPTABS$place %in% O$area[i]) # SAME AREA AND FLOWER
-                     k2 <- which(APPTABS$flower == O$flower_plot[i])
-                     if (length(k2) == 0) {
-                       if (grepl("Environmental", O$flower_plot[i], ignore.case=TRUE)) {
-                         k2 <- which(APPTABS$flower == "Environmental Representativity")
-                       }
-                     }
-                     keep <- intersect(k1,k2)
-                     O$tab[i] <- APPTABS$tab[keep]
-                     O$link[i] <- APPTABS$link[keep]
-                   } else {
-                     k <- which(pillar_ecol_df$indicators == trimws(gsub("-", "", gsub("\n", "", O$objectives[i]))), "right")
-                     O$tab[i] <- pillar_ecol_df$tab[k]
-                     O$link[i] <- pillar_ecol_df$link[k]
-
-                   }
-                 } else {
-                   O$tab[i] <- "tab_0"
-                   O$link[i] <- "link_0"
-                 }
-
-               }
-               O
-
-             }),
-
-
-
 
 
   ############ data loading ############
@@ -3250,24 +3166,22 @@ tar_target(name = ind_sst,
            }), # Environmental Representativity
 
 
-tar_target(objectives.csv,
-           command = "data/objectives.csv",
+tar_target(objectives_csv,
+           command = "data_raw/objectives.csv",
            format = "file"
            ),
 
 tar_target(objectives_df,
            command = {
-             read.csv(objectives.csv, stringsAsFactors = FALSE)
+             read.csv(objectives_csv, stringsAsFactors = FALSE)
            }
            ),
 
 tar_target(objective_indicators,
            command={
+             objectives_df
              #cat(paste0("The length of pillar_ecol is ", length(pillar_ecol_df$bin)))
              ped <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)),]
-
-              objectives_df$Objective <- sub("\\.$", "", objectives_df$Objective)
-              objectives_df$Objective <- sub("\\;$", "", objectives_df$Objective)
 
               indicator_objectives <- trimws(unique(unlist(strsplit(ped$objectives, ";;;"))), 'both')
               indicator_objectives <- indicator_objectives[-which(indicator_objectives == "NA")]
@@ -3310,13 +3224,13 @@ tar_target(objective_tabs,
            # WHICH ARE FOR OBJECTIVES
            command={
             ped <- pillar_ecol_df
-           ot <- data.frame(objectives=names(objective_indicators), tab=NA)
+           ot <- data.frame(objectives=objectives_df$Objective, tab=NA, area=objectives_df$Framework)
 
            start <- max(sort(as.numeric(sub(".*_", "", ped$tab))))+1
            end <- start+(length(ot$objectives)-1)
            tabs <- start:end
            ot$tab <- paste0("tab_", tabs)
-
+           ot$link <- paste0("link_", tabs)
            ot
 
            }
@@ -3936,7 +3850,7 @@ tar_target(name = upload_all_data_to_shiny,
 
               # Upload the targets folder, and only certain objects needed by the app
               upload_objects <- c("APPTABS", "pillar_ecol_df", "all_project_geoms", "MPA_report_card",
-                                  "MPAs", "areas", "regions", "odf", "flowerPalette", "indicatorFlower",
+                                  "MPAs", "areas", "regions", "flowerPalette", "indicatorFlower",
                                   "Objectives_processed", "N_Objectives", "om", "Ecological", "Context",
                                   "collaborations", "deliverables", "csas", "climate", "cost_of_mpas",
                                   "salary", "theme_table", "objective_tabs", "objective_indicators")

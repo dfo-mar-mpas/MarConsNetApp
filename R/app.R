@@ -51,7 +51,7 @@ app <- function() {
 
   # load targets if necessary
   if(!exists("APPTABS")){
-    tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","odf","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators"),
+    tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators"),
              store = STORE)
   }
 
@@ -795,12 +795,7 @@ server <- function(input, output, session) {
     tab_id <- input$tabs
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
       if (!(input$tabs == "tab_0")) {
-        if (input$tabs %in% odf$tab) {
-        objective <- gsub("\n", "", odf$objectives[which(odf$tab == tab_id)])
-        flower <- odf$flower_plot[which(odf$tab == tab_id)]
-        area <- gsub("_", " ", gsub("_CO$", "", odf$area[which(odf$tab == tab_id)]))
-
-        } else if (input$tabs %in% pillar_ecol_df$tab) {
+        if (input$tabs %in% pillar_ecol_df$tab) {
           objective <- " "
           flower <- pillar_ecol_df$bin[which(pillar_ecol_df$tab == tab_id)]
           area <- gsub("_", " ", gsub("_CO$", "", pillar_ecol_df$areaID[which(pillar_ecol_df$tab == tab_id)]))
@@ -1249,20 +1244,6 @@ server <- function(input, output, session) {
     do.call(tagList, img_outputs)
   })
 
-  output$indicatorLeaflet <- leaflet::renderLeaflet({
-    req(input$tabs)
-    currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
-    if (!(length(currentInd) == 0)) {
-      indy <- odf$objectives[which(odf$tab == input$tabs)]
-      if (length(indy) == 0) {
-        indy <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
-      }
-      plot <- pillar_ecol_df$plot[which(pillar_ecol_df$indicator == indy)]
-      if (pillar_ecol_df$type[which(pillar_ecol_df$indicator == currentInd)] == "leaflet") {
-        plot2 <- eval(parse(text = plot))
-      }
-    }
-  })
 
   output$conditionalFlower <- shiny::renderUI({
     req(state$mpas)
@@ -1498,7 +1479,7 @@ server <- function(input, output, session) {
       string <- "Scotian_Shelf_CO"
       textN <- N_Objectives
       links <- lapply(seq_along(textN), function(i) {
-        shiny::actionLink(inputId = odf$tab[which(odf$objectives == textN[[i]])], label = textN[[i]])
+        shiny::actionLink(inputId = objective_tabs$tab[which(objective_tabs$objectives == textN[[i]])], label = textN[[i]])
       })
     }
   })
