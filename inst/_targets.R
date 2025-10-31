@@ -479,7 +479,6 @@ list(
                flowerPalette
                objective_tabs
                N_Objectives
-               Objectives_processed
                MPA_report_card
                collaborations
                creature_feature
@@ -495,7 +494,7 @@ list(
 
                #TODO https://github.com/dfo-mar-mpas/MarConsNetApp/issues/184
                # mpas <- MPAs$NAME_E
-               mpas <- names(Objectives_processed)
+               mpas <- unique(objective_tabs$area[objective_tabs$area %in% MPAs$NAME_E])
                rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
                output_dir <- file.path(dirname(path_to_store()),"data","reports")
 
@@ -522,28 +521,6 @@ list(
              command = {
                MPAs$NAME_E
              }),
-
-  tar_target(name = objectives,
-             command = {
-               lapply(areas, function(x) data_objectives(type="site", area=x))
-               }),
-
-  tar_target(name = Objectives_processed,
-             command = {
-               OBJECTIVES <- vector(mode="list", length(objectives))
-               for (i in seq_along(OBJECTIVES)) {
-                 O <- objectives[[i]]
-                 for (j in seq_along(O)) {
-                   OBJECTIVES[[i]][[j]] <- newLine(O[j])
-                 }
-               }
-               OBJECTIVES <- lapply(OBJECTIVES, unlist)
-               names(OBJECTIVES) <- areas
-               OBJECTIVES <- OBJECTIVES[which(unname(unlist(lapply(OBJECTIVES, function(x) !(is.null(x))))))]
-               OBJECTIVES
-             }),
-
-
 
   tar_target(name = N_Objectives,
              command = {
@@ -3846,9 +3823,9 @@ tar_target(name = upload_all_data_to_shiny,
               # Upload the targets folder, and only certain objects needed by the app
               upload_objects <- c("APPTABS", "pillar_ecol_df", "all_project_geoms", "MPA_report_card",
                                   "MPAs", "areas", "regions", "flowerPalette", "indicatorFlower",
-                                  "Objectives_processed", "N_Objectives", "om", "Ecological", "Context",
-                                  "collaborations", "deliverables", "csas", "climate", "cost_of_mpas",
-                                  "salary", "theme_table", "objective_tabs", "objective_indicators")
+                                  "N_Objectives", "om", "Ecological", "Context", "collaborations",
+                                  "deliverables", "csas", "climate", "cost_of_mpas","salary",
+                                  "theme_table", "objective_tabs", "objective_indicators")
 
 
               # Add all targets folder subdirectories

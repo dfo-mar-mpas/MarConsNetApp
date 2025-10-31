@@ -51,7 +51,7 @@ app <- function() {
 
   # load targets if necessary
   if(!exists("APPTABS")){
-    tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators"),
+    tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","flowerPalette","indicatorFlower","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators"),
              store = STORE)
   }
 
@@ -664,9 +664,9 @@ server <- function(input, output, session) {
   output$objectives <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
-        keepO <- which(names(Objectives_processed) == state$mpas)
+      keepO <- which(objective_tabs$area %in% MPAs$NAME_E)
       if (!(length(keepO) == 0)) {
-        textO <- Objectives_processed[[keepO]]
+        textO <- objective_tabs$objectives[keepO]
         textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
         # Create UI elements for objectives with bar charts
 

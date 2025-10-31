@@ -134,12 +134,12 @@ if (length(com$project_id) != 0) {
 }
 
 # STATUS OF OBJECTIVES
-if (string %in% names(Objectives_processed)) {
-keepO <- which(names(Objectives_processed) == params$mpas)
-S_Objectives <- Objectives_processed[[keepO]]
+if (string %in% objective_tabs$objectives) {
+keepO <- which(objective_tabs$area %in% params$mpas)
+S_Objectives <- objective_tabs$objectives[keepO]
 if (!(length(S_Objectives) == 0)) {
   if (!(length(keepO) == 0)) {
-    textO <- Objectives_processed[[keepO]]
+    textO <- objective_tabs$objectives[keepO]
     textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
     # Create UI elements for objectives with bar charts
     
