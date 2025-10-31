@@ -916,7 +916,8 @@ list(
  tar_target(ds_all,
             # because this is loaded with the Mar.datawrangling package and not mentioned in the arguments to many of it's functions
             # mention ds_all whenever using e.g. self_filter() or summarize_catches()
-            ds_all),
+            ds_all,
+            cue = tar_cue("never")),
 
 
  tar_target(rv_rawdata_env,{ # Environment
