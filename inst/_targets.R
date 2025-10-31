@@ -3922,7 +3922,19 @@ tar_target(name = upload_all_data_to_shiny,
             },
             deployment = "main",
             priority = 0,
-            cue = tar_cue(mode = "always"))
+            cue = tar_cue(mode = "always")),
+
+tar_target(windowsdependenttargets,
+           command = {
+             rv_data
+             rv_data_det
+             om
+             csas
+             deliverables
+             collaborations
+             salary
+             return(TRUE)
+           })
 
 
 ) |>
