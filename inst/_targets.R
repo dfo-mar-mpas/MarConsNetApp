@@ -566,12 +566,6 @@ list(
                c
                }),
 
-  tar_target(name = fp,
-             command = {
-               read_excel(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","data","metaframework.xlsx"))
-             }),
-
-
 
   tar_target(name = flowerPalette,
              command = {
@@ -927,7 +921,7 @@ list(
 
  tar_target(rv_rawdata_env,{ # Environment
    # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
-   library(Mar.datawrangling)
+   ds_all
    .pkgenv <- new.env(parent = emptyenv())
 
    get_pesd_dw_dir <- function() {
