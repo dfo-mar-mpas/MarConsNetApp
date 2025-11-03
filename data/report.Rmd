@@ -28,14 +28,14 @@ embed_image <- function(file_path, width = 600) {
 
 }
 
-pillar_ecol_df <- pillar_ecol_df[order(pillar_ecol_df$indicator),]
+pillar_ecol_df2 <- pillar_ecol_df[order(pillar_ecol_df$indicator),]
 
 if (any(pillar_ecol_df$areaID == "Non_Conservation_Area")) {
-pillar_ecol_df <- pillar_ecol_df[-which(pillar_ecol_df$areaID == "Non_Conservation_Area"),]
+pillar_ecol_df2 <- pillar_ecol_df2[-which(pillar_ecol_df2$areaID == "Non_Conservation_Area"),]
 }
 
-if (any(pillar_ecol_df$status_statement == "No features are represented.", na.rm = TRUE)) {
-    pillar_ecol_df$status_statement[pillar_ecol_df$status_statement == "No features are represented."] <- paste0(
+if (any(pillar_ecol_df2$status_statement == "No features are represented.", na.rm = TRUE)) {
+    pillar_ecol_df2$status_statement[pillar_ecol_df2$status_statement == "No features are represented."] <- paste0(
           "No features are represented. ** Note: a score will still be assigned if multiple MPAs are 'tied' for the lowest rank. ",
           "For example, if no features are represented but an MPA has a score of 50, this indicates that 50% of MPAs share the 'least represented' status."
         )
@@ -51,7 +51,7 @@ image_files <- list.files(image_folder, full.names = TRUE)
 # AREA GRADE
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- params$mpas
-p <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
+p <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
 
 KEEP <- calc_group_score(df=p,grouping_var = "bin",
                                score_var = "score",
@@ -91,7 +91,7 @@ com <- cost_of_mpas[which(cost_of_mpas$area == params$mpas & !(cost_of_mpas$perc
 
 if (length(com$project_id) != 0) {
   proj_titles <- sapply(com$project_id, function(pid) {
-    unique(pillar_ecol_df$project_short_title[which(pillar_ecol_df$PPTID == pid)])
+    unique(pillar_ecol_df2$project_short_title[which(pillar_ecol_df2$PPTID == pid)])
   })
   proj <- unique(com$project_id)
   
@@ -150,7 +150,7 @@ if (!(length(S_Objectives) == 0)) {
     number_of_indicators <- NULL
     
     for (i in seq_along(filtered_odfS$objectives)) {
-      KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
+      KEEP <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
       KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
       number_of_indicators[i] <- length(KEEP$indicator[KEEP$indicator != "placeholder" & !is.na(KEEP$score)])
 
@@ -348,9 +348,9 @@ grade_colors_network <- NULL
 for (i in seq_along(filtered_odf$objectives)) {
   # GRADES
   if (params$mpas %in% MPAs$NAME_E) {
-    KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
+    KEEP <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
   } else {
-   KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
+   KEEP <- pillar_ecol_df2[which(pillar_ecol_df2$areaID %in% MPAs$NAME_E),]
   }
   KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
@@ -399,16 +399,16 @@ cat(sprintf(
   
   
   
-  k1 <- which(grepl(n_objectives[i], pillar_ecol_df$objectives, fixed=TRUE))
+  k1 <- which(grepl(n_objectives[i], pillar_ecol_df2$objectives, fixed=TRUE))
   if (params$mpas %in% regions$NAME_E) {
     k2 <- k1
   } else {
-    k2 <- which(pillar_ecol_df$areaID == params$mpas)
+    k2 <- which(pillar_ecol_df2$areaID == params$mpas)
   }
   keep <- intersect(k1,k2)
   if (!(length(keep) == 0)) {
     # FLOWER
-    objective_flower <- pillar_ecol_df[k2,]
+    objective_flower <- pillar_ecol_df2[k2,]
     objective_flower$score[which(!(grepl(n_objectives[i], objective_flower$objectives, fixed=TRUE)))] <- NA
     
     cat("The objective has the following score: \n")
@@ -436,15 +436,15 @@ cat(sprintf(
 
 
   for (j in seq_along(keep)) {
-    cat(sprintf("<b>Indicator: %s.</b>\n\n", pillar_ecol_df$indicator[keep[j]]))
+    cat(sprintf("<b>Indicator: %s.</b>\n\n", pillar_ecol_df2$indicator[keep[j]]))
     
     # FINDING PLOT
       keep1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE, fixed=TRUE)) # Which are from the correct area
-      keep2 <- which(grepl(make.names(pillar_ecol_df$indicator[keep[j]]), image_files, ignore.case=TRUE, fixed=TRUE)) # Which ones have the correct indicator name
+      keep2 <- which(grepl(make.names(pillar_ecol_df2$indicator[keep[j]]), image_files, ignore.case=TRUE, fixed=TRUE)) # Which ones have the correct indicator name
       KEEP <- intersect(keep1,keep2)
       
       if (length(KEEP) > 1) {
-        KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == pillar_ecol_df$indicator[keep[j]])]
+        KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == pillar_ecol_df2$indicator[keep[j]])]
       }
       plot_file <- image_files[KEEP]
     
@@ -459,20 +459,20 @@ cat(sprintf(
         cat("<br>")
       }
 
-      if (is.na(pillar_ecol_df$trend_statement[keep[j]])) {
+      if (is.na(pillar_ecol_df2$trend_statement[keep[j]])) {
         trendy <- "No temporal analysis completed for this indicator."
-      } else if (!(pillar_ecol_df$trend_statement[keep[j]] == "There is no temporal dimension in this data.")) {
-      trendy <- pillar_ecol_df$trend_statement[keep[j]]
+      } else if (!(pillar_ecol_df2$trend_statement[keep[j]] == "There is no temporal dimension in this data.")) {
+      trendy <- pillar_ecol_df2$trend_statement[keep[j]]
       } else {
-        trendy <- pillar_ecol_df$trend_statement[keep[j]]
+        trendy <- pillar_ecol_df2$trend_statement[keep[j]]
       }
       
-      table_df <- data.frame("Rationale"=pillar_ecol_df$indicator_rationale[keep[j]],
-                             "Status"=pillar_ecol_df$status_statement[keep[j]],
+      table_df <- data.frame("Rationale"=pillar_ecol_df2$indicator_rationale[keep[j]],
+                             "Status"=pillar_ecol_df2$status_statement[keep[j]],
                              "Trend"= trendy,
-                             "Score"= round(pillar_ecol_df$score[keep[j]],0),
-                             "Scoring_Scheme"=pillar_ecol_df$scoring[keep[j]],
-                             "Source"=ifelse(is.na(pillar_ecol_df$PPTID[keep[j]]), pillar_ecol_df$source[keep[j]], pillar_ecol_df$project_short_title[keep[j]])
+                             "Score"= round(pillar_ecol_df2$score[keep[j]],0),
+                             "Scoring_Scheme"=pillar_ecol_df2$scoring[keep[j]],
+                             "Source"=ifelse(is.na(pillar_ecol_df2$PPTID[keep[j]]), pillar_ecol_df2$source[keep[j]], pillar_ecol_df2$project_short_title[keep[j]])
       )
       
       cat(knitr::kable(
@@ -550,17 +550,17 @@ cat(sprintf(
 
   
 #cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n\n', toupper(textO[i])))
-  k1 <- which(grepl(textO[i], pillar_ecol_df$objectives, fixed=TRUE))
+  k1 <- which(grepl(textO[i], pillar_ecol_df2$objectives, fixed=TRUE))
   if (params$mpas %in% regions$NAME_E) {
     k2 <- k1
   } else {
-    k2 <- which(pillar_ecol_df$areaID == params$mpas)
+    k2 <- which(pillar_ecol_df2$areaID == params$mpas)
   }
   keep <- intersect(k1,k2)
   if (!(length(keep) == 0)) {
     
     # Flower plot for objectives
-    objective_flower <- pillar_ecol_df[k2,]
+    objective_flower <- pillar_ecol_df2[k2,]
     objective_flower$score[which(!(grepl(textO[i], objective_flower$objectives, fixed=TRUE)))] <- NA
     
     cat("The objective has the following score: \n")
@@ -587,16 +587,16 @@ cat(sprintf(
     # end flower plot
 
   for (j in seq_along(keep)) {
-    cat(sprintf("<b>Indicator: %s.</b>\n\n", pillar_ecol_df$indicator[keep[j]]))
+    cat(sprintf("<b>Indicator: %s.</b>\n\n", pillar_ecol_df2$indicator[keep[j]]))
 
     
     # FINDING PLOT
       keep1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE, fixed=TRUE)) # Which are from the correct area
-      keep2 <- which(grepl(make.names(pillar_ecol_df$indicator[keep[j]]), image_files, ignore.case=TRUE, fixed=TRUE)) # Which ones have the correct indicator name
+      keep2 <- which(grepl(make.names(pillar_ecol_df2$indicator[keep[j]]), image_files, ignore.case=TRUE, fixed=TRUE)) # Which ones have the correct indicator name
       KEEP <- intersect(keep1,keep2)
       
       if (length(KEEP) > 1) {
-        KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == pillar_ecol_df$indicator[keep[j]])]
+        KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == pillar_ecol_df2$indicator[keep[j]])]
       }
       plot_file <- image_files[KEEP]
     
@@ -612,22 +612,22 @@ cat(sprintf(
         cat("<br>")
       }
       
-      if (is.na(pillar_ecol_df$trend_statement[keep[j]])) {
+      if (is.na(pillar_ecol_df2$trend_statement[keep[j]])) {
         trendy <- "No temporal analysis completed for this indicator."
-      } else if (!(pillar_ecol_df$trend_statement[keep[j]] == "There is no temporal dimension in this data.")) {
-      trendy <- pillar_ecol_df$trend_statement[keep[j]]
+      } else if (!(pillar_ecol_df2$trend_statement[keep[j]] == "There is no temporal dimension in this data.")) {
+      trendy <- pillar_ecol_df2$trend_statement[keep[j]]
       } else {
-        trendy <- pillar_ecol_df$trend_statement[keep[j]]
+        trendy <- pillar_ecol_df2$trend_statement[keep[j]]
       }
       
       
       
-      table_df <- data.frame("Rationale"=pillar_ecol_df$indicator_rationale[keep[j]],
-                             "Status"=pillar_ecol_df$status_statement[keep[j]],
+      table_df <- data.frame("Rationale"=pillar_ecol_df2$indicator_rationale[keep[j]],
+                             "Status"=pillar_ecol_df2$status_statement[keep[j]],
                              "Trend"= trendy,
-                             "Score"= round(pillar_ecol_df$score[keep[j]],0),
-                             "Scoring_Scheme"=pillar_ecol_df$scoring[keep[j]],
-                             "Source"=ifelse(is.na(pillar_ecol_df$PPTID[keep[j]]), pillar_ecol_df$source[keep[j]], pillar_ecol_df$project_short_title[keep[j]])
+                             "Score"= round(pillar_ecol_df2$score[keep[j]],0),
+                             "Scoring_Scheme"=pillar_ecol_df2$scoring[keep[j]],
+                             "Source"=ifelse(is.na(pillar_ecol_df2$PPTID[keep[j]]), pillar_ecol_df2$source[keep[j]], pillar_ecol_df2$project_short_title[keep[j]])
       )
       
       cat(knitr::kable(
@@ -673,7 +673,7 @@ ECOLOGICAL OVERVIEW
 cat("<br>")
 cat('Ecological overview analyses the health of the overall ecosystem\n\n')
 
-plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),],
+plot_flowerplot(pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),],
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "score",
@@ -685,10 +685,10 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),],
 
 ```{r, echo=FALSE, results='asis',warning=FALSE}
 if (params$mpas %in% regions$NAME_E) {
-  table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
+  table_ped <- pillar_ecol_df2[which(!(pillar_ecol_df2$areaID %in% regions$NAME_E)),]
   
 } else {
-  table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
+  table_ped <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
 }
 if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
   table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
@@ -802,7 +802,7 @@ cat('</tbody></table>')
 library(knitr)
 library(leaflet)
 
-keeper <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas), ]
+keeper <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas), ]
 
 BINS <- unique(trimws(tolower(unlist(
   strsplit(keeper$bin, ";")
@@ -1297,25 +1297,25 @@ cat("\n\n")
 cat("### Climate Change\n")
 cat("<br>")
 
-climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == params$mpas)])
+climate_indicators <- unique(pillar_ecol_df2$indicator[which(grepl("Inside", pillar_ecol_df2$indicator) & pillar_ecol_df2$areaID == params$mpas)])
 
 for (i in seq_along(climate_indicators)) {
-  indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == params$mpas)
+  indicator_keep <- which(pillar_ecol_df2$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df2$areaID == params$mpas)
   
-  if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df$trend_statement[indicator_keep]))) {
+  if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df2$trend_statement[indicator_keep]))) {
     
     excel_keep <- which(climate_change$Indicator == climate_indicators[i])
-    pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == params$mpas)
+    pillar_keep_inside <- which(pillar_ecol_df2$indicator == climate_indicators[i] & pillar_ecol_df2$areaID == params$mpas)
     
     cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
     
     cat(climate_change$Context[excel_keep], "\n\n")
     cat("In our analysis, ")
-    cat(pillar_ecol_df$trend_statement[indicator_keep])
+    cat(pillar_ecol_df2$trend_statement[indicator_keep])
     
-    if (!(grepl("There is only one year of data", pillar_ecol_df$trend_statement[indicator_keep]))) {
+    if (!(grepl("There is only one year of data", pillar_ecol_df2$trend_statement[indicator_keep]))) {
     
-    pval <- str_extract(pillar_ecol_df$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
+    pval <- str_extract(pillar_ecol_df2$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
       str_extract("\\d+(\\.\\d+)?") |>
       as.numeric()
     
@@ -1327,14 +1327,14 @@ for (i in seq_along(climate_indicators)) {
     
     cat(" An inside/outside comparison was done to help understand the impacts of climate change on this variable. Results showed ")
     
-    result <- pillar_ecol_df$status_statement[pillar_keep_inside]
+    result <- pillar_ecol_df2$status_statement[pillar_keep_inside]
     
     cat(paste0(tolower(result), "."))
     
     if (!(grepl("Protection could therefore be positively impacting this variable", result))) {
       # No sig dif between the two
-      desired <- sub(".*\\s+", "", pillar_ecol_df$scoring[indicator_keep])
-      actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df$trend_statement[indicator_keep])), "increase", "decrease")
+      desired <- sub(".*\\s+", "", pillar_ecol_df2$scoring[indicator_keep])
+      actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df2$trend_statement[indicator_keep])), "increase", "decrease")
       
       if (pval > 0.05) { ## This is pval of the variable (not inside/ outside)
         cat("The rate in which this indicator is changing is not significant (p=", pval,") which suggests that climate change does not seem to have a significant impact on that particular indicator.")
@@ -1367,9 +1367,9 @@ cat(paste0(
 cat("\n\n")
 
 # Bad grade table
-badGrade <- which(pillar_ecol_df$areaID == params$mpas & (!(is.na(pillar_ecol_df$indicator))) & (!(pillar_ecol_df$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df$indicator))) & (pillar_ecol_df$score < 51 | is.na(pillar_ecol_df$score)))
+badGrade <- which(pillar_ecol_df2$areaID == params$mpas & (!(is.na(pillar_ecol_df2$indicator))) & (!(pillar_ecol_df2$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df2$indicator))) & (pillar_ecol_df2$score < 51 | is.na(pillar_ecol_df2$score)))
 
-badGradeTable <- pillar_ecol_df[badGrade, ] |> 
+badGradeTable <- pillar_ecol_df2[badGrade, ] |> 
   dplyr::group_by(bin) |>
   dplyr::ungroup() |>
   dplyr::select("indicator", "score")
@@ -1389,7 +1389,7 @@ print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Ex
 
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
-project_subset <- pillar_ecol_df$PPTID[which(pillar_ecol_df$areaID == params$mpas)]
+project_subset <- pillar_ecol_df2$PPTID[which(pillar_ecol_df2$areaID == params$mpas)]
 if (!(length(project_subset) == 0)) {
 p_subset <- unique(trimws(unlist(strsplit(project_subset, ";")), "both"))
 }
