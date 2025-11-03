@@ -31,9 +31,11 @@ image_folder <- file.path(suppressMessages(dirname(path_to_store())),"data","plo
 image_files <- list.files(image_folder, full.names = TRUE)
 
 if (any(MPAs$NAME_E == "Non_Conservation_Area")) {
-MPAs <- MPAs[-which(MPAs$NAME_E == "Non_Conservation_Area"),]
+MPAs2 <- MPAs[-which(MPAs$NAME_E == "Non_Conservation_Area"),]
+MPAs2 <- MPAs2[which(MPAs2$region == params$mpas),]
+} else {
+  MPAs2 <- MPAs[which(MPAs$region == params$mpas),]
 }
-MPAs <- MPAs[which(MPAs$region == params$mpas),]
 
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- params$mpas
@@ -64,18 +66,18 @@ cat("<br>")
 maps <- leaflet() %>%
     addTiles()
 
-for (i in seq_along(MPAs$NAME_E)) {
+for (i in seq_along(MPAs2$NAME_E)) {
   
   fill_color <- ifelse(
-    is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == MPAs$NAME_E[i])]),
+    is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == MPAs2$NAME_E[i])]),
     "#EDEDED",
-    flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == MPAs$NAME_E[i])]]]
+    flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == MPAs2$NAME_E[i])]]]
   )
   
   border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
 
   maps <- maps %>% 
-    addPolygons(data=MPAs$geoms[i], fillOpacity = 0.05, weight=2, color=border_color)
+    addPolygons(data=MPAs2$geoms[i], fillOpacity = 0.05, weight=2, color=border_color)
 }
 
 maps
@@ -91,7 +93,7 @@ try({
   datatable(
     creature_feature |> 
       group_by(speciesKey,scientificName,kingdom,phylum,class,commonname) |>
-      filter(NAME_E %in% MPAs$NAME_E) |> 
+      filter(NAME_E %in% MPAs2$NAME_E) |> 
       reframe(n = sum(n),
               NAME_E = paste(unique(NAME_E), collapse = "; "),
               exampleurl = exampleurl[1],
@@ -189,10 +191,10 @@ grade_colors_network <- NULL
 
 for (i in seq_along(filtered_odf$objectives)) {
   # GRADES
-  if (params$mpas %in% MPAs$NAME_E) {
+  if (params$mpas %in% MPAs2$NAME_E) {
     KEEP <- pillar_ecol_df[which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == params$mpas),]
   } else {
-     KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
+     KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs2$NAME_E),]
   }
   KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
@@ -288,7 +290,7 @@ for (i in seq_along(n_objectives)) {
       border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
       
       map <- map %>%
-        addPolygons(data = MPAs[MPAs$NAME_E == area, ], fillOpacity = 0.05, weight = 2, color = border_color)
+        addPolygons(data = MPAs2[MPAs2$NAME_E == area, ], fillOpacity = 0.05, weight = 2, color = border_color)
     }
     
     # Compose indicator block with bold label, rationale text, and map widget
@@ -553,7 +555,7 @@ for (i in seq_along(BINS)) {
       border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
       
       map <- map %>%
-        addPolygons(data = MPAs[MPAs$NAME_E == area, ], fillOpacity = 0.05, weight = 2, color = border_color)
+        addPolygons(data = MPAs2[MPAs2$NAME_E == area, ], fillOpacity = 0.05, weight = 2, color = border_color)
     }
     
     # Compose indicator block with bold label, rationale text, and map widget
@@ -651,7 +653,7 @@ if (!(length(ddff_unique$PPTID) == 0)) {
 
 ```{r, echo=FALSE, comment=FALSE, results='asis', message=FALSE, warning=FALSE}
 
-cost_of_mpas <- cost_of_mpas[which(cost_of_mpas$area %in% MPAs$NAME_E),]
+cost_of_mpas <- cost_of_mpas[which(cost_of_mpas$area %in% MPAs2$NAME_E),]
 
 if (length(cost_of_mpas$project_id) != 0) {
 
@@ -794,7 +796,7 @@ fill_colors <- mpa_colors[df$MPA]
 fill_colors[is.na(fill_colors)] <- "grey"
 fill_colors <- as.character(fill_colors)
 
-money_mpas <- MPAs[which(MPAs$NAME_E %in% df$MPA),]
+money_mpas <- MPAs2[which(MPAs2$NAME_E %in% df$MPA),]
 
 # GETTING PROJECTS
 pptids <- unique(apg_unique$PPTID)
@@ -989,20 +991,20 @@ if (any(p_subset == "NA")) {
 if (any(p_subset %in% collaborations$project_id)) {
   good_col <- which(collaborations$project_id %in% p_subset)
   collab_subset <- collaborations[good_col,]
-  
+
   ## For collaborations, I need to obtain the year. This would allow me to say 'for this year, x collaborations happened, but in previous years for this project, Y collaborations have happened).
-  
+
   #last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
-  
+
   year_keep <- which(collab_subset$fiscal_year == last_year)
-  
+
   if (!(length(year_keep) == 0)) {
     recent_col <- collab_subset[year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
     names(recent_col) <- c("Project ID", "Organization", "Year")
 
    organizations <- unique(recent_col$Organization)
     rc <- data.frame(Organization=organizations)
-    
+
     for (i in seq_along(organizations)) {
       keeping <- which(recent_col$Organization == organizations[i])
       rc$Year[i] <- paste0(sort(unique(recent_col[keeping,]$Year)), collapse= ", ")
@@ -1013,23 +1015,23 @@ if (any(p_subset %in% collaborations$project_id)) {
     print(knitr::kable(rc, caption = "Recent Collaborations and Partnerships",row.names=FALSE))
     cat("\n\n")
   } else {
-  cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. /n/n"))  
+  cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. /n/n"))
   }
   if (!(length(which((!(1:length(collab_subset$project_id)%in% year_keep))))) == 0) {
-    
+
     cat("The following past partnerships/collaborations have been identified and contributed to this site: \n\n")
     past_coll <- collab_subset[-year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
     names(past_coll) <- c("Project ID", "Organization", "Year")
     organizations <- unique(past_coll$Organization)
     pc <- data.frame(Organization=organizations)
-    
+
     for (i in seq_along(organizations)) {
       keeping <- which(past_coll$Organization == organizations[i])
       pc$Year[i] <- paste0(sort(unique(past_coll[keeping,]$Year)), collapse= ", ")
     }
 
     print(knitr::kable(pc, caption = "Past Collaborations and Partnerships",row.names=FALSE))
-    
+
   } else {
     cat("There are no partnerships/collaborations identified from previous years. \n\n")
   }
