@@ -12,8 +12,13 @@ library(sf)
 library(leaflet)
 library(rgbif)
 library(rvest)
-library(dplyr)
+library(leaflet)
+library(htmltools)
 library(DT)
+library(RColorBrewer)
+library(MarConsNetApp)
+library(dplyr)
+
 
 if (any(pillar_ecol_df$status_statement == "No features are represented.",na.rm = TRUE)) {
     pillar_ecol_df$status_statement[pillar_ecol_df$status_statement == "No features are represented."] <- paste0(
@@ -492,8 +497,7 @@ print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
 
 
 ```{r, echo=FALSE, comment=NA, results='asis'}
-library(leaflet)
-library(htmltools)
+
 
 # Container to hold all details blocks
 all_details <- list()
@@ -647,8 +651,6 @@ if (!(length(ddff_unique$PPTID) == 0)) {
 
 ```{r, echo=FALSE, comment=FALSE, results='asis', message=FALSE, warning=FALSE}
 
-library(htmltools)
-
 cost_of_mpas <- cost_of_mpas[which(cost_of_mpas$area %in% MPAs$NAME_E),]
 
 if (length(cost_of_mpas$project_id) != 0) {
@@ -695,11 +697,6 @@ if (length(cost_of_mpas$project_id) != 0) {
 ```
 
 ```{r, echo=FALSE, comment=FALSE, results='asis', message=FALSE, warning=FALSE}
-
-library(sf)
-library(dplyr)
-library(leaflet)
-library(RColorBrewer)
 
 pie_area <- unique(cost_of_mpas$area)
 ps <- split(cost_of_mpas, cost_of_mpas$area)
