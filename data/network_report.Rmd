@@ -16,7 +16,7 @@ library(leaflet)
 library(htmltools)
 library(DT)
 library(RColorBrewer)
-library(MarConsNetApp)
+library(MarConsNetAnalysis)
 library(dplyr)
 
 
