@@ -27,7 +27,7 @@ if (any(pillar_ecol_df$status_statement == "No features are represented.",na.rm 
         )
 }
 
-image_folder <- file.path(suppressMessages(path_to_store()),"data","plot")
+image_folder <- file.path(suppressMessages(dirname(path_to_store())),"data","plot")
 image_files <- list.files(image_folder, full.names = TRUE)
 
 if (any(MPAs$NAME_E == "Non_Conservation_Area")) {
