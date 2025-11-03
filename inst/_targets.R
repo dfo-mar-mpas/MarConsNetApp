@@ -48,8 +48,15 @@ pkgs <- c("sf",
 shelf(pkgs)
 
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
+if (dir.exists(Sys.getenv("OneDriveCommercial"))){
+  deployment <- "worker"
+} else {
+  deployment <- "main"
+}
+
 tar_option_set(packages = basename(pkgs),
-               format = "qs")
+               format = "qs",
+               deployment = deployment)
 
 if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
   store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
@@ -263,7 +270,8 @@ list(
 
                OM[-(which(OM$activity_type == "Other")),]
 
-             }),
+             },
+             deployment = "worker"),
 
   tar_target(name=salary,
              command={
@@ -272,14 +280,16 @@ list(
 
                SAL[-(which(SAL$activity_type == "Other")),]
 
-             }),
+             },
+             deployment = "worker"),
 
 
   tar_target(name = collaborations,
              command = {
               cookie
                col <- dataSPA::getData(type='collaboration', cookie=cookie)
-             }),
+             },
+             deployment = "worker"),
 
   tar_target(name = deliverables,
              command = {
@@ -403,7 +413,8 @@ list(
                DD <- DD[-which(is.na(DD$classification_display)),]
 
                deliverables <- DD
-             }),
+             },
+             deployment = "worker"),
 
   tar_target(name = csas,
              command = {
@@ -467,7 +478,8 @@ list(
                df <- data.frame('title'=title,
                                 'date'=display_dates
                                 )
-             }),
+             },
+             deployment = "worker"),
 
 
 
@@ -484,13 +496,13 @@ list(
                creature_feature
                cost_of_mpas
                om
-               objective_tabs
                regions
                Ecological
                all_project_geoms
                deliverables
                csas
                climate_change
+               salary
 
                #TODO https://github.com/dfo-mar-mpas/MarConsNetApp/issues/184
                # mpas <- MPAs$NAME_E
@@ -498,22 +510,24 @@ list(
                rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
                output_dir <- file.path(dirname(path_to_store()),"data","reports")
 
-               for (i in seq_along(mpas)) {
-                 message(i)
-                 params <- list()
-                 params$mpas <- mpas[i]
-                 output_file <- paste0(output_dir,"/", make.names(paste0(names=mpas[i], ".html")))
-                 render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
-               }
+               # for (i in seq_along(mpas)) {
+               #   message(i)
+               #   params <- list()
+               #   params$mpas <- mpas[i]
+               #   output_file <- paste0(output_dir,"/", make.names(paste0(names=mpas[i], ".html")))
+               #   render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
+               # }
 
                # network level
-               rmd_file <- system.file("data", "network_report.Rmd", package = "MarConsNetApp")
+               # rmd_file <- system.file("data", "network_report.Rmd", package = "MarConsNetApp")
+               rmd_file <- file.path("data", "network_report.Rmd")
 
                params <- list()
                params$mpas <- "Maritimes"
                output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=params$mpas, ".html"))))
-               render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
-             }),
+               render(input="data/network_report.Rmd", output_file = output_file, output_format = "html_document", params = params, envir = new.env())
+             },
+             deployment = "worker"),
 
 
 
@@ -943,7 +957,8 @@ list(
    self_filter(env=temp)
 
    summarize_catches('rv',env = temp)
- }
+ },
+ deployment = "worker"
  ),
 
  tar_target(rv_data_det,{
@@ -967,7 +982,8 @@ list(
    self_filter(env = temp)
 
    summarize_catches('rv',morph_dets=TRUE,env = temp)
- }
+ },
+ deployment = "worker"
  ),
 
  tar_target(name = fish_weight_per_1.75kn_tow,
@@ -3140,7 +3156,8 @@ tar_target(name = ind_sst,
 
 tar_target(objectives_csv,
            command = "data_raw/objectives.csv",
-           format = "file"
+           format = "file",
+           deployment = "worker"
            ),
 
 tar_target(objectives_df,
@@ -3911,7 +3928,8 @@ tar_target(windowsdependenttargets,
              collaborations
              salary
              return(TRUE)
-           })
+           },
+           deployment = "worker")
 
 
 ) |>
