@@ -44,7 +44,8 @@ pkgs <- c("sf",
           "qs",
           "qs2",
           "odbc",
-          "rvest")
+          "rvest",
+          "tarchetypes")
 shelf(pkgs)
 
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below
@@ -58,19 +59,7 @@ tar_option_set(packages = basename(pkgs),
                format = "qs",
                deployment = deployment)
 
-if(dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
-  store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
-} else if (dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")) {
-  # Accessing 'beast' via Windows
-  store <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
-} else if(dir.exists(file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets"))){
-  store = file.path(Sys.getenv("OneDriveCommercial"),"MarConsNetTargets","app_targets")
-} else if(dir.exists("//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets")){
-  store = "//wpnsbio9039519.mar.dfo-mpo.ca/MarConsNet/MarConsNetTargets/app_targets"
-} else {
-  warning("MarConsNet data store not found. Please check the directory paths.")
-  store = getwd()
-}
+store <- path_to_store()
 
 #store <- Sys.getenv("MARCONSNET_TARGETS_PATH")
 if (!nzchar(store)) stop("MARCONSNET_TARGETS_PATH is not set!")
@@ -483,51 +472,27 @@ list(
 
 
 
-  tar_target(name = render_reports,
-             command = {
-               MPAs
-               pillar_ecol_df
-               Context
-               flowerPalette
-               objective_tabs
-               N_Objectives
-               MPA_report_card
-               collaborations
-               creature_feature
-               cost_of_mpas
-               om
-               regions
-               Ecological
-               all_project_geoms
-               deliverables
-               csas
-               climate_change
-               salary
 
-               #TODO https://github.com/dfo-mar-mpas/MarConsNetApp/issues/184
-               # mpas <- MPAs$NAME_E
-               mpas <- unique(objective_tabs$area[objective_tabs$area %in% MPAs$NAME_E])
-               rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
-               output_dir <- file.path(dirname(path_to_store()),"data","reports")
+  # Create individual reports with dynamic branching
+  tar_render_rep(
+    name = mpa_report,
+    path = file.path("data", "report.Rmd"),
+    params = tibble(mpas = unique(objective_tabs$area[objective_tabs$area %in% MPAs$NAME_E])) |>
+      mutate(output_file = paste0(make.names(mpas), ".html")),
+    output_dir = file.path(dirname(path_to_store()), "data", "reports"),
+    quiet = TRUE
+  ),
 
-               # for (i in seq_along(mpas)) {
-               #   message(i)
-               #   params <- list()
-               #   params$mpas <- mpas[i]
-               #   output_file <- paste0(output_dir,"/", make.names(paste0(names=mpas[i], ".html")))
-               #   render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
-               # }
+  # Network report as a separate target
+  #TODO file naming for network
+  tar_render(
+    name = network_report,
+    path = file.path("data","network_report.Rmd"),
+    output_dir = file.path(dirname(path_to_store()), "data", "reports"),
+    params = list(mpas = "Maritimes"),
+    quiet = TRUE
+  ),
 
-               # network level
-               # rmd_file <- system.file("data", "network_report.Rmd", package = "MarConsNetApp")
-               rmd_file <- file.path("data", "network_report.Rmd")
-
-               params <- list()
-               params$mpas <- "Maritimes"
-               output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=params$mpas, ".html"))))
-               render(input="data/network_report.Rmd", output_file = output_file, output_format = "html_document", params = params, envir = new.env())
-             },
-             deployment = "worker"),
 
 
 

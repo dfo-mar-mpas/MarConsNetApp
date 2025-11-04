@@ -1,6 +1,8 @@
 ---
 title: "Annual Report"
 output: html_document
+params:
+  mpas: "Maritimes"
 ---
 
 # Conservation Network: **`r params$mpas`**
@@ -8,16 +10,74 @@ output: html_document
 ## At-a-glance
 
 ```{r, echo=FALSE,comment=NA, results="asis", message=FALSE, warning=FALSE, error=FALSE}
-library(sf)
-library(leaflet)
-library(rgbif)
-library(rvest)
-library(leaflet)
-library(htmltools)
-library(DT)
-library(RColorBrewer)
-library(MarConsNetAnalysis)
-library(dplyr)
+if(!require(librarian)) install.packages("librarian")
+pkgs <- c("sf",
+          "targets",
+          "viridis",
+          "j-harbin/dataSPA",
+          "arcpullr",
+          "ArgoCanada/argoFloats",
+          "casaultb/azmpdata",
+          "raster",
+          "dfo-mar-odis/TBSpayRates",
+          "readxl",
+          "ggplot2",
+          "shinyBS",
+          "Maritimes/Mar.datawrangling",
+          "DT",
+          "magrittr",
+          "RColorBrewer",
+          "dplyr",
+          "tidyr",
+          "stringr",
+          "officer",
+          "RColorBrewer",
+          "car",
+          "purrr",
+          "dfo-mar-mpas/MarConsNetAnalysis",
+          "dfo-mar-mpas/MarConsNetData",
+          "dfo-mar-mpas/MarConsNetApp",
+          "rnaturalearth",
+          "DBI",
+          "duckdb",
+          "rmarkdown",
+          "shiny",
+          "measurements",
+          "mregions2",
+          "patchwork",
+          "units",
+          "dankelley/oceglider",
+          "RCurl",
+          "oce",
+          "gsw",
+          "leaflet",
+          "rgbif",
+          "qs",
+          "qs2",
+          "odbc",
+          "rvest",
+          "tarchetypes")
+shelf(pkgs)
+
+tar_load(c(MPAs,
+           pillar_ecol_df,
+           Context,
+           flowerPalette,
+           objective_tabs,
+           N_Objectives,
+           MPA_report_card,
+           collaborations,
+           creature_feature,
+           cost_of_mpas,
+           om,
+           regions,
+           Ecological,
+           all_project_geoms,
+           deliverables,
+           csas,
+           climate_change,
+           salary),
+         store = path_to_store())
 
 
 if (any(pillar_ecol_df$status_statement == "No features are represented.",na.rm = TRUE)) {
@@ -428,17 +488,19 @@ if (!(length(ddff_unique$PPTID) == 0)) {
       '</tr></thead>\n')
   cat('<tbody>\n')
   
+  colgrade <- NA
   for (i in seq_len(nrow(ddff_display))) {
     # if you want row coloring, define here
-    grade <- calc_letter_grade(ddff_display$SCORE[i])   # your function
-    if (!(is.na(grade))) {
-      if (!(grade == "NA")) {
-        row_color <- flowerPalette[[grade]]
+    colgrade <- calc_letter_grade(ddff_display$SCORE[i])   # your function
+    print(colgrade)
+    if (!(is.na(colgrade))) {
+      if (!(colgrade == "NA")) {
+        row_color <- flowerPalette[[colgrade]]
       } else {
-        row_color <= 'white'
+        row_color <- 'white'
       }
     } else {
-      row_color <= 'white'
+      row_color <- 'white'
     }
     
     # lookup the color for that grade
@@ -653,16 +715,16 @@ if (!(length(ddff_unique$PPTID) == 0)) {
 
 ```{r, echo=FALSE, comment=FALSE, results='asis', message=FALSE, warning=FALSE}
 
-cost_of_mpas <- cost_of_mpas[which(cost_of_mpas$area %in% MPAs2$NAME_E),]
+cost_of_mpas2 <- cost_of_mpas[which(cost_of_mpas$area %in% MPAs2$NAME_E),]
 
-if (length(cost_of_mpas$project_id) != 0) {
+if (length(cost_of_mpas2$project_id) != 0) {
 
-  projects <- unique(cost_of_mpas$project_id)
+  projects <- unique(cost_of_mpas2$project_id)
 
   # Dealing with O&M First
   OMs <- list()
   for (i in seq_along(projects)) {
-    percent_sites_in_network <- sum(cost_of_mpas$percent_sites_in_mpa[which(cost_of_mpas$project_id == projects[i])])
+    percent_sites_in_network <- sum(cost_of_mpas2$percent_sites_in_mpa[which(cost_of_mpas2$project_id == projects[i])])
     om$amount[which(as.numeric(om$project_id) == as.numeric(projects[i]))] <- om$amount[which(as.numeric(om$project_id) == as.numeric(projects[i]))]*percent_sites_in_network #JAIM
     OMs[[i]] <- om[which(as.numeric(om$project_id) == as.numeric(projects[i])),]
   }
@@ -674,7 +736,7 @@ if (length(cost_of_mpas$project_id) != 0) {
   # Now Dealing with Salary
   SALs <- list()
    for (i in seq_along(projects)) {
-    percent_sites_in_network <- sum(cost_of_mpas$percent_sites_in_mpa[which(cost_of_mpas$project_id == projects[i])])
+    percent_sites_in_network <- sum(cost_of_mpas2$percent_sites_in_mpa[which(cost_of_mpas2$project_id == projects[i])])
     salary$amount_week[which(as.numeric(salary$project_id) == as.numeric(projects[i]))] <- salary$amount_week[which(as.numeric(salary$project_id) == as.numeric(projects[i]))]*percent_sites_in_network
     SALs[[i]] <- salary[which(as.numeric(salary$project_id) == as.numeric(projects[i])),]
   }
@@ -700,8 +762,8 @@ if (length(cost_of_mpas$project_id) != 0) {
 
 ```{r, echo=FALSE, comment=FALSE, results='asis', message=FALSE, warning=FALSE}
 
-pie_area <- unique(cost_of_mpas$area)
-ps <- split(cost_of_mpas, cost_of_mpas$area)
+pie_area <- unique(cost_of_mpas2$area)
+ps <- split(cost_of_mpas2, cost_of_mpas2$area)
 
 adjusted_ps <- list()
 for (i in seq_along(ps)) {
@@ -988,56 +1050,56 @@ if (any(p_subset == "NA")) {
   p_subset <- p_subset[-which(p_subset == "NA")]
 }
 
-if (any(p_subset %in% collaborations$project_id)) {
-  good_col <- which(collaborations$project_id %in% p_subset)
-  collab_subset <- collaborations[good_col,]
-
-  ## For collaborations, I need to obtain the year. This would allow me to say 'for this year, x collaborations happened, but in previous years for this project, Y collaborations have happened).
-
-  #last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
-
-  year_keep <- which(collab_subset$fiscal_year == last_year)
-
-  if (!(length(year_keep) == 0)) {
-    recent_col <- collab_subset[year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
-    names(recent_col) <- c("Project ID", "Organization", "Year")
-
-   organizations <- unique(recent_col$Organization)
-    rc <- data.frame(Organization=organizations)
-
-    for (i in seq_along(organizations)) {
-      keeping <- which(recent_col$Organization == organizations[i])
-      rc$Year[i] <- paste0(sort(unique(recent_col[keeping,]$Year)), collapse= ", ")
-    }
-    cat(paste0("The following collaborations/partnerships were identified for ", last_year, " for projects that contributed to this site:"))
-    cat("\n\n")
-
-    print(knitr::kable(rc, caption = "Recent Collaborations and Partnerships",row.names=FALSE))
-    cat("\n\n")
-  } else {
-  cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. /n/n"))
-  }
-  if (!(length(which((!(1:length(collab_subset$project_id)%in% year_keep))))) == 0) {
-
-    cat("The following past partnerships/collaborations have been identified and contributed to this site: \n\n")
-    past_coll <- collab_subset[-year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
-    names(past_coll) <- c("Project ID", "Organization", "Year")
-    organizations <- unique(past_coll$Organization)
-    pc <- data.frame(Organization=organizations)
-
-    for (i in seq_along(organizations)) {
-      keeping <- which(past_coll$Organization == organizations[i])
-      pc$Year[i] <- paste0(sort(unique(past_coll[keeping,]$Year)), collapse= ", ")
-    }
-
-    print(knitr::kable(pc, caption = "Past Collaborations and Partnerships",row.names=FALSE))
-
-  } else {
-    cat("There are no partnerships/collaborations identified from previous years. \n\n")
-  }
-} else {
-    cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool. \n\n")
-}
+# if (any(p_subset %in% collaborations$project_id)) {
+#   good_col <- which(collaborations$project_id %in% p_subset)
+#   collab_subset <- collaborations[good_col,]
+# 
+#   ## For collaborations, I need to obtain the year. This would allow me to say 'for this year, x collaborations happened, but in previous years for this project, Y collaborations have happened).
+# 
+#   #last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
+# 
+#   year_keep <- which(collab_subset$fiscal_year == last_year)
+# 
+#   if (!(length(year_keep) == 0)) {
+#     recent_col <- collab_subset[year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
+#     names(recent_col) <- c("Project ID", "Organization", "Year")
+# 
+#    organizations <- unique(recent_col$Organization)
+#     rc <- data.frame(Organization=organizations)
+# 
+#     for (i in seq_along(organizations)) {
+#       keeping <- which(recent_col$Organization == organizations[i])
+#       rc$Year[i] <- paste0(sort(unique(recent_col[keeping,]$Year)), collapse= ", ")
+#     }
+#     cat(paste0("The following collaborations/partnerships were identified for ", last_year, " for projects that contributed to this site:"))
+#     cat("\n\n")
+# 
+#     print(knitr::kable(rc, caption = "Recent Collaborations and Partnerships",row.names=FALSE))
+#     cat("\n\n")
+#   } else {
+#   cat(paste0("In year ", last_year, " there were no identified collaborations/ partnerships. /n/n"))
+#   }
+#   if (!(length(which((!(1:length(collab_subset$project_id)%in% year_keep))))) == 0) {
+# 
+#     cat("The following past partnerships/collaborations have been identified and contributed to this site: \n\n")
+#     past_coll <- collab_subset[-year_keep, !(names(collab_subset) %in% c("project_year_id", "new_or_existing", "type", "critical"))]
+#     names(past_coll) <- c("Project ID", "Organization", "Year")
+#     organizations <- unique(past_coll$Organization)
+#     pc <- data.frame(Organization=organizations)
+# 
+#     for (i in seq_along(organizations)) {
+#       keeping <- which(past_coll$Organization == organizations[i])
+#       pc$Year[i] <- paste0(sort(unique(past_coll[keeping,]$Year)), collapse= ", ")
+#     }
+# 
+#     print(knitr::kable(pc, caption = "Past Collaborations and Partnerships",row.names=FALSE))
+# 
+#   } else {
+#     cat("There are no partnerships/collaborations identified from previous years. \n\n")
+#   }
+# } else {
+#     cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool. \n\n")
+# }
 ```
 
 ## Outreach and engagement

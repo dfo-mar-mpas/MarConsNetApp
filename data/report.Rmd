@@ -6,19 +6,80 @@ output:
     toc: true
     toc_depth: 3
     toc_float: false
+params:
+  mpas: "Western and Emerald Banks Marine Refuge"
 ---
 
 ## Key Findings
 
 ```{r, echo=FALSE, message=FALSE}
-library(sf)
-library(leaflet)
-library(rgbif)
-library(rvest)
-library(dplyr)
-library(DT)
-library(webshot2)
-library(base64enc)
+if(!require(librarian)) install.packages("librarian")
+pkgs <- c("sf",
+          "targets",
+          "viridis",
+          "j-harbin/dataSPA",
+          "arcpullr",
+          "ArgoCanada/argoFloats",
+          "casaultb/azmpdata",
+          "raster",
+          "dfo-mar-odis/TBSpayRates",
+          "readxl",
+          "ggplot2",
+          "shinyBS",
+          "Maritimes/Mar.datawrangling",
+          "DT",
+          "magrittr",
+          "RColorBrewer",
+          "dplyr",
+          "tidyr",
+          "stringr",
+          "officer",
+          "RColorBrewer",
+          "car",
+          "purrr",
+          "dfo-mar-mpas/MarConsNetAnalysis",
+          "dfo-mar-mpas/MarConsNetData",
+          "dfo-mar-mpas/MarConsNetApp",
+          "rnaturalearth",
+          "DBI",
+          "duckdb",
+          "rmarkdown",
+          "shiny",
+          "measurements",
+          "mregions2",
+          "patchwork",
+          "units",
+          "dankelley/oceglider",
+          "RCurl",
+          "oce",
+          "gsw",
+          "leaflet",
+          "rgbif",
+          "qs",
+          "qs2",
+          "odbc",
+          "rvest",
+          "webshot2")
+shelf(pkgs)
+
+tar_load(c(MPAs,
+           pillar_ecol_df,
+           Context,
+           flowerPalette,
+           objective_tabs,
+           N_Objectives,
+           MPA_report_card,
+           collaborations,
+           creature_feature,
+           cost_of_mpas,
+           om,
+           regions,
+           Ecological,
+           all_project_geoms,
+           deliverables,
+           csas,
+           climate_change,
+           salary))
 
 embed_image <- function(file_path, width = 600) {
     mime <- paste0("image/", tools::file_ext(file_path))
