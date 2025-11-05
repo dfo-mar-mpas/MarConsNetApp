@@ -489,6 +489,7 @@ list(
     name = network_report,
     path = file.path("data","network_report.Rmd"),
     output_dir = file.path(dirname(path_to_store()), "data", "reports"),
+    output_file = "Maritimes.html",
     params = list(mpas = "Maritimes"),
     quiet = TRUE
   ),
