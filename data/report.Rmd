@@ -91,7 +91,7 @@ embed_image <- function(file_path, width = 600) {
 
 pillar_ecol_df2 <- pillar_ecol_df[order(pillar_ecol_df$indicator),]
 
-if (any(pillar_ecol_df$areaID == "Non_Conservation_Area")) {
+if (any(pillar_ecol_df2$areaID == "Non_Conservation_Area")) {
 pillar_ecol_df2 <- pillar_ecol_df2[-which(pillar_ecol_df2$areaID == "Non_Conservation_Area"),]
 }
 
@@ -201,7 +201,7 @@ S_Objectives <- objective_tabs$objectives[keepO]
 if (!(length(S_Objectives) == 0)) {
   if (!(length(keepO) == 0)) {
     textO <- objective_tabs$objectives[keepO]
-    textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
+    #textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
     # Create UI elements for objectives with bar charts
     
     filtered_odfS <- objective_tabs[objective_tabs$objectives %in% textO, ]

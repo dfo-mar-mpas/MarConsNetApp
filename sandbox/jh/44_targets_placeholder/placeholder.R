@@ -1,3 +1,18 @@
+list(
+tar_target(control_polygons,
+           command= {
+             MPAs
+             cp <- MPAs |>
+               filter(NAME_E!="Non_Conservation_Area") |>
+               rowwise() |>
+               mutate(geoms = st_difference(st_buffer(geoms,20000),geoms))|>
+               mutate(forty_km = st_difference(st_buffer(geoms,40000),geoms)) |>
+               mutate(sixty_km = st_difference(st_buffer(geoms,60000),geoms)) |>
+               mutate(eighty_km = st_difference(st_buffer(geoms,80000),geoms)) |>
+               mutate(hundred_km = st_difference(st_buffer(geoms,100000),geoms))
+
+           }),
+
 tar_target(ind_temperature_inside_outside,
            command={
              control_polygons
@@ -30,3 +45,4 @@ tar_target(ind_temperature_inside_outside,
                                     ))
              x
            })
+)

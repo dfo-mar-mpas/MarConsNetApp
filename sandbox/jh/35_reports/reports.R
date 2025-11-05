@@ -36,7 +36,7 @@ mpas <- MPAs$NAME_E
 rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
 output_dir <- "C:/Users/HARBINJ/Documents/REPORT_TESTS/"
 
-i <- 32
+i <- 44
 mpas <- MPAs$NAME_E
 state <- list()
 params <- list()
@@ -51,7 +51,7 @@ render(input=rmd_file, output_file = output_file, output_format = "html_document
 
 # ACTUAL network
 
-render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/network_report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//NEW_NETWORK.html", output_format = "html_document", params = params)
+render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/network_report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//DEBUG.html", output_format = "html_document", params = params)
 
 # SITE
 render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//DEVELOPING.html", output_format = "html_document", params = params)
