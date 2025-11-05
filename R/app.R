@@ -664,10 +664,12 @@ server <- function(input, output, session) {
   output$objectives <- shiny::renderUI({
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
-      keepO <- which(objective_tabs$area %in% MPAs$NAME_E)
+       if (!(state$mpas %in% regions$NAME_E)) {
+      keepO <- which(objective_tabs$area %in% input$mpas)
+      #keepO <- which(objective_tabs$area %in% MPAs$NAME_E)
       if (!(length(keepO) == 0)) {
         textO <- objective_tabs$objectives[keepO]
-        textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
+        #textO <- trimws(substr(gsub("\n", "", textO), 2, nchar(gsub("\n", "", textO))), 'both')
         # Create UI elements for objectives with bar charts
 
         filtered_odfS <- objective_tabs[objective_tabs$objectives %in% textO, ]
@@ -725,6 +727,7 @@ server <- function(input, output, session) {
         )
 
       }
+    }
     }
   })
 
@@ -1040,7 +1043,6 @@ server <- function(input, output, session) {
 
       }
 
-      #browser()
     }
 
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
@@ -1170,9 +1172,6 @@ server <- function(input, output, session) {
           }
 
           KEEP <- intersect(k1,k2)
-
-          #browser()
-
 
           image_files <- image_files[KEEP]
 
@@ -1529,6 +1528,7 @@ server <- function(input, output, session) {
           keep_projects <- which(all_project_geoms$project_short_title %in% sub("\\s*\\(.*", "", input$projects))
           }
           APJ_filtered <- all_project_geoms[keep_projects,]
+
           projectIds <- sub(".*\\((.*)\\).*", "\\1", input$projects) # The sub is because input$projects is snowCrabSurvey (1093)
 
           for (i in seq_along(input$projects)) {
@@ -1616,6 +1616,7 @@ server <- function(input, output, session) {
 
   observeEvent(input$tabs, {
     updateQueryString(paste0("?tab=", input$tabs), mode = "push")
+    #cat("Switched to:", input$tabs, "at", format(Sys.time(), "%M:%S"), "\n")
   })
 
   # Set initial tab based on URL
