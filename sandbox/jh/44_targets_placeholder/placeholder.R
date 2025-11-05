@@ -44,5 +44,21 @@ tar_target(ind_temperature_inside_outside,
                                       "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                     ))
              x
-           })
+           }),
+
+
+tar_target(labels,
+           command={
+             distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID", "source")])
+             unique(paste0(distinct_rows$project_short_title, " (", ifelse(is.na(distinct_rows$PPTID),distinct_rows$source,distinct_rows$PPTID), ")"))
+           }),
+
+tar_target(palette,
+           command={
+             data.frame("Project"=labels, "Color"= palette <- viridis::viridis(length(labels)))
+           }),
+
+
+
+
 )

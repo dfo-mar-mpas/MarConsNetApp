@@ -607,9 +607,8 @@ server <- function(input, output, session) {
 
   output$projects <- shiny::renderUI({
     req(input$tabs)
-    distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID", "source")])
     if (input$tabs == "tab_0") {
-      shiny::selectInput("projects", "Select Project(s):", choices=unique(paste0(distinct_rows$project_short_title, " (", ifelse(is.na(distinct_rows$PPTID),distinct_rows$source,distinct_rows$PPTID), ")")), multiple=TRUE, selected=state$projects)
+      shiny::selectInput("projects", "Select Project(s):", choices=labels, multiple=TRUE, selected=state$projects)
     }
   })
 
@@ -1221,16 +1220,16 @@ server <- function(input, output, session) {
   })
 
   # modal for map link clicking
-  shiny::observeEvent(input$projects, {
-    if (length(input$projects) == 1) {
-      showModal(modalDialog(
-        title = "Project Investment URL",
-        paste("To see the investment for the selected project(s), please click on a sampling location on the map to display a popup with a hyperlink to a financial report."),
-        easyClose = TRUE,
-        footer = modalButton("Close")
-      ))
-    }
-  })
+  # shiny::observeEvent(input$projects, {
+  #   if (length(input$projects) == 1) {
+  #     showModal(modalDialog(
+  #       title = "Project Investment URL",
+  #       paste("To see the investment for the selected project(s), please click on a sampling location on the map to display a popup with a hyperlink to a financial report."),
+  #       easyClose = TRUE,
+  #       footer = modalButton("Close")
+  #     ))
+  #   }
+  # })
 
   output$indicatorPlot <- renderUI({
     img_outputs <- lapply(seq_along(image_files), function(i) {
@@ -1488,9 +1487,6 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(state$mpas)
     req(state$region)
-
-    palette <- viridis::viridis(length(input$projects))
-
     if (input$tabs == "tab_0") {
       if (!(is.null(state$mpas))) {
         map <- leaflet::leaflet() %>%
@@ -1529,8 +1525,7 @@ server <- function(input, output, session) {
           }
           APJ_filtered <- all_project_geoms[keep_projects,]
 
-          projectIds <- sub(".*\\((.*)\\).*", "\\1", input$projects) # The sub is because input$projects is snowCrabSurvey (1093)
-
+          projectIds <- sub("^.*\\(([^)]*)\\).*", "\\1", input$projects) # The sub is because input$projects is snowCrabSurvey (1093)
           for (i in seq_along(input$projects)) {
             if (!(projectIds[i] == "NA")) {
               if (suppressWarnings(is.na(as.numeric(projectIds[i])))) {
@@ -1564,13 +1559,14 @@ server <- function(input, output, session) {
               unlist()
             geom <- APJ$geometry
             if (any(st_geometry_type(geom) == "POLYGON")) {
+
               # Remote Sensing
               point_keep <- which(st_geometry_type(geom) == "POINT")
               polygon_keep <- which(st_geometry_type(geom) == "POLYGON")
               sf_polygons <- st_as_sf(APJ[polygon_keep,], sf_column = "geometry")
 
               map <- map %>%
-                leaflet::addPolygons(data=sf_polygons, color=palette[i],
+                leaflet::addPolygons(data=sf_polygons, color=map_palette$Color[which(map_palette$Project == input$projects[i])],
                                      popup=unique(popupContent[polygon_keep]), weight=0.5, fillOpacity = 0.3,)
             } else {
               point_keep <- 1:length(APJ$geometry)
@@ -1582,8 +1578,17 @@ server <- function(input, output, session) {
             latitude <- st_coordinates(APJ$geometry[point_keep])[, "Y"]
             longitude <- st_coordinates(APJ$geometry[point_keep])[, "X"]
 
+            # TEST
+            lat_round <- round(latitude, 1)
+            lon_round <- round(longitude, 1)
+            unique_coords <- unique(data.frame(lat_round, lon_round))
+            colnames(unique_coords) <- c("latitude", "longitude")
+
+            latitude <- unique_coords$latitude
+            longitude <- unique_coords$longitude
+
             map <- map %>%
-              leaflet::addCircleMarkers(longitude, latitude, radius=3, color=palette[i],
+              leaflet::addCircleMarkers(longitude, latitude, radius=3, color=map_palette$Color[which(map_palette$Project == input$projects[i])],
                                         popup=unname(popupContent[point_keep]))
               }
             } else {
@@ -1594,7 +1599,7 @@ server <- function(input, output, session) {
               multipoints_expanded <- st_cast(multipoints, "POINT")
               APJ_points <- bind_rows(points, multipoints_expanded)
               map <- map %>%
-                addCircleMarkers(data=APJ_points, radius = 3, color=palette[i],
+                addCircleMarkers(data=APJ_points, radius = 3, color=map_palette$Color[which(map_palette$Project == input$projects[i])],
                                  popup=unname(popupContent[point_keep]))
               }
             }
@@ -1603,7 +1608,7 @@ server <- function(input, output, session) {
           map <- map %>%
             leaflet::addLegend(
               "bottomright",
-              colors = palette,
+              colors = map_palette$Color[which(map_palette$Project %in% input$projects)],
               labels = input$projects,
               opacity = 1
             )

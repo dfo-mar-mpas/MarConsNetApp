@@ -3666,21 +3666,16 @@ tar_target(theme_table,
     rbind(biodiversity_geoms, habitat_geoms, productivity_geoms)
   }),
 
-  tar_target(name=project_widget_choices,
-             command={
-               distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID", "source")])
+tar_target(labels,
+           command={
+             distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID", "source")])
+             unique(paste0(distinct_rows$project_short_title, " (", ifelse(is.na(distinct_rows$PPTID),distinct_rows$source,distinct_rows$PPTID), ")"))
+           }),
 
-               if (any(is.na(distinct_rows$project_short_title))) {
-                 bad <- which(is.na(distinct_rows$project_short_title))
-                 for (i in bad) {
-                   message(paste0("for " , i, " source = ", distinct_rows$source[i]))
-                   distinct_rows$project_short_title[i] <- distinct_rows$source[i]
-                 }
-               }
-
-               unique(paste0(distinct_rows$project_short_title, " (", ifelse(is.na(distinct_rows$PPTID),distinct_rows$source,distinct_rows$PPTID), ")"))
-
-             }),
+tar_target(map_palette,
+           command={
+             data.frame("Project"=labels, "Color"= palette <- viridis::viridis(length(labels)))
+           }),
 
 tar_target(plot_files_biodiversity,
            command = save_plots(dplyr::select(ecol_obj_biodiversity_df,-data))),
