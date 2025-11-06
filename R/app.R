@@ -1354,7 +1354,7 @@ server <- function(input, output, session) {
   }
 
 
-  })
+  }, res = 96, device = ragg::agg_png)
 
   shiny::observeEvent(input$flower_click, {
     req(state$mpas)
