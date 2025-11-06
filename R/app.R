@@ -1114,7 +1114,7 @@ server <- function(input, output, session) {
       }
     }
 
-  })
+  }, res = 96, device = ragg::agg_png)
 
   output$conditional_ind_Flower <- shiny::renderUI({
     req(state$mpas)
