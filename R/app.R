@@ -56,6 +56,9 @@ app <- function() {
   }
 
   condition <- paste0('input.tabs === "tab_0"')
+  if (.Platform$OS.type == "unix") {
+    options(shiny.usecairo = TRUE)
+  }
 
 ## FILTERING FOR
 
@@ -1114,7 +1117,7 @@ server <- function(input, output, session) {
       }
     }
 
-  }, res = 96, device = ragg::agg_png)
+  })
 
   output$conditional_ind_Flower <- shiny::renderUI({
     req(state$mpas)
@@ -1354,7 +1357,7 @@ server <- function(input, output, session) {
   }
 
 
-  }, res = 96, device = ragg::agg_png)
+  })
 
   shiny::observeEvent(input$flower_click, {
     req(state$mpas)
