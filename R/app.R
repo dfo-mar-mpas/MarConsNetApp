@@ -55,6 +55,7 @@ app <- function() {
              store = STORE)
   }
 
+  condition <- paste0('input.tabs === "tab_0"')
 
 ## FILTERING FOR
 
