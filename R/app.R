@@ -55,10 +55,6 @@ app <- function() {
              store = STORE)
   }
 
-  condition <- paste0('input.tabs === "tab_0"')
-  if (.Platform$OS.type == "unix") {
-    options(shiny.usecairo = TRUE)
-  }
 
 ## FILTERING FOR
 
