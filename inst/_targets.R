@@ -3802,8 +3802,9 @@ tar_target(name = upload_all_data_to_shiny,
               upload_objects <- c("APPTABS", "pillar_ecol_df", "all_project_geoms", "MPA_report_card",
                                   "MPAs", "areas", "regions", "flowerPalette", "indicatorFlower",
                                   "N_Objectives", "om", "Ecological", "Context", "collaborations",
-                                  "deliverables", "csas", "climate", "cost_of_mpas","salary",
-                                  "theme_table", "objective_tabs", "objective_indicators")
+                                  "deliverables", "csas", "climate_change", "cost_of_mpas","salary",
+                                  "theme_table", "objective_tabs", "objective_indicators",
+                                  "map_palette","labels")
 
 
               # Add all targets folder subdirectories
@@ -3859,7 +3860,7 @@ tar_target(name = upload_all_data_to_shiny,
 
 
               # copy data directories
-              for(f in datadirs[datadirs %in% c("reports","plots")]){
+              for(f in datadirs[datadirs %in% c("reports","plot")]){
                 system(paste0('scp -r -i ',
                               file.path(Sys.getenv("USERPROFILE"),'.ssh','id_rsa'),
                               ' -P 22 "',
