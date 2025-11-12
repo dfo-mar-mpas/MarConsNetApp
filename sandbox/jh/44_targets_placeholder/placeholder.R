@@ -1,3 +1,5 @@
+source("../MarConsNetAnalysis/R/process_indicator.R")
+
 list(
 tar_target(control_polygons,
            command= {
@@ -6,9 +8,9 @@ tar_target(control_polygons,
 
              mpa_combined <- MPAs |>
                filter(NAME_E != "Non_Conservation_Area") |>
-               st_make_valid() |>
-               st_combine() |>
-               st_as_sf()
+               st_union() |>
+               st_as_sf() |>
+               st_make_valid()
 
              cp <- MPAs |>
                filter(NAME_E!="Non_Conservation_Area") |>
@@ -24,8 +26,9 @@ tar_target(control_polygons,
                             names_to = "buffer_distance",
                             values_to = "geoms")|>
                st_as_sf()|>
-               st_make_valid()|>
-               st_difference(mpa_combined)
+               st_make_valid() |>
+               st_difference(mpa_combined)|>
+               st_make_valid()
            }),
 
 tar_target(ind_temperature_inside_outside,
