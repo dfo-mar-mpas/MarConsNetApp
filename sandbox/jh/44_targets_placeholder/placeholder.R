@@ -2,15 +2,30 @@ list(
 tar_target(control_polygons,
            command= {
              MPAs
+             sf::sf_use_s2(FALSE)
+
+             mpa_combined <- MPAs |>
+               filter(NAME_E != "Non_Conservation_Area") |>
+               st_make_valid() |>
+               st_combine() |>
+               st_as_sf()
+
              cp <- MPAs |>
                filter(NAME_E!="Non_Conservation_Area") |>
                rowwise() |>
-               mutate(geoms = st_difference(st_buffer(geoms,20000),geoms))|>
-               mutate(forty_km = st_difference(st_buffer(geoms,40000),geoms)) |>
-               mutate(sixty_km = st_difference(st_buffer(geoms,60000),geoms)) |>
-               mutate(eighty_km = st_difference(st_buffer(geoms,80000),geoms)) |>
-               mutate(hundred_km = st_difference(st_buffer(geoms,100000),geoms))
-
+               mutate(twenty_km = st_difference(st_buffer(geoms,20000),geoms),
+                     forty_km = st_difference(st_buffer(geoms,40000), st_buffer(geoms, 20000)),
+                     sixty_km=st_difference(st_buffer(geoms, 60000), st_buffer(geoms, 40000)),
+                     eighty_km=st_difference(st_buffer(geoms, 80000), st_buffer(geoms, 60000))) |>
+               ungroup()|>
+               as.data.frame() |>
+               dplyr::select(-geoms) |>
+               pivot_longer(cols=ends_with("_km"),
+                            names_to = "buffer_distance",
+                            values_to = "geoms")|>
+               st_as_sf()|>
+               st_make_valid()|>
+               st_difference(mpa_combined)
            }),
 
 tar_target(ind_temperature_inside_outside,
@@ -44,19 +59,7 @@ tar_target(ind_temperature_inside_outside,
                                       "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                     ))
              x
-           }),
-
-
-tar_target(labels,
-           command={
-             distinct_rows <- unique(all_project_geoms[c("project_short_title", "PPTID", "source")])
-             unique(paste0(distinct_rows$project_short_title, " (", ifelse(is.na(distinct_rows$PPTID),distinct_rows$source,distinct_rows$PPTID), ")"))
-           }),
-
-tar_target(palette,
-           command={
-             data.frame("Project"=labels, "Color"= palette <- viridis::viridis(length(labels)))
-           }),
+           })
 
 
 
