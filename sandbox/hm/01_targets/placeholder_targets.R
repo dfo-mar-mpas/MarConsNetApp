@@ -96,7 +96,7 @@ tar_target(name = ind_phytoplankton_biomass_and_diversity,
            }), # Biomass Metrics, maybe species/functional Diversity
 
 
-tar_target(name = ind_start_date_spring_bloom,
+tar_target(name = ind_spring_bloom,
            command = {
              ind_placeholder(ind_name="Start Date of Spring Bloom", areas = MPAs, readiness = NA,
                              source = "AZMP", objectives = NA))
@@ -110,11 +110,11 @@ tar_target(name = ind_biomass_calanus_finmarchicus,
            }), # Biomass Metrics
 
 
-tar_target(name = ind_zooplankton_community_composition,
-           command = {
-             ind_placeholder(ind_name="Zooplankton Community Composition", areas = MPAs, readiness = NA,
-                             source = "AZMP", objectives = NA))
-           }), # Functional Diversity??
+## tar_target(name = ind_zooplankton_community_composition,
+##           command = {
+##            ind_placeholder(ind_name="Zooplankton Community Composition", areas = MPAs, readiness = NA,
+##                             source = "AZMP", objectives = NA))
+##           }), # Functional Diversity??
 
 
 tar_target(name = ind_fish_eggs_and_larve,
@@ -162,7 +162,7 @@ tar_target(name = ind_abundance_invasive_species_webmr,
            command = {
              ind_placeholder(ind_name="Abundance of Aquatic Invasive Species in WEBMER", areas = MPAs, readiness = NA,
                              source = "RV Survey", objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
-           }), # Structure and Function
+           }), # Biomass Metrics
 
 
 tar_target(name = ind_biomass_groundfish_prey_webmr,
@@ -179,7 +179,7 @@ tar_target(name = ind_abundance_sea_pens_webmr,
            }), # Functional Diversity
 
 
-tar_target(name = ind_richness,
+tar_target(name = ind_epibenthic_infaunal,
            command = {
              ind_placeholder(ind_name="Diversity of Epibenthic and Infaunal Communities", areas = MPAs, readiness = NA,
                              source = "RV Survey", objectives = NA))
@@ -190,7 +190,7 @@ tar_target(name = ind_community_comp_epibenthic_infaunal,
            command = {
              ind_placeholder(ind_name="Community Composition of Epibenthic and Infaunal Benthic Communities", areas = MPAs, readiness = NA,
                              source = "RV Survey", objectives = NA))
-           }), # Structure and Function?
+           }), # Biomass Metrics
 
 
 tar_target(name = ind_biomass_bioturbators,
@@ -243,7 +243,7 @@ tar_target(name = ind_community_comp_demersal,
              ind_placeholder(ind_name="Community Composition of Demersal Fish", areas = MPAs, readiness = "Readily Available",
                              source = "RV Survey", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
                                                                   "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
-           }), # Structure and Function
+           }), # Biomass Metrics
 
 
 tar_target(name = ind_distribution_juv_haddock_habitat,
@@ -339,11 +339,11 @@ tar_target(name = ind_anthropogenic_debris,
            }), # Threats to Habitat
 
 
-tar_target(name = ind_cumulative_impact,
-           command = {
-             ind_placeholder(ind_name="Change in Relative Cumulative Impact", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), # Threats to Productivity, Threats to Habitat
+##tar_target(name = ind_cumulative_impact,
+##           command = {
+##             ind_placeholder(ind_name="Change in Relative Cumulative Impact", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), # Threats to Productivity, Threats to Habitat
 
 
 
@@ -360,7 +360,7 @@ tar_target(name = ind_species_per_trophic,
            command = {
              ind_placeholder(ind_name="Species per trophic level within each habitat type", areas = MPAs, readiness = NA,
                              source = NA, objectives = NA)
-           }), # Structure and Function
+           }), # Functional Diversity
 
 
 tar_target(name = ind_species_at_risk,
@@ -384,11 +384,11 @@ tar_target(name = ind_sediment_regime,
            }), # Environmental Representativity
 
 
-tar_target(name = ind_temp_salinity,
-           command = {
-             ind_placeholder(ind_name="Temperature and salinity within estuary", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), # Environmental Representativity
+##tar_target(name = ind_temp_salinity,
+##           command = {
+##             ind_placeholder(ind_name="Temperature and salinity within estuary", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), # Environmental Representativity
 
 
 tar_target(name = ind_nutrients,
@@ -426,11 +426,11 @@ tar_target(name = ind_human_perturbation,
            }), # Threats to Habitat
 
 
-tar_target(name = ind_contaminant_concentration_musquash,
-           command = {
-             ind_placeholder(ind_name="Contaminant concentrations within the estuary", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), # Threats to Productivity, Biomass Metrics
+##tar_target(name = ind_contaminant_concentration_musquash,
+##           command = {
+##             ind_placeholder(ind_name="Contaminant concentrations within the estuary", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), # Threats to Productivity, Biomass Metrics
 
 
 #The Gully from Halles spreadsheet
@@ -491,7 +491,7 @@ tar_target(name = ind_cetacean_presence,
            }), # Structure and Function
 
 
-tar_target(name = ind_strandings_gully,
+tar_target(name = ind_strandings,
            command = {
              ind_placeholder(ind_name="Number of reported strandings of Scotian Shelf Northern Bottlenose Whales", areas = MPAs, readiness = NA,
                              source = NA, objectives = NA)
@@ -523,7 +523,7 @@ tar_target(name = ind_coral_distribution,
            command = {
              ind_placeholder(ind_name="Coral distribution, density, and size structure by species at select monitoring sites", areas = MPAs, readiness = NA,
                              source = NA, objectives = NA)
-           }), # Structure and Function
+           }), # Biomass Metrics
 
 
 tar_target(name = ind_coral_diversity,
@@ -537,7 +537,7 @@ tar_target(name = ind_coral_proportions,
            command = {
              ind_placeholder(ind_name="Proportions of live and dead corals, by species, at selected monitoring sites within the MPA", areas = MPAs, readiness = NA,
                              source = NA, objectives = NA)
-           }), # Structure and Function?
+           }), # Biomass Metrics
 
 
 tar_target(name = ind_zoanthid_overgrowth,
@@ -610,18 +610,18 @@ tar_target(name = ind_water_masses,
            }), # Environmental Representativity
 
 
-tar_target(name = ind_phytoplankton_production,
-           command = {
-             ind_placeholder(ind_name="Phytoplankton production, community composition and timing of the spring bloom in the MPA and the surrounding region", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), # Structure and Function?
+##tar_target(name = ind_phytoplankton_production,
+##           command = {
+##             ind_placeholder(ind_name="Phytoplankton production, community composition and timing of the spring bloom in the MPA and the surrounding region", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), # Structure and Function?
 
 
-tar_target(name = ind_zooplankton_biomass,
-           command = {
-             ind_placeholder(ind_name="Zooplankton biomass, community composition, and the biomass of selected species within the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), # Biomass Metrics
+##tar_target(name = ind_zooplankton_biomass,
+##           command = {
+##            ind_placeholder(ind_name="Zooplankton biomass, community composition, and the biomass of selected species within the MPA", areas = MPAs, readiness = NA,
+##                           source = NA, objectives = NA)
+##         }), # Biomass Metrics
 
 
 tar_target(name = ind_acoustic_scattering,
@@ -666,11 +666,11 @@ tar_target(name = ind_fishing_effort_nearby_gully,
            }), # ??
 
 
-tar_target(name = ind_unauthorized_fishing_gully,
-           command = {
-             ind_placeholder(ind_name="Unauthoirized fishing activity within or close proximity to the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), # ??
+##tar_target(name = ind_unauthorized_fishing_gully,
+##           command = {
+##             ind_placeholder(ind_name="Unauthoirized fishing activity within or close proximity to the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), # ??
 
 
 tar_target(name = ind_corals_removed,
@@ -747,7 +747,7 @@ tar_target(name = ind_invasive_gully,
            command = {
              ind_placeholder(ind_name="Reports of known invasive species in the Gully MPA", areas = MPAs, readiness = NA,
                              source = NA, objectives = NA)
-           }), # Threats to Habitat
+           }), # Threats to Productivity
 
 
 tar_target(name = ind_anthropogenic_sound,
@@ -865,11 +865,11 @@ tar_target(name = ind_groundfish_abundance_sab,
            }), #Biomass Metrics
 
 
-tar_target(name = ind_longline_vunerable,
-           command = {
-             ind_placeholder(ind_name="Relative abundances, biomasses, size distributions and population fecundities of selected longline-vulnerable species in appropriate portions of the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #
+##tar_target(name = ind_longline_vunerable,
+##           command = {
+##             ind_placeholder(ind_name="Relative abundances, biomasses, size distributions and population fecundities of selected longline-vulnerable species in appropriate portions of the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #
 
 
 tar_target(name = ind_nekton_abundance,
@@ -914,11 +914,11 @@ tar_target(name = ind_mammal_bird_reptile,
            }), #Biomass Metrics, Structure and Function
 
 
-tar_target(name = ind_cetaceans_sab,
-           command = {
-             ind_placeholder(ind_name="Cetacean presence and activity in the MPA, year-round", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Structure and Function
+##tar_target(name = ind_cetaceans_sab,
+##           command = {
+##             ind_placeholder(ind_name="Cetacean presence and activity in the MPA, year-round", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Structure and Function
 
 
 tar_target(name = ind_seal_breeding,
@@ -956,53 +956,53 @@ tar_target(name = ind_marxan_input,
            }), #??
 
 
-tar_target(name = ind_vessel_transits,
-           command = {
-             ind_placeholder(ind_name="Number and speeds of transits of, or past, the MPA by vessels other than pleasure craft, broken down into naval vessels, fishing vessels not fishing in the MPA, and other vessels", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat
+##tar_target(name = ind_vessel_transits,
+##           command = {
+##             ind_placeholder(ind_name="Number and speeds of transits of, or past, the MPA by vessels other than pleasure craft, broken down into naval vessels, fishing vessels not fishing in the MPA, and other vessels", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat
 
 
-tar_target(name = ind_vessel_operation,
-           command = {
-             ind_placeholder(ind_name="Hours of operation within the MPA by vessels other than commercial fishing vessels or pleasure craft, broken down into research and monitoring vessels, other government vessels, ecotourism vessels, and all others", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat
+##tar_target(name = ind_vessel_operation,
+##           command = {
+##             ind_placeholder(ind_name="Hours of operation within the MPA by vessels other than commercial fishing vessels or pleasure craft, broken down into research and monitoring vessels, other government vessels, ecotourism vessels, and all others", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat
 
 
-tar_target(name = ind_fishing_effort_sab,
-           command = {
-             ind_placeholder(ind_name="Commercial and recreational fishing effort within the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat
+##tar_target(name = ind_fishing_effort_sab,
+##           command = {
+##             ind_placeholder(ind_name="Commercial and recreational fishing effort within the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat
 
 
-tar_target(name = ind_nearby_fishing_effort_sab,
-           command = {
-             ind_placeholder(ind_name="Commercial and recreational fishing effort in close proximity to the MPA boundary", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat
+##tar_target(name = ind_nearby_fishing_effort_sab,
+##           command = {
+##             ind_placeholder(ind_name="Commercial and recreational fishing effort in close proximity to the MPA boundary", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat
 
 
-tar_target(name = ind_unauthorized_fishing_sab,
-           command = {
-             ind_placeholder(ind_name="Unauthorized fishing activity within the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Productivity
+##tar_target(name = ind_unauthorized_fishing_sab,
+##           command = {
+##             ind_placeholder(ind_name="Unauthorized fishing activity within the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Productivity
 
 
-tar_target(name = ind_seabed_swept_sab,
-           command = {
-             ind_placeholder(ind_name="Seabed area within the MPA swept by bottom-tending mobile commercial fishing, research and monitoring gears, both as a total and subdivided by zone or seabed habitat type", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat
+##tar_target(name = ind_seabed_swept_sab,
+##           command = {
+##             ind_placeholder(ind_name="Seabed area within the MPA swept by bottom-tending mobile commercial fishing, research and monitoring gears, both as a total and subdivided by zone or seabed habitat type", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat
 
 
-tar_target(name = ind_seabed_occupied_sab,
-           command = {
-             ind_placeholder(ind_name="Seabed area within the MPA occupied by bottom-set commercial fishing, research and monitoring traps, both as a total and subdivided by zone or seabed habitat type", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat
+##tar_target(name = ind_seabed_occupied_sab,
+##           command = {
+##             ind_placeholder(ind_name="Seabed area within the MPA occupied by bottom-set commercial fishing, research and monitoring traps, both as a total and subdivided by zone or seabed habitat type", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat
 
 
 tar_target(name = ind_bottomset_length,
@@ -1023,14 +1023,14 @@ tar_target(name = ind_bait,
            command = {
              ind_placeholder(ind_name="Quantities and types of baits introduced to the MPA as part of commercial fishing, research or monitoring gears, both as a total and subdivided by zone", areas = MPAs, readiness = NA,
                              source = NA, objectives = NA)
-           }), #?
+           }), #Threats to Productivity
 
 
-tar_target(name = ind_target_org_removed_sab,
-           command = {
-             ind_placeholder(ind_name="Quantities of target and bycatch organisms removed from or discarded within the MPA by commercial, recreational, research and monitoring fishing, subdivided by type of organism and the nature of the human activity", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Biomass Metrics?
+##tar_target(name = ind_target_org_removed_sab,
+##           command = {
+##             ind_placeholder(ind_name="Quantities of target and bycatch organisms removed from or discarded within the MPA by commercial, recreational, research and monitoring fishing, subdivided by type of organism and the nature of the human activity", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Biomass Metrics?
 
 
 tar_target(name = ind_development_sab,
@@ -1047,11 +1047,11 @@ tar_target(name = ind_anchoring,
            }), #Threats to Habitat?
 
 
-tar_target(name = ind_ballast_sab,
-           command = {
-             ind_placeholder(ind_name="Number of ballast-water exchanges within or in proximity to the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat, Threats to Productivity
+##tar_target(name = ind_ballast_sab,
+##           command = {
+##             ind_placeholder(ind_name="Number of ballast-water exchanges within or in proximity to the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat, Threats to Productivity
 
 
 tar_target(name = ind_other_discharge_offshore,
@@ -1068,52 +1068,52 @@ tar_target(name = ind_other_discharge_coastal,
            }), #Threats to Habitat, Threats to Productivity
 
 
-tar_target(name = ind_contaminant_concentration_sab,
-           command = {
-             ind_placeholder(ind_name="Types and concentrations of contaminants (including organic chemicals, heavy metals and plastics) in the biota, water column and seabed of the MPA, including contaminants derived from unexploded ordinance", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat, Threats to Productivity
+##tar_target(name = ind_contaminant_concentration_sab,
+##           command = {
+##             ind_placeholder(ind_name="Types and concentrations of contaminants (including organic chemicals, heavy metals and plastics) in the biota, water column and seabed of the MPA, including contaminants derived from unexploded ordinance", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat, Threats to Productivity
 
 
-tar_target(name = ind_floating_debris_sab,
-           command = {
-             ind_placeholder(ind_name="Quantity of large floating anthropogenic debris in the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat
+##tar_target(name = ind_floating_debris_sab,
+##           command = {
+##             ind_placeholder(ind_name="Quantity of large floating anthropogenic debris in the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat
 
 
-tar_target(name = ind_seabed_debris_sab,
-           command = {
-             ind_placeholder(ind_name="Quantity of anthropogenic debris on the seabed of the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Habitat
+##tar_target(name = ind_seabed_debris_sab,
+##           command = {
+##             ind_placeholder(ind_name="Quantity of anthropogenic debris on the seabed of the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Habitat
 
 
-tar_target(name = ind_entanglement_sab,
-           command = {
-             ind_placeholder(ind_name="Incidents of whale or turtle entanglement, ship strikes or other interactions with humans in the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Productivity?
+##tar_target(name = ind_entanglement_sab,
+##           command = {
+##             ind_placeholder(ind_name="Incidents of whale or turtle entanglement, ship strikes or other interactions with humans in the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Productivity?
 
 
-tar_target(name = ind_strandings_sab,
-           command = {
-             ind_placeholder(ind_name="Incidents of whale or turtle strandings adjacent to the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Productivity
+##tar_target(name = ind_strandings_sab,
+##           command = {
+##             ind_placeholder(ind_name="Incidents of whale or turtle strandings adjacent to the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Productivity
 
 
-tar_target(name = ind_invasive_sab,
-           command = {
-             ind_placeholder(ind_name="Reports of known invasive species in the MPA and spread of established invasive species towards the MPA", areas = MPAs, readiness = NA,
-                             source = NA, objectives = NA)
-           }), #Threats to Productivity
+##tar_target(name = ind_invasive_sab,
+##           command = {
+##             ind_placeholder(ind_name="Reports of known invasive species in the MPA and spread of established invasive species towards the MPA", areas = MPAs, readiness = NA,
+##                             source = NA, objectives = NA)
+##           }), #Threats to Productivity
 
 tar_target(name = ind_ocean_noise_sab,
            command = {
              ind_placeholder(ind_name="Characterization of deep-water natural and anthropogenic noise within the MPA", areas = MPAs, readiness = NA,
                              source = NA, objectives = NA)
-           }), #?
+           }), #Threats to Habitat
 
 
 tar_target(name = ind_economic_value_sab,
