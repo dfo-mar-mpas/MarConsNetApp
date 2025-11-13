@@ -43,6 +43,10 @@
 
 app <- function() {
 
+  rv <- reactiveValues(
+    plotted_projects = character()  # keeps track of already plotted projects
+  )
+
   # find the path to the targets data store
   STORE <- path_to_store()
 
@@ -58,8 +62,6 @@ app <- function() {
   condition <- paste0('input.tabs === "tab_0"')
 
 ## FILTERING FOR
-
-  options(shiny.error = browser)
 
   old_pillar_ecol_df <- pillar_ecol_df
   old_all_project_geoms <- all_project_geoms
@@ -109,6 +111,10 @@ app <- function() {
         uiOutput("report_ui")
       ),
       shiny::mainPanel(
+        div(
+          id = "mapContainer",
+          leafletOutput("map", height = "600px")
+        ),
         shiny::uiOutput("indicatorText"),
         shiny::uiOutput("DT_ui"),
         shiny::uiOutput("conditionalPlot"),
@@ -1141,12 +1147,23 @@ server <- function(input, output, session) {
     }
   })
 
+  observe({
+    req(input$tabs)
+    if (input$tabs == "tab_0") {
+      shinyjs::show("mapContainer")
+    } else {
+      shinyjs::hide("mapContainer")
+    }
+  })
 
   output$conditionalPlot <- shiny::renderUI({
     req(input$tabs)
     req(state$mpas)
     if (input$tabs == "tab_0") {
-      leaflet::leafletOutput("map")
+      # shiny::div(
+      #   style = "display: block;",
+      #   leafletOutput("map")
+      # )
     } else if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
         currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
         if (!(length(currentInd) == 0)) {
@@ -1405,7 +1422,7 @@ server <- function(input, output, session) {
       grade_colors <- NULL
 
       for (i in seq_along(filtered_odf$objectives)) {
-        message(i)
+        #message(i)
         links[i] <- sprintf(
           '<a href="#%1$s" style="color: black; font-weight: bold; text-decoration: underline"
             onclick="Shiny.setInputValue(&#39;%1$s&#39;, &#39;%2$s&#39;, {priority: &#39;event&#39;});
@@ -1483,141 +1500,245 @@ server <- function(input, output, session) {
   })
 
   # Render the map with selected coordinates
+
   output$map <- leaflet::renderLeaflet({
+    map <- leaflet() %>%
+      addTiles()
+    if (!(is.null(state$mpas)) && !(state$mpas %in% unique(pillar_ecol_df$region))) {
+      selected <- which(MPA_report_card$NAME_E == state$mpas)
+      map <- map %>% leaflet::addPolygons(
+        data=MPA_report_card[selected,]$geoms,
+        fillColor=ifelse(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED"),
+        opacity=1,
+        fillOpacity = 1,
+        weight = 1,
+        color=ifelse(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey")
+      )
+
+    } else if (state$mpas %in% unique(pillar_ecol_df$region)) {
+      selected <- which(MPA_report_card$region %in% state$mpas)
+      map <- map %>%
+        leaflet::addPolygons(data=MPA_report_card$geoms[selected],
+                             fillColor = unname(if_else(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED")),
+                             opacity=1,
+                             fillOpacity = 1,
+                             weight = 1,
+                             color = if_else(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey"),
+                             popup = MPA_report_card$NAME_E[selected])
+    }
+
+    message(">>> renderLeaflet ran again <<<")
+
+    map
+
+  })
+
+
+  # ---- Incremental project plotting ----
+
+  # Track plotted projects globally
+  plotted_projects <- reactiveVal(character(0))
+  last_tab <- reactiveVal(NULL)
+  # Ensure the map is fully rendered
+
+  observeEvent(list(input$projects, input$tabs), {
     req(input$tabs)
-    req(state$mpas)
-    req(state$region)
+    #req(input$tabs == "tab_0")  # Only plot on the correct tab
+    tab_changed <- !identical(last_tab(), input$tabs)
+    last_tab(input$tabs)  # update memory
+    message("             ")
+    message("NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW")
+    message("             ")
+    message("tab_changed= ", tab_changed)
+
+    message("This was triggered ", state$projects)
+
+    projects <- input$projects
+    if (is.null(projects)) projects <- character(0)
+
+    triggered_by_tab <- input$tab  # or compare previous tab with current if you store it
+
+    if (tab_changed) {
+      old_projects <- character(0)   # treat as if nothing is plotted yet
+      new_projects <- projects        # re-plot everything
+      removed_projects <- character(0)
+    } else {
+      old_projects <- plotted_projects()
+      new_projects <- setdiff(projects, old_projects)
+      removed_projects <- setdiff(old_projects, projects)
+    }
+
+    message("old_projects = ", old_projects)
+    message("new_projects = ", new_projects)
+    message("removed_projects = ", removed_projects)
+
+
+
+    # ---- Remove deselected project layers ----
     if (input$tabs == "tab_0") {
-      if (!(is.null(state$mpas))) {
-        map <- leaflet::leaflet() %>%
-          leaflet::addTiles()
+    req(input$map_bounds)
+    invalidateLater(1000, session)  # wait 100ms
+    message("ONLY SHOW UP ON TAB_0")
+    proxy <- leafletProxy("map")
 
-        if (!(is.null(state$mpas)) && !(state$mpas %in% unique(pillar_ecol_df$region))) {
-          selected <- which(MPA_report_card$NAME_E == state$mpas)
-          map <- map %>% leaflet::addPolygons(
-            data=MPA_report_card[selected,]$geoms,
-            fillColor=ifelse(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED"),
-            opacity=1,
-            fillOpacity = 1,
-            weight = 1,
-            color=ifelse(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey")
-          )
-
-        } else if (state$mpas %in% unique(pillar_ecol_df$region)) {
-          selected <- which(MPA_report_card$region %in% state$mpas)
-            map <- map %>%
-              leaflet::addPolygons(data=MPA_report_card$geoms[selected],
-                                   fillColor = unname(if_else(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED")),
-                                   opacity=1,
-                                   fillOpacity = 1,
-                                   weight = 1,
-                                   color = if_else(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey"),
-                                   popup = MPA_report_card$NAME_E[selected])
-        }
-
-        if (!(is.null(input$projects))) {
-          if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) { # We want it filtered
-            k1 <- which(all_project_geoms$areaID == state$mpas)
-            k2 <- which(all_project_geoms$project_short_title %in% sub("\\s*\\(.*", "", input$projects))
-            keep_projects <- intersect(k1,k2)
-          } else {
-          keep_projects <- which(all_project_geoms$project_short_title %in% sub("\\s*\\(.*", "", input$projects))
-          }
-          APJ_filtered <- all_project_geoms[keep_projects,]
-
-          projectIds <- sub("^.*\\(([^)]*)\\).*", "\\1", input$projects) # The sub is because input$projects is snowCrabSurvey (1093)
-          for (i in seq_along(input$projects)) {
-            if (!(projectIds[i] == "NA")) {
-              if (suppressWarnings(is.na(as.numeric(projectIds[i])))) {
-                k1 <- which(APJ_filtered$PPTID %in% unique(pillar_ecol_df$PPTID[which(pillar_ecol_df$type == projectIds[i])]))
-              } else {
-                k1 <- which(APJ_filtered$PPTID == projectIds[i])
-              }
-            } else {
-              k1 <- which(is.na(APJ_filtered$PPTID))
-            }
-            k2 <- which(APJ_filtered$project_short_title ==  sub(" \\(.*", "", input$projects[i]))
-            keep <- intersect(k1,k2)
-
-            APJ <- APJ_filtered[keep,]
-
-            type <- APJ$type
-            popupContent <- mapply(
-              function(type_val, proj_id) {
-                paste0(
-                  type_val,
-                  "<br>",  # Line break
-                  "<a href='http://glf-proxy:8018/mar-spa/reports/", proj_id, ".html' target='_blank'  rel='noopener noreferrer'>",
-                  "View Investment: ", proj_id,
-                  "</a>"
-                )
-              },
-              type,  # Your vector of types
-              projectIds[i],  # Your vector of project IDs
-              SIMPLIFY = FALSE
-            ) |>
-              unlist()
-            geom <- APJ$geometry
-            if (any(st_geometry_type(geom) == "POLYGON")) {
-
-              # Remote Sensing
-              point_keep <- which(st_geometry_type(geom) == "POINT")
-              polygon_keep <- which(st_geometry_type(geom) == "POLYGON")
-              sf_polygons <- st_as_sf(APJ[polygon_keep,], sf_column = "geometry")
-
-              map <- map %>%
-                leaflet::addPolygons(data=sf_polygons, color=map_palette$Color[which(map_palette$Project == input$projects[i])],
-                                     popup=unique(popupContent[polygon_keep]), weight=0.5, fillOpacity = 0.3,)
-            } else {
-              point_keep <- 1:length(APJ$geometry)
-
-            }
-
-            if (!("sfc_GEOMETRY" %in% class(APJ$geometry[point_keep]))) {
-              if (!(length(point_keep) == 0)) {
-            latitude <- st_coordinates(APJ$geometry[point_keep])[, "Y"]
-            longitude <- st_coordinates(APJ$geometry[point_keep])[, "X"]
-
-            # TEST
-            lat_round <- round(latitude, 1)
-            lon_round <- round(longitude, 1)
-            unique_coords <- unique(data.frame(lat_round, lon_round))
-            colnames(unique_coords) <- c("latitude", "longitude")
-
-            latitude <- unique_coords$latitude
-            longitude <- unique_coords$longitude
-
-            map <- map %>%
-              leaflet::addCircleMarkers(longitude, latitude, radius=3, color=map_palette$Color[which(map_palette$Project == input$projects[i])],
-                                        popup=unname(popupContent[point_keep]))
-              }
-            } else {
-              if (!(length(point_keep) == 0)) {
-              APJ_sub <<- APJ[point_keep, ]
-              multipoints <- APJ_sub %>% filter(st_geometry_type(.) == "MULTIPOINT")
-              points <- APJ_sub %>% filter(st_geometry_type(.) == "POINT")
-              multipoints_expanded <- st_cast(multipoints, "POINT")
-              APJ_points <- bind_rows(points, multipoints_expanded)
-              map <- map %>%
-                addCircleMarkers(data=APJ_points, radius = 3, color=map_palette$Color[which(map_palette$Project == input$projects[i])],
-                                 popup=unname(popupContent[point_keep]))
-              }
-            }
-          }
-
-          map <- map %>%
-            leaflet::addLegend(
-              "bottomright",
-              colors = map_palette$Color[which(map_palette$Project %in% input$projects)],
-              labels = input$projects,
-              opacity = 1
-            )
-        }
-        map
-
+    if (length(removed_projects) > 0) {
+      for (proj in removed_projects) {
+        proxy <- proxy %>% clearGroup(proj)
       }
     }
-  })
+
+    # ---- Add newly selected project layers ----
+    if (length(new_projects) > 0) {
+      for (proj in new_projects) {
+        proj_id <- sub("^.*\\(([^)]*)\\).*", "\\1", proj)
+        proj_short <- sub(" \\(.*", "", proj)
+
+        # Filter relevant data
+        if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) {
+          k1 <- which(all_project_geoms$areaID == state$mpas)
+          k2 <- which(all_project_geoms$project_short_title %in% proj_short)
+          keep_projects <- intersect(k1, k2)
+        } else {
+          keep_projects <- which(all_project_geoms$project_short_title %in% proj_short)
+        }
+
+        APJ_filtered <- all_project_geoms[keep_projects, ]
+
+        # Match by project ID or type
+        if (!(proj_id == "NA")) {
+          if (suppressWarnings(is.na(as.numeric(proj_id)))) {
+            k1 <- which(APJ_filtered$PPTID %in% unique(pillar_ecol_df$PPTID[which(pillar_ecol_df$type == proj_id)]))
+          } else {
+            k1 <- which(APJ_filtered$PPTID == proj_id)
+          }
+        } else {
+          k1 <- which(is.na(APJ_filtered$PPTID))
+        }
+
+        k2 <- which(APJ_filtered$project_short_title == proj_short)
+        keep <- intersect(k1, k2)
+        APJ <- APJ_filtered[keep, ]
+
+        message("proj=", proj)
+        message("nrow(APJ)=", nrow(APJ))
+        message("point color = ", map_palette$Color[map_palette$Project == proj])
+
+
+        type <- APJ$type
+        popupContent <- mapply(
+          function(type_val, proj_id) {
+            paste0(
+              type_val,
+              "<br>",
+              "<a href='http://glf-proxy:8018/mar-spa/reports/", proj_id, ".html' target='_blank' rel='noopener noreferrer'>",
+              "View Investment: ", proj_id,
+              "</a>"
+            )
+          },
+          type,
+          proj_id,
+          SIMPLIFY = FALSE
+        ) |> unlist()
+
+        geom <- APJ$geometry
+
+        # --- Add polygons ---
+        if (any(st_geometry_type(geom) == "POLYGON")) {
+          polygon_keep <- which(st_geometry_type(geom) == "POLYGON")
+          sf_polygons <- st_as_sf(APJ[polygon_keep, ], sf_column = "geometry")
+
+          proxy <- proxy %>%
+            addPolygons(
+              data = sf_polygons,
+              color = map_palette$Color[which(map_palette$Project == proj)],
+              popup = unique(popupContent[polygon_keep]),
+              weight = 0.5,
+              fillOpacity = 0.3,
+              group = proj
+            )
+        }
+
+        # --- Add points ---
+        point_keep <- which(st_geometry_type(geom) %in% c("POINT", "MULTIPOINT"))
+        if (length(point_keep) > 0) {
+          APJ_sub <- APJ[point_keep, ]
+          multipoints <- APJ_sub %>% filter(st_geometry_type(.) == "MULTIPOINT")
+          points <- APJ_sub %>% filter(st_geometry_type(.) == "POINT")
+          multipoints_expanded <- st_cast(multipoints, "POINT")
+          APJ_points <- bind_rows(points, multipoints_expanded)
+
+          message("geom types after cast = ", paste(unique(st_geometry_type(APJ_points)), collapse = ", "))
+          message("nrow(APJ_points) = ", nrow(APJ_points))
+          message("length(popupContent) = ", length(popupContent))
+          message("length(point_keep) = ", length(point_keep))
+
+          # if (!(is.null(input$projects))) {
+          #   browser()
+          # }
+
+          # if (!(is.null(tab_changed)) && tab_changed && !(is.null(input$projects)) && input$tabs == "tab_0") {
+          #   browser()
+          # }
+
+
+          proxy <- proxy %>%
+            addCircleMarkers(
+              data = APJ_points,
+              radius = 3,
+              color = map_palette$Color[which(map_palette$Project == proj)],
+              popup = unname(popupContent[point_keep]),
+              group = proj
+            )
+        }
+
+        }
+      }
+
+
+    # ---- Update legend ----
+    #Use projects (already normalized) instead of input$projects
+    if (length(projects) > 0) {
+      proxy %>%
+        clearControls() %>%
+        addLegend(
+          "bottomright",
+          colors = map_palette$Color[map_palette$Project %in% projects],
+          labels = projects,
+          opacity = 1,
+          layerId = "projectLegend"
+        )
+    } else {
+      proxy %>% clearControls()
+    }
+
+
+    # ---- Save the current state ----
+    plotted_projects(projects)
+    }
+  }, ignoreNULL = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   observeEvent(input$tabs, {
     updateQueryString(paste0("?tab=", input$tabs), mode = "push")
