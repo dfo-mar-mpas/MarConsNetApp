@@ -291,6 +291,7 @@ server <- function(input, output, session) {
       }
 
       if ((input$tab0_subtabs == "Ecosystem Overview" && input$indicator_mode == "ebm") | input$tab0_subtabs == "Threats") {
+        #browser()
         # Ecological Overview
 
       if (state$mpas %in% regions$NAME_E) {
@@ -303,7 +304,19 @@ server <- function(input, output, session) {
         table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
       }
 
-      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID")]
+      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID")]
+
+      # Determining quality statement
+      # for (i in seq_along(table_ped$indicator)) {
+      #   if (state$mpas %in% regions$NAME_E) {
+      #
+      #   } else {
+      #     which(all_project_geoms$i)
+      #   }
+      # }
+
+
+      # End quality statement
 
 
       ddff <- table_ped %>%

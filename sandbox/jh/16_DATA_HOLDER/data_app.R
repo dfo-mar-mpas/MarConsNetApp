@@ -10,7 +10,7 @@ library(base64enc)
 webshot::install_phantomjs()
 
 tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","flowerPalette","indicatorFlower","Objectives_processed","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate_change", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators", "creature_feature", "labels", "map_palette"))
-source("R/app.R");app()
+Blue is whasource("R/app.R");app()
 
 tar_make(c("all_project_geoms", "MPA_report_card", "odf", "pillar_ecol_df", "plot_files"),
          script="inst/_targets.R")
