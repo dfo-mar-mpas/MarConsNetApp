@@ -232,7 +232,7 @@ indicator_targets <- list(
                         year = YEAR)  |>
                  dplyr::select(longitude, latitude, year, fish_length)
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "fish_length",
                                  indicator = "Fish Length",
                                  type = "Ecosystem Trawl Survey",
@@ -253,6 +253,8 @@ indicator_targets <- list(
                                    "Contribute to the recovery and conservation of depleted species"
                                  ),
                                  plot_lm=FALSE)
+
+               x
              }
   ),
 
