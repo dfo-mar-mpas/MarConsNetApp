@@ -1938,151 +1938,199 @@ indicator_targets <- list(
   tar_target(name = ind_population_characteristics,
              command = {
                ind_placeholder(ind_name="Size, age, and sex structure of the Scotian Shelf population of Northern Bottlenose Whales", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
+                                                           "Contribute to the recovery and conservation of depleted species",
+                                                           "Ensure the conservation and protection of threatened or endangered species",
+                                                           "promote the recovery of at-risk whales and wolffish"))
              }), # Structure and Function, Marine Mammals and other Top Predators
 
   tar_target(name = ind_fresh_scars,
              command = {
-               ind_placeholder(ind_name="% of individuals in the Scotian Shelf Nortyhern Bottlenose population showing fresh scars ", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+               ind_placeholder(ind_name="% of individuals in the Scotian Shelf Northern Bottlenose population showing fresh scars", areas = MPAs, readiness = "Unknown",
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
+                                                           "Control unintended incidental mortality for all species",
+                                                           "Ensure the conservation and protection of threatened or endangered species",
+                                                           "promote the recovery of at-risk whales and wolffish"))
              }), # Threats to Habitat, Marine Mammals and other Top Predators
 
   tar_target(name = ind_genetic_diversity_nbw,
              command = {
                ind_placeholder(ind_name="Genetic diversity within the Northern Bottlenose Whales", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels",
+                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes",
+                                                           "Ensure the conservation and protection of threatened or endangered species"))
              }), # Genetic Diversity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_blubber_contaminants,
              command = {
-               ind_placeholder(ind_name="Level of contaminants in the blubber of individuals in the Scotian Shelf population of Northern Bottlenose Whales ", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+               ind_placeholder(ind_name="Level of contaminants in the blubber of individuals in the Scotian Shelf population of Northern Bottlenose Whales", areas = MPAs, readiness = "Unknown",
+                               source = NA, objectives = c("Maintain and monitor the quality of water and sediments of the Gully; and",
+                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
+                                                           "Minimize harmful impacts from human activities on cetacean populations and their habitats",
+                                                           "Ensure the conservation and protection of threatened or endangered species"))
              }), # Threats to Productivity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_rel_abundance_cetaceans,
              command = {
                ind_placeholder(ind_name="Relative abundances of cetaceans beside Northern Bottlenose Whales in The Gully", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
              }), # Biomass Metrics, Marine Mammals and other Top Predators
 
   tar_target(name = ind_cetacean_presence,
              command = {
                ind_placeholder(ind_name="Cetacean presence and activity in the MPA, year-round", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats"))
              }), # Structure and Function, Marine Mammals and other Top Predators
 
   tar_target(name = ind_strandings,
              command = {
                ind_placeholder(ind_name="Number of reported strandings of Scotian Shelf Northern Bottlenose Whales", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
+                                                           "Ensure the conservation and protection of threatened or endangered species",
+                                                           "Control unintended incidental mortality for all species"))
              }), # Threats to Productivity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_ship_strikes,
              command = {
                ind_placeholder(ind_name="Number of reported ship strikes on cetaceans in or near the Gully and of strikes on Scotian Shelf Northern Bottlenose Whales elsewhere", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
+                                                           "Control unintended incidental mortality for all species",
+                                                           "Ensure the conservation and protection of threatened or endangered species"))
              }), # Threats to Habitat, Marine Mammals and other Top Predators, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_entanglement_gully,
              command = {
                ind_placeholder(ind_name="Number of reported gear entanglements of cetaceans in or near the Gully and of entanglements of Scotian Shelf Northern Bottlenose Whales elsewhere", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
+                                                           "Control unintended incidental mortality for all species",
+                                                           "Ensure the conservation and protection of threatened or endangered species"))
              }), # Threats to Habitat, Marine Mammals and other Top Predators, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_human_interaction,
              command = {
                ind_placeholder(ind_name="Number of reports of other interactions between human activities and cetaceans in or near the Gully and of interactions with Scotian Shelf Northern Bottlenose Whales", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
+                                                           "Control unintended incidental mortality for all species"))
              }), # Threats to Habitat, Marine Mammals and other Top Predators, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_coral_distribution,
              command = {
                ind_placeholder(ind_name="Coral distribution, density, and size structure by species at select monitoring sites", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Protect cold-water corals",
+                                                           "Protect cold-water corals and deep water frontier area",
+                                                           "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel"))
              }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_coral_diversity,
              command = {
                ind_placeholder(ind_name="Coral Diversity at selcted monitoring sites", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Protect cold-water corals",
+                                                           "Protect cold-water corals and deep water frontier area",
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
              }), # Species Diversity, Benthic Environment
 
   tar_target(name = ind_coral_proportions,
              command = {
                ind_placeholder(ind_name="Proportions of live and dead corals, by species, at selected monitoring sites within the MPA", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Protect cold-water corals",
+                                                           "Protect cold-water corals and deep water frontier area",
+                                                           "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel"))
              }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_zoanthid_overgrowth,
              command = {
                ind_placeholder(ind_name="Proportion on live corals at selected monitoring sites with the MPA that show zoanthid over-growths, and extent of over-growth in affected colonies", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Protect cold-water corals",
+                                                           "Protect cold-water corals and deep water frontier area",
+                                                           "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel"))
              }), # Threats to Productivity, Benthic Environment, Trophic Structure and Function
 
   tar_target(name = ind_trawl_vunerable,
              command = {
                ind_placeholder(ind_name="Relative abundances, size distributions and diversity of selected groundfish and trawl-vunerable invertebrates in Zone 3 of the MPA", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Maintain productivity of harvested species",
+                                                           "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+                                                           "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
              }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_longline_vunerable,
              command = {
                ind_placeholder(ind_name="Relative abundances, size distributions and diversity of selected longline-vunerable species in Zones 2 and 3 of the MPA", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Maintain productivity of harvested species",
+                                                           "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+                                                           "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
              }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_trap_vunerable,
              command = {
                ind_placeholder(ind_name="Relative abundances, size distributions and diversity of selected trap-vunerable species in Zonea 1 and 2 of the MPA", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Maintain productivity of harvested species",
+                                                           "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+                                                           "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
              }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_mesopelagic_nektonic,
              command = {
                ind_placeholder(ind_name="Relative abundances, size distributions and diversity of selected mesopelagic nektonic species in Zones 1 and 2 of the MPA", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+                                                           "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
              }), # Biomass Metrics,Trophic Structure and Function
 
   tar_target(name = ind_environmental_conditions_near_seabed,
              command = {
                ind_placeholder(ind_name="Temperature, salinity, oxygen concentration, alkalinity, pH, light levels, chlorophyll, pigments and nutrients in water column within the MPA, including in close proximity to the seabed", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
+                                                           "Maintain and monitor the quality of water and sediments of the Gully; and",
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_environmental_conditions_azmp_lines,
              command = {
                ind_placeholder(ind_name="Temperature, salinity, oxygen concentration, light levels, chlorophyll, pigments and nutrients in waters flowing into and past the MPA, as measured on the Louisbourg Line, the Halifax Line and the Extended Halifax Line", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
+                                                           "Maintain and monitor the quality of water and sediments of the Gully; and",
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_physical_biological_surface_properties,
              command = {
                ind_placeholder(ind_name="Physical (temperature, salinity, wind, sea-surface height) and biological (ocean colour) sea surface properties in the MPA and the surrounding region", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
+                                                           "Maintain and monitor the quality of water and sediments of the Gully; and",
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_weather_station_buoy_sites,
              command = {
                ind_placeholder(ind_name="Weather conditions at the Sable Island weather station, Banquereau and Laurentian Fan weather-buoy sites, including wind direction and speed, air pressure and sea-level air temperatures, and at buoy sites sea surface temperatures, wave height and dominant wave period", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
+                                                           "Maintain and monitor the quality of water and sediments of the Gully; and",
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_water_masses,
              command = {
                ind_placeholder(ind_name="Three-dimensional distribution and movements of water masses within and around the MPA", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
+                                                           "Maintain and monitor the quality of water and sediments of the Gully; and",
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
              }), # Environmental Representativity, Ocean Structure and Movement
 
   tar_target(name = ind_acoustic_scattering,
              command = {
                ind_placeholder(ind_name="Acoustic scattering in the water column within the MPA (as a measure of mesopelagic and zooplankton densities and distribution)", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
              }), # Biomass Metrics, Secondary Production
 
   tar_target(name = ind_seabird_abundance,
              command = {
                ind_placeholder(ind_name="Distribution and abundance of seabird species within the MPA, including an index of planktivorous seabird species", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"))
              }), # Biomass Metrics, Trophic Structure and Function
 
   tar_target(name = ind_vessel_transits,
