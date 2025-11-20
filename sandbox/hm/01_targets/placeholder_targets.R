@@ -1263,7 +1263,7 @@ tar_target(name = ind_user_characteristics,
 
 
 
-
+[ , setdiff(names(), c("data", "plot"))]
 
 
 
