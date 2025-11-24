@@ -181,7 +181,6 @@ framework_targets <- list(
                               ind_offshore_wind_developments,
                               ind_contaminant_concentration,
                               ind_anthropogenic_debris,
-                              ind_cumulative_impact,
                               ind_disturbed_area,
                               ind_human_perturbation,
                               ind_fresh_scars,
@@ -415,7 +414,25 @@ framework_targets <- list(
                x <- rbind(
                  ind_oxygen[ , setdiff(names(ind_oxygen), c("data", "plot"))],
                  ind_salinity[ , setdiff(names(ind_salinity), c("data", "plot"))],
-                 ind_temperature[ , setdiff(names(ind_temperature), c("data", "plot"))]
+                 ind_temperature[ , setdiff(names(ind_temperature), c("data", "plot"))],
+                 ind_temp_at_depth[ , setdiff(names(ind_temp_at_depth), c("data", "plot"))],
+                 ind_sea_surface_salinity[ , setdiff(names(ind_sea_surface_salinity), c("data", "plot"))],
+                 ind_subsurface_salinity[ , setdiff(names(ind_subsurface_salinity), c("data", "plot"))],
+                 ind_oxygen_saturation[ , setdiff(names(ind_oxygen_saturation), c("data", "plot"))],
+                 ind_ave_ph_level[ , setdiff(names(ind_ave_ph_level), c("data", "plot"))],
+                 ind_carbonate[ , setdiff(names(ind_carbonate), c("data", "plot"))],
+                 ind_ave_mixed_layer_depth[ , setdiff(names(ind_ave_mixed_layer_depth), c("data", "plot"))],
+                 ind_ave_position_of_shelf_slope_front[ , setdiff(names(ind_ave_position_of_shelf_slope_front), c("data", "plot"))],
+                 ind_wind_speed_and_storminess[ , setdiff(names(ind_wind_speed_and_storminess), c("data", "plot"))],
+                 ind_nutrients[ , setdiff(names(ind_nutrients), c("data", "plot"))],
+                 ind_environmental_conditions_near_seabed[ , setdiff(names(ind_environmental_conditions_near_seabed), c("data", "plot"))],
+                 ind_environmental_conditions_azmp_lines[ , setdiff(names(ind_environmental_conditions_azmp_lines), c("data", "plot"))],
+                 ind_physical_biological_surface_properties[ , setdiff(names(ind_physical_biological_surface_properties), c("data", "plot"))],
+                 ind_weather_station_buoy_sites[ , setdiff(names(ind_weather_station_buoy_sites), c("data", "plot"))],
+                 ind_physandbio_properties[ , setdiff(names(ind_physandbio_properties), c("data", "plot"))],
+                 ind_physandbio_seasurface_properties[ , setdiff(names(ind_physandbio_seasurface_properties), c("data", "plot"))],
+                 ind_weather_condition[ , setdiff(names(ind_weather_condition), c("data", "plot"))],
+                 ind_ice_cover[ , setdiff(names(ind_ice_cover), c("data", "plot"))]
                )
                x$theme <- "Ocean Conditions"
                x$weight <- NA
@@ -433,7 +450,11 @@ framework_targets <- list(
                x <- rbind(
                  ind_otn_proportion_tags_detected_in_multiple_mpas[ , setdiff(names(ind_otn_proportion_tags_detected_in_multiple_mpas), c("data", "plot"))],
                  ind_surface_height[ , setdiff(names(ind_surface_height), c("data", "plot"))],
-                 ind_stratification[ , setdiff(names(ind_stratification), c("data", "plot"))]
+                 ind_stratification[ , setdiff(names(ind_stratification), c("data", "plot"))],
+                 ind_spatial_extent_ebsa_webmr[ , setdiff(names(ind_spatial_extent_ebsa_webmr), c("data", "plot"))],
+                 ind_sediment_regime[ , setdiff(names(ind_sediment_regime), c("data", "plot"))],
+                 ind_water_masses[ , setdiff(names(ind_water_masses), c("data", "plot"))],
+                 ind_seabed_feature_extent[ , setdiff(names(ind_seabed_feature_extent), c("data", "plot"))]
                )
                x$theme <- "Ocean Structure and Movement"
                x$weight <- NA
@@ -454,7 +475,11 @@ framework_targets <- list(
                  ind_phosphate[ , setdiff(names(ind_phosphate), c("data", "plot"))],
                  ind_chlorophyll[ , setdiff(names(ind_chlorophyll), c("data", "plot"))],
                  ind_bloom_amplitude[ , setdiff(names(ind_bloom_amplitude), c("data", "plot"))],
-                 ind_bloom_timing[ , setdiff(names(ind_bloom_timing), c("data", "plot"))]
+                 ind_bloom_timing[ , setdiff(names(ind_bloom_timing), c("data", "plot"))],
+                 ind_chlorophyll_a[ , setdiff(names(ind_chlorophyll_a), c("data", "plot"))],
+                 ind_phytoplankton_biomass_and_diversity[ , setdiff(names(ind_phytoplankton_biomass_and_diversity), c("data", "plot"))],
+                 ind_spring_bloom[ , setdiff(names(ind_spring_bloom), c("data", "plot"))],
+                 ind_plankton_production[ , setdiff(names(ind_plankton_production), c("data", "plot"))]
                )
                x$theme <- "Primary Production"
                x$weight <- NA
@@ -470,7 +495,10 @@ framework_targets <- list(
              command={
                x <- rbind(
                  ind_zooplankton[ , setdiff(names(ind_zooplankton), c("data", "plot"))],
-                 ind_zooplankton_community_composition[ , setdiff(names(ind_zooplankton_community_composition), c("data", "plot"))]
+                 ind_zooplankton_community_composition[ , setdiff(names(ind_zooplankton_community_composition), c("data", "plot"))],
+                 ind_calanus_finmarchicus[ , setdiff(names(ind_calanus_finmarchicus), c("data", "plot"))],
+                 ind_acoustic_scattering[ , setdiff(names(ind_acoustic_scattering), c("data", "plot"))],
+                 ind_mesozooplankton_community[ , setdiff(names(ind_mesozooplankton_community), c("data", "plot"))]
                )
                x$theme <- "Secondary Production"
 
@@ -487,7 +515,21 @@ framework_targets <- list(
   tar_target(theme_marine_mammals_and_other_top_predators,
              command={
                x <- rbind(
-                 ind_musquash_birds_sample_coverage[ , setdiff(names(ind_musquash_birds_sample_coverage), c("data", "plot"))]
+                 ind_musquash_birds_sample_coverage[ , setdiff(names(ind_musquash_birds_sample_coverage), c("data", "plot"))],
+                 ind_seasonal_presence_cetaceans[ , setdiff(names(ind_seasonal_presence_cetaceans), c("data", "plot"))],
+                 ind_seasonal_presence_seals[ , setdiff(names(ind_seasonal_presence_seals), c("data", "plot"))],
+                 ind_seasonal_presence_pelagics[ , setdiff(names(ind_seasonal_presence_pelagics), c("data", "plot"))],
+                 ind_seasonal_presence_seabirds[ , setdiff(names(ind_seasonal_presence_seabirds), c("data", "plot"))],
+                 ind_abundance_nbw[ , setdiff(names(ind_abundance_nbw), c("data", "plot"))],
+                 ind_mpa_use_nbw[ , setdiff(names(ind_mpa_use_nbw), c("data", "plot"))],
+                 ind_population_characteristics[ , setdiff(names(ind_population_characteristics), c("data", "plot"))],
+                 ind_genetic_diversity_nbw[ , setdiff(names(ind_genetic_diversity_nbw), c("data", "plot"))],
+                 ind_rel_abundance_cetaceans[ , setdiff(names(ind_rel_abundance_cetaceans), c("data", "plot"))],
+                 ind_cetacean_presence[ , setdiff(names(ind_cetacean_presence), c("data", "plot"))],
+                 ind_strandings[ , setdiff(names(ind_strandings), c("data", "plot"))],
+                 ind_mammal_bird_reptile[ , setdiff(names(ind_mammal_bird_reptile), c("data", "plot"))],
+                 ind_seal_breeding[ , setdiff(names(ind_seal_breeding), c("data", "plot"))]
+
                )
                x$theme <- "Marine Mammals and Other Top Predators"
 
@@ -504,53 +546,67 @@ framework_targets <- list(
 
   tar_target(theme_trophic_structure_and_function,
              command={
-               data.frame(
-                 areaID = NA,
-                 indicator = NA,
-                 type = NA,
-                 units = NA,
-                 scoring = NA,
-                 PPTID = NA,
-                 project_short_title = NA,
-                 climate = NA,
-                 design_target = NA,
-                 score = NA,
-                 status_statement = NA,
-                 trend_statement = NA,
-                 source = NA,
-                 climate_expectation = NA,
-                 indicator_rationale = NA,
-                 objectives = NA,
-                 bin_rationale = NA,
-                 theme="Trophic Structure and Function",
-                 weight=NA
+               x <- rbind(
+                 ind_abundance_invasive_species_webmr[ , setdiff(names(ind_abundance_invasive_species_webmr), c("data", "plot"))],
+                 ind_biomass_abund_distribution_musquash[ , setdiff(names(ind_biomass_abund_distribution_musquash), c("data", "plot"))],
+                 ind_species_per_trophic[ , setdiff(names(ind_species_per_trophic), c("data", "plot"))],
+                 ind_species_at_risk[ , setdiff(names(ind_species_at_risk), c("data", "plot"))],
+                 ind_nonindigenous_rel_indigenous[ , setdiff(names(ind_nonindigenous_rel_indigenous), c("data", "plot"))],
+                 ind_mesopelagic_nektonic[ , setdiff(names(ind_mesopelagic_nektonic), c("data", "plot"))],
+                 ind_seabird_abundance[ , setdiff(names(ind_seabird_abundance), c("data", "plot"))],
+                 ind_invasive_gully[ , setdiff(names(ind_invasive_gully), c("data", "plot"))],
+                 ind_fluxes[ , setdiff(names(ind_fluxes), c("data", "plot"))],
+                 ind_exchanges[ , setdiff(names( ind_exchanges), c("data", "plot"))],
+                 ind_harmful_algae[ , setdiff(names(ind_harmful_algae), c("data", "plot"))],
+                 ind_nekton_abundance[ , setdiff(names(ind_nekton_abundance), c("data", "plot"))],
+                 ind_large_wolffish[ , setdiff(names(ind_large_wolffish), c("data", "plot"))],
+                 ind_fish_nekton_fluxes[ , setdiff(names(ind_fish_nekton_fluxes), c("data", "plot"))],
+                 ind_seabird_nesting[ , setdiff(names(ind_seabird_nesting), c("data", "plot"))],
+                 ind_trophic_relationships[ , setdiff(names(ind_trophic_relationships), c("data", "plot"))],
+                 ind_ecosystem_function[ , setdiff(names(ind_ecosystem_function), c("data", "plot"))]
+
                )
+               x$theme <- "Trophic Structure and Function"
+
+               x$weight <- NA
+               for (i in seq_along(x$areaID)) {
+                 message(i)
+                 X <- x[i,]
+                 keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+                 x$weight[i] <- pillar_ecol_df$weight[keep]
+               }
+
+               x
 
              }),
 
   tar_target(theme_benthic_environment,
              command={
-               data.frame(
-                 areaID = NA,
-                 indicator = NA,
-                 type = NA,
-                 units = NA,
-                 scoring = NA,
-                 PPTID = NA,
-                 project_short_title = NA,
-                 climate = NA,
-                 design_target = NA,
-                 score = NA,
-                 status_statement = NA,
-                 trend_statement = NA,
-                 source = NA,
-                 climate_expectation = NA,
-                 indicator_rationale = NA,
-                 objectives = NA,
-                 bin_rationale = NA,
-                 theme="Benthic Environment",
-                 weight=NA
+               x <- rbind(
+                 ind_abundance_sea_pens_webmr[ , setdiff(names(ind_abundance_sea_pens_webmr), c("data", "plot"))],
+                 ind_epibenthic_infaunal[ , setdiff(names(ind_epibenthic_infaunal), c("data", "plot"))],
+                 ind_community_comp_epibenthic_infaunal[ , setdiff(names(ind_community_comp_epibenthic_infaunal), c("data", "plot"))],
+                 ind_biomass_bioturbators[ , setdiff(names(ind_biomass_bioturbators), c("data", "plot"))],
+                 ind_coral_distribution[ , setdiff(names(ind_coral_distribution), c("data", "plot"))],
+                 ind_coral_diversity[ , setdiff(names(ind_coral_diversity), c("data", "plot"))],
+                 ind_coral_proportions[ , setdiff(names(ind_coral_proportions), c("data", "plot"))],
+                 ind_zoanthid_overgrowth[ , setdiff(names(ind_zoanthid_overgrowth), c("data", "plot"))],
+                 ind_benthic_characteristics[ , setdiff(names(ind_benthic_characteristics), c("data", "plot"))],
+                 ind_compared_benthic_characteristics[ , setdiff(names(ind_compared_benthic_characteristics), c("data", "plot"))],
+                 ind_distinctive_benthic_characteristics[ , setdiff(names(ind_distinctive_benthic_characteristics), c("data", "plot"))]
+
                )
+               x$theme <- "Benthic Environment"
+
+               x$weight <- NA
+               for (i in seq_along(x$areaID)) {
+                 message(i)
+                 X <- x[i,]
+                 keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+                 x$weight[i] <- pillar_ecol_df$weight[keep]
+               }
+
+               x
              }),
 
   tar_target(theme_fish_and_fishery_resources,
@@ -559,7 +615,25 @@ framework_targets <- list(
                  ind_fish_length[ , setdiff(names(ind_fish_length), c("data", "plot"))],
                  ind_fish_weight[ , setdiff(names(ind_fish_weight), c("data", "plot"))],
                  ind_haddock_counts[ , setdiff(names(ind_haddock_counts), c("data", "plot"))],
-                 ind_haddock_biomass[ , setdiff(names(ind_haddock_biomass), c("data", "plot"))]
+                 ind_haddock_biomass[ , setdiff(names(ind_haddock_biomass), c("data", "plot"))],
+                 ind_fish_eggs_and_larve[ , setdiff(names(ind_fish_eggs_and_larve), c("data", "plot"))],
+                 ind_proportion_demersal_fish[ , setdiff(names(ind_proportion_demersal_fish), c("data", "plot"))],
+                 ind_biomass_groundfish_prey_webmr[ , setdiff(names(ind_biomass_groundfish_prey_webmr), c("data", "plot"))],
+                 ind_rel_abundance_groundfish[ , setdiff(names(ind_rel_abundance_groundfish), c("data", "plot"))],
+                 ind_size_distribution_groundfish[ , setdiff(names(ind_size_distribution_groundfish), c("data", "plot"))],
+                 ind_condition_groundfish[ , setdiff(names(ind_condition_groundfish), c("data", "plot"))],
+                 ind_fecundity_groundfish[ , setdiff(names(ind_fecundity_groundfish), c("data", "plot"))],
+                 ind_community_comp_demersal[ , setdiff(names(ind_community_comp_demersal), c("data", "plot"))],
+                 ind_distribution_juv_haddock_habitat[ , setdiff(names(ind_distribution_juv_haddock_habitat), c("data", "plot"))],
+                 ind_distribution_key_fish_habitat[ , setdiff(names(ind_distribution_key_fish_habitat), c("data", "plot"))],
+                 ind_cpue[ , setdiff(names(ind_cpue), c("data", "plot"))],
+                 ind_trawl_vunerable[ , setdiff(names(ind_trawl_vunerable), c("data", "plot"))],
+                 ind_longline_vunerable[ , setdiff(names(ind_longline_vunerable), c("data", "plot"))],
+                 ind_trap_vunerable[ , setdiff(names(ind_trap_vunerable), c("data", "plot"))],
+                 ind_resource_species_abundance[ , setdiff(names(ind_resource_species_abundance), c("data", "plot"))],
+                 ind_groundfish_abundance_sab[ , setdiff(names(ind_groundfish_abundance_sab), c("data", "plot"))],
+                 ind_compared_groundfish_abundance[ , setdiff(names(ind_compared_groundfish_abundance), c("data", "plot"))],
+                 ind_compared_longline_vunerable[ , setdiff(names(ind_compared_longline_vunerable), c("data", "plot"))]
                )
                x$theme <- "Fish and Fishery Resources"
 
@@ -576,27 +650,62 @@ framework_targets <- list(
 
   tar_target(theme_anthropogenic_pressure_and_impacts,
              command={
-               x <- data.frame(
-                 areaID = NA,
-                 indicator = NA,
-                 type = NA,
-                 units = NA,
-                 scoring = NA,
-                 PPTID = NA,
-                 project_short_title = NA,
-                 climate = NA,
-                 design_target = NA,
-                 score = NA,
-                 status_statement = NA,
-                 trend_statement = NA,
-                 source = NA,
-                 climate_expectation = NA,
-                 indicator_rationale = NA,
-                 objectives = NA,
-                 bin_rationale = NA,
-                 theme="Anthropogenic Pressure And Impacts",
-                 weight=NA
+               x <- rbind(
+                 ind_unauthorized_fishing[ , setdiff(names(ind_unauthorized_fishing), c("data", "plot"))],
+                 ind_seabed_disruption_in_around_webmr_fishing[ , setdiff(names(ind_seabed_disruption_in_around_webmr_fishing), c("data", "plot"))],
+                 ind_total_annual_landings[ , setdiff(names(ind_total_annual_landings), c("data", "plot"))],
+                 ind_seabed_disruption_in_around_webmr_research[ , setdiff(names(ind_seabed_disruption_in_around_webmr_research), c("data", "plot"))],
+                 ind_vessel_traffic[ , setdiff(names(ind_vessel_traffic), c("data", "plot"))],
+                 ind_ocean_sound[ , setdiff(names(ind_ocean_sound), c("data", "plot"))],
+                 ind_cables[ , setdiff(names(ind_cables), c("data", "plot"))],
+                 ind_well_proximity[ , setdiff(names(ind_well_proximity), c("data", "plot"))],
+                 ind_offshore_wind_developments[ , setdiff(names(ind_offshore_wind_developments), c("data", "plot"))],
+                 ind_contaminant_concentration[ , setdiff(names(ind_contaminant_concentration), c("data", "plot"))],
+                 ind_anthropogenic_debris[ , setdiff(names(ind_anthropogenic_debris), c("data", "plot"))],
+                 ind_disturbed_area[ , setdiff(names(ind_disturbed_area), c("data", "plot"))],
+                 ind_bycatch[ , setdiff(names(ind_bycatch), c("data", "plot"))],
+                 ind_human_perturbation[ , setdiff(names(ind_human_perturbation), c("data", "plot"))],
+                 ind_fresh_scars[ , setdiff(names(ind_fresh_scars), c("data", "plot"))],
+                 ind_blubber_contaminants[ , setdiff(names(ind_blubber_contaminants), c("data", "plot"))],
+                 ind_ship_strikes[ , setdiff(names(ind_ship_strikes), c("data", "plot"))],
+                 ind_entanglement_gully[ , setdiff(names(ind_entanglement_gully), c("data", "plot"))],
+                 ind_human_interaction[ , setdiff(names(ind_human_interaction), c("data", "plot"))],
+                 ind_vessel_transits[ , setdiff(names(ind_vessel_transits), c("data", "plot"))],
+                 ind_vessel_operation[ , setdiff(names(ind_vessel_operation), c("data", "plot"))],
+                 ind_fishing_effort[ , setdiff(names(ind_fishing_effort), c("data", "plot"))],
+                 ind_fishing_effort_nearby[ , setdiff(names(ind_fishing_effort_nearby), c("data", "plot"))],
+                 ind_corals_removed[ , setdiff(names(ind_corals_removed), c("data", "plot"))],
+                 ind_target_org_removed_gully[ , setdiff(names(ind_target_org_removed_gully), c("data", "plot"))],
+                 ind_organisms_removed[ , setdiff(names(ind_organisms_removed), c("data", "plot"))],
+                 ind_seabed_swept[ , setdiff(names(ind_seabed_swept), c("data", "plot"))],
+                 ind_seabed_occupied[ , setdiff(names(ind_seabed_occupied), c("data", "plot"))],
+                 ind_petroleum_activity[ , setdiff(names(ind_petroleum_activity), c("data", "plot"))],
+                 ind_ballast[ , setdiff(names(ind_ballast), c("data", "plot"))],
+                 ind_other_discharge[ , setdiff(names(ind_other_discharge), c("data", "plot"))],
+                 ind_floating_debris_gully[ , setdiff(names(ind_floating_debris_gully), c("data", "plot"))],
+                 ind_seabed_debris_gully[ , setdiff(names(ind_seabed_debris_gully), c("data", "plot"))],
+                 ind_anthropogenic_sound[ , setdiff(names(ind_anthropogenic_sound), c("data", "plot"))],
+                 ind_bottomset_length[ , setdiff(names(ind_bottomset_length), c("data", "plot"))],
+                 ind_vertical_lines[ , setdiff(names(ind_vertical_lines), c("data", "plot"))],
+                 ind_bait[ , setdiff(names(ind_bait), c("data", "plot"))],
+                 ind_development_sab[ , setdiff(names(ind_development_sab), c("data", "plot"))],
+                 ind_anchoring[ , setdiff(names(ind_anchoring), c("data", "plot"))],
+                 ind_other_discharge_offshore[ , setdiff(names(ind_other_discharge_offshore), c("data", "plot"))],
+                 ind_other_discharge_coastal[ , setdiff(names(ind_other_discharge_coastal), c("data", "plot"))],
+                 ind_ocean_noise_sab[ , setdiff(names(ind_ocean_noise_sab), c("data", "plot"))]
+
+
                )
+               x$theme <- "Anthropogenic Pressure and Impacts"
+
+               x$weight <- NA
+               for (i in seq_along(x$areaID)) {
+                 message(i)
+                 X <- x[i,]
+                 keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+                 x$weight[i] <- pillar_ecol_df$weight[keep]
+               }
+
                x
              }),
 
