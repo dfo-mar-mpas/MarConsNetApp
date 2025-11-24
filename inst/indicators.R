@@ -1525,7 +1525,7 @@ indicator_targets <- list(
 
   # PLACEHOLDER INDICATORS ----
 
-  tar_target(ind_placeholder_df,ind_placeholder(areas = MPAs)),
+  tar_target(ind_placeholder_df,ind_placeholder(areas = MPAs, readiness="Unknown")),
 
 
   tar_target(name = ind_sst,
@@ -2261,7 +2261,7 @@ indicator_targets <- list(
   tar_target(name = ind_physandbio_properties,
              command = {
                ind_placeholder(ind_name="Temperature, salinity, oxygen concentration, light levels, chlorophyll, pigments, nutrients and zooplankton within the AOI and both upstream and downstream", areas = MPAs, readiness = "Unknown",
-                               source = AZMP, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                               source = "AZMP", objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                              "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
              }), #Environmental Representativity, Ocean Conditions
 
