@@ -1,11 +1,12 @@
 ---
-title: "Annual Report"
-output: html_document
-params:
-  mpas: "Maritimes"
+title: "Conservation Area: `r params$mpas`"
+output:
+  html_document:
+    self_contained: true
+    toc: true
+    toc_depth: 3
+    toc_float: false
 ---
-
-# Conservation Network: **`r params$mpas`**
 
 ## At-a-glance
 
@@ -79,9 +80,12 @@ tar_load(c(MPAs,
            salary),
          store = path_to_store())
 
+pillar_ecol_df2 <- pillar_ecol_df[order(pillar_ecol_df$indicator),]
 
-if (any(pillar_ecol_df$status_statement == "No features are represented.",na.rm = TRUE)) {
-    pillar_ecol_df$status_statement[pillar_ecol_df$status_statement == "No features are represented."] <- paste0(
+
+
+if (any(pillar_ecol_df2$status_statement == "No features are represented.",na.rm = TRUE)) {
+    pillar_ecol_df2$status_statement[pillar_ecol_df2$status_statement == "No features are represented."] <- paste0(
           "No features are represented. ** Note: a score will still be assigned if multiple MPAs are 'tied' for the lowest rank. ",
           "For example, if no features are represented but an MPA has a score of 50, this indicates that 50% of MPAs share the 'least represented' status."
         )
@@ -107,6 +111,9 @@ cat("<br>")
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
+
+cat("The entirety of this report follows this legend:\n\n")
+
 cat("<div style='display: flex; gap: 10px;'>")
 PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
 for (name in names(PALETTE)) {
@@ -142,11 +149,18 @@ for (i in seq_along(MPAs2$NAME_E)) {
 
 maps
 
+cat(paste0("Figure 1: Location of ", string, " color coded for overall ecological status score"))
+
+
 ```
 
 ## Creature Feature
 
 ```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
+cat(paste0("Table 1: Species detected in ", string, " according to iNaturalist"))
+cat("<br>")
+
+
 try({
   
   
@@ -216,7 +230,7 @@ try({
 ```
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-p <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
+p <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
 
 KEEP <- calc_group_score(df=p,grouping_var = "bin",
                                score_var = "score",
@@ -225,7 +239,7 @@ area_grade <- as.character(calc_letter_grade(weighted.mean(x=KEEP$score, w=KEEP$
 
 ```
 
-
+## Results
 
 <details>
 <summary style="
@@ -239,9 +253,16 @@ area_grade <- as.character(calc_letter_grade(weighted.mean(x=KEEP$score, w=KEEP$
 MANAGEMENT EFFECTIVENESS
 </summary>
 
-```{r, echo=FALSE, comment=NA, results="asis"}
 
-cat('<h2>Network Conservation Objectives</h2>\n')
+
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+cat("<br>")
+cat('Management effectiveness analyses if conservation objectives are being met\n\n')
+
+cat('<h3>Network Conservation Objectives</h3>\n')
+cat('Click each objective to see information on relevant indicators.\n')
+
 
 n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
 filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
@@ -252,9 +273,9 @@ grade_colors_network <- NULL
 for (i in seq_along(filtered_odf$objectives)) {
   # GRADES
   if (params$mpas %in% MPAs2$NAME_E) {
-    KEEP <- pillar_ecol_df[which(grepl(filtered_odf$objectives[i], pillar_ecol_df$objectives, fixed=TRUE) & pillar_ecol_df$areaID == params$mpas),]
+    KEEP <- pillar_ecol_df2[which(grepl(filtered_odf$objectives[i], pillar_ecol_df2$objectives, fixed=TRUE) & pillar_ecol_df2$areaID == params$mpas),]
   } else {
-     KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs2$NAME_E),]
+     KEEP <- pillar_ecol_df2[which(pillar_ecol_df2$areaID %in% MPAs2$NAME_E),]
   }
   KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
@@ -262,7 +283,7 @@ for (i in seq_along(filtered_odf$objectives)) {
                                score_var = "score",
                                weight_var = "weight")
   grades_network[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
-  
+
   if (!(all(is.na(KEEP$score)))) {
     grade_colors_network[i] <- unname(flowerPalette[which(names(flowerPalette) == grades_network[i])])
   } else {
@@ -277,53 +298,46 @@ dt_data_network <- data.frame(
   Grade = grades_network,
   stringsAsFactors = FALSE
 )
-
-cat('<table style="border-collapse: collapse; width:100%;">\n')
-cat('<tr><th>Objective</th><th>Grade</th></tr>\n')
-for(i in seq_len(nrow(dt_data_network))) {
-  cat('<tr style="background-color:', grade_colors_network[i], ';">')
-  cat('<td>', dt_data_network$Objective[i], '</td>')
-  cat('<td>', dt_data_network$Grade[i], '</td>')
-  cat('</tr>\n')
-}
-cat('</table>')
-
-cat("<br>")
-cat("<br>")
-
 ```
 
 
-```{r, echo=FALSE, comment=NA, results="asis"}
-# SHOWING OBJECTIVE INDICATORS
 
-
-## TEST
+```{r, echo=FALSE, comment=NA, results='asis', warning=FALSE}
 
 # Container to hold all details blocks
 all_details <- list()
 
-keeper <- pillar_ecol_df[-which(pillar_ecol_df$areaID %in% regions$NAME_E),]
-
 for (i in seq_along(n_objectives)) {
   
-  KK <- keeper[grepl(n_objectives[i], keeper$objectives,fixed=TRUE), ]
-  
-  # Remove NA, placeholder, or missing score
-  KK <- KK[!(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score)), ]
-  
-  if (nrow(KK) == 0) {
-    # If no indicators in this bin, add a simple message block
-    details_block <- tags$details(
-      tags$summary(tags$strong(paste("Objective:", n_objectives[i]))),
-      "There are no indicators for this objecive."
-    )
-    all_details[[length(all_details) + 1]] <- details_block
-    next
+  k1 <- which(grepl(n_objectives[i], pillar_ecol_df2$objectives, fixed=TRUE))
+  if (params$mpas %in% regions$NAME_E) {
+    k2 <- which(pillar_ecol_df2$region == state$mpas)
+  } else {
+    k2 <- which(pillar_ecol_df2$areaID == params$mpas)
   }
+  keep <- intersect(k1,k2)
+  if (!(length(keep) == 0)) {
+    # FLOWER
+    objective_flower <- pillar_ecol_df2[k2,]
+    objective_flower$score[which(!(grepl(n_objectives[i], objective_flower$objectives, fixed=TRUE)))] <- NA
+
+    p <- MarConsNetAnalysis::plot_flowerplot(objective_flower,
+                                            grouping = "objective",
+                                            labels = "bin",
+                                            score = "score",
+                                            max_score=100,
+                                            min_score=0,
+                                            title=" ")
+    #print(p)
+    img_file <- tempfile(fileext = ".png")
+    ggplot2::ggsave(filename = img_file, plot = p, width = 6, height = 6, dpi = 120)
+
+
+    unique_indicators <- unique(pillar_ecol_df2$indicator[keep])
+    KK <- pillar_ecol_df2[keep,]
   
-  unique_indicators <- unique(KK$indicator) # ROXANNE 
-  
+  # ADD CONDITION HERE
+
   # For each indicator, collect content & maps
   indicator_blocks <- list()
   
@@ -335,12 +349,17 @@ for (i in seq_along(n_objectives)) {
     # Text rationale
     rationale <- unique(KK2$indicator_rationale)
     
+    # TEMPORARY FIX:
+    if (indicator_name ==  "Nutrient Conditions (Phosphate)") {
+      rationale <- "Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020)."
+    }
+    
     # Create leaflet map for this indicator
     map <- leaflet() %>% addTiles()
     
     for (k in seq_along(KK2$areaID)) {
       area <- KK2$areaID[k]
-      score <- pillar_ecol_df$score[pillar_ecol_df$areaID == area & pillar_ecol_df$indicator == indicator_name]
+      score <- pillar_ecol_df2$score[pillar_ecol_df2$areaID == area & pillar_ecol_df2$indicator == indicator_name]
       
       fill_color <- ifelse(
         length(score) == 0 || is.na(score),
@@ -360,24 +379,69 @@ for (i in seq_along(n_objectives)) {
       map,
       tags$hr()
     )
-  }
-  
-  # Compose the whole details block for this bin
+  } 
+ 
   details_block <- tags$details(
-    tags$summary(tags$strong(paste("Objective:", n_objectives[i]))),
+    tags$summary(
+    style = "
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.2em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 5px;",
+    tags$u(
+      n_objectives[i],
+      tags$span(
+        style = sprintf(
+          "background-color:%s; padding:2px 6px; border-radius:4px;",
+          grade_colors_network[i]
+        ),
+        ifelse(!(grades_network[i] == "NA"), grades_network[i], " ")
+      )
+    )
+  ),
+     tags$img(
+    src = img_file,
+    style = "max-width: 350px; display:block; margin: 10px 0;"
+  ),
     tagList(indicator_blocks)
   )
-  
   all_details[[length(all_details) + 1]] <- details_block
+  
+  } else {
+     # If no indicators in this bin, add a simple message block
+    details_block <- tags$details(
+        tags$summary(
+    style = "
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.2em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 5px;",
+    tags$u(
+      n_objectives[i],
+      tags$span(
+        style = sprintf(
+          "background-color:%s; padding:2px 6px; border-radius:4px;",
+          grade_colors_network[i]
+        ),
+        ifelse(!(grades_network[i] == "NA"), grade_colors_network[i], " ")
+      )
+    )
+  ),
+      "There are no indicators for this objective."
+    )
+    all_details[[length(all_details) + 1]] <- details_block
+    next
+    
+  }
 }
 
 # Render all the details blocks combined as the chunk output
 tagList(all_details)
 
-## END TEST
-
-cat("<br>")
-cat("<br>")
 
 ```
 
@@ -395,9 +459,12 @@ ECOLOGICAL OVERVIEW
 </summary>
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+cat("<br>")
+cat('Ecological overview analyses the health of the overall ecosystem\n\n')
+
 cat('<h2>Flower Plot</h2>\n')
 
-plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == "Maritimes"),],
+plot_flowerplot(pillar_ecol_df2[which(pillar_ecol_df2$areaID == "Maritimes"),],
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "score",
@@ -415,16 +482,16 @@ plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == "Maritimes"),],
 # print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
 
 if (params$mpas %in% regions$NAME_E) {
-  table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
+  table_ped <- pillar_ecol_df2[which(!(pillar_ecol_df2$areaID %in% regions$NAME_E)),]
   
 } else {
-  table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == params$mpas),]
+  table_ped <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
 }
 if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
   table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
 }
 
-table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID")]
+table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", 'readiness')]
 
 
 ddff <- table_ped %>%
@@ -434,7 +501,6 @@ ddff <- table_ped %>%
   ) %>%
   # Add placeholders for readiness, quality, cost
   mutate(
-    readiness = NA_real_,
     quality   = NA_real_,
     cost      = NA_real_
   ) %>%
@@ -473,7 +539,7 @@ if (!(length(ddff_unique$PPTID) == 0)) {
       
     }
   }
-  ddff_unique$READINESS <- "Ready"
+  #ddff_unique$READINESS <- "Ready"
   
      ddff_display <- ddff_unique %>%
         arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
@@ -482,9 +548,10 @@ if (!(length(ddff_unique$PPTID) == 0)) {
         ungroup()
 
   # example: add table headers
-  cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
+  cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Ecological Overview Summary</h4>\n')
+cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
   cat('<thead><tr>',
-      paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
+      paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST", "GRADE"), '</th>', collapse=""),
       '</tr></thead>\n')
   cat('<tbody>\n')
   
@@ -492,29 +559,35 @@ if (!(length(ddff_unique$PPTID) == 0)) {
   for (i in seq_len(nrow(ddff_display))) {
     # if you want row coloring, define here
     colgrade <- calc_letter_grade(ddff_display$SCORE[i])   # your function
-    print(colgrade)
     if (!(is.na(colgrade))) {
       if (!(colgrade == "NA")) {
         row_color <- flowerPalette[[colgrade]]
       } else {
-        row_color <- 'white'
+        row_color <- "#EDEDED"
       }
     } else {
-      row_color <- 'white'
+      row_color <- "#EDEDED"
     }
     
     # lookup the color for that grade
     
-    cat('<tr style="background-color:', row_color, ';">')
-    cat('<td>', ddff_display$GROUPING[i], '</td>')
-    cat('<td>', ddff_display$BIN[i], '</td>')
-    cat('<td>', ddff_display$INDICATOR[i], '</td>')
-    cat('<td>', ddff_display$SOURCE[i], '</td>')
-    cat('<td>', sprintf("%.2f", ddff_display$SCORE[i]), '</td>')
-    cat('<td>', ddff_display$READINESS[i], '</td>')
-    cat('<td>', ddff_display$QUALITY[i], '</td>')
-    cat('<td>', ddff_display$COST[i], '</td>')
-    cat('</tr>\n')
+    
+  cat('<tr>')
+ cat('<td style="background-color:white;">', ddff_display$GROUPING[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_display$BIN[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_display$INDICATOR[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_display$SOURCE[i], '</td>')
+  cat('<td style="background-color:white;">', sprintf("%.2f", ddff_display$SCORE[i]), '</td>')
+  cat('<td style="background-color:white;">', ddff_display$READINESS[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_display$QUALITY[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_display$COST[i], '</td>')
+  
+  # ✅ Grade column — last, colored cell, blank inside (or replace "" with grade letter)
+  cat(sprintf('<td style="background-color:%s; font-weight:bold; text-align:center;">%s</td>',
+              row_color,
+              ""))  # leave blank, or use grade to display the letter
+
+  cat('</tr>\n')
   }
   
   cat('</tbody></table>')
@@ -566,9 +639,12 @@ print(knitr::kable(summary_table, caption = "Grades by Indicator Bin"))
 # Container to hold all details blocks
 all_details <- list()
 
-BINS <- unique(trimws(tolower(unlist(strsplit(pillar_ecol_df$bin, ";"))), "both"))
+BINS <- unique(trimws(tolower(unlist(strsplit(pillar_ecol_df2$bin, ";"))), "both"))
 
-keeper <- pillar_ecol_df[-which(pillar_ecol_df$areaID %in% regions$NAME_E),]
+keeper <- pillar_ecol_df2[-which(pillar_ecol_df2$areaID %in% regions$NAME_E),]
+
+FILL_COLORS <- NULL
+BIN_SCORE <- NULL
 
 for (i in seq_along(BINS)) {
   
@@ -582,7 +658,25 @@ for (i in seq_along(BINS)) {
   if (nrow(KK) == 0) {
     # If no indicators in this bin, add a simple message block
     details_block <- tags$details(
-      tags$summary(tags$strong(paste("Indicator Bin:", bin_upper))),
+        tags$summary(
+    style = "
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.2em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 5px;",
+    tags$u(
+      bin_upper,
+      tags$span(
+        style = sprintf(
+          "background-color:%s; padding:2px 6px; border-radius:4px;",
+          FILL_COLORS[i]
+        ),
+        ifelse(!(BIN_SCORE[i] == "NA"), BIN_SCORE[i], " ")
+      )
+    )
+  ),
       "There are no indicators for this bin."
     )
     all_details[[length(all_details) + 1]] <- details_block
@@ -607,7 +701,7 @@ for (i in seq_along(BINS)) {
     
     for (k in seq_along(KK2$areaID)) {
       area <- KK2$areaID[k]
-      score <- pillar_ecol_df$score[pillar_ecol_df$areaID == area & pillar_ecol_df$indicator == indicator_name & tolower(pillar_ecol_df$bin) == BINS[i]]
+      score <- pillar_ecol_df2$score[pillar_ecol_df2$areaID == area & pillar_ecol_df2$indicator == indicator_name & tolower(pillar_ecol_df2$bin) == BINS[i]]
       
       fill_color <- ifelse(
         length(score) == 0 || is.na(score),
@@ -615,6 +709,9 @@ for (i in seq_along(BINS)) {
         flowerPalette[[calc_letter_grade(score)]]
       )
       border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+      
+      FILL_COLORS[i] <- fill_color
+      BIN_SCORE[i] <- calc_letter_grade(score)
       
       map <- map %>%
         addPolygons(data = MPAs2[MPAs2$NAME_E == area, ], fillOpacity = 0.05, weight = 2, color = border_color)
@@ -630,8 +727,29 @@ for (i in seq_along(BINS)) {
   }
   
   # Compose the whole details block for this bin
+  
+  # JAIM HERE NOW
   details_block <- tags$details(
-    tags$summary(tags$strong(paste("Indicator Bin:", bin_upper))),
+    tags$summary(
+    style = "
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.2em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 5px;",
+    tags$u(
+      bin_upper,
+      tags$span(
+        style = sprintf(
+          "background-color:%s; padding:2px 6px; border-radius:4px;",
+          FILL_COLORS[i]
+        ),
+        ifelse(!(BIN_SCORE[i] == "NA"), BIN_SCORE[i], " ")
+      )
+    )
+  ),
+    #tags$summary(tags$strong(paste(bin_upper))),
     tagList(indicator_blocks)
   )
   
@@ -656,8 +774,9 @@ tagList(all_details)
 THREATS
 </summary>
 ```{r, echo=FALSE, results='asis'}
-# dfdt <- data.frame(Pressure=c("Fishing", "Research", "Vessel", "Cables", "Offshore", "Contaminant Debris", "Cumulative Impacts"), Metrics=NA, Score=NA)
-# print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
+cat("<br>")
+cat(paste0("Table: Threat indicators in ", string, "\n"))
+
 
 if (!(length(ddff_unique$PPTID) == 0)) {
   
@@ -669,12 +788,10 @@ if (!(length(ddff_unique$PPTID) == 0)) {
         mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
         ungroup()
 
-  
-  
   # example: add table headers
   cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
   cat('<thead><tr>',
-      paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
+      paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST", "GRADE"), '</th>', collapse=""),
       '</tr></thead>\n')
   cat('<tbody>\n')
   
@@ -685,24 +802,30 @@ if (!(length(ddff_unique$PPTID) == 0)) {
       if (!(grade == "NA")) {
         row_color <- flowerPalette[[grade]]
       } else {
-        row_color <= 'white'
+        row_color <= "#EDEDED"
       }
     } else {
-      row_color <= 'white'
+      row_color <= "#EDEDED"
     }
     
     # lookup the color for that grade
     
-    cat('<tr style="background-color:', row_color, ';">')
-    cat('<td>', ddff_threats$GROUPING[i], '</td>')
-    cat('<td>', ddff_threats$BIN[i], '</td>')
-    cat('<td>', ddff_threats$INDICATOR[i], '</td>')
-    cat('<td>', ddff_threats$SOURCE[i], '</td>')
-    cat('<td>', sprintf("%.2f", ddff_threats$SCORE[i]), '</td>')
-    cat('<td>', ddff_threats$READINESS[i], '</td>')
-    cat('<td>', ddff_threats$QUALITY[i], '</td>')
-    cat('<td>', ddff_threats$COST[i], '</td>')
-    cat('</tr>\n')
+     cat('<tr>')
+ cat('<td style="background-color:white;">', ddff_threats$GROUPING[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$BIN[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$INDICATOR[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$SOURCE[i], '</td>')
+  cat('<td style="background-color:white;">', sprintf("%.2f", ddff_threats$SCORE[i]), '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$READINESS[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$QUALITY[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$COST[i], '</td>')
+  
+  # ✅ Grade column — last, colored cell, blank inside (or replace "" with grade letter)
+  cat(sprintf('<td style="background-color:%s; font-weight:bold; text-align:center;">%s</td>',
+              row_color,
+              ""))  # leave blank, or use grade to display the letter
+
+  cat('</tr>\n')
   }
   
   cat('</tbody></table>')
@@ -886,7 +1009,6 @@ icons <- awesomeIcons(
   markerColor = marker_color
 )
 
-####### WEDNESDAY JAIM HERE
 
 # Build legend items dynamically:
 legend_items <- paste0(
@@ -953,25 +1075,25 @@ tagList(
 
 cat("### Climate Change\n")
 
-climate_indicators <- unique(pillar_ecol_df$indicator[which(grepl("Inside", pillar_ecol_df$indicator) & pillar_ecol_df$areaID == params$mpa)])
+climate_indicators <- unique(pillar_ecol_df2$indicator[which(grepl("Inside", pillar_ecol_df2$indicator) & pillar_ecol_df2$areaID == params$mpa)])
 
 for (i in seq_along(climate_indicators)) {
-  indicator_keep <- which(pillar_ecol_df$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df$areaID == params$mpas)
+  indicator_keep <- which(pillar_ecol_df2$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df2$areaID == params$mpas)
   
-  if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df$trend_statement[indicator_keep]))) {
+  if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df2$trend_statement[indicator_keep]))) {
     
     excel_keep <- which(climate$Indicator == climate_indicators[i])
-    pillar_keep_inside <- which(pillar_ecol_df$indicator == climate_indicators[i] & pillar_ecol_df$areaID == params$mpas)
+    pillar_keep_inside <- which(pillar_ecol_df2$indicator == climate_indicators[i] & pillar_ecol_df2$areaID == params$mpas)
     
     cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
     
     cat(climate$Context[excel_keep], "\n\n")
     cat("In our analysis, ")
-    cat(pillar_ecol_df$trend_statement[indicator_keep])
+    cat(pillar_ecol_df2$trend_statement[indicator_keep])
     
-    if (!(grepl("There is only one year of data", pillar_ecol_df$trend_statement[indicator_keep]))) {
+    if (!(grepl("There is only one year of data", pillar_ecol_df2$trend_statement[indicator_keep]))) {
     
-    pval <- str_extract(pillar_ecol_df$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
+    pval <- str_extract(pillar_ecol_df2$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
       str_extract("\\d+(\\.\\d+)?") |>
       as.numeric()
     
@@ -983,14 +1105,14 @@ for (i in seq_along(climate_indicators)) {
     
     cat(" An inside/outside comparison was done to help understand the impacts of climate change on this variable. Results showed ")
     
-    result <- pillar_ecol_df$status_statement[pillar_keep_inside]
+    result <- pillar_ecol_df2$status_statement[pillar_keep_inside]
     
     cat(paste0(tolower(result), "."))
     
     if (!(grepl("Protection could therefore be positively impacting this variable", result))) {
       # No sig dif between the two
-      desired <- sub(".*\\s+", "", pillar_ecol_df$scoring[indicator_keep])
-      actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df$trend_statement[indicator_keep])), "increase", "decrease")
+      desired <- sub(".*\\s+", "", pillar_ecol_df2$scoring[indicator_keep])
+      actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df2$trend_statement[indicator_keep])), "increase", "decrease")
       
       if (pval > 0.05) { ## This is pval of the variable (not inside/ outside)
         cat("The rate in which this indicator is changing is not significant (p=", pval,") which suggests that climate change does not seem to have a significant impact on that particular indicator.")
@@ -1024,9 +1146,9 @@ cat(paste0(
 cat("\n\n")
 
 # Bad grade table
-badGrade <- which(pillar_ecol_df$areaID == params$mpas & (!(is.na(pillar_ecol_df$indicator))) & (!(pillar_ecol_df$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df$indicator))) & (pillar_ecol_df$score < 51 | is.na(pillar_ecol_df$score)))
+badGrade <- which(pillar_ecol_df2$areaID == params$mpas & (!(is.na(pillar_ecol_df2$indicator))) & (!(pillar_ecol_df2$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df2$indicator))) & (pillar_ecol_df2$score < 51 | is.na(pillar_ecol_df2$score)))
 
-badGradeTable <- pillar_ecol_df[badGrade, ] |> 
+badGradeTable <- pillar_ecol_df2[badGrade, ] |> 
   dplyr::group_by(bin) |>
   dplyr::ungroup() |>
   dplyr::select("indicator", "score")
@@ -1035,11 +1157,13 @@ badGradeTable <- pillar_ecol_df[badGrade, ] |>
 
 
 
-## Collaborations and partnerships
+## Outreach and engagement
+
+### Collaborations and partnerships
 
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
-project_subset <- pillar_ecol_df$PPTID[which(pillar_ecol_df$areaID == params$mpas)]
+project_subset <- pillar_ecol_df2$PPTID[which(pillar_ecol_df2$areaID == params$mpas)]
 if (!(length(project_subset) == 0)) {
 p_subset <- unique(trimws(unlist(strsplit(project_subset, ";")), "both"))
 }
@@ -1101,8 +1225,6 @@ if (any(p_subset == "NA")) {
 #     cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool. \n\n")
 # }
 ```
-
-## Outreach and engagement
 
 ### Deliverables
 

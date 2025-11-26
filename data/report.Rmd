@@ -77,7 +77,8 @@ tar_load(c(MPAs,
            deliverables,
            csas,
            climate_change,
-           salary))
+           salary,
+           objective_tabs))
 
 embed_image <- function(file_path, width = 600) {
     mime <- paste0("image/", tools::file_ext(file_path))
@@ -763,7 +764,6 @@ ddff <- table_ped %>%
   ) %>%
   # Add placeholders for readiness, quality, cost
   mutate(
-    readiness = NA_real_,
     quality   = NA_real_,
     cost      = NA_real_
   ) %>%
@@ -802,8 +802,6 @@ if (!(length(ddff_unique$PPTID) == 0)) {
       
     }
   }
-  ddff_unique$READINESS <- "Ready"
-  
    ddff_display <- ddff_unique %>%
         arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
         group_by(GROUPING, SOURCE) %>%

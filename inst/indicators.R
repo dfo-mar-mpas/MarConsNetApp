@@ -1209,7 +1209,7 @@ indicator_targets <- list(
                                  project_short_title = NA,
                                  climate = TRUE,
                                  climate_expectation="FIXME",
-                                 indicator_rationale="FIXME",
+                                 indicator_rationale="Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020).",
                                  bin_rationale="FIXME",
                                  areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                                  plot_type=c('time-series-no-line','map'),

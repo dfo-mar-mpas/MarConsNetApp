@@ -60,3 +60,18 @@ render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/report.Rmd", 
 
 # TEST
 render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/test.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//test.html", output_format = "html_document", params = params)
+
+
+
+
+
+# MARITIMES NETWORK
+# MARITIMES
+state <- list()
+params <- list()
+input <- list()
+state$mpas <- "Maritimes"
+params$mpas <- "Maritimes"
+input$mpas <- "Maritimes"
+render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/network_report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//MARITIMES_TESTER.html", output_format = "html_document", params = params)
+
