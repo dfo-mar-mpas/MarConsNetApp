@@ -815,6 +815,11 @@ raw_data_targets <- list(
                  st_as_sf()
              }),
 
+  tar_target(name=data_edna,command={
+    MarConsNetData::data_eDNA()
+
+  }),
+
   tar_target(name = data_musquash_nekton_occurence,
              command = {
                # data from https://catalogue.ogsl.ca/en/dataset/ca-cioos_4c93ac96-0a9f-41d5-9505-80a3b24c30ae
