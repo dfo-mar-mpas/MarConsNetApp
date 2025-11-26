@@ -77,10 +77,26 @@ tar_load(c(MPAs,
            deliverables,
            csas,
            climate_change,
-           salary),
+           salary,
+           objective_tabs),
          store = path_to_store())
 
 pillar_ecol_df2 <- pillar_ecol_df[order(pillar_ecol_df$indicator),]
+
+
+###
+# Starting Key findings:
+kf1 <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
+
+kf_score <- calc_group_score(df=kf1,grouping_var = "bin",
+                               score_var = "score",
+                               weight_var = "weight")
+kf_area_grade <- as.character(calc_letter_grade(weighted.mean(x=kf_score$score, w=kf_score$weight, na.rm=TRUE)))
+
+
+
+###
+
 
 
 
@@ -269,6 +285,7 @@ filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives
 
 grades_network <- NULL
 grade_colors_network <- NULL
+number_of_indicators <- NULL
 
 for (i in seq_along(filtered_odf$objectives)) {
   # GRADES
@@ -278,6 +295,8 @@ for (i in seq_along(filtered_odf$objectives)) {
      KEEP <- pillar_ecol_df2[which(pillar_ecol_df2$areaID %in% MPAs2$NAME_E),]
   }
   KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
+  number_of_indicators[i] <- length(KEEP$indicator[KEEP$indicator != "placeholder" & !is.na(KEEP$score)])
+
 
   KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
                                score_var = "score",
@@ -352,6 +371,10 @@ for (i in seq_along(n_objectives)) {
     # TEMPORARY FIX:
     if (indicator_name ==  "Nutrient Conditions (Phosphate)") {
       rationale <- "Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020)."
+    }
+    
+    if (rationale == "FIXME") {
+      rationale <- "There is no rationale yet available for this indicator."
     }
     
     # Create leaflet map for this indicator
@@ -728,7 +751,6 @@ for (i in seq_along(BINS)) {
   
   # Compose the whole details block for this bin
   
-  # JAIM HERE NOW
   details_block <- tags$details(
     tags$summary(
     style = "
@@ -848,7 +870,7 @@ if (length(cost_of_mpas2$project_id) != 0) {
   OMs <- list()
   for (i in seq_along(projects)) {
     percent_sites_in_network <- sum(cost_of_mpas2$percent_sites_in_mpa[which(cost_of_mpas2$project_id == projects[i])])
-    om$amount[which(as.numeric(om$project_id) == as.numeric(projects[i]))] <- om$amount[which(as.numeric(om$project_id) == as.numeric(projects[i]))]*percent_sites_in_network #JAIM
+    om$amount[which(as.numeric(om$project_id) == as.numeric(projects[i]))] <- om$amount[which(as.numeric(om$project_id) == as.numeric(projects[i]))]*percent_sites_in_network
     OMs[[i]] <- om[which(as.numeric(om$project_id) == as.numeric(projects[i])),]
   }
   network_om <- do.call(rbind, OMs)
@@ -1060,8 +1082,9 @@ tagList(
   tags$div(style = "display: flex; gap: 20px; align-items: center;",
            tags$div(style = "flex: 1;",
                     tags$img(src = base64enc::dataURI(file = temp_file, mime = "image/png"), style = "max-width: 100%; height: auto;")
-           ),
-           tags$div(style = "flex: 1;", map)
+           )
+           #,
+           #tags$div(style = "flex: 1;", map)
   )
 )
 
@@ -1071,7 +1094,66 @@ tagList(
 
 ## Discussion
 
-```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis"}
+```{r, echo=FALSE, warning=FALSE, error=FALSE, results="asis", message=FALSE}
+
+
+cat("### Status\n")
+
+cat(paste0("In ", string, " there is an overall ecological status score of ", kf_area_grade, ". This is based on a total of ", length(unique(ddff_display$INDICATOR)), " indicators. Of these ", length(unique(ddff_display$INDICATOR)), " indicators, ", length(which(ddff_display$SCORE>49)), " indicators are receiving a 'pass' score of 50 or greater."))
+
+if (kf_area_grade %in% c("A", "B", "C")) {
+  cat(paste0("The results suggest that the MPA is maintaining a healthy environmental condition."))
+} else if (area_grade == "NA") {
+  cat(paste0("Insufficient data are available to assess ecological condition, highlighting the need for monitoring to better understand and manage the MPA’s environmental health"))
+} else {
+  cat(paste0("This indicates that ecological conditions are below expectations, highlighting the need for targeted management actions to improce ecosystem health."))
+}
+
+if (length(unique(ddff_display$INDICATOR)) < 5) {
+  cat(paste0("Though, it should be noted that additional work should be considered to add more indicators in this area."))
+}
+
+# Code for print statement
+obj_ex <- read_excel(file.path(dirname(path_to_store()), "data", "objectives.xlsx"))
+
+
+# JAIM FIX 
+now_what <- NULL
+for (i in seq_along(n_objectives)) {
+  msg <- paste0(n_objectives[i], 
+    " had a score of ", grades_network[i], 
+    ", that is based on ", number_of_indicators[i], " indicators. "
+  )
+  
+  # Conditional addition
+  if (length(grades_network)<1){
+    msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
+  } else if(grades_network[i] == "NA") {
+    msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
+  } else if (grades_network[i] %in% c("A", "B", "C")) {
+    msg <- paste0(msg, obj_ex$Success[which(obj_ex$Objective == n_objectives[i])])
+  } else {
+    msg <- paste0(msg, obj_ex$Continue_Work[which(obj_ex$Objective == n_objectives[i])])
+    
+  }
+  
+  if ( !is.null(number_of_indicators[i])){
+    if (number_of_indicators[i] < 5) {
+      msg <- paste0(msg, "Additional work should also be considered to add more indicators to support this objective.")
+    }
+  }
+  msg <- paste0(msg, '\n\n')
+  
+  now_what[i] <- msg
+}
+
+cat("\n\n")
+cat(paste0("From a management perspective,"))
+cat("\n\n")
+cat(now_what)
+cat("\n\n")
+
+
 
 cat("### Climate Change\n")
 
