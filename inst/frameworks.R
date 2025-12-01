@@ -82,7 +82,7 @@ framework_targets <- list(
                               weights_ratio = 1,
                               weights_sum = 1,
                               ind_species_representation,
-                              # ind_species_richness_eDNA,
+                              ind_species_richness_eDNA,
                               ind_musquash_infaunal_diversity,
                               ind_musquash_nekton_diversity,
                               ind_musquash_birds_sample_coverage,
