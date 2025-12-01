@@ -984,6 +984,43 @@ indicator_targets <- list(
                                  ))
              }),
 
+  tar_target(name = ind_species_richness_eDNA,
+             command = {
+
+               data <- MarConsNetData::data_eDNA()
+               data <- data[-(which(is.na(data$latitude))),]
+
+               df_sf <- sf::st_as_sf(data,
+                                     coords = c("longitude", "latitude"),   # your coordinate column names
+                                     crs = 4326)
+
+               df_sf <- df_sf[,c("year", "species_richness", "geometry")]
+
+               x <- process_indicator(data = df_sf,
+                                 indicator_var_name = "species_richness",
+                                 indicator = "Species Richness (eDNA)",
+                                 type = "Observations",
+                                 units = NA,
+                                 scoring = "desired state: increase",
+                                 PPTID = 450,
+                                 source="eDNA",
+                                 project_short_title = "Advancing eDNA",
+                                 bin_rationale="FIXME",
+                                 climate_expectation="FIXME",
+                                 indicator_rationale="FIXME",
+                                 areas = MPAs,
+                                 plot_type=c('time-series', 'map'),
+                                 plot_lm=FALSE,
+                                 objectives = c(
+                                   "Maintain Species Biodiversity",
+                                   "Maintain Functional Biodiversity",
+                                   "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+                                   "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
+                                   "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+                                 ))
+               x
+             }),
+
   tar_target(name = ind_MAR_cum_impact,
              command = {
                process_indicator(data = data_MAR_cumulative_impacts$Cumul_Impact_Maritimes_ALL.tif,
