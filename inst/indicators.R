@@ -67,6 +67,7 @@ indicator_targets <- list(
                x$bin_rationale <- NA
                x$plot <-NULL
                x$readiness <- "Ready"
+               x$scale <- 'site'
 
 
                # Doing the score and statement status
@@ -1532,6 +1533,7 @@ indicator_targets <- list(
         theme_classic()
     )
     ind$readiness <- 'Ready'
+    ind$scale <- 'site'
 
     as_tibble(ind)
   }),
