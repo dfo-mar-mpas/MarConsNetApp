@@ -208,7 +208,7 @@ indicator_targets <- list(
                      "areaID", "indicator", "type", "units", "scoring",
                      "PPTID", "project_short_title", "climate", "design_target", "data",
                      "score", "status_statement", "trend_statement", "source", "climate_expectation",
-                     "indicator_rationale", "objectives", "bin_rationale", "plot"
+                     "indicator_rationale", "objectives", "bin_rationale", "plot", "readiness", "scale"
                    )
 
                    x <- x[ , desired_order]
