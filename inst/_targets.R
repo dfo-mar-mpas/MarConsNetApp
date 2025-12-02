@@ -132,7 +132,7 @@ list(
   }),
 
   tar_target(all_indicator_project_geoms, {
-    rbind(biodiversity_geoms, habitat_geoms, productivity_geoms)|>
+    x <- rbind(biodiversity_geoms, habitat_geoms, productivity_geoms)|>
       transform(gtype = as.character(st_geometry_type(geometry))) |>
       (\(x) {
         rbind(
@@ -143,6 +143,152 @@ list(
         )
       })() |>
       subset(select = -gtype)
+
+
+
+
+
+    # ADDING QUALITY
+
+    # QUALITY
+    site_quality_statement <- NULL
+    network_quality_statement <- NULL
+    indicators <- unique(x$indicator)
+    x$network_quality_statement <- NA
+    x$site_quality_statement <- NA
+
+
+    for (i in seq_along(indicators)) {
+      message(paste0(i, " of ", length(indicators)))
+
+      ## DOING NETWORK_QUALITY
+        areas_with_indicators <- unique(x$areaID[which(x$indicator == indicators[i])])
+        if (any(areas_with_indicators == "Non_Conservation_Area")) {
+          areas_with_indicators <- areas_with_indicators[-(which(areas_with_indicators == "Non_Conservation_Area"))]
+        }
+
+        # TEST
+        quality_keep <- which(x$indicator == indicators[i])
+        if (!(length(quality_keep) == 0)) {
+          number_of_samples <- length(quality_keep)
+          if (length(unique(x$year[quality_keep])) == 1) {
+            if (!(is.na(unique(x$year[quality_keep])))) {
+              sample_year <- sort(unique(x$year[quality_keep]))
+
+              # FIXME HERE (ADD LOCATION)
+              network_sample_number <- NULL
+              for (j in seq_along(areas_with_indicators)) {
+                keeper <- which(x$indicator == indicators[i] & x$areaID == areas_with_indicators[j])
+                network_sample_number[j] <- length(keeper)
+              }
+
+              statements <- mapply(
+                function(a, s, sy) paste0(a, ": ", s, " samples taken in ", sy),
+                areas_with_indicators,
+                network_sample_number,
+                sample_year
+              )
+
+              # END FIXME
+
+              network_quality_statement[i] <- paste0(paste0(unlist(unname(statements)), collapse=' ; '))
+
+
+
+              #network_quality_statement[i] <- paste0("This score is based off of ", number_of_samples, " samples in ", sample_year)
+            } else if (any(grepl("GEOMETRYCOLLECTION", class(x$geometry[quality_keep][1])))) {
+              network_quality_statement[i] <- paste0("No quality statement available.")
+
+            } else {
+              #browser()
+
+
+              network_sample_number <- NULL
+              min_years <- NULL
+              max_years <- NULL
+              for (j in seq_along(areas_with_indicators)) {
+                keeper <- which(x$indicator == indicators[i] & x$areaID == areas_with_indicators[j])
+                network_sample_number[j] <- length(keeper)
+              }
+
+              statements <- mapply(
+                function(a, s, min, max) paste0(a, ": ", s, " samples taken"),
+                areas_with_indicators,
+                network_sample_number
+              )
+
+              network_quality_statement[i] <- paste0(paste0(unlist(unname(statements)), collapse=' ; '))
+            }
+          } else {
+            sample_number <- NULL
+            min_years <- NULL
+            max_years <- NULL
+            for (j in seq_along(areas_with_indicators)) {
+              keeper <- which(x$indicator == indicators[i] & x$areaID == areas_with_indicators[j])
+              min_years[j] <- sort(unique(x$year[keeper]))[1]
+              max_years[j] <- sort(unique(x$year[keeper]))[length(sort(unique(x$year[keeper])))]
+              sample_number[j] <- length(keeper)
+            }
+
+            statements <- mapply(
+              function(a, s, min, max) paste0(a, ": ", s, " samples taken (", min, "-", max,")"),
+              areas_with_indicators,
+              sample_number,
+              min_years,
+              max_years
+            )
+
+            network_quality_statement[i] <- paste0(paste0(unlist(unname(statements)), collapse=' ; '))
+          }
+        } else {
+          # This is a representation one that did not overlap.
+
+          if (any(grepl("POLYGON", class(x$geometry[k1][1])))) {
+            browser()
+            network_quality_statement[i] <- paste0("There was no ", indicators[i], " overlap with this area." )
+          } else {
+            network_quality_statement[i] <- paste0("No quality statement available.")
+
+          }
+
+        }
+
+        x$network_quality_statement[which(x$indicator == indicators[i])] <- network_quality_statement[i]
+
+        for (a in seq_along(areas_with_indicators)) {
+          area_indicator_keep <- which(x$indicator == indicators[i] & x$areaID == areas_with_indicators[a])
+
+
+
+          QUALITY <- strsplit(network_quality_statement[i], " ; ")[[1]][which(grepl(areas_with_indicators[a], strsplit(network_quality_statement[i], " ; ")[[1]], fixed=TRUE))]
+
+          if (areas_with_indicators[a] == "East of Anticosti Island Sponge Conservation Area") {
+            if (any(grepl("South-East of Anticosti Island Sponge Conservation Area", QUALITY, fixed=TRUE))) {
+              QUALITY <- QUALITY[-(which(grepl("South-East of Anticosti Island Sponge Conservation Area", QUALITY, fixed=TRUE)))]
+
+            }
+          }
+
+          if (length(QUALITY) > 1) {
+            browser()
+          }
+          x$site_quality_statement[area_indicator_keep] <- QUALITY
+        }
+
+        x
+
+    }
+
+
+
+
+    # END QUALITY
+
+
+
+
+
+
   }),
 
   tar_target(all_project_geoms, {

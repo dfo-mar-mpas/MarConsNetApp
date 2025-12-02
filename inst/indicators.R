@@ -71,7 +71,7 @@ indicator_targets <- list(
 
                # Doing the score and statement status
 
-               tracking <- split(tester , tester $tag_id)
+               tracking <- split(tester , tester$tag_id)
 
                otn_areas <- vector("list", length = length(tracking))
                names(otn_areas) <- names(tracking)
@@ -199,7 +199,9 @@ indicator_targets <- list(
 
                    # Store results
                    x$plot[[i]] <- map
-                   x$data[[i]] <- tester[tester$areaID == name_of_interest, c("tag_id", "geometry")]
+                   tester_data <- tester[tester$areaID == name_of_interest,]
+                   tester_data$year <- as.numeric(substr(tester_data$eventDate, 1, 4))
+                   x$data[[i]] <- tester_data[, c("tag_id", "geometry", "year")]
 
                    desired_order <- c(
                      "areaID", "indicator", "type", "units", "scoring",
