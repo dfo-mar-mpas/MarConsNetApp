@@ -356,64 +356,64 @@ framework_targets <- list(
                                         "Ecological",
                                         weights_ratio=NA,
                                         weights_sum = NA,
-                                        dplyr::select(ecol_obj_biodiversity_df,-data,-plot),
-                                        dplyr::select(ecol_obj_habitat_df,-data,-plot),
-                                        dplyr::select(ecol_obj_productivity_df,-data,-plot)) |>
+                                        dplyr::select(ecol_obj_biodiversity_df,-data),
+                                        dplyr::select(ecol_obj_habitat_df,-data),
+                                        dplyr::select(ecol_obj_productivity_df,-data)) |>
                  mutate(PPTID = as.character(PPTID)) |>
                  left_join(dplyr::select(as.data.frame(MPAs), NAME_E, region), by = c("areaID"="NAME_E"))
 
                rm(ecol_obj_biodiversity_df, ecol_obj_habitat_df, ecol_obj_productivity_df)
                gc()
 
-               # pedf_filtered <- pedf |> filter(areaID != "Non_Conservation_Area")
-               #
-               # x <- pedf_filtered |>
-               #   group_by(objective, bin, areaID, region) |>
-               #   reframe(
-               #     indicator = unique(areaID),
-               #     areaID = unique(region),
-               #     score = weighted.mean(score, weight, na.rm = TRUE),
-               #     score = if_else(is.nan(score), NA, score),
-               #     PPTID = paste(PPTID, collapse = "; ")
-               #   ) |>
-               #   group_by(bin) |>
-               #   mutate(weight = target_bin_weight / n()) |>
-               #   ungroup() |>
-               #
-               #   ##### Bind in full data, including Non_Conservation_Area
-               #   bind_rows(pedf) |>
-               #
-               #   mutate(tab = paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))))
-               #
-               # areas <- unique(x$areaID)
-               #
-               # pillar_list <- split(x, x$areaID)
-               #
-               # ##### Keep Non_Conservation_Area in pillar_list
-               # mpa_list <- pillar_list[!names(pillar_list) %in% regions$NAME_E]
-               #
-               # mpa_list <- lapply(mpa_list, function(ddff) {
-               #   ddff[order(ddff$score, na.last = TRUE), ]
-               # })
-               #
-               # region_list <- pillar_list[names(pillar_list) %in% regions$NAME_E]
-               # region_list <- lapply(region_list, function(ddff) {
-               #   ddff[order(ddff$score, na.last = TRUE), ]
-               # })
-               #
-               # for (i in seq_along(region_list)) {
-               #   reg <- region_list[[i]]
-               #   for (j in 1:nrow(reg)) {
-               #     reg2 <- reg[j,]
-               #     region_bin <- reg2$indicator
-               #     keep <- which(names(mpa_list) == region_bin)
-               #     if (length(keep) > 0) {
-               #       mpa_list[[keep]] <- rbind(reg2, mpa_list[[keep]])
-               #     }
-               #   }
-               # }
-               #
-               # do.call(rbind, mpa_list)
+               pedf_filtered <- pedf |> filter(areaID != "Non_Conservation_Area")
+
+               x <- pedf_filtered |>
+                 group_by(objective, bin, areaID, region) |>
+                 reframe(
+                   indicator = unique(areaID),
+                   areaID = unique(region),
+                   score = weighted.mean(score, weight, na.rm = TRUE),
+                   score = if_else(is.nan(score), NA, score),
+                   PPTID = paste(PPTID, collapse = "; ")
+                 ) |>
+                 group_by(bin) |>
+                 mutate(weight = target_bin_weight / n()) |>
+                 ungroup() |>
+
+                 ##### Bind in full data, including Non_Conservation_Area
+                 bind_rows(pedf) |>
+
+                 mutate(tab = paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))))
+
+               areas <- unique(x$areaID)
+
+               pillar_list <- split(x, x$areaID)
+
+               ##### Keep Non_Conservation_Area in pillar_list
+               mpa_list <- pillar_list[!names(pillar_list) %in% regions$NAME_E]
+
+               mpa_list <- lapply(mpa_list, function(ddff) {
+                 ddff[order(ddff$score, na.last = TRUE), ]
+               })
+
+               region_list <- pillar_list[names(pillar_list) %in% regions$NAME_E]
+               region_list <- lapply(region_list, function(ddff) {
+                 ddff[order(ddff$score, na.last = TRUE), ]
+               })
+
+               for (i in seq_along(region_list)) {
+                 reg <- region_list[[i]]
+                 for (j in 1:nrow(reg)) {
+                   reg2 <- reg[j,]
+                   region_bin <- reg2$indicator
+                   keep <- which(names(mpa_list) == region_bin)
+                   if (length(keep) > 0) {
+                     mpa_list[[keep]] <- rbind(reg2, mpa_list[[keep]])
+                   }
+                 }
+               }
+
+               do.call(rbind, mpa_list)
 
                result <- pedf_filtered |>
                  group_by(objective, bin, areaID, region) |>
