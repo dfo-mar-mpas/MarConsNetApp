@@ -309,22 +309,6 @@ list(
                data.frame("Project"=labels, "Color"= palette <- viridis::viridis(length(labels)))
              }),
 
-  tar_target(plot_files_biodiversity,
-             command = save_plots(dplyr::select(ecol_obj_biodiversity_df,-data))),
-
-  tar_target(plot_files_habitat,
-             command = save_plots(dplyr::select(ecol_obj_habitat_df,-data))),
-
-  tar_target(plot_files_productivity,
-             command = save_plots(dplyr::select(ecol_obj_productivity_df,-data))),
-
-  tar_target(plot_files,
-             command = c(plot_files_biodiversity,
-                         plot_files_habitat,
-                         plot_files_productivity)
-  ),
-
-
 
   tar_target(name = MPA_report_card,
              command = {

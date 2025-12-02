@@ -307,31 +307,43 @@ framework_targets <- list(
              )),
 
   tar_target(ecol_obj_biodiversity_df,
-             aggregate_groups("objective",
-                              "Biodiversity",
-                              weights_ratio=NA,
-                              weights_sum = NA,
-                              bin_biodiversity_FunctionalDiversity_df,
-                              bin_biodiversity_GeneticDiversity_df,
-                              bin_biodiversity_SpeciesDiversity_df)),
+             {
+               obj <- aggregate_groups("objective",
+                                       "Biodiversity",
+                                       weights_ratio=NA,
+                                       weights_sum = NA,
+                                       bin_biodiversity_FunctionalDiversity_df,
+                                       bin_biodiversity_GeneticDiversity_df,
+                                       bin_biodiversity_SpeciesDiversity_df)
+               save_plots(dplyr::select(obj,-data))
+               dplyr::select(obj,-plot)
+             }),
   tar_target(ecol_obj_habitat_df,
-             aggregate_groups("objective",
-                              "Habitat",
-                              weights_ratio=NA,
-                              weights_sum = NA,
-                              bin_habitat_Connectivity_df,
-                              bin_habitat_EnvironmentalRepresentativity_df,
-                              bin_habitat_KeyFishHabitat_df,
-                              bin_habitat_ThreatstoHabitat_df,
-                              bin_habitat_Uniqueness_df)),
+             {
+               obj <- aggregate_groups("objective",
+                                       "Habitat",
+                                       weights_ratio=NA,
+                                       weights_sum = NA,
+                                       bin_habitat_Connectivity_df,
+                                       bin_habitat_EnvironmentalRepresentativity_df,
+                                       bin_habitat_KeyFishHabitat_df,
+                                       bin_habitat_ThreatstoHabitat_df,
+                                       bin_habitat_Uniqueness_df)
+               save_plots(dplyr::select(obj,-data))
+               dplyr::select(obj,-plot)
+             }),
   tar_target(ecol_obj_productivity_df,
-             aggregate_groups("objective",
-                              "Productivity",
-                              weights_ratio=NA,
-                              weights_sum = NA,
-                              bin_productivity_BiomassMetrics_df,
-                              bin_productivity_StructureandFunction_df,
-                              bin_productivity_ThreatstoProductivity_df)),
+             {
+               obj <- aggregate_groups("objective",
+                                       "Productivity",
+                                       weights_ratio=NA,
+                                       weights_sum = NA,
+                                       bin_productivity_BiomassMetrics_df,
+                                       bin_productivity_StructureandFunction_df,
+                                       bin_productivity_ThreatstoProductivity_df)
+               save_plots(dplyr::select(obj,-data))
+               dplyr::select(obj,-plot)
+             }),
 
 
   tar_target(pillar_ecol_df,
@@ -350,13 +362,60 @@ framework_targets <- list(
                  mutate(PPTID = as.character(PPTID)) |>
                  left_join(dplyr::select(as.data.frame(MPAs), NAME_E, region), by = c("areaID"="NAME_E"))
 
-               rm(ecol_obj_biodiversity_df)
-               rm(ecol_obj_habitat_df)
-               rm(ecol_obj_productivity_df)
+               rm(ecol_obj_biodiversity_df, ecol_obj_habitat_df, ecol_obj_productivity_df)
+               gc()
 
-               pedf_filtered <- pedf |> filter(areaID != "Non_Conservation_Area")
+               # pedf_filtered <- pedf |> filter(areaID != "Non_Conservation_Area")
+               #
+               # x <- pedf_filtered |>
+               #   group_by(objective, bin, areaID, region) |>
+               #   reframe(
+               #     indicator = unique(areaID),
+               #     areaID = unique(region),
+               #     score = weighted.mean(score, weight, na.rm = TRUE),
+               #     score = if_else(is.nan(score), NA, score),
+               #     PPTID = paste(PPTID, collapse = "; ")
+               #   ) |>
+               #   group_by(bin) |>
+               #   mutate(weight = target_bin_weight / n()) |>
+               #   ungroup() |>
+               #
+               #   ##### Bind in full data, including Non_Conservation_Area
+               #   bind_rows(pedf) |>
+               #
+               #   mutate(tab = paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))))
+               #
+               # areas <- unique(x$areaID)
+               #
+               # pillar_list <- split(x, x$areaID)
+               #
+               # ##### Keep Non_Conservation_Area in pillar_list
+               # mpa_list <- pillar_list[!names(pillar_list) %in% regions$NAME_E]
+               #
+               # mpa_list <- lapply(mpa_list, function(ddff) {
+               #   ddff[order(ddff$score, na.last = TRUE), ]
+               # })
+               #
+               # region_list <- pillar_list[names(pillar_list) %in% regions$NAME_E]
+               # region_list <- lapply(region_list, function(ddff) {
+               #   ddff[order(ddff$score, na.last = TRUE), ]
+               # })
+               #
+               # for (i in seq_along(region_list)) {
+               #   reg <- region_list[[i]]
+               #   for (j in 1:nrow(reg)) {
+               #     reg2 <- reg[j,]
+               #     region_bin <- reg2$indicator
+               #     keep <- which(names(mpa_list) == region_bin)
+               #     if (length(keep) > 0) {
+               #       mpa_list[[keep]] <- rbind(reg2, mpa_list[[keep]])
+               #     }
+               #   }
+               # }
+               #
+               # do.call(rbind, mpa_list)
 
-               x <- pedf_filtered |>
+               result <- pedf_filtered |>
                  group_by(objective, bin, areaID, region) |>
                  reframe(
                    indicator = unique(areaID),
