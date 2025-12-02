@@ -5,7 +5,7 @@
 #' Site-Level Goals
 #' - Report on what scientific work is occurring, and resources
 #' allocated for this
-#' - Report on how the scientific work being done is contributing to
+#' - Report on how the scientific work being done is contrifbuting to
 #' indicators and therefore conservation objectives (CO)
 #' - Report on the status of the sites, based on existing data
 #' Network-level Goals
@@ -291,7 +291,6 @@ server <- function(input, output, session) {
       }
 
       if ((input$tab0_subtabs == "Ecosystem Overview" && input$indicator_mode == "ebm") | input$tab0_subtabs == "Threats") {
-        #browser()
         # Ecological Overview
 
       if (state$mpas %in% regions$NAME_E) {
@@ -299,22 +298,13 @@ server <- function(input, output, session) {
 
       } else {
         table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+        #browser()
       }
       if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
         table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
       }
 
-      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID")]
-
-      # Determining quality statement
-      # for (i in seq_along(table_ped$indicator)) {
-      #   if (state$mpas %in% regions$NAME_E) {
-      #
-      #   } else {
-      #     which(all_project_geoms$i)
-      #   }
-      # }
-
+      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness')]
 
       # End quality statement
 
@@ -326,7 +316,7 @@ server <- function(input, output, session) {
         ) %>%
         # Add placeholders for readiness, quality, cost
         mutate(
-          readiness = NA_real_,
+          #readiness = NA_real_,
           quality   = NA_real_,
           cost      = NA_real_
         ) %>%
@@ -363,14 +353,14 @@ server <- function(input, output, session) {
           table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
         }
 
-        table_ped <- table_ped[,c("theme", "indicator", "source", "score", "weight", "PPTID")]
+        table_ped <- table_ped[,c("theme", "indicator", "source", "score", "weight", "PPTID", 'readiness')]
 
 
 
         ddff <- table_ped %>%
           # Add placeholders for readiness, quality, cost
           mutate(
-            readiness = NA_real_,
+            #readiness = NA_real_,
             quality   = NA_real_,
             cost      = NA_real_
           ) %>%
@@ -412,7 +402,6 @@ server <- function(input, output, session) {
 
         }
       }
-      ddff_unique$READINESS <- "Ready"
 
       if (input$tab0_subtabs == "Threats") {
         ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
