@@ -346,6 +346,7 @@ framework_targets <- list(
              }),
 
 
+
   tar_target(pillar_ecol_df,
              {
                APPTABS
@@ -365,9 +366,9 @@ framework_targets <- list(
                rm(ecol_obj_biodiversity_df, ecol_obj_habitat_df, ecol_obj_productivity_df)
                gc()
 
-               pedf_filtered <- pedf |> filter(areaID != "Non_Conservation_Area")
-
-               x <- pedf_filtered |>
+               result <- pedf |>
+                 ##### filter results to calculate weighted means at regional level
+                 filter(areaID != "Non_Conservation_Area" & scale == "site") |>
                  group_by(objective, bin, areaID, region) |>
                  reframe(
                    indicator = unique(areaID),
@@ -383,85 +384,22 @@ framework_targets <- list(
                  ##### Bind in full data, including Non_Conservation_Area
                  bind_rows(pedf) |>
 
-                 mutate(tab = paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))))
-
-               areas <- unique(x$areaID)
-
-               pillar_list <- split(x, x$areaID)
-
-               ##### Keep Non_Conservation_Area in pillar_list
-               mpa_list <- pillar_list[!names(pillar_list) %in% regions$NAME_E]
-
-               mpa_list <- lapply(mpa_list, function(ddff) {
-                 ddff[order(ddff$score, na.last = TRUE), ]
-               })
-
-               region_list <- pillar_list[names(pillar_list) %in% regions$NAME_E]
-               region_list <- lapply(region_list, function(ddff) {
-                 ddff[order(ddff$score, na.last = TRUE), ]
-               })
-
-               for (i in seq_along(region_list)) {
-                 reg <- region_list[[i]]
-                 for (j in 1:nrow(reg)) {
-                   reg2 <- reg[j,]
-                   region_bin <- reg2$indicator
-                   keep <- which(names(mpa_list) == region_bin)
-                   if (length(keep) > 0) {
-                     mpa_list[[keep]] <- rbind(reg2, mpa_list[[keep]])
-                   }
-                 }
-               }
-
-               do.call(rbind, mpa_list)
-
-               result <- pedf_filtered |>
-                 group_by(objective, bin, areaID, region) |>
-                 reframe(
-                   indicator = unique(areaID),
-                   areaID = unique(region),
-                   score = weighted.mean(score, weight, na.rm = TRUE),
-                   score = if_else(is.nan(score), NA, score),
-                   PPTID = paste(PPTID, collapse = "; ")
+                 mutate(
+                   tab = paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))),
+                   # Identify regions vs MPAs
+                   is_region = areaID %in% regions$NAME_E,
+                   # Create grouping: regions group by their indicator, MPAs by their areaID
+                   sort_group = if_else(is_region, indicator, areaID),
+                   # Priority for sorting: regions first (1), then MPAs (2)
+                   sort_priority = if_else(is_region, 1L, 2L)
                  ) |>
-                 group_by(bin) |>
-                 mutate(weight = target_bin_weight / n()) |>
-                 ungroup() |>
 
-                 ##### Bind in full data, including Non_Conservation_Area
-                 bind_rows(pedf) |>
+                 # Sort: by group, then regions before MPAs, then by score
+                 arrange(sort_group, sort_priority, score) |>
 
-                 mutate(tab = paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))))
-
-               areas <- unique(x$areaID)
-
-               pillar_list <- split(x, x$areaID)
-
-               ##### Keep Non_Conservation_Area in pillar_list
-               mpa_list <- pillar_list[!names(pillar_list) %in% regions$NAME_E]
-
-               mpa_list <- lapply(mpa_list, function(ddff) {
-                 ddff[order(ddff$score, na.last = TRUE), ]
-               })
-
-               region_list <- pillar_list[names(pillar_list) %in% regions$NAME_E]
-               region_list <- lapply(region_list, function(ddff) {
-                 ddff[order(ddff$score, na.last = TRUE), ]
-               })
-
-               for (i in seq_along(region_list)) {
-                 reg <- region_list[[i]]
-                 for (j in 1:nrow(reg)) {
-                   reg2 <- reg[j,]
-                   region_bin <- reg2$indicator
-                   keep <- which(names(mpa_list) == region_bin)
-                   if (length(keep) > 0) {
-                     mpa_list[[keep]] <- rbind(reg2, mpa_list[[keep]])
-                   }
-                 }
-               }
-
-               do.call(rbind, mpa_list)
+                 # Clean up helper columns
+                 select(-is_region, -sort_group, -sort_priority) |>
+                 filter(!is.na(areaID)) #TODO we can probably remove this after investigating the NAs in areaID if bin_habitat_ThreatstoHabitat_df
 
 
              }),
