@@ -6,6 +6,8 @@ output:
     toc: true
     toc_depth: 3
     toc_float: false
+params:
+  mpas: "Maritimes"
 ---
 
 ## At-a-glance
