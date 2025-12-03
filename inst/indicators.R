@@ -1577,40 +1577,40 @@ indicator_targets <- list(
   tar_target(name = ind_temp_at_depth,
              command = {
                ind_placeholder(ind_name="Temperature at Depth", areas = MPAs, readiness = "Readily Available",
-                               source = "AZMP", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities"))
+                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"))
              }), # Environmental Representativity, Ocean Conditions
 
 
   tar_target(name = ind_sea_surface_salinity,
              command = {
                ind_placeholder(ind_name="Sea Surface Salinity", areas = MPAs, readiness = "Readily Available",
-                               source = "AZMP", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities"))
+                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"))
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_subsurface_salinity,
              command = {
                ind_placeholder(ind_name="Subsurface Salinity", areas = MPAs, readiness = "Readily Available",
-                               source = "AZMP", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities"))
+                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"))
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_oxygen_saturation,
              command = {
                ind_placeholder(ind_name="Oxygen Saturation", areas = MPAs, readiness = "Readily Available",
-                               source = "AZMP", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_ave_ph_level,
              command = {
                ind_placeholder(ind_name="Average pH Level", areas = MPAs, readiness = "Readily Available",
-                               source = "AZMP", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_carbonate,
              command = {
                ind_placeholder(ind_name="Carbonate", areas = MPAs, readiness = "Readily Available",
-                               source = "AZMP", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Environmental Representativity, Ocean Conditions
 
@@ -1751,49 +1751,49 @@ indicator_targets <- list(
   tar_target(name = ind_rel_abundance_groundfish,
              command = {
                ind_placeholder(ind_name="Relative abundance and biomass of select groundfish species", areas = MPAs, readiness = "Readily Available",
-                               source = "RV Survey", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                     "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_size_distribution_groundfish,
              command = {
                ind_placeholder(ind_name="Size Distribution of Select Groundfish Species", areas = MPAs, readiness = "Unknown",
-                               source = "RV Survey", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                     "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_condition_groundfish,
              command = {
                ind_placeholder(ind_name="Condition of Select Groundfish Species", areas = MPAs, readiness = "Unknown",
-                               source = "RV Survey", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                     "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_fecundity_groundfish,
              command = {
                ind_placeholder(ind_name="Fecundity of Select Groundfish Species", areas = MPAs, readiness = "Unknown",
-                               source = "RV Survey", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                     "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_community_comp_demersal,
              command = {
                ind_placeholder(ind_name="Community Composition of Demersal Fish", areas = MPAs, readiness = "Readily Available",
-                               source = "RV Survey", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                     "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_distribution_juv_haddock_habitat,
              command = {
                ind_placeholder(ind_name="Distriburion of Juvenile Haddock Habitat", areas = MPAs, readiness = "Unknown",
-                               source = "RV Survey", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                     "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Key Fish Habitat, Fish and Fishery Resources?
 
   tar_target(name = ind_distribution_key_fish_habitat,
              command = {
                ind_placeholder(ind_name="Distribution of Key Fish Species Habitat", areas = MPAs, readiness = "Readily Available",
-                               source = "RV Survey", objectives = c("Protect continential shelf habitats and associated benthic and demersal communities",
+                               source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
                                                                     "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
              }), # Key Fish Habitat, Fish and Fishery Resources?
 
