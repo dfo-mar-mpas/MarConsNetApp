@@ -335,7 +335,8 @@ list(
                  group_by(project_id) |>
                  reframe(totalamount = sum(amount))
 
-               all_project_geoms_single_obs_per_row <- all_project_geoms |>
+               all_project_geoms_single_obs_per_row <- all_indicator_project_geoms |>
+                 select(PPTID,areaID,geometry) |>
                  filter(!is.na(PPTID),
                         areaID!="Non_Conservation_Area") |>
                  distinct()
