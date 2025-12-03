@@ -2274,14 +2274,14 @@ indicator_targets <- list(
              command = {
                ind_placeholder(ind_name="Quantity of floating debris (i.e., large objects) in the Gully MPA", areas = MPAs, readiness = "Unknown",
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
-                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality,"))
+                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"))
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_seabed_debris_gully,
              command = {
                ind_placeholder(ind_name="Quantity of anthropogenic debris on the seabed at selected monitoring sites in the Gully MPA", areas = MPAs, readiness = "Unknown",
                                source = NA, objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
-                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality,",
+                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"))
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
@@ -2309,7 +2309,7 @@ indicator_targets <- list(
   tar_target(name = ind_physandbio_seasurface_properties,
              command = {
                ind_placeholder(ind_name="Physical (e.g. temperature, salinity, wind, sea-surface height) and biological (e.g. ocean colour) sea surface properties in the MPA and the surrounding region", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality,",
+                               source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"))
              }), # Environmental Representativity, Ocean Conditions
@@ -2363,7 +2363,7 @@ indicator_targets <- list(
   tar_target(name = ind_harmful_algae,
              command = {
                ind_placeholder(ind_name="Blooms of harmful algal in or near the MPA", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality,",
+                               source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                            "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
              }), # Threats to Productivity, Trophic structure and Function?
