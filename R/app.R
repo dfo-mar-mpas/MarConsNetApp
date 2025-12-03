@@ -291,14 +291,14 @@ server <- function(input, output, session) {
       }
 
       if ((input$tab0_subtabs == "Ecosystem Overview" && input$indicator_mode == "ebm") | input$tab0_subtabs == "Threats") {
-        # Ecological Overview
+
+      # Ecological Overview
 
       if (state$mpas %in% regions$NAME_E) {
         table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
 
       } else {
         table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
-        #browser()
       }
       if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
         table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
@@ -393,15 +393,29 @@ server <- function(input, output, session) {
       }
 
       if (!(length(ddff_unique$PPTID) == 0)) {
+
+        #browser()
+
       for (i in seq_along(unique(ddff_unique$PPTID))) {
         ppt <- unique(ddff_unique$PPTID)[i]
         if (is.na(ppt)) {
-          ddff_unique$COST[which(is.na(ddff_unique$PPTID))] <- "External"
+
+          isna <- which(is.na(ddff_unique$PPTID))
+
+          for (j in isna) {
+            if (!(ddff_unique$READINESS[j] == "Ready")) {
+              ddff_unique$COST[j] <- "Unknown at this time"
+            } else {
+              ddff_unique$COST[j] <- "External"
+            }
+
+          }
         } else {
           ddff_unique$COST[which(ddff_unique$PPTID == unique(ddff_unique$PPTID)[i])] <- paste0("$", round(unique(cost_of_mpas$price_per_station[which(cost_of_mpas$project_id == ppt)]),2), "/ source sample")
 
         }
       }
+        #browser()
 
       if (input$tab0_subtabs == "Threats") {
         ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
@@ -409,6 +423,8 @@ server <- function(input, output, session) {
       }
       if (!(input$tab0_subtabs == "Threats")) {
         if (input$indicator_mode == "ebm") {
+          #browser()
+
           ddff_display <- ddff_unique %>%
             dplyr::arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
             group_by(GROUPING, SOURCE) %>%
@@ -432,6 +448,23 @@ server <- function(input, output, session) {
       }
 
       # Render datatable
+
+      ## ADDING QUALITY
+      for (i in seq_along(ddff_display$INDICATOR)) {
+        k1 <- which(all_indicator_project_geoms$indicator == ddff_display$INDICATOR[i])
+
+        if (state$mpas %in% MPAs$NAME_E) {
+          k2 <- which(all_indicator_project_geoms$areaID == state$mpas)
+          keep <- intersect(k1,k2)
+          ddff_display$QUALITY[i] <- all_indicator_project_geoms$site_quality_statement[keep[1]]
+        } else {
+          ddff_display$QUALITY[i] <- all_indicator_project_geoms$network_quality_statement[k1[1]]
+        }
+
+      }
+
+      # END QUALITY
+
       datatable(
         ddff_display,
         rownames = FALSE,
