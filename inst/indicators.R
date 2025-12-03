@@ -1997,7 +1997,7 @@ indicator_targets <- list(
   tar_target(name = ind_genetic_diversity_nbw,
              command = {
                ind_placeholder(ind_name="Genetic diversity within the Northern Bottlenose Whales", areas = MPAs, readiness = "Unknown",
-                               source = NA, objectives = c("Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels",
+                               source = NA, objectives = c("Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
                                                            "Maintain biodiversity of individual species, communities and populations within the different ecotypes",
                                                            "Ensure the conservation and protection of threatened or endangered species"))
              }), # Genetic Diversity, Marine Mammals and other Top Predators
