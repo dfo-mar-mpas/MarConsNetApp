@@ -814,8 +814,6 @@ server <- function(input, output, session) {
     ))
   })
 
-  observe({ print(names(input)) })
-
   # Dynmaically coding in which actionLink is selected will update the tab
   for (i in 0:max(sort(as.numeric(gsub("\\D", "", c(pillar_ecol_df$tab, APPTABS$tab, objective_tabs$tab)))))) {
     local({
@@ -1236,6 +1234,12 @@ server <- function(input, output, session) {
           KEEP <- intersect(k1,k2)
 
           image_files <- image_files[KEEP]
+
+          if (length(image_files) > 1) {
+            if (!(grepl("Inside", pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)], ignore.case=TRUE))) {
+              image_files <- image_files[-which(grepl("Inside", image_files))]
+            }
+          }
 
           shiny::uiOutput("indicatorPlot")
 
