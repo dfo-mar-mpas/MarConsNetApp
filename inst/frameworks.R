@@ -1,5 +1,8 @@
 source("inst/set_up.R")
 
+conservation_targets <- read.csv("../DFO_MPA_Network_2022/data/target_values.csv")
+
+
 framework_targets <- list(
 
   # OBJECTIVES ----
@@ -744,7 +747,14 @@ framework_targets <- list(
                split_text <- split_text[-length(split_text)]
                summary <- unlist(lapply(split_text, function(x) x[2]))
                cc <- data.frame(indicators=indicators, summary=summary)
-             })
+             }),
+
+  # DESIGN TARGETS ----
+
+  tar_target(
+    name = conservation_targets_target,
+    read.csv(target_values_file)
+  ),
 
 
 
