@@ -814,10 +814,13 @@ server <- function(input, output, session) {
     ))
   })
 
+  observe({ print(names(input)) })
+
   # Dynmaically coding in which actionLink is selected will update the tab
-  for (i in 0:(length(unique(APPTABS$tab))+length(pillar_ecol_df$indicator) + length(objective_tabs$tab))) {
+  for (i in 0:max(sort(as.numeric(gsub("\\D", "", c(pillar_ecol_df$tab, APPTABS$tab, objective_tabs$tab)))))) {
     local({
       tab_id <- paste0("tab_", i)
+      #print(paste0(tab_id, " IS THE TAB ID"))
       shiny::observeEvent(input[[tab_id]], {
         if (tab_id %in% APPTABS$tab) {
           selected_tab <- unique(APPTABS$tab[which(APPTABS$tab == tab_id)])
@@ -836,6 +839,10 @@ server <- function(input, output, session) {
   calculated_info <- shiny::reactive({
     req(input$tabs)
     tab_id <- input$tabs
+    # if (input$tabs == "tab_8588") {
+    #   browser()
+    # }
+
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
       if (!(input$tabs == "tab_0")) {
         if (input$tabs %in% pillar_ecol_df$tab) {
@@ -1025,6 +1032,10 @@ server <- function(input, output, session) {
 
   output$indicatorText <- shiny::renderUI({
     info <- calculated_info()
+
+    # if (input$tabs == "tab_8588") {
+    # browser()
+    # }
 
     req(info)  # Ensure the info is available
     shiny::HTML(

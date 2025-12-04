@@ -26,7 +26,7 @@ framework_targets <- list(
                ped <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)),]
 
                indicator_objectives <- trimws(unique(unlist(strsplit(ped$objectives, ";;;"))), 'both')
-               indicator_objectives <- indicator_objectives[-which(indicator_objectives == "NA")]
+               indicator_objectives <- unique(indicator_objectives[-which(indicator_objectives == "NA")])
 
                ped_objectives <- vector("list", length=length(indicator_objectives))
 
