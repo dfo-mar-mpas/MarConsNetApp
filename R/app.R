@@ -55,7 +55,7 @@ app <- function() {
 
   # load targets if necessary
   if(!exists("APPTABS")){
-    tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","areas","regions","flowerPalette","indicatorFlower","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate_change", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators","map_palette","labels"),
+    tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","regions","flowerPalette","indicatorFlower","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate_change", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators","map_palette","labels"),
              store = STORE)
   }
 
@@ -502,7 +502,7 @@ server <- function(input, output, session) {
     req(state$mpas)
     req(input$tabs)
     if (input$tabs == "tab_0") {
-      if (state$mpas %in% unique(pillar_ecol_df$areaID) || tolower(state$mpas) %in% tolower(areas)) {
+      if (state$mpas %in% unique(pillar_ecol_df$areaID) || tolower(state$mpas) %in% tolower(MPAs$NAME_E)) {
       choices <- c("Status","Network Design Targets", "Level of Certainty", "Models", "In Situ Measurements", "Time Since Last in Situ Measurement")
       selectInput("flowerType", "Select Score Type", choices=choices, selected = "Status")
       } else {
@@ -796,7 +796,7 @@ server <- function(input, output, session) {
     req(input$tabs)
     if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
       string <- state$mpas
-      keepO <- which(areas == string)
+      keepO <- which(MPAs$NAME_E == string)
       if (!(length(keepO) == 0)) {
         shiny::actionButton(inputId="contextButton", label="Context")
       }
@@ -805,8 +805,8 @@ server <- function(input, output, session) {
 
   shiny::observeEvent(input$contextButton, {
     string <- state$mpas
-    keepC <- which(areas == string)
-    textC <- Context[areas[keepC]]
+    keepC <- which(MPAs$NAME_E == string)
+    textC <- Context[MPAs$NAME_E[keepC]]
     textC <- unlist(lapply(textC, function(x) paste(x, "\n\n")))
     shiny::showModal(shiny::modalDialog(
       title = "Marine Protected Area Context",

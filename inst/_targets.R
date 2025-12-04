@@ -60,12 +60,6 @@ list(
     quiet = TRUE
   ),
 
-  tar_target(name = areas,
-             command = {
-               MPAs$NAME_E
-             }),
-
-
   tar_target(name = flowerPalette,
              command = {
                grades <- c("A", "B", "C", "D", "F")
@@ -378,7 +372,7 @@ list(
 
                # Upload the targets folder, and only certain objects needed by the app
                upload_objects <- c("APPTABS", "pillar_ecol_df", "all_project_geoms", "MPA_report_card",
-                                   "MPAs", "areas", "regions", "flowerPalette", "indicatorFlower",
+                                   "MPAs", "regions", "flowerPalette", "indicatorFlower",
                                    "N_Objectives", "om", "Ecological", "Context", "collaborations",
                                    "deliverables", "csas", "climate_change", "cost_of_mpas","salary",
                                    "theme_table", "objective_tabs", "objective_indicators",
@@ -474,8 +468,8 @@ list(
 
   tar_target(name = Context,
              command = {
-               c <- lapply(areas, function(x) data_context(type="site", area=x))
-               names(c) <- areas
+               c <- lapply(MPAs$NAME_E, function(x) data_context(type="site", area=x))
+               names(c) <- MPAs$NAME_E
                c <- c[which(unname(unlist(lapply(c, function(x) !(is.null(x))))))]
                c
              }),

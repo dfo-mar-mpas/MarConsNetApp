@@ -356,6 +356,9 @@ framework_targets <- list(
                regions
                target_bin_weight <- 1
 
+               start_id <- max(as.integer(gsub("tab_", "", APPTABS$tab))) + 1
+
+
                pedf <- aggregate_groups("pillar",
                                         "Ecological",
                                         weights_ratio=NA,
@@ -386,9 +389,8 @@ framework_targets <- list(
 
                  ##### Bind in full data, including Non_Conservation_Area
                  bind_rows(pedf) |>
-
                  mutate(
-                   tab = paste0("tab_", seq(length(APPTABS$flower) + 1, length(APPTABS$flower) + length(objective))),
+                   tab = paste0("tab_", start_id:(start_id+ length(objective) - 1)),
                    # Identify regions vs MPAs
                    is_region = areaID %in% regions$NAME_E,
                    # Create grouping: regions group by their indicator, MPAs by their areaID
