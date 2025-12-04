@@ -78,7 +78,7 @@ tar_load(c(MPAs,
            csas,
            climate_change,
            salary,
-           objective_tabs))
+           objective_tabs), store=path_to_store())
 
 embed_image <- function(file_path, width = 600) {
     mime <- paste0("image/", tools::file_ext(file_path))
@@ -754,7 +754,7 @@ if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator)))
   table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
 }
 
-table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID")]
+table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "readiness")]
 
 
 ddff <- table_ped %>%

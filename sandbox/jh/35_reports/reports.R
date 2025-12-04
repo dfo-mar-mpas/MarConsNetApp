@@ -36,7 +36,7 @@ mpas <- MPAs$NAME_E
 rmd_file <- system.file("data", "report.Rmd", package = "MarConsNetApp")
 output_dir <- "C:/Users/HARBINJ/Documents/REPORT_TESTS/"
 
-i <- 44
+i <- 16
 mpas <- MPAs$NAME_E
 state <- list()
 params <- list()
@@ -44,8 +44,8 @@ input <- list()
 state$mpas <- mpas[i]
 params$mpas <- mpas[i]
 input$mpas <- mpas[i]
-output_file <- file.path(paste0(output_dir,"/", make.names(paste0(names=mpas[i], ".html"))))
-render(input=rmd_file, output_file = output_file, output_format = "html_document", params = params, envir = new.env())
+render(input="C:/Users/HARBINJ/Documents/GitHub/MarConsNetApp/data/report.Rmd", output_file = "C:/Users/HARBINJ/Documents/REPORT_TESTS//GULLY.html", output_format = "html_document", params = params)
+
 
 
 
