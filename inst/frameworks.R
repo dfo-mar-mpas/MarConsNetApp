@@ -1,6 +1,5 @@
 source("inst/set_up.R")
 
-conservation_targets <- read.csv("../DFO_MPA_Network_2022/data/target_values.csv")
 
 
 framework_targets <- list(
@@ -754,9 +753,16 @@ framework_targets <- list(
   # DESIGN TARGETS ----
 
   tar_target(
+    name = target_values_file,
+    command = file.path(dirname(path_to_store()),"data","target_values.csv"),
+    format = "file",
+    deployment = "worker"
+  ),
+
+  tar_target(
     name = conservation_targets_target,
     read.csv(target_values_file)
-  ),
+  )
 
 
 

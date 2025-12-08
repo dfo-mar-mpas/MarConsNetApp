@@ -1420,6 +1420,24 @@ raw_data_targets <- list(
                glider_data <- do.call(rbind, glider_list)
                glider_data
 
-             })
+             }),
+
+  tar_target(
+    name = data_designtargets_gdb,
+    command = {
+      # from: https://open.canada.ca/data/en/dataset/2d9cce9a-d634-4b49-879f-87c40c52acf2
+      url <- "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/2d9cce9a-d634-4b49-879f-87c40c52acf2/attachments/MPA_NetworkDesign.gdb.zip"
+
+      dest_dir <- file.path(dirname(path_to_store()), "data", "design")
+      zip_file <- file.path(tempdir(), "MPA_NetworkDesign.gdb.zip")
+      dir.create(dest_dir, recursive = TRUE, showWarnings = FALSE)
+
+      download.file(url, destfile = zip_file, mode = "wb")
+      unzip(zip_file, exdir = dest_dir)
+
+      file.path(dest_dir, "MPA_NetworkDesign.gdb")
+    },
+    format = "file"
+  )
 
 )

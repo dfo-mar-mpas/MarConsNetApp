@@ -1563,6 +1563,162 @@ indicator_targets <- list(
                         readiness="Ready")
              }),
 
+  # DESIGN TARGETS INDICATORS ----
+
+  tar_target(
+    name = ind_designtarget,
+    {
+      # with the tar_map below, this target creates many targets!
+      conservation_targets_target # listed here so the dependency is tracked
+      cp <- st_read(data_designtargets_gdb,layername) |>
+        st_make_valid() |>
+        mutate(layername = layername,
+               plainname = plainname,
+               min_target = min_target,
+               max_target = max_target)
+
+      process_indicator(data = cp,
+                        indicator_var_name = "layername",
+                        indicator = paste("Network design target:", filter,type,plainname,sep=" - "),
+                        type = "Network-Design Consevation Target",
+                        units = ifelse(type == "Commercial fishery landing","percent landings","percent area"),
+                        scoring = ifelse(type == "Commercial fishery landing","coverage: landings","coverage"),
+                        PPTID = NA,
+                        source = NA,
+                        project_short_title = "",
+                        climate = FALSE,
+                        design_target = TRUE,
+                        other_nest_variables = ifelse(type == "Commercial fishery landing","WEIGHTMT",NA),
+                        areas = filter(MPAs,region=="Maritimes"),
+                        climate_expectation = "FIXME",
+                        indicator_rationale = "FIXME",
+                        bin_rationale = "FIXME",
+                        objectives = NA,
+                        readiness="Ready",
+                        scale = "region-site")
+
+
+      intersect <- cp |>
+        st_make_valid() |>
+        st_intersection(marMPAs) |>
+        st_make_valid()
+
+      if(type == "Commercial fishery landing"){
+        site_prot_cp <- intersect |>
+          as.data.frame() |>
+          select(region,areaID=NAME_E,geoms=Shape,WEIGHTMT) |>
+          st_as_sf() |>
+          nest(WEIGHTMT,geoms) |>
+          mutate(
+            cp_landing = as.numeric(st_area(geoms)),
+            cp_percent = cp_area/ sum(as.numeric(st_area(cp)))*100,
+            score = cume_dist(cp_percent)*100, #TODO is cume_dist the way to go here?
+            scale = "site"
+          )
+
+        region_prot_cp <- site_prot_cp |>
+          group_by(region) |>
+          reframe(
+            areaID = unique(region),
+            cp_area = sum(cp_area),
+            cp_percent = sum(cp_percent),
+            score = case_when(cp_percent < min_target ~ cp_percent/min_target*100,
+                              cp_percent > max_target ~ 100-(cp_percent-max_target)/(100-max_target)*100,
+                              TRUE ~ 100),
+            scale = "region",
+            geoms = st_union(geoms)
+          )
+
+
+
+        bind_rows(region_prot_cp,site_prot_cp) |>
+          nest(cp_area,cp_percent,geoms) |>
+          mutate(
+            indicator = paste("Network design target:", filter,type,layername,sep=" - "),
+            type = "Model",
+            units = NA,
+            scoring = "custom",
+            PPTID = NA,
+            source = NA,
+            project_short_title = "",
+            climate = FALSE,
+            design_target = FALSE,
+            status_statement = paste0(
+              ""
+            ),
+            trend_statement = paste0(
+              ""
+            ),
+            climate_expectation = "FIXME",
+            indicator_rationale = "FIXME",
+            bin_rationale = "FIXME",
+            readiness="Ready"
+          )
+      } else {
+        # else normal representation type
+        site_prot_cp <- intersect |>
+          as.data.frame() |>
+          select(region,areaID=NAME_E,geoms=Shape) |>
+          st_as_sf() |>
+          mutate(
+            cp_area = as.numeric(st_area(geoms)),
+            cp_percent = cp_area/ sum(as.numeric(st_area(cp)))*100,
+            score = cume_dist(cp_percent)*100, #TODO is cume_dist the way to go here?
+            scale = "site"
+          )
+
+        region_prot_cp <- site_prot_cp |>
+          group_by(region) |>
+          reframe(
+            areaID = unique(region),
+            cp_area = sum(cp_area),
+            cp_percent = sum(cp_percent),
+            score = case_when(cp_percent < min_target ~ cp_percent/min_target*100,
+                              cp_percent > max_target ~ 100-(cp_percent-max_target)/(100-max_target)*100,
+                              TRUE ~ 100),
+            scale = "region",
+            geoms = st_union(geoms)
+          )
+
+
+
+        bind_rows(region_prot_cp,site_prot_cp) |>
+          nest(cp_area,cp_percent,geoms) |>
+          mutate(
+            indicator = paste("Network design target:", filter,type,layername,sep=" - "),
+            type = "Model",
+            units = NA,
+            scoring = "custom",
+            PPTID = NA,
+            source = NA,
+            project_short_title = "",
+            climate = FALSE,
+            design_target = FALSE,
+            status_statement = paste0(
+              ""
+            ),
+            trend_statement = paste0(
+              ""
+            ),
+            climate_expectation = "FIXME",
+            indicator_rationale = "FIXME",
+            bin_rationale = "FIXME",
+            readiness="Ready"
+          )
+      }
+
+
+
+    }
+  ) |>
+    tar_map(
+      names = layername,
+      values = conservation_targets[!grepl("BiophysicalUnits",conservation_targets$layername) &
+                                      !grepl("GeomorphicUnits",conservation_targets$layername) &
+                                      !grepl("NaturalDisturbance",conservation_targets$layername) &
+                                      !grepl("ScopeForGrowth",conservation_targets$layername),]
+    ),
+
 
   # PLACEHOLDER INDICATORS ----
 
