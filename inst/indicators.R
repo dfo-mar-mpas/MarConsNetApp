@@ -1577,9 +1577,11 @@ indicator_targets <- list(
                min_target = min_target,
                max_target = max_target)
 
+
+
       process_indicator(data = cp,
                         indicator_var_name = "layername",
-                        indicator = paste("Network design target:", filter,type,plainname,sep=" - "),
+                        indicator = paste("Network design target:", filter_type,type,plainname,sep=" - "),
                         type = "Network-Design Consevation Target",
                         units = ifelse(type == "Commercial fishery landing","percent landings","percent area"),
                         scoring = ifelse(type == "Commercial fishery landing","coverage: landings","coverage"),
@@ -1589,7 +1591,7 @@ indicator_targets <- list(
                         climate = FALSE,
                         design_target = TRUE,
                         other_nest_variables = ifelse(type == "Commercial fishery landing","WEIGHTMT",NA),
-                        areas = filter(MPAs,region=="Maritimes"),
+                        areas = dplyr::filter(MPAs,region=="Maritimes"),
                         climate_expectation = "FIXME",
                         indicator_rationale = "FIXME",
                         bin_rationale = "FIXME",

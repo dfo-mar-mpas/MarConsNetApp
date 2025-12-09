@@ -65,5 +65,6 @@ if (!nzchar(store)) stop("MARCONSNET_TARGETS_PATH is not set!")
 
 tar_config_set(store = store)
 
-conservation_targets <- read.csv(file.path(dirname(path_to_store()),"data","target_values.csv"))
+conservation_targets <- read.csv(file.path(dirname(path_to_store()),"data","target_values.csv")) |>
+  rename(filter_type = filter)
 

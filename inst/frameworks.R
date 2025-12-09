@@ -761,7 +761,8 @@ framework_targets <- list(
 
   tar_target(
     name = conservation_targets_target,
-    read.csv(target_values_file)
+    read.csv(target_values_file) |>
+      rename(filter_type = filter)
   )
 
 
