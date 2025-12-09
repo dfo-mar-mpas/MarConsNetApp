@@ -1438,6 +1438,56 @@ raw_data_targets <- list(
       file.path(dest_dir, "MPA_NetworkDesign.gdb")
     },
     format = "file"
-  )
+  ),
+
+  tar_target(
+    name = data_designtargets_lookup,
+    command = {
+      data.frame(
+        layerpart = c(
+          # BiophysicalUnits
+          "BaccaroLaHaveBanks",
+          "EasternScotianShelf",
+          "GulfofMaine",
+          "LaHaveandEmeraldBasins",
+          "LaurentianSlope",
+          "SlopeRiseandAbyss",
+          "WesternandSableIslandBanks",
+          # GeomorphicUnits
+          "AbyssalPlain",
+          "ContinentalRiseContinentalRise",
+          "ShelfBank",
+          "ShelfBasin",
+          "ShelfChannel",
+          "ShelfFlat",
+          "ShelfTopoComplex",
+          "ShelfTopoComplexBank",
+          "ShelfTopoComplexBasin",
+          "Slope",
+          "SlopeChannel"
+        ),
+        NAME = c(
+          # BiophysicalUnits
+          "Baccaro & LaHave Banks",
+          "Eastern Scotian Shelf",
+          "Gulf of Maine",
+          "LaHave and Emerald Basins",
+          "Laurentian Slope",
+          "Slope, Rise and Abyss",
+          "Western and Sable Island Banks",
+          # GeomorphicUnits
+          "Abyssal Plain",
+          "Continental Rise Continental Rise",
+          "Shelf Bank",
+          "Shelf Basin",
+          "Shelf Channel",
+          "Shelf Flat",
+          "Shelf Topo. Complex",
+          "Shelf Topo. Complex Bank",
+          "Shelf Topo. Complex Basin",
+          "Slope",
+          "Slope Channel"
+        ))
+    })
 
 )

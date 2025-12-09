@@ -1570,14 +1570,37 @@ indicator_targets <- list(
     {
       # with the tar_map below, this target creates many targets!
       conservation_targets_target # listed here so the dependency is tracked
-      cp <- st_read(data_designtargets_gdb,layername) |>
-        st_make_valid() |>
-        mutate(layername = layername,
-               plainname = plainname,
-               min_target = min_target,
-               max_target = max_target)
 
+      if( grepl("BiophysicalUnits",layername) | grepl("GeomorphicUnits",layername)){
 
+        cp <- st_read(data_designtargets_gdb,sub("_.*", "", layername)) |>
+          st_make_valid() |>
+          left_join(data_designtargets_lookup,
+                    by = "NAME") |>
+          filter(layerpart == sub("^[^_]*_", "", layername)) |>
+          mutate(layername = layername,
+                 plainname = plainname,
+                 min_target = min_target,
+                 max_target = max_target)
+
+      } else if(grepl("NaturalDisturbance",layername) | grepl("ScopeForGrowth",layername)){
+
+        cp <- st_read(data_designtargets_gdb,sub("_.*", "", layername)) |>
+          st_make_valid() |>
+          filter(gsub(" ","",Type) == sub("^[^_]*_", "", layername)) |>
+          mutate(layername = layername,
+                 plainname = plainname,
+                 min_target = min_target,
+                 max_target = max_target)
+
+      } else {
+        cp <- st_read(data_designtargets_gdb,layername) |>
+          st_make_valid() |>
+          mutate(layername = layername,
+                 plainname = plainname,
+                 min_target = min_target,
+                 max_target = max_target)
+      }
 
       process_indicator(data = cp,
                         indicator_var_name = "layername",
@@ -1604,10 +1627,7 @@ indicator_targets <- list(
   ) |>
     tar_map(
       names = layername,
-      values = conservation_targets[!grepl("BiophysicalUnits",conservation_targets$layername) &
-                                      !grepl("GeomorphicUnits",conservation_targets$layername) &
-                                      !grepl("NaturalDisturbance",conservation_targets$layername) &
-                                      !grepl("ScopeForGrowth",conservation_targets$layername),]
+      values = conservation_targets
     ),
 
 
