@@ -1620,7 +1620,8 @@ indicator_targets <- list(
                         bin_rationale = "FIXME",
                         objectives = NA,
                         readiness="Ready",
-                        scale = "region-site")
+                        scale = "region-site",
+                        plot_type = "map")
 
 
     }
