@@ -29,6 +29,14 @@ process_geom_data <- function(x) {
       st_as_sf()
   }
 
+  if("Shape" %in% names(x)) {
+    x <- x |>
+      mutate(geometry = Shape) |>
+      as.data.frame() |>
+      dplyr::select(-Shape) |>
+      st_as_sf()
+  }
+
   if(!("year" %in% names(x))) {
     x <- x |> mutate(year = NA)
   }
