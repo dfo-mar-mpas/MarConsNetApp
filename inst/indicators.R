@@ -1600,6 +1600,13 @@ indicator_targets <- list(
                  plainname = plainname,
                  min_target = min_target,
                  max_target = max_target)
+
+        if ( nrow(cp)>1 & type != "Commercial fishery landing"){
+          cp <- cp |>
+            group_by(across(any_of(c("layername", "plainname", "min_target", "max_target")))) |>
+            summarize()
+          print(cp)
+        }
       }
 
       process_indicator(data = cp,
