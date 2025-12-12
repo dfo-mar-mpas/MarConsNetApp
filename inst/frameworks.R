@@ -548,17 +548,27 @@ framework_targets <- list(
                                         dplyr::select(ecol_obj_biodiversity_df,-data),
                                         dplyr::select(ecol_obj_habitat_df,-data),
                                         dplyr::select(ecol_obj_productivity_df,-data)) |>
+                 dplyr::select(-region,-plainname,-min_target,-max_target) |> #TODO we can probably remove this if we fix the coverage scoring output
                  mutate(PPTID = as.character(PPTID)) |>
-                 left_join(dplyr::select(as.data.frame(MPAs), NAME_E, region), by = c("areaID"="NAME_E"))
+                 left_join(dplyr::select(as.data.frame(MPAs), NAME_E, region), by = c("areaID"="NAME_E")) |>
+                 mutate(region = if_else(areaID %in% MPAs$region,
+                                         areaID,
+                                         region))
 
                rm(ecol_obj_biodiversity_df, ecol_obj_habitat_df, ecol_obj_productivity_df)
                gc()
 
                result <- pedf |>
                  ##### filter results to calculate weighted means at bin level
-                 #TODO figure out network vs site
-                 # mutate(needsregion = )
-                 filter(areaID != "Non_Conservation_Area" & scale == "site") |>
+                 group_by(target_name,region) |>
+                 mutate(multiscale = length(unique(scale)) > 1,
+                        # give all the multiscale indicators the score of the region scale
+                        # for the multiscale indicators, the individual site contributions do not count towards regional scores
+                        score = ifelse(multiscale,
+                                       score[scale!="site"],
+                                       score)) |>
+                 ungroup() |>
+                 filter(areaID != "Non_Conservation_Area" & scale=="site") |>
                  group_by(objective, bin, areaID, region) |>
                  reframe(
                    indicator = unique(areaID),

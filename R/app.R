@@ -55,7 +55,7 @@ app <- function() {
 
   # load targets if necessary
   if(!exists("APPTABS")){
-    tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","regions","flowerPalette","indicatorFlower","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate_change", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators","map_palette","labels"),
+    tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","regions","flowerPalette","indicatorFlower","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate_change", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators","map_palette","labels","all_indicator_project_geoms"),
              store = STORE)
   }
 
