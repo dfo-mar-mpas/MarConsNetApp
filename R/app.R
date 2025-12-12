@@ -146,11 +146,15 @@ app <- function() {
                         style = "border-right: 1px solid #ccc;",
                         shiny::uiOutput('network_design')
           ),
-          shiny::column(width=6,
-                        br(),
-                        style = "border-right: 1px solid #ccc;",
-                        shiny::uiOutput("networkObjectiveText")
-          ),
+
+          uiOutput("network_column"),
+
+
+          # shiny::column(width=6,
+          #               br(),
+          #               style = "border-right: 1px solid #ccc;",
+          #               shiny::uiOutput("networkObjectiveText")
+          # ),
           shiny::column(width=6,
                         br(),
                         shiny::uiOutput("objectives")
@@ -186,6 +190,27 @@ server <- function(input, output, session) {
     division = NULL
     #report = NULL
     )
+
+
+
+  output$network_column <- renderUI({ #JAIM
+    req(state$mpas)
+
+    # Check condition
+    in_list <- state$mpas %in% MPAs$NAME_E
+
+    # If ANY selected MPA is in the list → width = 6
+    width_val <- if (any(in_list)) 6 else 12
+
+    column(
+      width = width_val,
+      br(),
+      style = "border-left: 1px solid #ccc; border-right: 1px solid #ccc;",
+      uiOutput("networkObjectiveText")
+    )
+  })
+
+
 
   rv <- shiny::reactiveValues(button_label = "See All Project Data")
 
