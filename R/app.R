@@ -130,23 +130,28 @@ app <- function() {
       column(
         width = 12,
         shiny::fluidRow(
-          shiny::column(width=3,
+          shiny::column(width=4,
                         br(),
                         style = "border-right: 1px solid #ccc;",
                         shiny::uiOutput('gbf_objectives')
-                        ),
-          shiny::column(width=3,
+          ),
+          shiny::column(width=4,
                         br(),
                         style = "border-left: 1px solid #ccc;",
                         style = "border-right: 1px solid #ccc;",
                         shiny::uiOutput("ebm_objectives")
           ),
-          shiny::column(width=3,
+          shiny::column(width=4,
+                        br(),
+                        style = "border-right: 1px solid #ccc;",
+                        shiny::uiOutput('network_design')
+          ),
+          shiny::column(width=6,
                         br(),
                         style = "border-right: 1px solid #ccc;",
                         shiny::uiOutput("networkObjectiveText")
           ),
-          shiny::column(width=3,
+          shiny::column(width=6,
                         br(),
                         shiny::uiOutput("objectives")
           )
@@ -227,7 +232,8 @@ server <- function(input, output, session) {
           "tab_0",
           tabsetPanel(
             id = "tab0_subtabs",
-            tabPanel("Management Effectiveness", "This tab considers only the effectiveness indicators (i.e. those that directly inform objectives)"),
+            tabPanel("Management Effectiveness", "This tab considers only the effectiveness indicators that directly inform objectives that the site is managed for"),
+            tabPanel("Secondary Contributions", "This tab considers only the effectiveness indicators that inform objectives that the site is NOT managed for. These are considered bonus contributions of the site."),
             tabPanel("Ecosystem Overview",
                      p(
                        "Readiness Score Explained: ",
@@ -645,6 +651,49 @@ server <- function(input, output, session) {
       shiny::selectInput("region","Select Region(s)",choices = regionlist[!is.na(regionlist)], selected=state$region, multiple=TRUE)
     }
   })
+
+  # output$management_contribution <- renderUI({
+  #   req(input$tabs)
+  #
+  #   if (input$tabs == "tab_0" && input$tab0_subtabs == "Management Effectiveness") {
+  #     tagList(
+  #       tags$style("
+  #       .btn-radio .shiny-input-radiogroup label {
+  #         display: inline-block;
+  #         padding: 8px 16px;
+  #         margin-right: 6px;
+  #         border: 1px solid #ccc;
+  #         border-radius: 6px;
+  #         cursor: pointer;
+  #       }
+  #       .btn-radio .shiny-input-radiogroup input[type='radio'] {
+  #         display: none;
+  #       }
+  #       .btn-radio .shiny-input-radiogroup input[type='radio']:checked + span {
+  #         background-color: #0275d8;
+  #         color: white;
+  #         border-color: #01549b;
+  #       }
+  #     "),
+  #
+  #       div(class = "btn-radio",
+  #           radioButtons(
+  #             inputId = "management_contribution",
+  #             label = "Select Management Effectiveness view:",
+  #             choices = c(
+  #               "Management" = "management",
+  #               "Contribution" = "contribution"
+  #             ),
+  #             selected = "management",
+  #             inline = TRUE
+  #           )
+  #       )
+  #     )
+  #   }
+  # })
+  #
+
+
 
   output$projects <- shiny::renderUI({
     req(input$tabs)
@@ -1324,7 +1373,7 @@ server <- function(input, output, session) {
   output$ebm_objectives <- renderUI({
     req(state$mpas)
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(input$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
+    if (input$tabs == "tab_0" && !(is.null(input$mpas)) && input$tab0_subtabs == "Secondary Contributions") {
 
     emb_targets <- c("Control unintended incidental mortality for all species",
                      "Distribute population component mortality in relation to component biomass",
@@ -1364,7 +1413,7 @@ server <- function(input, output, session) {
     req(state$mpas)
     req(input$tabs)
 
-    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Secondary Contributions") {
       gbf_targets <- c(
         "Plan and Manage all Areas To Reduce Biodiversity Loss",
         "Restore 30% of all Degraded Ecosystems",
@@ -1402,6 +1451,66 @@ server <- function(input, output, session) {
         )
       )
     )
+    }
+  })
+
+  output$ebm_objectives <- renderUI({
+    req(state$mpas)
+    req(input$tabs)
+    if (input$tabs == "tab_0" && !(is.null(input$mpas)) && input$tab0_subtabs == "Secondary Contributions") {
+
+      emb_targets <- c("Control unintended incidental mortality for all species",
+                       "Distribute population component mortality in relation to component biomass",
+                       "Minimize unintended introduction and transmission of invasive species",
+                       "Control introduction and proliferation of disease/pathogens",
+                       "Minimize aquaculture escapes",
+                       "Maintain Species Biodiversity",
+                       "Maintain Functional Biodiversity",
+                       "Maintain Ecosystem Resistance",
+                       "Maintain Habitat Diversity",
+                       "Keep fishing and other forms of mortality moderate",
+                       "Allow sufficient escapement from exploitation for spawning",
+                       "Limit disturbing activity in important reproductive areas/seasons",
+                       "Control alteration of nutrient concentrations affecting primary production",
+                       "Maintain/promote ecosystem structure and functioning",
+                       "Habitat required for all species, particularly priority species, is maintained and protected",
+                       "Fish habitat that has been degraded is restored",
+                       "Pollution is prevented and reduced"
+      )
+
+      tagList(
+        h3("EBM Objectives"),
+        DT::datatable(
+          data.frame(Objective = emb_targets),
+          rownames = FALSE,
+          options = list(
+            pageLength = 10,
+            autoWidth = TRUE
+          )
+        )
+      )
+    }
+
+  })
+
+  output$network_design <- renderUI({
+    req(state$mpas)
+    req(input$tabs)
+    req(input$region)
+
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Secondary Contributions" && input$region == "Maritimes") {
+
+      tagList(
+        h3("Network Design Targets"),  # This adds the title above the table
+        DT::datatable(
+          data.frame(Type=conservation_targets_target$type, Target = conservation_targets_target$plainname),
+          rownames = FALSE,
+          options = list(
+            pageLength = 10,
+            autoWidth = TRUE
+          )
+        )
+      )
     }
   })
 
