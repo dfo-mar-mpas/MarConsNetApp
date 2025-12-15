@@ -58,6 +58,7 @@ app <- function() {
     tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card","MPAs","regions","flowerPalette","indicatorFlower","N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas", "climate_change", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators","map_palette","labels","all_indicator_project_geoms","conservation_targets_target"),
              store = STORE)
   }
+  load(paste0(dirname(path_to_store()), '/data/unique_table_cost.rda'))
 
   condition <- paste0('input.tabs === "tab_0"')
 
@@ -169,7 +170,7 @@ app <- function() {
           shiny::column(width=5, align='right',
           shiny::uiOutput("conditionalFlower")),
           shiny::column(width=7,
-                        shiny:: uiOutput("ecosystem_table"))
+                        DT:: DTOutput("ecosystem_table"))
       ),
         shiny::uiOutput("threats_home_table")
       )
@@ -312,7 +313,26 @@ server <- function(input, output, session) {
     }
   })
 
-  output$ecosystem_table <- renderUI({
+
+  output$ecosystem_table <- renderDT({
+    datatable(
+      ddff_display_r(),
+      rownames = FALSE,
+      selection='single',
+      extensions = "RowGroup",
+      escape=FALSE,
+      options = list(
+        rowGroup = list(dataSrc = 0),                        # group by GROUPING
+        columnDefs = list(
+          list(visible = FALSE, targets = 0),               # hide GROUPING column
+          list(visible = FALSE, targets = (which(names(ddff_display_r()) == "PPTID") - 1))
+        ),
+        pageLength = 100
+      )
+    )
+  })
+
+  ddff_display_r <- reactive({
     req(input$tab0_subtabs)
     if (input$tabs == "tab_0" &&
         input$tab0_subtabs %in% c("Ecosystem Overview", "Threats")) {
@@ -424,9 +444,6 @@ server <- function(input, output, session) {
       }
 
       if (!(length(ddff_unique$PPTID) == 0)) {
-
-        #browser()
-
       for (i in seq_along(unique(ddff_unique$PPTID))) {
         ppt <- unique(ddff_unique$PPTID)[i]
         if (is.na(ppt)) {
@@ -446,7 +463,6 @@ server <- function(input, output, session) {
 
         }
       }
-        #browser()
 
       if (input$tab0_subtabs == "Threats") {
         ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
@@ -454,8 +470,6 @@ server <- function(input, output, session) {
       }
       if (!(input$tab0_subtabs == "Threats")) {
         if (input$indicator_mode == "ebm") {
-          #browser()
-
           ddff_display <- ddff_unique %>%
             dplyr::arrange(GROUPING, SOURCE) %>%                # make sure sources are together within grouping
             group_by(GROUPING, SOURCE) %>%
@@ -494,40 +508,47 @@ server <- function(input, output, session) {
 
       }
 
-      # END QUALITY
-
-      datatable(
-        ddff_display,
-        rownames = FALSE,
-        extensions = "RowGroup",
-        options = list(
-          rowGroup = list(dataSrc = 0),                        # group by GROUPING
-          columnDefs = list(
-            list(visible = FALSE, targets = 0),               # hide GROUPING column
-            list(visible = FALSE, targets = (which(names(ddff_display) == "PPTID") - 1))
-          ),
-          pageLength = 100
-        )
-      ) %>%
-        formatRound("SCORE", 2)
-
-
-      } else {
-
-        showModal(
-          modalDialog(
-            title = "Grouping in Progress",
-            "There is currently no indicators identified for this area.",
-            easyClose = TRUE,       # modal closes if user clicks outside or presses Esc
-            footer = modalButton("Close")
-          )
-        )
-
-
-
       }
     }
+
+    ddff_display$SCORE <- round(ddff_display$SCORE,2)
+
+    ddff_display <- ddff_display %>%
+      mutate(
+      SOURCE = paste0(
+        '<a href="#" class="source-link">', SOURCE, '</a>'  # ••• Make SOURCE look like a link
+      )
+    )
+
+    ddff_display
+
   })
+
+  observeEvent(input$ecosystem_table_cell_clicked, {
+
+    info <- input$ecosystem_table_cell_clicked
+    req(info$row, info$col)
+
+    if (colnames(ddff_display_r())[info$col + 1] == "SOURCE") {
+      indicator_clicked <- ddff_display_r()$INDICATOR[info$row]
+      source_clicked <- ddff_display_r()$SOURCE[info$row]
+      keep <- which(unique_table$indicator == indicator_clicked &
+                      unique_table$source == source_clicked)
+
+      showModal(
+        modalDialog(
+          title = "Code for Indicator",
+          tagList(
+            unique_table$plot[[keep]],                    # interactive plotly plot
+            tags$pre(unique_table$code[keep])             # formatted code block
+          ),
+          easyClose = TRUE,
+          footer = modalButton("Close")
+        )
+      )
+    }
+  })
+
 
   output$flowerType <- renderUI({
     req(state$mpas)
@@ -911,10 +932,6 @@ server <- function(input, output, session) {
   calculated_info <- shiny::reactive({
     req(input$tabs)
     tab_id <- input$tabs
-    # if (input$tabs == "tab_8588") {
-    #   browser()
-    # }
-
     if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab, objective_tabs$tab)) {
       if (!(input$tabs == "tab_0")) {
         if (input$tabs %in% pillar_ecol_df$tab) {
@@ -1104,11 +1121,6 @@ server <- function(input, output, session) {
 
   output$indicatorText <- shiny::renderUI({
     info <- calculated_info()
-
-    # if (input$tabs == "tab_8588") {
-    # browser()
-    # }
-
     req(info)  # Ensure the info is available
     shiny::HTML(
       paste(
@@ -1855,15 +1867,6 @@ server <- function(input, output, session) {
           message("nrow(APJ_points) = ", nrow(APJ_points))
           message("length(popupContent) = ", length(popupContent))
           message("length(point_keep) = ", length(point_keep))
-
-          # if (!(is.null(input$projects))) {
-          #   browser()
-          # }
-
-          # if (!(is.null(tab_changed)) && tab_changed && !(is.null(input$projects)) && input$tabs == "tab_0") {
-          #   browser()
-          # }
-
 
           proxy <- proxy %>%
             addCircleMarkers(
