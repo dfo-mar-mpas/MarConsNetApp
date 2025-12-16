@@ -1183,10 +1183,6 @@ server <- function(input, output, session) {
     )
   })
 
-
-
-
-
   dfdt_r <- reactive({
     req(input$tabs)
     info <- calculated_info()
