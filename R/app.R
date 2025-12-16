@@ -334,6 +334,8 @@ server <- function(input, output, session) {
 
   ddff_display_r <- reactive({
     req(input$tab0_subtabs)
+    req(input$indicator_mode)
+    req(input$tabs)
     if (input$tabs == "tab_0" &&
         input$tab0_subtabs %in% c("Ecosystem Overview", "Threats")) {
 
@@ -530,22 +532,61 @@ server <- function(input, output, session) {
     req(info$row, info$col)
 
     if (colnames(ddff_display_r())[info$col + 1] == "SOURCE") {
+      #browser()
       indicator_clicked <- ddff_display_r()$INDICATOR[info$row]
-      source_clicked <- ddff_display_r()$SOURCE[info$row]
-      keep <- which(unique_table$indicator == indicator_clicked &
-                      unique_table$source == source_clicked)
+      source_clicked <- gsub("<[^>]+>", "", ddff_display_r()$SOURCE[info$row])
+      k1 <- which(unique_table$indicator == indicator_clicked)
+      k2 <- which(unique_table$source == source_clicked)
+      keep <- intersect(k1,k2)
 
       showModal(
         modalDialog(
           title = "Code for Indicator",
           tagList(
-            unique_table$plot[[keep]],                    # interactive plotly plot
-            tags$pre(unique_table$code[keep])             # formatted code block
+            unique_table$plot[[keep]],
+
+            # Hidden textarea used for copying
+            tags$textarea(
+              id = "code_to_copy",
+              unique_table$code[keep],
+              style = "position:absolute; left:-9999px;"
+            ),
+
+            # Visible formatted code
+            tags$pre(htmltools::htmlEscape(unique_table$code[keep]))
           ),
+          size = "xl",
           easyClose = TRUE,
-          footer = modalButton("Close")
+          footer = tagList(
+            tags$button(
+              "Copy",
+              class = "btn btn-primary",
+              onclick = "
+  var el = document.getElementById('code_to_copy');
+  el.style.display = 'block';
+  el.select();
+  document.execCommand('copy');
+  el.style.display = 'none';
+"
+            ),
+            modalButton("Close")
+          )
         )
       )
+
+
+      # showModal(
+      #   modalDialog(
+      #     title = "Code for Indicator",
+      #     tagList(
+      #       unique_table$plot[[keep]],
+      #       tags$pre(unique_table$code[keep])
+      #     ),
+      #     easyClose = TRUE,
+      #     size='xl',
+      #     footer = modalButton("Close")
+      #   )
+      # )
     }
   })
 
