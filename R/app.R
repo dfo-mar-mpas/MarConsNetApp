@@ -571,19 +571,6 @@ server <- function(input, output, session) {
         )
       )
 
-
-      # showModal(
-      #   modalDialog(
-      #     title = "Code for Indicator",
-      #     tagList(
-      #       unique_table$plot[[keep]],
-      #       tags$pre(unique_table$code[keep])
-      #     ),
-      #     easyClose = TRUE,
-      #     size='xl',
-      #     footer = modalButton("Close")
-      #   )
-      # )
     }
   })
 
@@ -1168,12 +1155,19 @@ server <- function(input, output, session) {
         "<p>", info$area, "</p>",
         "<p><strong>", info$indicator_label, "</strong></p>",
         "<p>", info$flower, "</p>",
-        "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>"
-      )
+        "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>",
+        "<p><strong><span style='background-color: yellow;'>",
+        "Click on each source to see the code to produce that specific indicator",
+        "</span></strong></p>"
+        )
     )
   })
 
-  output$DT <- DT::renderDT({
+
+
+
+
+  dfdt_r <- reactive({
     req(input$tabs)
     info <- calculated_info()
     req(info)  # Ensure the info is available
@@ -1229,23 +1223,6 @@ server <- function(input, output, session) {
         dfdt <- dfdt[-(which(is.na(dfdt$Trend))),]
         }
 
-        #browser()
-
-        DT::datatable(dfdt, escape = FALSE, options = list(
-          pageLength = 100,
-          columnDefs = list(
-            list(targets = ncol(dfdt), visible = FALSE)  # Hide the Grade column (last column)
-          )
-        )) %>%
-          DT::formatStyle(
-            columns = colnames(dfdt),  # Apply styling to all columns
-            target = 'row',  # Target the entire row for styling
-            backgroundColor = DT::styleEqual(
-              names(flowerPalette),  # Map based on letter grades
-              flowerPalette[names(flowerPalette)]  # Apply corresponding colors
-            )
-          )
-
       } else {
         # MODAL
         showModal(modalDialog(
@@ -1263,6 +1240,84 @@ server <- function(input, output, session) {
       NULL
     }
   })
+
+
+
+  output$DT <- DT::renderDT({
+    DT::datatable(dfdt_r(),
+                  escape = FALSE,
+                  options = list(
+                    pageLength = 100,
+                    columnDefs = list(
+                      list(targets = ncol(dfdt_r()), visible = FALSE)  # Hide the Grade column (last column)
+                    )
+                  )) %>%
+      DT::formatStyle(
+        columns = colnames(dfdt_r()),  # Apply styling to all columns
+        target = 'row',  # Target the entire row for styling
+        backgroundColor = DT::styleEqual(
+          names(flowerPalette),  # Map based on letter grades
+          flowerPalette[names(flowerPalette)]  # Apply corresponding colors
+        )
+      )
+
+
+  })
+
+
+
+# ROXANNE
+  observeEvent(input$DT_cell_clicked, {
+    info <- input$DT_cell_clicked
+    req(info$row, info$col)
+    # Only trigger when SOURCE column is clicked
+    if (colnames(dfdt_r())[info$col] == "Source") {
+
+
+         source_clicked <- gsub("<[^>]+>", "", dfdt_r()$Source[info$row])
+         indicator_clicked <- gsub("<[^>]+>", "", dfdt_r()$Indicator[info$row])
+
+         k1 <- which(unique_table$indicator == indicator_clicked)
+         k2 <- which(unique_table$source == source_clicked)
+         keep <- intersect(k1,k2)
+
+         showModal(
+           modalDialog(
+             title = "Code for Indicator",
+             tagList(
+               unique_table$plot[[keep]],
+
+               # Hidden textarea used for copying
+               tags$textarea(
+                 id = "code_to_copy",
+                 unique_table$code[keep],
+                 style = "position:absolute; left:-9999px;"
+               ),
+
+               # Visible formatted code
+               tags$pre(htmltools::htmlEscape(unique_table$code[keep]))
+             ),
+             size = "xl",
+             easyClose = TRUE,
+             footer = tagList(
+               tags$button(
+                 "Copy",
+                 class = "btn btn-primary",
+                 onclick = "
+  var el = document.getElementById('code_to_copy');
+  el.style.display = 'block';
+  el.select();
+  document.execCommand('copy');
+  el.style.display = 'none';
+"
+               ),
+               modalButton("Close")
+             )
+           )
+         )
+         }
+     })
+
 
   output$objective_flower <- shiny::renderPlot({
     req(input$tabs)
