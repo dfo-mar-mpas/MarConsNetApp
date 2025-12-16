@@ -347,7 +347,10 @@ server <- function(input, output, session) {
       # Ecological Overview
 
       if (state$mpas %in% regions$NAME_E) {
-        table_ped <- pillar_ecol_df[which(!(pillar_ecol_df$areaID %in% regions$NAME_E)),]
+        k1 <- which(!(pillar_ecol_df$areaID %in% regions$NAME_E))
+        k2 <- which(grepl("Network design", pillar_ecol_df$indicator))
+        table_ped <- pillar_ecol_df[sort(c(k1,k2)),]
+        table_ped <- table_ped[-(which(grepl("Network design", table_ped$indicator) & (!(table_ped$areaID %in% regions$NAME_E)))),]
 
       } else {
         table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
@@ -372,20 +375,37 @@ server <- function(input, output, session) {
           quality   = NA_real_,
           cost      = NA_real_
         ) %>%
-        dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost, PPTID) %>%
+        dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost, PPTID, areaID) %>%
         dplyr::arrange(grouping, bin) %>%
         setNames(toupper(names(.)))
 
       if (state$mpas %in% regions$NAME_E) {
         # FIXME!!!!!
-
+        #browser()
         ddff_unique <- ddff %>%
           rowwise() %>%
           mutate(
-            SCORE = weighted.mean(
-              x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
-              w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
-              na.rm = TRUE
+            SCORE = if_else(
+              grepl("Network design", INDICATOR),
+
+              # 🔹 WHEN TRUE → use actual score
+              table_ped$score[
+                table_ped$indicator == INDICATOR &
+                  table_ped$bin == BIN
+              ][1],
+
+              # 🔹 WHEN FALSE → weighted mean (your existing logic)
+              weighted.mean(
+                x = table_ped$score[
+                  table_ped$indicator == INDICATOR &
+                    table_ped$bin == BIN
+                ],
+                w = table_ped$weight[
+                  table_ped$indicator == INDICATOR &
+                    table_ped$bin == BIN
+                ],
+                na.rm = TRUE
+              )
             )
           ) %>%
           ungroup() %>%

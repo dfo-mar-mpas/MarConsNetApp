@@ -511,7 +511,10 @@ plot_flowerplot(flower_df,
 # print(knitr::kable(dfdt, caption = "Threats Table",row.names=FALSE))
 
 if (params$mpas %in% regions$NAME_E) {
-  table_ped <- pillar_ecol_df2[which(!(pillar_ecol_df2$areaID %in% regions$NAME_E)),]
+ k1 <- which(!(pillar_ecol_df$areaID %in% regions$NAME_E))
+        k2 <- which(grepl("Network design", pillar_ecol_df$indicator))
+        table_ped <- pillar_ecol_df[sort(c(k1,k2)),]
+        table_ped <- table_ped[-(which(grepl("Network design", table_ped$indicator) & (!(table_ped$areaID %in% regions$NAME_E)))),]
   
 } else {
   table_ped <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
@@ -520,7 +523,7 @@ if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator)))
   table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
 }
 
-table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", 'readiness')]
+table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", 'readiness', 'areaID')]
 
 
 ddff <- table_ped %>%
@@ -540,17 +543,34 @@ ddff <- table_ped %>%
 if (params$mpas %in% regions$NAME_E) {
   # FIXME!!!!!
   
-  ddff_unique <- ddff %>%
-    rowwise() %>%
-    mutate(
-      SCORE = weighted.mean(
-        x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
-        w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
-        na.rm = TRUE
-      )
-    ) %>%
-    ungroup() %>%
-    distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
+   ddff_unique <- ddff %>%
+          rowwise() %>%
+          mutate(
+            SCORE = if_else(
+              grepl("Network design", INDICATOR),
+
+              # 🔹 WHEN TRUE → use actual score
+              table_ped$score[
+                table_ped$indicator == INDICATOR &
+                  table_ped$bin == BIN
+              ][1],
+
+              # 🔹 WHEN FALSE → weighted mean (your existing logic)
+              weighted.mean(
+                x = table_ped$score[
+                  table_ped$indicator == INDICATOR &
+                    table_ped$bin == BIN
+                ],
+                w = table_ped$weight[
+                  table_ped$indicator == INDICATOR &
+                    table_ped$bin == BIN
+                ],
+                na.rm = TRUE
+              )
+            )
+          ) %>%
+          ungroup() %>%
+          distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
   
 } else {
   ddff_unique <- ddff
