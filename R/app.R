@@ -334,7 +334,6 @@ server <- function(input, output, session) {
 
   ddff_display_r <- reactive({
     req(input$tab0_subtabs)
-    req(input$indicator_mode)
     req(input$tabs)
     if (input$tabs == "tab_0" &&
         input$tab0_subtabs %in% c("Ecosystem Overview", "Threats")) {
@@ -494,8 +493,6 @@ server <- function(input, output, session) {
 
       }
 
-      # Render datatable
-
       ## ADDING QUALITY
       for (i in seq_along(ddff_display$INDICATOR)) {
         k1 <- which(all_indicator_project_geoms$indicator == ddff_display$INDICATOR[i])
@@ -511,7 +508,7 @@ server <- function(input, output, session) {
       }
 
       }
-    }
+
 
     ddff_display$SCORE <- round(ddff_display$SCORE,2)
 
@@ -523,6 +520,7 @@ server <- function(input, output, session) {
     )
 
     ddff_display
+    }
 
   })
 
@@ -532,7 +530,6 @@ server <- function(input, output, session) {
     req(info$row, info$col)
 
     if (colnames(ddff_display_r())[info$col + 1] == "SOURCE") {
-      #browser()
       indicator_clicked <- ddff_display_r()$INDICATOR[info$row]
       source_clicked <- gsub("<[^>]+>", "", ddff_display_r()$SOURCE[info$row])
       k1 <- which(unique_table$indicator == indicator_clicked)
@@ -1231,6 +1228,8 @@ server <- function(input, output, session) {
         if (any(is.na(dfdt$Trend))) {
         dfdt <- dfdt[-(which(is.na(dfdt$Trend))),]
         }
+
+        #browser()
 
         DT::datatable(dfdt, escape = FALSE, options = list(
           pageLength = 100,
