@@ -1651,7 +1651,14 @@ server <- function(input, output, session) {
     req(input$tabs)
     if (input$tabs == "tab_0") {
         NAME <- state$mpas
-        MarConsNetAnalysis::plot_flowerplot(pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),],
+        flower_df <- pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),]
+        if (NAME %in% regions$NAME_E) {
+          # Removing design targets in the plot because they already exist in the site 'indicators'
+          # (see issue 219)
+          flower_df <- flower_df[which(is.na(flower_df$scale)),]
+
+        }
+        MarConsNetAnalysis::plot_flowerplot(flower_df,
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "score",

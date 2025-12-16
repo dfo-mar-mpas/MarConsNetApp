@@ -489,7 +489,11 @@ cat('Ecological overview analyses the health of the overall ecosystem\n\n')
 
 cat('<h2>Flower Plot</h2>\n')
 
-plot_flowerplot(pillar_ecol_df2[which(pillar_ecol_df2$areaID == "Maritimes"),],
+flower_df <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == "Maritimes"),]
+flower_df <- flower_df[which(is.na(flower_df$scale)),]
+
+
+plot_flowerplot(flower_df,
                                             grouping = "objective",
                                             labels = "bin",
                                             score = "score",
