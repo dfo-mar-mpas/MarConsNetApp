@@ -56,6 +56,7 @@ indicator_targets <- list(
                x$score <- NA
                x$status_statement <- NA
                x$trend_statement <- "There is no relevant trend statement available."
+               x$quality_statement <- NA
                x$source <- "Ocean Tracking Network"
                x$climate_expectation <- "FIXME"
                x$objectives = paste0(c(
@@ -207,7 +208,7 @@ indicator_targets <- list(
                    desired_order <- c(
                      "areaID", "indicator", "type", "units", "scoring",
                      "PPTID", "project_short_title", "climate", "design_target", "data",
-                     "score", "status_statement", "trend_statement", "source", "climate_expectation",
+                     "score", "status_statement", "trend_statement","quality_statement", "source", "climate_expectation",
                      "indicator_rationale", "objectives", "bin_rationale", "plot", "readiness", "scale"
                    )
 
@@ -858,7 +859,7 @@ indicator_targets <- list(
 
   tar_target(name = ind_QC_gulf_biogenic_habitat_representation,
              command = {
-               process_indicator(data = data_QC_gulf_biogenic_habitat,
+               x <- process_indicator(data = data_QC_gulf_biogenic_habitat,
                                  indicator_var_name = "layer",
                                  indicator = "Biogenic Habitat Representation",
                                  type = "Model",
@@ -884,11 +885,12 @@ indicator_targets <- list(
                                    "Protect representative examples of identified ecosystem and habitat types",
                                    "Habitat required for all species, particularly priority species, is maintained and protected"
                                  ))
+               x
              }),
 
   tar_target(name = ind_ebsa_representation,
              command = {
-               process_indicator(data = ebsa,
+               x <- process_indicator(data = ebsa,
                                  indicator_var_name = "Name",
                                  indicator = "EBSA Representation",
                                  type = "TBD",
@@ -914,6 +916,7 @@ indicator_targets <- list(
                                    "Habitat required for all species, particularly priority species, is maintained and protected"
                                  )
                )
+               x
              }),
 
   tar_target(name = ind_SAR_CH_representation,
@@ -1555,6 +1558,9 @@ indicator_targets <- list(
                           ""
                         ),
                         trend_statement = paste0(
+                          ""
+                        ),
+                        quality_statement = paste0(
                           ""
                         ),
                         climate_expectation = "FIXME",
