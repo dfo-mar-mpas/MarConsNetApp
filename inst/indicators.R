@@ -1177,7 +1177,7 @@ indicator_targets <- list(
                data <- data_musquash_eutrophication  |>
                  dplyr::select(Lon, Lat, pH, year)
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "pH",
                                  indicator = "pH",
                                  type = "Discrete Occupations Sections",
@@ -1200,6 +1200,7 @@ indicator_targets <- list(
                                    "Maintain Ecosystem Resistance",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+               x
 
              }
   ),
@@ -1622,7 +1623,7 @@ indicator_targets <- list(
                         units = ifelse(type == "Commercial fishery landing","percent landings","percent area"),
                         scoring = ifelse(type == "Commercial fishery landing","coverage: landings","coverage"),
                         PPTID = NA,
-                        source = NA,
+                        source = "Open Data (DFO)",
                         project_short_title = "",
                         climate = FALSE,
                         design_target = TRUE,
