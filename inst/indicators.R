@@ -43,7 +43,7 @@ indicator_targets <- list(
 
                #names(data_otn_tags)[which(names(data_otn_tags) == "NAME_E.x")] <- "areaID"
 
-               x <- data.frame("areaID"=MPAs$NAME_E)
+               x <- data.frame("areaID"=MPAs$NAME_E, "region"=MPAs$region)
                x$indicator <- "Proportion of Tags Detected in More than One MPA"
                x$type <- "Ocean Tracking Network"
                x$units <- "%"
@@ -206,7 +206,7 @@ indicator_targets <- list(
                    x$data[[i]] <- tester_data[, c("tag_id", "geometry", "year")]
 
                    desired_order <- c(
-                     "areaID", "indicator", "type", "units", "scoring",
+                     "areaID", "region", "indicator", "type", "units", "scoring",
                      "PPTID", "project_short_title", "climate", "design_target", "data",
                      "score", "status_statement", "trend_statement","quality_statement", "source", "climate_expectation",
                      "indicator_rationale", "objectives", "bin_rationale", "plot", "readiness", "scale"
@@ -1486,6 +1486,7 @@ indicator_targets <- list(
 
     ind <- data.frame(
       areaID = areaID,
+      region="Maritimes",
       indicator = "Birds Sample Coverage",
       type = "Observations",
       units = NA,
@@ -1578,7 +1579,7 @@ indicator_targets <- list(
       # with the tar_map below, this target creates many targets!
       conservation_targets_target # listed here so the dependency is tracked
 
-      if( grepl("BiophysicalUnits",layername) | grepl("GeomorphicUnits",layername)){
+      if(grepl("BiophysicalUnits",layername) | grepl("GeomorphicUnits",layername)){
 
         cp <- st_read(data_designtargets_gdb,sub("_.*", "", layername)) |>
           st_make_valid() |>

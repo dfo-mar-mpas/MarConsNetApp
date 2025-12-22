@@ -359,10 +359,7 @@ server <- function(input, output, session) {
         table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
       }
 
-      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness')]
-
-      # End quality statement
-
+      table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement')]
 
       ddff <- table_ped %>%
         left_join(
@@ -372,10 +369,9 @@ server <- function(input, output, session) {
         # Add placeholders for readiness, quality, cost
         mutate(
           #readiness = NA_real_,
-          quality   = NA_real_,
           cost      = NA_real_
         ) %>%
-        dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost, PPTID, areaID) %>%
+        dplyr::select(grouping, bin, indicator, source, score, readiness, quality_statement, cost, PPTID, areaID) %>%
         dplyr::arrange(grouping, bin) %>%
         setNames(toupper(names(.)))
 
@@ -409,7 +405,7 @@ server <- function(input, output, session) {
             )
           ) %>%
           ungroup() %>%
-          distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
+          distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY_STATEMENT, COST, PPTID)
 
       } else {
         ddff_unique <- ddff
@@ -425,7 +421,7 @@ server <- function(input, output, session) {
           table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
         }
 
-        table_ped <- table_ped[,c("theme", "indicator", "source", "score", "weight", "PPTID", 'readiness')]
+        table_ped <- table_ped[,c("theme", "indicator", "source", "score", "weight", "PPTID", 'readiness', 'quality_statement')]
 
 
 
@@ -433,11 +429,10 @@ server <- function(input, output, session) {
           # Add placeholders for readiness, quality, cost
           mutate(
             #readiness = NA_real_,
-            quality   = NA_real_,
             cost      = NA_real_
           ) %>%
           # Select columns in the desired order
-          dplyr::select(theme, indicator, source, score, readiness, quality, cost, PPTID) %>%
+          dplyr::select(theme, indicator, source, score, readiness, quality_statement, cost, PPTID) %>%
           # Arrange by theme and indicator
           dplyr::arrange(theme, indicator) %>%
           # Capitalize column names
@@ -456,7 +451,7 @@ server <- function(input, output, session) {
               )
             ) %>%
             ungroup() %>%
-            distinct(THEME,INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
+            distinct(THEME,INDICATOR, SOURCE, SCORE, READINESS, QUALITY_STATEMENT, COST, PPTID)
 
         } else {
           ddff_unique <- ddff
@@ -514,18 +509,18 @@ server <- function(input, output, session) {
       }
 
       ## ADDING QUALITY
-      for (i in seq_along(ddff_display$INDICATOR)) {
-        k1 <- which(all_indicator_project_geoms$indicator == ddff_display$INDICATOR[i])
-
-        if (state$mpas %in% MPAs$NAME_E) {
-          k2 <- which(all_indicator_project_geoms$areaID == state$mpas)
-          keep <- intersect(k1,k2)
-          ddff_display$QUALITY[i] <- all_indicator_project_geoms$site_quality_statement[keep[1]]
-        } else {
-          ddff_display$QUALITY[i] <- all_indicator_project_geoms$network_quality_statement[k1[1]]
-        }
-
-      }
+      # for (i in seq_along(ddff_display$INDICATOR)) {
+      #   k1 <- which(all_indicator_project_geoms$indicator == ddff_display$INDICATOR[i])
+      #
+      #   if (state$mpas %in% MPAs$NAME_E) {
+      #     k2 <- which(all_indicator_project_geoms$areaID == state$mpas)
+      #     keep <- intersect(k1,k2)
+      #     ddff_display$QUALITY[i] <- all_indicator_project_geoms$site_quality_statement[keep[1]]
+      #   } else {
+      #     ddff_display$QUALITY[i] <- all_indicator_project_geoms$network_quality_statement[k1[1]]
+      #   }
+      #
+      # }
 
       }
 
