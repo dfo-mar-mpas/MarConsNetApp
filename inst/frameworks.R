@@ -540,7 +540,6 @@ framework_targets <- list(
 
                start_id <- max(as.integer(gsub("tab_", "", APPTABS$tab))) + 1
 
-
                pedf <- aggregate_groups("pillar",
                                         "Ecological",
                                         weights_ratio=NA,
@@ -548,7 +547,8 @@ framework_targets <- list(
                                         dplyr::select(ecol_obj_biodiversity_df,-data),
                                         dplyr::select(ecol_obj_habitat_df,-data),
                                         dplyr::select(ecol_obj_productivity_df,-data)) |>
-                 dplyr::select(-region,-plainname,-min_target,-max_target) |> #TODO we can probably remove this if we fix the coverage scoring output
+                 dplyr::select(-region) |>
+                 #dplyr::select(-region,-plainname,-min_target,-max_target) |> #TODO we can probably remove this if we fix the coverage scoring output
                  mutate(PPTID = as.character(PPTID)) |>
                  left_join(dplyr::select(as.data.frame(MPAs), NAME_E, region), by = c("areaID"="NAME_E")) |>
                  mutate(region = if_else(areaID %in% MPAs$region,
