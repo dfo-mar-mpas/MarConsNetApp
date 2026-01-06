@@ -259,7 +259,7 @@ server <- function(input, output, session) {
           tabsetPanel(
             id = "tab0_subtabs",
             tabPanel("Management Effectiveness", "This tab considers only the effectiveness indicators that directly inform objectives that the site is managed for"),
-            tabPanel("Secondary Contributions", "This tab considers only the effectiveness indicators that inform objectives that the site is NOT managed for. These are considered bonus contributions of the site."),
+            tabPanel("Effectiveness Contributions", "This tab considers only the effectiveness indicators that inform objectives for which the site is NOT managed. These are considered additional contributions of the site."),
             tabPanel("Ecosystem Overview",
                      p(
                        "Readiness Score Explained: ",
@@ -1515,7 +1515,7 @@ server <- function(input, output, session) {
   output$ebm_objectives <- renderUI({
     req(state$mpas)
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(input$mpas)) && input$tab0_subtabs == "Secondary Contributions") {
+    if (input$tabs == "tab_0" && !(is.null(input$mpas)) && input$tab0_subtabs == "Effectiveness Contributions") {
 
     emb_targets <- c("Control unintended incidental mortality for all species",
                      "Distribute population component mortality in relation to component biomass",
@@ -1555,7 +1555,7 @@ server <- function(input, output, session) {
     req(state$mpas)
     req(input$tabs)
 
-    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Secondary Contributions") {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Effectiveness Contributions") {
       gbf_targets <- c(
         "Plan and Manage all Areas To Reduce Biodiversity Loss",
         "Restore 30% of all Degraded Ecosystems",
@@ -1599,7 +1599,7 @@ server <- function(input, output, session) {
   output$ebm_objectives <- renderUI({
     req(state$mpas)
     req(input$tabs)
-    if (input$tabs == "tab_0" && !(is.null(input$mpas)) && input$tab0_subtabs == "Secondary Contributions") {
+    if (input$tabs == "tab_0" && !(is.null(input$mpas)) && input$tab0_subtabs == "Effectiveness Contributions") {
 
       emb_targets <- c("Control unintended incidental mortality for all species",
                        "Distribute population component mortality in relation to component biomass",
@@ -1640,7 +1640,7 @@ server <- function(input, output, session) {
     req(input$tabs)
     req(input$region)
 
-    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Secondary Contributions" && input$region == "Maritimes") {
+    if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Effectiveness Contributions" && input$region == "Maritimes") {
 
       tagList(
         h3("Network Design Targets"),  # This adds the title above the table
