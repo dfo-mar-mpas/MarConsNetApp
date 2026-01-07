@@ -616,6 +616,58 @@ app <- function() {
             grid-template-columns: 1fr;
           }
         }
+
+        /* Plot container styling */
+        .plot-container {
+          width: 100%;
+          overflow-x: auto;
+          overflow-y: auto;
+          max-height: none;
+          padding: 15px 0;
+        }
+
+        /* Tab content must have sufficient height */
+        #tab0_subtabs > .tab-content {
+          padding: 25px;
+          border: none;
+          background: white;
+          min-height: auto;
+          max-height: none;
+        }
+
+        /* Image display styling */
+        .image-display-wrapper {
+          display: block;
+          width: 100%;
+          margin: 20px 0;
+          overflow-x: auto;
+        }
+
+        /* Individual image styling */
+        .image-display-wrapper img {
+          max-width: 100%;
+          height: auto;
+          display: block;
+          margin: 10px 0;
+        }
+
+        /* Integrated tabs card should not restrict height */
+        .integrated-tabs-card {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+          border: 1px solid #e5e7eb;
+          margin-bottom: 20px;
+          overflow: visible;
+        }
+
+        /* Main content should have proper overflow handling */
+        .main-content {
+          padding: 25px;
+          background: #f0f2f5;
+          margin-left: 25%;
+          overflow-y: auto;
+        }
       "))
     ),
 
@@ -1996,6 +2048,48 @@ app <- function() {
       }
     })
 
+    # Create reactive image_files that's accessible to all outputs
+    image_files <- reactive({
+      req(input$tabs)
+
+      if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
+        currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
+
+        if (!(length(currentInd) == 0)) {
+
+          image_folder <- file.path(dirname(STORE),
+                                    "data",
+                                    "plots")
+          image_files_list <- list.files(image_folder, full.names = TRUE)
+
+          if (length(image_files_list) == 0) {
+            image_files_list <- list.files(file.path(dirname(STORE), "data", "plot"), full.names = TRUE)
+          }
+
+          k2 <- which(grepl(make.names(pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]), image_files_list, ignore.case=TRUE)) # Which ones have the correct indicator name
+
+          if (!(state$mpas %in% regions$NAME_E)) {
+            k1 <- which(grepl(make.names(state$mpas), image_files_list, ignore.case=TRUE)) # Which are from the correct area
+          } else {
+            k1 <- which(grepl(make.names(pillar_ecol_df$areaID[which(pillar_ecol_df$tab == input$tabs)]), image_files_list))
+          }
+
+          KEEP <- intersect(k1, k2)
+          image_files_list <- image_files_list[KEEP]
+
+          if (length(image_files_list) > 1) {
+            if (!(grepl("Inside", pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)], ignore.case=TRUE))) {
+              image_files_list <- image_files_list[-which(grepl("Inside", image_files_list))]
+            }
+          }
+
+          return(image_files_list)
+        }
+      }
+
+      return(NULL)
+    })
+
     output$conditionalPlot <- shiny::renderUI({
       req(input$tabs)
       req(state$mpas)
@@ -2005,54 +2099,31 @@ app <- function() {
         #   leafletOutput("map")
         # )
       } else if (input$tabs %in% c(APPTABS$tab, pillar_ecol_df$tab)) {
-        currentInd <- pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]
-        if (!(length(currentInd) == 0)) {
+        files <- image_files()  # Call the reactive
 
-          image_folder <- file.path(dirname(STORE),
-                                    "data",
-                                    "plots")
-          image_files <- list.files(image_folder, full.names = TRUE)
-
-          if (length(image_files) == 0) {
-            image_files <- list.files(file.path(dirname(STORE), "data", "plot"), full.names = TRUE)
-          }
-
-
-          k2 <- which(grepl(make.names(pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)]), image_files, ignore.case=TRUE)) # Which ones have the correct indicator name
-
-          if (!(state$mpas %in% regions$NAME_E)) {
-            k1 <- which(grepl(make.names(state$mpas), image_files, ignore.case=TRUE)) # Which are from the correct area
-
-          } else {
-            k1 <- which(grepl(make.names(pillar_ecol_df$areaID[which(pillar_ecol_df$tab == input$tabs)]), image_files))
-          }
-
-          KEEP <- intersect(k1,k2)
-
-          image_files <- image_files[KEEP]
-
-          if (length(image_files) > 1) {
-            if (!(grepl("Inside", pillar_ecol_df$indicator[which(pillar_ecol_df$tab == input$tabs)], ignore.case=TRUE))) {
-              image_files <- image_files[-which(grepl("Inside", image_files))]
-            }
-          }
-
-          shiny::uiOutput("indicatorPlot")
-
-          lapply(seq_along(image_files), function(i) {
-            output[[paste0("image_display_", i)]] <- renderImage({
+        if (!(is.null(files)) && length(files) > 0) {
+          # Create outputs for each image
+          lapply(seq_along(files), function(i) {
+            output[[paste0("image_display_", i)]] <<- renderImage({
               list(
-                src = normalizePath(image_files[i], winslash = "/"),
+                src = normalizePath(files[i], winslash = "/"),
                 contentType = "image/jpeg",
-                width = "75%"
+                width = "100%",
+                height = "auto"
               )
             }, deleteFile = FALSE)
           })
+
+          # Return the UI wrapper
+          shiny::div(
+            class = "plot-container",
+            style = "width: 100%; overflow-x: auto; overflow-y: auto; max-height: 100%;",
+            shiny::uiOutput("indicatorPlot")
+          )
         }
       } else {
         NULL
       }
-
     })
 
     output$whaleDisclaimer <- shiny::renderUI({
@@ -2095,13 +2166,19 @@ app <- function() {
     # })
 
     output$indicatorPlot <- renderUI({
-      img_outputs <- lapply(seq_along(image_files), function(i) {
+      files <- image_files()  # Call the reactive
+      req(files)
+      req(length(files) > 0)
+
+      img_outputs <- lapply(seq_along(files), function(i) {
         image_id <- paste0("image_display_", i)
         div(
-          imageOutput(image_id),
-          style = "display: inline-block; margin: 10px; width: 15px; height: 10px; overflow: hidden;"
+          class = "image-display-wrapper",
+          style = "width: 100%; display: block; margin: 20px 0;",
+          imageOutput(image_id, height = "auto", width = "100%")
         )
       })
+
       do.call(tagList, img_outputs)
     })
 
