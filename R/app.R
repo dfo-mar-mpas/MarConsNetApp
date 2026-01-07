@@ -742,9 +742,18 @@ app <- function() {
             shiny::uiOutput("projects")
         ),
 
+        # buttons section
         div(class = "sidebar-section",
             div(shiny::uiOutput("contextButton"),
                 shiny::uiOutput("filter_button_ui", inline = TRUE)
+            )
+        ),
+
+        # indicator selection section
+        div(class = "sidebar-section",
+            h4("INDICATOR SELECTION"),
+            shiny::uiOutput("filter_ind_type_ui", inline = TRUE),
+            shiny::uiOutput("filter_ind_scale_ui", inline = TRUE
             )
         ),
 
@@ -1618,6 +1627,27 @@ app <- function() {
         title = "Marine Protected Area Context",
         shiny::HTML(textC)
       ))
+    })
+
+    output$filter_ind_type_ui <- shiny::renderUI({
+      choices <- unique(pillar_ecol_df$type)
+      shiny::checkboxGroupInput(
+        inputId = "filter_ind_type",
+        label = "Indicator Type:",
+        choices = choices,
+        selected = choices
+      )
+    })
+
+    output$filter_ind_scale_ui <- shiny::renderUI({
+      choices <- unique(pillar_ecol_df$scale)
+      shiny::checkboxGroupInput(
+        inputId = "filter_ind_scale",
+        label = "Indicator Scale:",
+        choices = choices,
+        selected = choices
+      )
+
     })
 
     # Dynmaically coding in which actionLink is selected will update the tab
