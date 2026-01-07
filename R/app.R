@@ -87,14 +87,31 @@ app <- function() {
           padding: 0;
         }
 
+       /* Reset default margins and padding */
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        html, body {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+        }
+
         /* Top Navigation Bar */
         .top-navbar {
           background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%);
           color: white;
           padding: 15px 30px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-          position: sticky;
+          position: fixed;
           top: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
           z-index: 1000;
           display: flex;
           justify-content: space-between;
@@ -725,7 +742,6 @@ app <- function() {
             shiny::uiOutput("projects")
         ),
 
-        # Report section
         div(class = "sidebar-section",
             div(shiny::uiOutput("contextButton"),
                 shiny::uiOutput("filter_button_ui", inline = TRUE)
