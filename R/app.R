@@ -321,6 +321,64 @@ app <- function() {
           background: rgba(255,255,255,0.3);
         }
 
+        /* Context Button */
+        .btn-context-custom {
+          background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 12px 18px;
+          font-weight: 600;
+          font-size: 14px;
+          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+          transition: all 0.3s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .btn-context-custom:hover {
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-context-custom:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Filter Button */
+        .btn-filter-custom {
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 12px 18px;
+          font-weight: 600;
+          font-size: 14px;
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+          transition: all 0.3s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .btn-filter-custom:hover {
+          background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-filter-custom:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Icon styling */
+        .btn-context-custom i,
+        .btn-filter-custom i {
+          margin-right: 6px;
+        }
+
         /* Select inputs */
         .selectize-input {
           border: 1px solid #d1d5db;
@@ -577,9 +635,7 @@ app <- function() {
               class = "btn-icon",
               icon("github"),
               title = "View on GitHub"
-            ),
-            shiny::uiOutput("contextButton", inline = TRUE),
-            shiny::uiOutput("filter_button_ui", inline = TRUE)
+            )
         )
     ),
 
@@ -619,12 +675,11 @@ app <- function() {
 
         # Report section
         div(class = "sidebar-section",
-            shiny::conditionalPanel(
-              condition = condition,
-              shiny::uiOutput("report_button_ui")
-            ),
-            uiOutput("report_ui")
-        )
+            div(shiny::uiOutput("contextButton"),
+                shiny::uiOutput("filter_button_ui", inline = TRUE)
+            )
+        ),
+
       ),
 
       # Main Panel
@@ -1457,18 +1512,16 @@ app <- function() {
       rv$button_label <- ifelse(rv$button_label == "See All Project Data", "Filter Project Data", "See All Project Data")
     })
 
-    # Render the action button UI
-    output$filter_button_ui <- shiny::renderUI({
-      if (is_button_visible()) {
-        shiny::actionButton("filter_button", rv$button_label)
-      }
-    })
 
     # Ensure the button is correctly displayed when navigating tabs
     observe({
       output$filter_button_ui <- shiny::renderUI({
         if (is_button_visible()) {
-          shiny::actionButton("filter_button", rv$button_label)
+          shiny::actionButton(
+            "filter_button",
+            label = HTML(paste("<i class='fa fa-sliders'></i> ", rv$button_label)),
+            class = "btn btn-filter-custom"
+          )
         }
       })
     })
@@ -1479,7 +1532,11 @@ app <- function() {
         string <- state$mpas
         keepO <- which(MPAs$NAME_E == string)
         if (!(length(keepO) == 0)) {
-          shiny::actionButton(inputId="contextButton", label="Context")
+          shiny::actionButton(
+            inputId = "contextButton",
+            label = HTML("<i class='fa fa-info-circle'></i> Area Context"),
+            class = "btn btn-context-custom"
+          )
         }
       }
     })
