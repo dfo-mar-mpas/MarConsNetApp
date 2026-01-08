@@ -1513,6 +1513,7 @@ indicator_targets <- list(
         ),
         "% per sample."
       ),
+      quality_statement="No quality statement available",
       climate_expectation = "FIXME",
       indicator_rationale = "Seabirds are outside the scope of DFO mandate and so are not assessed here; however, indicators have been developed and are monitored by the Canadian Wildlife Service of Environment and Climate Change Canada.",
       objectives = paste0(c(
