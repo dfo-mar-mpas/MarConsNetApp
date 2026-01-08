@@ -69,6 +69,7 @@ indicator_targets <- list(
                x$plot <-NULL
                x$readiness <- "Ready"
                x$scale <- 'site'
+               x$theme <- "Ocean Structure and Movement"
 
 
                # Doing the score and statement status
@@ -256,6 +257,7 @@ indicator_targets <- list(
                                    "Allow sufficient escapement from exploitation for spawning",
                                    "Contribute to the recovery and conservation of depleted species"
                                  ),
+                                 theme = "Fish and Fishery Resources",
                                  plot_lm=FALSE)
 
                x
@@ -287,6 +289,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type = c("violin", "map"),
                                  plot_lm=FALSE,
+                                 theme = "Fish and Fishery Resources",
                                  objectives = c(
                                    "Maintain productivity of harvested species",
                                    "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
@@ -325,6 +328,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type = c("violin", "map"),
                                  plot_lm=FALSE,
+                                 theme = "Fish and Fishery Resources",
                                  objectives = c(
                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
                                    "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
@@ -364,6 +368,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type = c("violin", "map"),
                                  plot_lm=FALSE,
+                                 theme = "Fish and Fishery Resources",
                                  objectives = c(
                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
                                    "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
@@ -398,6 +403,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type=c('time-series','map'),
                                  plot_lm=FALSE,
+                                 theme = "Secondary Production",
                                  objectives = c(
                                    "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -435,6 +441,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type=c('community-composition', 'map'),
                                  plot_lm=FALSE,
+                                 theme = "Secondary Production",
                                  objectives = c(
                                    "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -468,6 +475,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type=c('time-series','map'),
                                  plot_lm=FALSE,
+                                 theme = "Ocean Structure and Movement",
                                  objectives=NA)
              }),
 
@@ -492,6 +500,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type = c('time-series','map'),
                                  plot_lm=FALSE,
+                                 theme = "Primary Production",
                                  objectives = c(
                                    "Control alteration of nutrient concentrations affecting primary production",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -525,6 +534,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type = c('time-series','map'),
                                  plot_lm=FALSE,
+                                 theme = "Ocean Conditions",
                                  objectives = c(
                                    "Maintain/promote ecosystem structure and functioning",
                                    "Maintain Ecosystem Resistance",
@@ -558,6 +568,7 @@ indicator_targets <- list(
                                       areas = MPAs,
                                       plot_type = c('time-series','map'),
                                       plot_lm=FALSE,
+                                      theme = "Ocean Structure and Movement",
                                       objectives=NA)
                x
 
@@ -587,6 +598,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type = c('time-series','map'),
                                  plot_lm=FALSE,
+                                 theme = "Primary Production",
                                  objectives = c(
                                    "Control alteration of nutrient concentrations affecting primary production",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -616,6 +628,7 @@ indicator_targets <- list(
                                  areas = MPAs[-(which(MPAs$NAME_E =="Musquash Estuary Marine Protected Area")),],
                                  plot_type = c('time-series','map'),
                                  plot_lm=FALSE,
+                                 theme = "Primary Production",
                                  objectives = c(
                                    "Control alteration of nutrient concentrations affecting primary production",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -646,6 +659,7 @@ indicator_targets <- list(
                                  bin_rationale="FIXME",
                                  plot_type=c('time-series','map'),
                                  plot_lm=FALSE,
+                                 theme = "Ocean Conditions",
                                  objectives = c(
                                    "Maintain/promote ecosystem structure and functioning",
                                    "Maintain Ecosystem Resistance",
@@ -675,6 +689,7 @@ indicator_targets <- list(
                                       bin_rationale="FIXME",
                                       plot_type=c('time-series','map'),
                                       plot_lm=FALSE,
+                                      theme = "Ocean Conditions",
                                       objectives = c(
                                         "Maintain/promote ecosystem structure and functioning",
                                         "Maintain Ecosystem Resistance",
@@ -705,6 +720,7 @@ indicator_targets <- list(
                                  bin_rationale="FIXME",
                                  plot_type=c('time-series','map'),
                                  plot_lm=FALSE,
+                                 theme = "Primary Production",
                                  objectives = c(
                                    "Maintain/promote ecosystem structure and functioning",
                                    "Maintain Functional Biodiversity",
@@ -753,6 +769,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type = c("time-series","map"),
                                  plot_lm=FALSE,
+                                 theme = "Primary Production",
                                  objectives = c(
                                    "Maintain/promote ecosystem structure and functioning",
                                    "Maintain Functional Biodiversity",
@@ -801,6 +818,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type = c("time-series","map"),
                                  plot_lm=FALSE,
+                                 theme = "Primary Production",
                                  objectives = c(
                                    "Maintain/promote ecosystem structure and functioning",
                                    "Maintain Functional Biodiversity",
@@ -846,6 +864,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type=c('time-series','map'),
                                  plot_lm=FALSE,
+                                 theme = "Primary Production",
                                  objectives = c(
                                    "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -874,6 +893,7 @@ indicator_targets <- list(
                                  areas = MPAs[MPAs$region %in% c("Quebec","Gulf"),],
                                  plot_type='map',
                                  plot_lm=FALSE,
+                                 theme = "Benthic Environment",
                                  objectives = c(
                                    "Protect cold-water corals",
                                    "Protect cold-water corals and deep water frontier area",
@@ -905,6 +925,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type='map',
                                  plot_lm=FALSE,
+                                 theme = "Benthic Environment", #TODO This theme is probably not correct?
                                  objectives = c(
                                    "Protect cold-water corals",
                                    "Protect cold-water corals and deep water frontier area",
@@ -944,6 +965,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type='map',
                                  plot_lm=FALSE,
+                                 theme = "Anthropogenic Pressure and Impacts", #TODO This theme is probably not correct?
                                  objectives = c(
                                    "Ensure the conservation and protection of threatened or endangered species",
                                    "Protect cold-water corals",
@@ -981,6 +1003,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type='map-species',
                                  plot_lm=FALSE,
+                                 theme = "Fish and Fishery Resources", #TODO This theme is probably not correct?
                                  objectives = c(
                                    "Maintain Species Biodiversity",
                                    "Maintain Functional Biodiversity",
@@ -1017,6 +1040,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type=c('time-series', 'map'),
                                  plot_lm=FALSE,
+                                 theme = "Fish and Fishery Resources", #TODO This theme is probably not correct?
                                  objectives = c(
                                    "Maintain Species Biodiversity",
                                    "Maintain Functional Biodiversity",
@@ -1045,6 +1069,7 @@ indicator_targets <- list(
                                  areas = MPAs[MPAs$region=="Maritimes",],
                                  plot_type='map',
                                  plot_lm=FALSE,
+                                 theme = "Anthropogenic Pressure and Impacts",
                                  objectives = c(
                                    "Minimize harmful impacts from human activities on cetacean populations and their habitats",
                                    "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
@@ -1088,6 +1113,7 @@ indicator_targets <- list(
                                  areas = MPAs[MPAs$region=="Maritimes",],
                                  plot_type='map',
                                  plot_lm=FALSE,
+                                 theme = "Anthropogenic Pressure and Impacts",
                                  objectives = c(
                                    "Minimize unintended introduction and transmission of invasive species",
                                    "Prevent and Mitigate Invasive Alien Species"
@@ -1132,6 +1158,7 @@ indicator_targets <- list(
                                       areas = MPAs,
                                       plot_type='map-species',
                                       plot_lm=FALSE,
+                                      theme = "Fish and Fishery Resources", #TODO This theme is probably not correct?
                                       objectives = c(
                                         "Maintain Species Biodiversity",
                                         "Maintain Functional Biodiversity",
@@ -1163,6 +1190,7 @@ indicator_targets <- list(
                                  areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                                  plot_type='map',
                                  plot_lm=FALSE,
+                                 theme = "Fish and Fishery Resources", #TODO This theme is probably not correct?
                                  objectives = c(
                                    "Maintain Species Biodiversity",
                                    "Maintain Functional Biodiversity",
@@ -1195,6 +1223,7 @@ indicator_targets <- list(
                                  plot_lm=FALSE,
                                  latitude='Lat',
                                  longitude='Lon',
+                                 theme = "Ocean Conditions",
                                  objectives = c(
                                    "Maintain/promote ecosystem structure and functioning",
                                    "Maintain Ecosystem Resistance",
@@ -1228,6 +1257,7 @@ indicator_targets <- list(
                                  plot_lm=FALSE,
                                  latitude='Lat',
                                  longitude='Lon',
+                                 theme = "Ocean Conditions",
                                  objectives = c(
                                    "Maintain/promote ecosystem structure and functioning",
                                    "Maintain Ecosystem Resistance",
@@ -1260,6 +1290,7 @@ indicator_targets <- list(
                                  plot_lm=FALSE,
                                  latitude='Lat',
                                  longitude='Lon',
+                                 theme = "Primary Production",
                                  objectives = c(
                                    "Control alteration of nutrient concentrations affecting primary production",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -1293,6 +1324,7 @@ indicator_targets <- list(
                                  plot_lm=FALSE,
                                  latitude='Lat',
                                  longitude='Lon',
+                                 theme = "Primary Production",
                                  objectives = c(
                                    "Maintain/promote ecosystem structure and functioning",
                                    "Maintain Functional Biodiversity",
@@ -1322,6 +1354,7 @@ indicator_targets <- list(
                                  areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                                  plot_type=c('time-series-no-line','map'),
                                  plot_lm=FALSE,
+                                 theme = "Anthropogenic Pressure and Impacts",
                                  objectives = c(
                                    "Maintain/promote ecosystem structure and functioning",
                                    "Pollution is prevented and reduced",
@@ -1358,6 +1391,7 @@ indicator_targets <- list(
                                       plot_type = c('outside-comparison','map'),
                                       plot_lm=FALSE,
                                       control_polygon=control_polygons,
+                                      theme = "Primary Production",
                                       objectives = c(
                                         "Control alteration of nutrient concentrations affecting primary production",
                                         "Maintain/promote ecosystem structure and functioning",
@@ -1392,6 +1426,7 @@ indicator_targets <- list(
                                       plot_type=c('outside-comparison','map'),
                                       control_polygon = control_polygons,
                                       plot_lm=FALSE,
+                                      theme = "Ocean Conditions",
                                       objectives = c(
                                         "Maintain/promote ecosystem structure and functioning",
                                         "Maintain Ecosystem Resistance",
@@ -1430,6 +1465,7 @@ indicator_targets <- list(
                                       latitude='Lat',
                                       longitude="Lon",
                                       control_polygon=control_polygons,
+                                      theme = "Primary Production",
                                       objectives = c(
                                         "Control alteration of nutrient concentrations affecting primary production",
                                         "Maintain/promote ecosystem structure and functioning",
@@ -1470,6 +1506,7 @@ indicator_targets <- list(
                                       plot_type=c('outside-comparison','map'),
                                       plot_lm=FALSE,
                                       control_polygon=control_polygons,
+                                      theme = "Anthropogenic Pressure and Impacts",
                                       objectives = c(
                                         "Maintain/promote ecosystem structure and functioning",
                                         "Pollution is prevented and reduced",
@@ -1516,6 +1553,7 @@ indicator_targets <- list(
       quality_statement="No quality statement available",
       climate_expectation = "FIXME",
       indicator_rationale = "Seabirds are outside the scope of DFO mandate and so are not assessed here; however, indicators have been developed and are monitored by the Canadian Wildlife Service of Environment and Climate Change Canada.",
+      theme = "Trophic Structure and Function", #TODO This theme is probably not correct?
       objectives = paste0(c(
         "Maintain Species Biodiversity",
         "Maintain Functional Biodiversity",
@@ -1569,7 +1607,9 @@ indicator_targets <- list(
                         climate_expectation = "FIXME",
                         indicator_rationale = "The exchange of individuals between conservation sites can support ecosystem resilience, population recovery, genetic exchange, and the maintenance of biodiversity",
                         bin_rationale = "FIXME",
-                        readiness="Ready")
+                        readiness="Ready",
+                        theme = "Fish and Fishery Resources" #TODO This theme is probably not correct?
+                 )
              }),
 
   # DESIGN TARGETS INDICATORS ----
@@ -1634,6 +1674,11 @@ indicator_targets <- list(
                         climate_expectation = "FIXME",
                         indicator_rationale = "FIXME",
                         bin_rationale = "FIXME",
+                        theme = case_when(type == "Biodiversity hotspot" ~ "Trophic Structure and Function",
+                                          type == "Commercial fishery landing" ~ "Fish and Fishery Resources",
+                                          type == "Natural disturbance classification" ~ "Ocean Structure and Movement",
+                                          TRUE ~ "Benthic Environment"), #TODO this theme is probably not correct?
+
                         objectives = NA,
                         readiness="Ready",
                         scale = "region-site",
