@@ -807,7 +807,50 @@ app <- function() {
       #report = NULL
     )
 
-    output$network_column <- renderUI({ #JAIM
+    output$ddff_display_tbl <- DT::renderDT({
+
+      if (any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))) {
+      ddff <- old_pillar_ecol_df[0,]
+      names(ddff) <- toupper(names(ddff))
+        } else {
+      ddff <- ddff_display_r()
+        }
+      if (length(ddff$INDICATOR) == 0) {
+        if (input$tabs == "tab_0") {
+        showModal(modalDialog(
+          title = "No indicators Available",
+          "There are no indicators that match your filter. Try adding more selections in the 'Type' filter.",
+          easyClose = TRUE,
+          footer = NULL
+        ))
+        }
+        return(NULL)
+      } else {
+        dt <- datatable(
+          ddff,
+          rownames = FALSE,
+          selection = "single",
+          extensions = "RowGroup",
+          escape = FALSE,
+          options = list(
+            rowGroup = list(dataSrc = 0),
+            columnDefs = list(
+              list(visible = FALSE, targets = 0),
+              list(
+                visible = FALSE,
+                targets = which(names(ddff) == "PPTID") - 1
+              )
+            ),
+            pageLength = 100
+          )
+        )
+        return(dt)
+
+      }
+    }
+   )
+
+    output$network_column <- renderUI({
       req(state$mpas)
 
       # Check condition
@@ -928,19 +971,7 @@ app <- function() {
                          ),
                          column(7,
                                 # Try rendering the table directly
-                                renderDT({
-                                  ddff_display_r()
-                                }, rownames = FALSE, selection='single',
-                                extensions = "RowGroup",
-                                escape=FALSE,
-                                options = list(
-                                  rowGroup = list(dataSrc = 0),
-                                  columnDefs = list(
-                                    list(visible = FALSE, targets = 0),
-                                    list(visible = FALSE, targets = (which(names(ddff_display_r()) == "PPTID") - 1))
-                                  ),
-                                  pageLength = 100
-                                ))
+                                DT::DTOutput("ddff_display_tbl") # KYLO
                          )
                        ),
                        br(),
@@ -993,9 +1024,25 @@ app <- function() {
     })
 
 
-    output$ecosystem_table <- renderDT({
+    output$ecosystem_table <- renderDT({ # JAIM (show modal showing up when it shouldn't)
+      if (any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))) {
+        ddff <- old_pillar_ecol_df[0,]
+        names(ddff) <- toupper(names(ddff))
+      } else {
+        ddff <- ddff_display_r()
+      }
+      if (length(ddff$INDICATOR) == 0) {
+        showModal(modalDialog(
+          title = "No Indicators Available",
+          "There are no indicators that match your filter. Try adding more selections in the 'Type' filter.",
+          easyClose = TRUE,
+          footer = NULL
+        ))
+        return(NULL)
+
+      } else {
       datatable(
-        ddff_display_r(),
+        ddff,
         rownames = FALSE,
         selection='single',
         extensions = "RowGroup",
@@ -1009,6 +1056,7 @@ app <- function() {
           pageLength = 100
         )
       )
+      }
     })
 
     ddff_display_r <- reactive({
@@ -1022,21 +1070,25 @@ app <- function() {
         }
 
         if ((input$tab0_subtabs == "Ecosystem Overview" && input$indicator_mode == "ebm") | input$tab0_subtabs == "Threats") {
+          if (!(is.null(input$filter_ind_type)) | !(is.null(input$filter_ind_scale))) {
 
           # Ecological Overview
 
           if (state$mpas %in% regions$NAME_E) {
-            k1 <- which(!(pillar_ecol_df$areaID %in% regions$NAME_E))
-            k2 <- which(grepl("Network design", pillar_ecol_df$indicator))
-            table_ped <- pillar_ecol_df[sort(c(k1,k2)),]
+            k1 <- which(!(filtered_pillar_ecol_df()$areaID %in% regions$NAME_E))
+            k2 <- which(grepl("Network design", filtered_pillar_ecol_df()$indicator))
+            table_ped <- filtered_pillar_ecol_df()[sort(c(k1,k2)),]
+            if (!(length(k2) == 0)) { # This is now due to if we remove network targets from indicator type
             table_ped <- table_ped[-(which(grepl("Network design", table_ped$indicator) & (!(table_ped$areaID %in% regions$NAME_E)))),]
+            }
 
           } else {
-            table_ped <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+            table_ped <- filtered_pillar_ecol_df()[which(filtered_pillar_ecol_df()$areaID == state$mpas),]
           }
           if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
             table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
           }
+
 
           table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement')]
 
@@ -1088,7 +1140,19 @@ app <- function() {
           } else {
             ddff_unique <- ddff
           }
+          } else {
+          # EVERYTHING IS DE-SELECTED KYLO
+            ddff_display <- old_pillar_ecol_df[0, ]  # empty df
+            names(ddff_display) <- toupper(names(ddff_display))
+            ddff_unique <- ddff_display
+
+
+        }
         } else {
+
+          ## THEME
+          if (!(is.null(input$filter_ind_type)) | !(is.null(input$filter_ind_scale))) {
+
           if (state$mpas %in% regions$NAME_E) {
             table_ped <- theme_table[which(!(theme_table$areaID %in% regions$NAME_E)),]
 
@@ -1133,6 +1197,15 @@ app <- function() {
 
           } else {
             ddff_unique <- ddff
+          }
+
+          } else {
+            # EVERYTHING IS DE-SELECTED KYLO
+            ddff_display <- old_pillar_ecol_df[0, ]  # empty df
+            names(ddff_display) <- toupper(names(ddff_display))
+            ddff_unique <- ddff_display
+
+
           }
 
         }
@@ -1185,21 +1258,6 @@ app <- function() {
               ungroup()
 
           }
-
-          ## ADDING QUALITY
-          # for (i in seq_along(ddff_display$INDICATOR)) {
-          #   k1 <- which(all_indicator_project_geoms$indicator == ddff_display$INDICATOR[i])
-          #
-          #   if (state$mpas %in% MPAs$NAME_E) {
-          #     k2 <- which(all_indicator_project_geoms$areaID == state$mpas)
-          #     keep <- intersect(k1,k2)
-          #     ddff_display$QUALITY[i] <- all_indicator_project_geoms$site_quality_statement[keep[1]]
-          #   } else {
-          #     ddff_display$QUALITY[i] <- all_indicator_project_geoms$network_quality_statement[k1[1]]
-          #   }
-          #
-          # }
-
         }
 
 
@@ -1462,9 +1520,39 @@ app <- function() {
     output$projects <- shiny::renderUI({
       req(input$tabs)
       if (input$tabs == "tab_0") {
-        shiny::selectInput("projects", "Select Project(s):", choices=labels, multiple=TRUE, selected=state$projects)
+        shiny::selectInput("projects", "Select Project(s):", choices=project_choices(), multiple=TRUE, selected=NULL)
       }
     })
+
+    # Reactive project choices derived from filtered data
+    project_choices <- reactive({
+      req(input$filter_ind_scale)
+      req(input$filter_ind_type)
+      req(filtered_pillar_ecol_df())
+
+
+      filter_ppt <- unique(filtered_pillar_ecol_df()$PPTID)
+      filter_ppt <- filter_ppt[-(which(grepl(";", filter_ppt)))]
+      filtered_labels <- labels[
+        grepl(
+          paste0("\\(", paste(filter_ppt, collapse = "|"), "\\)"),
+          labels
+        )
+      ]
+
+      filtered_labels
+
+    })
+
+    observe({
+      updateSelectInput(
+        session,
+        "projects",
+        choices = project_choices(),
+        selected = input$projects
+      )
+    })
+
 
 
 
@@ -1514,7 +1602,7 @@ app <- function() {
     })
 
 
-    output$objectives <- shiny::renderUI({
+    output$objectives <- shiny::renderUI({ # JAIM
       req(input$tabs)
       if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
         if (!(state$mpas %in% regions$NAME_E)) {
@@ -1542,7 +1630,7 @@ app <- function() {
                 filtered_odfS$objectives[i]     # objective text
               )
 
-              KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+              KEEP <- filtered_pillar_ecol_df()[which(filtered_pillar_ecol_df()$areaID == state$mpas),]
               KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
               KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
@@ -1631,12 +1719,21 @@ app <- function() {
 
     output$filter_ind_type_ui <- shiny::renderUI({
       choices <- unique(pillar_ecol_df$type)
+
       shiny::checkboxGroupInput(
         inputId = "filter_ind_type",
         label = "Indicator Type:",
         choices = choices,
         selected = choices
       )
+
+      # selectInput(
+      #   inputId = "filter_ind_type",
+      #   label = "Indicator Type:",
+      #   choices = choices,
+      #   selected = choices,  # default selection
+      #   multiple = TRUE
+      # )
     })
 
     output$filter_ind_scale_ui <- shiny::renderUI({
@@ -1649,6 +1746,30 @@ app <- function() {
       )
 
     })
+
+
+    filtered_pillar_ecol_df <- reactive({
+
+      # Doesn't react when NULL. Never going to hit this for modal.
+      req(input$filter_ind_scale)
+      req(input$filter_ind_type)
+
+      filterTypes <- input$filter_ind_type
+      filterScales <- input$filter_ind_scale
+      filterTypes[filterTypes == ""] <- NA
+      filterScales[filterScales == ""] <- NA
+
+      pillar_ecol_df <- old_pillar_ecol_df |>
+        filter(type %in% filterTypes &
+                 scale %in% filterScales &
+                 areaID != "Non_Conservation_Area")
+
+
+
+      ## TEMPORARY FOR TESTING GLIDERS
+      return(pillar_ecol_df)
+    })
+
 
     # Dynmaically coding in which actionLink is selected will update the tab
     for (i in 0:max(sort(as.numeric(gsub("\\D", "", c(pillar_ecol_df$tab, APPTABS$tab, objective_tabs$tab)))))) {
@@ -1693,47 +1814,60 @@ app <- function() {
 
                 flowerBins <- NULL
                 for (i in seq_along(labels)) {
-                  flowerBins[[i]] <- which(grepl(labels[i], gsub("\\(|\\)", "", pillar_ecol_df$bin), ignore.case = TRUE))
+                  flowerBins[[i]] <- which(grepl(labels[i], gsub("\\(|\\)", "", filtered_pillar_ecol_df()$bin), ignore.case = TRUE))
                 }
 
                 ki1 <- sort(unique(unlist(flowerBins)))
 
               } else {
-                ki1 <- which(grepl(flower, gsub("\\(|\\)", "", pillar_ecol_df$bin), ignore.case = TRUE))
+                ki1 <- which(grepl(flower, gsub("\\(|\\)", "", filtered_pillar_ecol_df()$bin), ignore.case = TRUE))
               }
               if (!(state$mpas %in% unique(pillar_ecol_df$region))) {
                 #2024/12/31 Issue 7
                 #ki2 <- which(tolower(pillar_ecol_df$applicability) %in% tolower(c(gsub(" MPA", "", area), "coastal", "offshore", "all")))
-                ki2 <- which(tolower(pillar_ecol_df$areaID) == tolower(state$mpas))
+                ki2 <- which(tolower(filtered_pillar_ecol_df()$areaID) == tolower(state$mpas))
               } else {
-                ki2 <- which(pillar_ecol_df$region %in% state$mpas)
+                ki2 <- which(filtered_pillar_ecol_df()$region %in% state$mpas)
               }
 
               keepind <- intersect(ki1, ki2)
-              keepind <- keepind[!(is.na(pillar_ecol_df$indicator[keepind]))]
-              keepind <- keepind[pillar_ecol_df$indicator[keepind]!="placeholder"]
+              keepind <- keepind[!(is.na(filtered_pillar_ecol_df()$indicator[keepind]))]
+              keepind <- keepind[filtered_pillar_ecol_df()$indicator[keepind]!="placeholder"]
             } else {
-              keepind <- which(pillar_ecol_df$tab == tab_id)
+              keepind <- which(filtered_pillar_ecol_df()$tab == tab_id)
             }
           } else {
             keep_name <- names(objective_indicators)[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]
             area <- state$mpas
 
             if (area %in% MPAs$NAME_E) {
-              keep1 <- which(grepl(keep_name, pillar_ecol_df$objectives, fixed=TRUE))
-              keep2 <- which(pillar_ecol_df$areaID == area)
+              keep1 <- which(grepl(keep_name, filtered_pillar_ecol_df()$objectives, fixed=TRUE)) # NOTE: The ones above can remain pillar_ecol because they won't change regardless
+              keep2 <- which(filtered_pillar_ecol_df()$areaID == area) ## JAIM
               keepind <- intersect(keep1,keep2)
 
             } else {
-              keepind <- which(grepl(keep_name, pillar_ecol_df$objectives, fixed=TRUE))
+              keepind <- which(grepl(keep_name, filtered_pillar_ecol_df()$objectives, fixed=TRUE))
             }
           }
 
           if (input$tabs %in% pillar_ecol_df$tab) {
-            keepind <- which(pillar_ecol_df$tab == input$tabs)
+            keepind <- which(filtered_pillar_ecol_df()$tab == input$tabs)
           }
           binned_ind <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$indicator[keepind]))
           areaID <- pillar_ecol_df$areaID[keepind]
+
+          if (length(keepind) == 0) {
+            return(pillar_ecol_df[0, c(
+              "indicator",
+              "status_statement",
+              "trend_statement",
+              "score",
+              "source",
+              "PPTID",
+              "scoring",
+              "indicator_rationale"
+            )])
+          }
 
           ind_tabs <- shiny::tagList(lapply(seq_along(pillar_ecol_df$indicator[keepind]), function(i) {
             tab_id <- gsub("^[0-9]+\\. ", "", gsub("Indicator [0-9]+: ", "", pillar_ecol_df$tab[keepind][i]))
@@ -1882,6 +2016,25 @@ app <- function() {
     dfdt_r <- reactive({
       req(input$tabs)
       info <- calculated_info()
+      if (length(info$indicator_names) == 0) {
+        ddff <- as.data.frame(
+          setNames(
+            replicate(9, character(0), simplify = FALSE),
+            c(
+              "Indicator",
+              "Rationale",
+              "areaID",
+              "Status",
+              "Trend",
+              "Projects",
+              "Source",
+              "Score",
+              "Method"
+            )
+          )
+        )
+        return(ddff)
+      }
       req(info)  # Ensure the info is available
       indicatorProject <- as.numeric(info$indicatorProject)
       Projects <- NULL
@@ -1954,9 +2107,10 @@ app <- function() {
       }
     })
 
-
-
     output$DT <- DT::renderDT({
+      if (length(dfdt_r()$Indicator) == 0) {
+        DT::datatable(dfdt_r())
+      } else {
       DT::datatable(dfdt_r(),
                     escape = FALSE,
                     options = list(
@@ -1973,13 +2127,11 @@ app <- function() {
             flowerPalette[names(flowerPalette)]  # Apply corresponding colors
           )
         )
+      }
 
 
     })
 
-
-
-    # ROXANNE
     observeEvent(input$DT_cell_clicked, {
       info <- input$DT_cell_clicked
       req(info$row, info$col)
@@ -2388,6 +2540,7 @@ app <- function() {
       req(state$mpas)
       req(input$tabs)
       if (input$tabs == "tab_0") {
+        # JAIM - filtered_pillar_ecol_df()
         NAME <- state$mpas
         flower_df <- pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),]
         if (NAME %in% regions$NAME_E) {
@@ -2471,9 +2624,9 @@ app <- function() {
 
           # GRADES
           if (state$mpas %in% MPAs$NAME_E) {
-            KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID == state$mpas),]
+            KEEP <- filtered_pillar_ecol_df()[which(filtered_pillar_ecol_df()$areaID == state$mpas),]
           } else {
-            KEEP <- pillar_ecol_df[which(pillar_ecol_df$areaID %in% MPAs$NAME_E),]
+            KEEP <- filtered_pillar_ecol_df()[which(filtered_pillar_ecol_df()$areaID %in% MPAs$NAME_E),]
           }
           KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
