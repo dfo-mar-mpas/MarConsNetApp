@@ -1375,87 +1375,39 @@ app <- function() {
 
     observeEvent(input$about, {
       req(input$about)
-      showModal(modalDialog(
-        title = "User Guide",
-        size = "l",
-        easyClose = TRUE,
-        footer = modalButton("Close"),
-        fluidRow(
-          column(12,
-                 p("This app is designed to support the following goals:"),
-                 tags$ul(
-                   tags$li("Site-level Goals"),
-                   tags$ul(
-                     tags$li("1. Report on what scientific work is occurring, and resources allocated for this"),
-                     tags$li("2. Report on how the scientific work being done is contributing to indicators and therefore conservation objectives (CO)"),
-                     tags$li("3. Report on the status of the sites, based on existing data")
-                   ),
-                   tags$li("Network-level Goals"),
-                   tags$ul(
-                     tags$li("1. How are individual sites contributing to network conservation objectives"),
-                     tags$li("2. How are science projects contributing to network conservation objectives"),
-                     tags$li("3. Provide scientific data to support status claims")
-                   )
-                 ),
-                 p("To navigate the app:"),
-                 tags$ol(
-                   tags$li("Choose a Region"),
-                   tags$ul(
-                     tags$li("Focus on the Scotian Shelf network or select an individual protected area to assess its contribution to broader conservation goals.")
-                   ),
-                   tags$li("Select a Project"),
-                   tags$ul(
-                     tags$li("Pick the project(s) you're interested in to view sampling locations."),
-                     tags$li("Click on any point to see sample types and financial details.")
-                   ),
-                   tags$li("Explore the Data (Read Left to Right)"),
-                   tags$ul(
-                     tags$li("Left Panel: Status of network-level conservation objectives"),
-                     tags$li("Center: Site-level objectives, evaluating progress at individual locations."),
-                     tags$li("Right Panel: The flower plot with 'Indicator Bins', summarizing key scientific indicators for the selected region. These bins are clickable.")
-                   ),
-                   tags$li("Drill Down into Indicators"),
-                   tags$ul(
-                     tags$li("Click an Indicator Bin to see the scientific indicators that inform it."),
-                     tags$li("Click an individual indicator to view trends over time and sampling locations on a map.")
-                   ),
-                   tags$li("Generate Reports"),
-                   tags$ul(
-                     tags$li("Click 'Report' to create a reproducible summary of your selected data.")
-                   )
-                 ),
-                 br(),
-                 p("1. Status"),
-                 p("Trend Method:"),
-                 tags$ul(
-                   tags$li("The score of an area of the network is calculated in the following way:"),
-                   tags$ul(
-                     tags$li("When a trend is statistically significant AND matches the desired direction for the indicator, a score of 100 is assigned."),
-                     tags$li("If there is no significant change, a score of 50 is assigned."),
-                     tags$li("If a trend is statistically significant but going in the opposite direction, a score of 0 is assigned.")
-                   )
-                 ),
-                 p("Stable Method:"),
-                 tags$ul(
-                   tags$li("If the desired direction of the indicator is stable:"),
-                   tags$ul(
-                     tags$li("If the trend of the indicator has no significant change, an A is assigned."),
-                     tags$li("If there is a significant change, an F is assigned.")
-                   )
-                 ),
-                 renderImage({
-                   # Path to your image outside the 'www' folder
-                   list(
-                     src = paste0(dirname(STORE), "/data/visual_flow.png"),
-                     contentType = "image/png",
-                     width = "580px",
-                     height = "auto"
-                   )
-                 }, deleteFile = FALSE),
-                 p("From: ", a("http://127.0.0.1:3803/", href = "http://127.0.0.1:3803/"))
+      showModal(
+        modalDialog(
+          title = "About this App",
+          size = "l",
+          easyClose = TRUE,
+          footer = modalButton("Close"),
+
+          tags$p(
+            "This app uses the ",
+            tags$b("Ecosystem-based Management (EBM) framework"),
+            " to report on the effectiveness of Marine Protected Areas."
+          ),
+
+          tags$p(
+            "Learn more here: ",
+            tags$a(
+              href = "https://dfo-mar-mpas.shinyapps.io/EBMapp/",
+              "Ecosystem-based Management Framework",
+              target = "_blank"
+            )
+          ),
+
+          tags$p("The app reports on:"),
+
+          tags$ol(
+            tags$li("The Management Effectiveness of network- and site-level objectives"),
+            tags$li("Effectiveness contributions to objectives that sites are not explicitly managed for"),
+            tags$li("Overall ecosystem health"),
+            tags$li("Threats to the ecosystem")
           )
         )
-      ))
+      )
+
     })
 
 
@@ -1473,49 +1425,6 @@ app <- function() {
         shiny::selectInput("region","Select Region(s)",choices = regionlist[!is.na(regionlist)], selected=state$region, multiple=TRUE)
       }
     })
-
-    # output$management_contribution <- renderUI({
-    #   req(input$tabs)
-    #
-    #   if (input$tabs == "tab_0" && input$tab0_subtabs == "Management Effectiveness") {
-    #     tagList(
-    #       tags$style("
-    #       .btn-radio .shiny-input-radiogroup label {
-    #         display: inline-block;
-    #         padding: 8px 16px;
-    #         margin-right: 6px;
-    #         border: 1px solid #ccc;
-    #         border-radius: 6px;
-    #         cursor: pointer;
-    #       }
-    #       .btn-radio .shiny-input-radiogroup input[type='radio'] {
-    #         display: none;
-    #       }
-    #       .btn-radio .shiny-input-radiogroup input[type='radio']:checked + span {
-    #         background-color: #0275d8;
-    #         color: white;
-    #         border-color: #01549b;
-    #       }
-    #     "),
-    #
-    #       div(class = "btn-radio",
-    #           radioButtons(
-    #             inputId = "management_contribution",
-    #             label = "Select Management Effectiveness view:",
-    #             choices = c(
-    #               "Management" = "management",
-    #               "Contribution" = "contribution"
-    #             ),
-    #             selected = "management",
-    #             inline = TRUE
-    #           )
-    #       )
-    #     )
-    #   }
-    # })
-    #
-
-
 
     output$projects <- shiny::renderUI({
       req(input$tabs)
@@ -1764,9 +1673,6 @@ app <- function() {
                  scale %in% filterScales &
                  areaID != "Non_Conservation_Area")
 
-
-
-      ## TEMPORARY FOR TESTING GLIDERS
       return(pillar_ecol_df)
     })
 
