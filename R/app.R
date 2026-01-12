@@ -1842,7 +1842,7 @@ app <- function() {
 
             if (area %in% MPAs$NAME_E) {
               keep1 <- which(grepl(keep_name, filtered_pillar_ecol_df()$objectives, fixed=TRUE)) # NOTE: The ones above can remain pillar_ecol because they won't change regardless
-              keep2 <- which(filtered_pillar_ecol_df()$areaID == area) ## JAIM
+              keep2 <- which(filtered_pillar_ecol_df()$areaID == area)
               keepind <- intersect(keep1,keep2)
 
             } else {
@@ -2184,7 +2184,7 @@ app <- function() {
     })
 
 
-    output$objective_flower <- shiny::renderPlot({
+    output$objective_flower <- shiny::renderPlot({ # JAIM
       req(input$tabs)
       req(input$mpas)
       if (input$tabs %in% objective_tabs$tab) {
@@ -2195,6 +2195,8 @@ app <- function() {
         }
         OB <- names(objective_indicators)[[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]]
         ind_ped$score[which(!grepl(OB, ind_ped$objectives, fixed=TRUE))] <- NA
+        ind_ped$score[which(!(ind_ped$type %in% input$filter_ind_type))] <- NA
+        #browser()
 
         if (!(all(is.na(unique(ind_ped$indicator)))) | !(length(ind_ped$indicator) == 0)) {
           MarConsNetAnalysis::plot_flowerplot(ind_ped,
@@ -2540,15 +2542,20 @@ app <- function() {
       req(state$mpas)
       req(input$tabs)
       if (input$tabs == "tab_0") {
+        #browser()
         # JAIM - filtered_pillar_ecol_df()
         NAME <- state$mpas
-        flower_df <- pillar_ecol_df[which(pillar_ecol_df$areaID == NAME),]
+        ind_ped <- pillar_ecol_df
+        flower_df <- ind_ped[which(ind_ped$areaID == NAME),]
         if (NAME %in% regions$NAME_E) {
           # Removing design targets in the plot because they already exist in the site 'indicators'
           # (see issue 219)
           flower_df <- flower_df[which(is.na(flower_df$scale)),]
-
+        } else {
+        flower_df$score[which(!(flower_df$type %in% input$filter_ind_type))] <- NA
         }
+
+
         MarConsNetAnalysis::plot_flowerplot(flower_df,
                                             grouping = "objective",
                                             labels = "bin",
