@@ -1453,6 +1453,54 @@ app <- function() {
 
     })
 
+
+    filtered_MPA_report_card <- reactive({
+    req(filtered_pillar_ecol_df())
+      # if (!("Gliders") %in% input$filter_ind_type) {
+      #   browser()
+      # }
+
+      target_bin_weight <- 1
+
+      pedf <- filtered_pillar_ecol_df() |>
+        filter(!(indicator %in% MPAs$NAME_E))
+
+    mpc <- left_join(MPAs,pedf |> ##### filter results to calculate weighted means at bin level
+                       group_by(target_name,region) |>
+                       mutate(multiscale = length(unique(scale)) > 1,
+                              # give all the multiscale indicators the score of the region scale
+                              # for the multiscale indicators, the individual site contributions do not count towards regional scores
+                              score = ifelse(multiscale,
+                                             score[scale!="site"],
+                                             score)) |>
+                       ungroup() |>
+                       filter(areaID != "Non_Conservation_Area" & scale=="site") |>
+                       group_by(objective, bin, areaID, region) |>
+                       reframe(
+                         indicator = unique(areaID),
+                         areaID = unique(region),
+                         score = weighted.mean(score, weight, na.rm = TRUE),
+                         score = if_else(is.nan(score), NA, score),
+                         PPTID = paste(PPTID, collapse = "; ")
+                       ) |>
+                       group_by(bin) |>
+                       mutate(weight = target_bin_weight / n()) |>
+                       ungroup() |>
+
+                       ##### Bind in full data, including Non_Conservation_Area
+                       bind_rows(pedf) |>
+                                            filter(indicator %in% MPAs$NAME_E,
+                                                   areaID != "Non_Conservation_Area") |>
+                                            calc_group_score(grouping_var = "indicator") |>
+                                            mutate(grade = if_else(is.nan(score),
+                                                                   NA,
+                                                                   calc_letter_grade(score))),
+                                          by=c("NAME_E"="indicator"))
+
+    return(mpc)
+
+    })
+
     observe({
       updateSelectInput(
         session,
@@ -2603,30 +2651,39 @@ app <- function() {
 
     # Render the map with selected coordinates
 
-    output$map <- leaflet::renderLeaflet({
+    output$map <- leaflet::renderLeaflet({ # JAIM
+
+      message(paste0("The score is ", filtered_MPA_report_card()$score[44]))
+      message(paste0("rows of filtered_pillar_ecol ", nrow(filtered_pillar_ecol_df())))
+
+
       map <- leaflet() %>%
         addTiles()
       if (!(is.null(state$mpas)) && !(state$mpas %in% unique(pillar_ecol_df$region))) {
-        selected <- which(MPA_report_card$NAME_E == state$mpas)
+        #browser() # JAIM
+
+
+
+        selected <- which(filtered_MPA_report_card()$NAME_E == state$mpas)
         map <- map %>% leaflet::addPolygons(
-          data=MPA_report_card[selected,]$geoms,
-          fillColor=ifelse(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED"),
+          data=filtered_MPA_report_card()[selected,]$geoms,
+          fillColor=ifelse(!is.na(filtered_MPA_report_card()$grade[selected]), flowerPalette[filtered_MPA_report_card()$grade[selected]], "#EDEDED"),
           opacity=1,
           fillOpacity = 1,
           weight = 1,
-          color=ifelse(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey")
+          color=ifelse(!is.na(filtered_MPA_report_card()$grade[selected]), "black", "lightgrey")
         )
 
       } else if (state$mpas %in% unique(pillar_ecol_df$region)) {
-        selected <- which(MPA_report_card$region %in% state$mpas)
+        selected <- which(filtered_MPA_report_card()$region %in% state$mpas)
         map <- map %>%
-          leaflet::addPolygons(data=MPA_report_card$geoms[selected],
-                               fillColor = unname(if_else(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED")),
+          leaflet::addPolygons(data=filtered_MPA_report_card()$geoms[selected],
+                               fillColor = unname(if_else(!is.na(filtered_MPA_report_card()$grade[selected]), flowerPalette[filtered_MPA_report_card()$grade[selected]], "#EDEDED")),
                                opacity=1,
                                fillOpacity = 1,
                                weight = 1,
-                               color = if_else(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey"),
-                               popup = MPA_report_card$NAME_E[selected])
+                               color = if_else(!is.na(filtered_MPA_report_card()$grade[selected]), "black", "lightgrey"),
+                               popup = filtered_MPA_report_card()$NAME_E[selected])
       }
 
       message(">>> renderLeaflet ran again <<<")
@@ -2634,7 +2691,6 @@ app <- function() {
       map
 
     })
-
 
     # ---- Incremental project plotting ----
 
