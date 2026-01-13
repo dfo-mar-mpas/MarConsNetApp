@@ -971,7 +971,7 @@ app <- function() {
                          ),
                          column(7,
                                 # Try rendering the table directly
-                                DT::DTOutput("ddff_display_tbl") # KYLO
+                                DT::DTOutput("ddff_display_tbl")
                          )
                        ),
                        br(),
@@ -1024,7 +1024,7 @@ app <- function() {
     })
 
 
-    output$ecosystem_table <- renderDT({ # JAIM (show modal showing up when it shouldn't)
+    output$ecosystem_table <- renderDT({
       if (any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))) {
         ddff <- old_pillar_ecol_df[0,]
         names(ddff) <- toupper(names(ddff))
@@ -1141,7 +1141,6 @@ app <- function() {
             ddff_unique <- ddff
           }
           } else {
-          # EVERYTHING IS DE-SELECTED KYLO
             ddff_display <- old_pillar_ecol_df[0, ]  # empty df
             names(ddff_display) <- toupper(names(ddff_display))
             ddff_unique <- ddff_display
@@ -1152,7 +1151,6 @@ app <- function() {
 
           ## THEME
           if (!(is.null(input$filter_ind_type)) | !(is.null(input$filter_ind_scale))) {
-
           if (state$mpas %in% regions$NAME_E) {
             table_ped <- theme_table[which(!(theme_table$areaID %in% regions$NAME_E)),]
 
@@ -1200,7 +1198,6 @@ app <- function() {
           }
 
           } else {
-            # EVERYTHING IS DE-SELECTED KYLO
             ddff_display <- old_pillar_ecol_df[0, ]  # empty df
             names(ddff_display) <- toupper(names(ddff_display))
             ddff_unique <- ddff_display
@@ -1439,7 +1436,6 @@ app <- function() {
       req(input$filter_ind_type)
       req(filtered_pillar_ecol_df())
 
-
       filter_ppt <- unique(filtered_pillar_ecol_df()$PPTID)
       filter_ppt <- filter_ppt[-(which(grepl(";", filter_ppt)))]
       filtered_labels <- labels[
@@ -1457,34 +1453,7 @@ app <- function() {
     filtered_MPA_report_card <- reactive({
     req(filtered_pillar_ecol_df())
       target_bin_weight <- 1
-
-      pedf <- filtered_pillar_ecol_df() |>
-        filter(!(indicator %in% MPAs$NAME_E))
-
-    mpc <- left_join(MPAs,pedf |> ##### filter results to calculate weighted means at bin level
-                       group_by(target_name,region) |>
-                       mutate(multiscale = length(unique(scale)) > 1,
-                              # give all the multiscale indicators the score of the region scale
-                              # for the multiscale indicators, the individual site contributions do not count towards regional scores
-                              score = ifelse(multiscale,
-                                             score[scale!="site"],
-                                             score)) |>
-                       ungroup() |>
-                       filter(areaID != "Non_Conservation_Area" & scale=="site") |>
-                       group_by(objective, bin, areaID, region) |>
-                       reframe(
-                         indicator = unique(areaID),
-                         areaID = unique(region),
-                         score = weighted.mean(score, weight, na.rm = TRUE),
-                         score = if_else(is.nan(score), NA, score),
-                         PPTID = paste(PPTID, collapse = "; ")
-                       ) |>
-                       group_by(bin) |>
-                       mutate(weight = target_bin_weight / n()) |>
-                       ungroup() |>
-
-                       ##### Bind in full data, including Non_Conservation_Area
-                       bind_rows(pedf) |>
+    mpc <- left_join(MPAs, calc_regional_bin_scores(df = filtered_pillar_ecol_df()) |>
                                             filter(indicator %in% MPAs$NAME_E,
                                                    areaID != "Non_Conservation_Area") |>
                                             calc_group_score(grouping_var = "indicator") |>
@@ -1555,7 +1524,7 @@ app <- function() {
     })
 
 
-    output$objectives <- shiny::renderUI({ # JAIM
+    output$objectives <- shiny::renderUI({
       req(input$tabs)
       if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
         if (!(state$mpas %in% regions$NAME_E)) {
@@ -1701,17 +1670,10 @@ app <- function() {
 
       filterTypes <- input$filter_ind_type
       filterScales <- input$filter_ind_scale
-      #filterTypes[filterTypes == ""] <- NA
-      #filterScales[filterScales == ""] <- NA
-
-      #browser()
+      filterTypes[filterTypes == ""] <- NA
+      filterScales[filterScales == ""] <- NA
 
       pillar_ecol_df <- old_pillar_ecol_df
-
-
-      pillar_ecol_df$type[is.na(pillar_ecol_df$type)]   <- ""
-      pillar_ecol_df$scale[is.na(pillar_ecol_df$scale)] <- ""
-
 
       pillar_ecol_df <- pillar_ecol_df %>%
         filter(type %in% filterTypes &
@@ -2147,7 +2109,6 @@ app <- function() {
         OB <- names(objective_indicators)[[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]]
         ind_ped$score[which(!grepl(OB, ind_ped$objectives, fixed=TRUE))] <- NA
         ind_ped$score[which(!(ind_ped$type %in% input$filter_ind_type))] <- NA
-        #browser()
 
         if (!(all(is.na(unique(ind_ped$indicator)))) | !(length(ind_ped$indicator) == 0)) {
           MarConsNetAnalysis::plot_flowerplot(ind_ped,
@@ -2493,28 +2454,51 @@ app <- function() {
       req(state$mpas)
       req(input$tabs)
       if (input$tabs == "tab_0") {
-        #browser()
-        # JAIM - filtered_pillar_ecol_df()
         NAME <- state$mpas
-        ind_ped <- pillar_ecol_df
-        flower_df <- ind_ped[which(ind_ped$areaID == NAME),]
-        if (NAME %in% regions$NAME_E) {
-          # Removing design targets in the plot because they already exist in the site 'indicators'
-          # (see issue 219)
-          flower_df <- flower_df[which(is.na(flower_df$scale)),]
-        } else {
-        flower_df$score[which(!(flower_df$type %in% input$filter_ind_type))] <- NA
-        }
+        #browser()
+
+        ind_ped <- calc_regional_bin_scores(df = pillar_ecol_df|>
+                                              filter(!(indicator %in% MPAs$NAME_E)))
+          if (state$mpas %in% MPAs$NAME_E) {
+            ind_ped <- ind_ped[which(pillar_ecol_df$areaID == state$mpas),]
+          } else {
+            ind_ped <- ind_ped[which(is.na(ind_ped$scale)),]
+          }
+          ind_ped$score[which(!(ind_ped$type %in% input$filter_ind_type))] <- NA
+
+          MarConsNetAnalysis::plot_flowerplot(ind_ped,
+                                              grouping = "objective",
+                                              labels = "bin",
+                                              score = "score",
+                                              max_score=100,
+                                              min_score=0,
+                                              title=NAME)
 
 
-        MarConsNetAnalysis::plot_flowerplot(flower_df,
-                                            grouping = "objective",
-                                            labels = "bin",
-                                            score = "score",
-                                            max_score=100,
-                                            min_score=0,
-                                            title=NAME
-        )
+
+
+          ### OLD
+        # NAME <- state$mpas
+        # ind_ped <- calc_regional_bin_scores(df = filtered_pillar_ecol_df()|>
+        #                                       filter(!(indicator %in% MPAs$NAME_E)))
+        # flower_df <- ind_ped[which(ind_ped$areaID == NAME),]
+        # if (NAME %in% regions$NAME_E) {
+        #   # Removing design targets in the plot because they already exist in the site 'indicators'
+        #   # (see issue 219)
+        #   flower_df <- flower_df[which(is.na(flower_df$scale)),]
+        # } else {
+        # flower_df$score[which(!(flower_df$type %in% input$filter_ind_type))] <- NA
+        # }
+        #
+        #
+        # MarConsNetAnalysis::plot_flowerplot(flower_df,
+        #                                     grouping = "objective",
+        #                                     labels = "bin",
+        #                                     score = "score",
+        #                                     max_score=100,
+        #                                     min_score=0,
+        #                                     title=NAME
+        # )
       }
 
 
@@ -2699,6 +2683,10 @@ app <- function() {
       last_mpa(input$mpas)
 
       projects <- input$projects
+      # if (!(is.null(projects))) {
+      # browser()
+      # }
+
       if (is.null(projects)) projects <- character(0)
 
       triggered_by_tab <- input$tab
