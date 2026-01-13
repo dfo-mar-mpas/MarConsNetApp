@@ -70,7 +70,7 @@ indicator_targets <- list(
                x$readiness <- "Ready"
                x$scale <- 'site'
                x$theme <- "Ocean Structure and Movement"
-               x$SME <- "Jon Pye"
+               x$SME <- "Unknown"
 
 
                # Doing the score and statement status
@@ -409,7 +409,7 @@ indicator_targets <- list(
                                  plot_type=c('time-series','map'),
                                  plot_lm=FALSE,
                                  theme = "Secondary Production",
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  objectives = c(
                                    "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -447,7 +447,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type=c('community-composition', 'map'),
                                  plot_lm=FALSE,
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  theme = "Secondary Production",
                                  objectives = c(
                                    "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
@@ -478,7 +478,7 @@ indicator_targets <- list(
                                  climate = TRUE,
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  bin_rationale="FIXME",
                                  areas = MPAs,
                                  plot_type=c('time-series','map'),
@@ -509,7 +509,7 @@ indicator_targets <- list(
                                  plot_type = c('time-series','map'),
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  objectives = c(
                                    "Control alteration of nutrient concentrations affecting primary production",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -536,7 +536,7 @@ indicator_targets <- list(
                                  source="Glider Program",
                                  project_short_title = "Glider Program",
                                  climate = TRUE,
-                                 SME="Clark Richards",
+                                 SME="Unknown",
                                  climate_expectation="FIXME",
                                  indicator_rationale="Deoxygenation can impact marine life and its ecosystem directly and indirectly, and lead to changes in the abundance and distribution of fish, which, in turn, affects fisheries and productivity (e.g., Kim et al. 2023). This variable may be particularly important to monitor in deep habitats, where oxygen levels are depleted.",
                                  bin_rationale="FIXME",
@@ -575,7 +575,7 @@ indicator_targets <- list(
                                       indicator_rationale="Stratification of the mixed layer plays a complementary role in phytoplankton blooms (e.g., Greenan et al. 2004).",
                                       bin_rationale="FIXME",
                                       other_nest_variables="depth",
-                                      SME="Clark Richards",
+                                      SME="Unknown",
                                       areas = MPAs,
                                       plot_type = c('time-series','map'),
                                       plot_lm=FALSE,
@@ -608,7 +608,7 @@ indicator_targets <- list(
                                  other_nest_variables="depth",
                                  areas = MPAs,
                                  plot_type = c('time-series','map'),
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
                                  objectives = c(
@@ -639,7 +639,7 @@ indicator_targets <- list(
                                  other_nest_variables="depth",
                                  areas = MPAs[-(which(MPAs$NAME_E =="Musquash Estuary Marine Protected Area")),],
                                  plot_type = c('time-series','map'),
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
                                  objectives = c(
@@ -668,7 +668,7 @@ indicator_targets <- list(
                                  other_nest_variables="depth",
                                  areas = MPAs,
                                  climate_expectation="FIXME",
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  indicator_rationale="Salinity changes can impact ocean biological functions and may produce community shifts including trophic cascades (e.g., Röthig et al. 2023). Changes in salinity can also adversely affect the temperature tolerance of aquatic organisms (e.g., Farias et al. 2024)",
                                  bin_rationale="FIXME",
                                  plot_type=c('time-series','map'),
@@ -699,7 +699,7 @@ indicator_targets <- list(
                                       other_nest_variables="depth",
                                       areas = MPAs,
                                       climate_expectation="FIXME",
-                                      SME="Catherine Johnson",
+                                      SME="Unknown",
                                       indicator_rationale="Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
                                       bin_rationale="FIXME",
                                       plot_type=c('time-series','map'),
@@ -729,7 +729,7 @@ indicator_targets <- list(
                                  source="AZMP",
                                  project_short_title = "AZMP",
                                  other_nest_variables="depth",
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  areas = MPAs,
                                  climate_expectation="FIXME",
                                  indicator_rationale="Chlorophyll a measurements are typically used as a proxy for primary production at the ocean surface, which, in turn, can influence ocean bottom conditions through benthic/pelagic coupling.",
@@ -784,7 +784,7 @@ indicator_targets <- list(
                                  project_short_title = "AZMP",
                                  areas = MPAs,
                                  plot_type = c("time-series","map"),
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
                                  objectives = c(
@@ -834,7 +834,7 @@ indicator_targets <- list(
                                  project_short_title = "AZMP",
                                  areas = MPAs,
                                  plot_type = c("time-series","map"),
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
                                  objectives = c(
@@ -879,7 +879,7 @@ indicator_targets <- list(
                                  indicator_rationale="Phytoplankton constitutes the base of the marine food web and, consequently, their production sets an upper limit on the production of all higher trophic levels.",
                                  bin_rationale="FIXME",
                                  project_short_title = "AZMP",
-                                 SME="Catherine Johnson",
+                                 SME="Unknown",
                                  areas = MPAs,
                                  plot_type=c('time-series','map'),
                                  plot_lm=FALSE,
@@ -1059,7 +1059,7 @@ indicator_targets <- list(
                                  project_short_title = "Advancing eDNA",
                                  bin_rationale="FIXME",
                                  climate_expectation="FIXME",
-                                 SME="Nick Jeffery",
+                                 SME="Unknown",
                                  indicator_rationale="FIXME",
                                  areas = MPAs,
                                  plot_type=c('time-series', 'map'),
@@ -1089,7 +1089,7 @@ indicator_targets <- list(
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
                                  bin_rationale="FIXME",
-                                 SME="Noreen Kelley",
+                                 SME="Unknown",
                                  project_short_title = "Cumulative Impacts",
                                  areas = MPAs[MPAs$region=="Maritimes",],
                                  plot_type='map',
@@ -1183,7 +1183,7 @@ indicator_targets <- list(
                                       project_short_title = "Musquash benthic monitoring",
                                       areas = MPAs,
                                       plot_type='map-species',
-                                      SME="Andrew Cooper",
+                                      SME="Unknown",
                                       plot_lm=FALSE,
                                       theme = "Fish and Fishery Resources", #TODO This theme is probably not correct?
                                       objectives = c(
@@ -1422,7 +1422,7 @@ indicator_targets <- list(
                                       other_nest_variables="depth",
                                       areas = MPAs,
                                       plot_type = c('outside-comparison','map'),
-                                      SME="Catherine Johnson",
+                                      SME="Unknown",
                                       plot_lm=FALSE,
                                       control_polygon=control_polygons,
                                       theme = "Primary Production",
@@ -1454,7 +1454,7 @@ indicator_targets <- list(
                                       climate = TRUE,
                                       other_nest_variables="depth",
                                       areas = MPAs,
-                                      SME="Catherine Johnson",
+                                      SME="Unknown",
                                       climate_expectation="FIXME",
                                       indicator_rationale="Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
                                       bin_rationale="FIXME",
