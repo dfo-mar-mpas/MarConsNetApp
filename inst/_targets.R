@@ -143,7 +143,8 @@ list(
 
   tar_target(all_project_geoms, {
     all_indicator_project_geoms |>
-      select(project_short_title, areaID, PPTID,source)|>
+      group_by(project_short_title, areaID, PPTID,source,geometry)|>
+      summarise(type = paste(type,";;")) |>
       st_make_valid() |>
       distinct()
 

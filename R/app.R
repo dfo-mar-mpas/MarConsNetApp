@@ -1456,10 +1456,6 @@ app <- function() {
 
     filtered_MPA_report_card <- reactive({
     req(filtered_pillar_ecol_df())
-      # if (!("Gliders") %in% input$filter_ind_type) {
-      #   browser()
-      # }
-
       target_bin_weight <- 1
 
       pedf <- filtered_pillar_ecol_df() |>
@@ -2651,19 +2647,11 @@ app <- function() {
 
     # Render the map with selected coordinates
 
-    output$map <- leaflet::renderLeaflet({ # JAIM
-
-      message(paste0("The score is ", filtered_MPA_report_card()$score[44]))
-      message(paste0("rows of filtered_pillar_ecol ", nrow(filtered_pillar_ecol_df())))
-
+    output$map <- leaflet::renderLeaflet({
 
       map <- leaflet() %>%
         addTiles()
       if (!(is.null(state$mpas)) && !(state$mpas %in% unique(pillar_ecol_df$region))) {
-        #browser() # JAIM
-
-
-
         selected <- which(filtered_MPA_report_card()$NAME_E == state$mpas)
         map <- map %>% leaflet::addPolygons(
           data=filtered_MPA_report_card()[selected,]$geoms,
