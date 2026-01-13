@@ -2090,7 +2090,7 @@ app <- function() {
     })
 
 
-    output$objective_flower <- shiny::renderPlot({ # JAIM
+    output$objective_flower <- shiny::renderPlot({
       req(input$tabs)
       req(input$mpas)
       if (input$tabs %in% objective_tabs$tab) {
@@ -2292,7 +2292,7 @@ app <- function() {
     output$conditionalFlower <- shiny::renderUI({
       req(state$mpas)
       req(input$tabs)
-      if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
+      if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview" & input$indicator_mode == 'ebm') { # ROXANNE
         plotOutput("flowerPlot",click="flower_click")
       } else {
         NULL
