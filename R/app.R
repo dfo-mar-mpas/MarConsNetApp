@@ -1679,15 +1679,7 @@ app <- function() {
         choices = choices,
         selected = choices
       )
-
-      # selectInput(
-      #   inputId = "filter_ind_type",
-      #   label = "Indicator Type:",
-      #   choices = choices,
-      #   selected = choices,  # default selection
-      #   multiple = TRUE
-      # )
-    })
+     })
 
     output$filter_ind_scale_ui <- shiny::renderUI({
       choices <- unique(pillar_ecol_df$scale)
@@ -1709,10 +1701,19 @@ app <- function() {
 
       filterTypes <- input$filter_ind_type
       filterScales <- input$filter_ind_scale
-      filterTypes[filterTypes == ""] <- NA
-      filterScales[filterScales == ""] <- NA
+      #filterTypes[filterTypes == ""] <- NA
+      #filterScales[filterScales == ""] <- NA
 
-      pillar_ecol_df <- old_pillar_ecol_df |>
+      #browser()
+
+      pillar_ecol_df <- old_pillar_ecol_df
+
+
+      pillar_ecol_df$type[is.na(pillar_ecol_df$type)]   <- ""
+      pillar_ecol_df$scale[is.na(pillar_ecol_df$scale)] <- ""
+
+
+      pillar_ecol_df <- pillar_ecol_df %>%
         filter(type %in% filterTypes &
                  scale %in% filterScales &
                  areaID != "Non_Conservation_Area")
