@@ -558,31 +558,7 @@ framework_targets <- list(
                rm(ecol_obj_biodiversity_df, ecol_obj_habitat_df, ecol_obj_productivity_df)
                gc()
 
-               result <- pedf |>
-                 ##### filter results to calculate weighted means at bin level
-                 group_by(target_name,region) |>
-                 mutate(multiscale = length(unique(scale)) > 1,
-                        # give all the multiscale indicators the score of the region scale
-                        # for the multiscale indicators, the individual site contributions do not count towards regional scores
-                        score = ifelse(multiscale,
-                                       score[scale!="site"],
-                                       score)) |>
-                 ungroup() |>
-                 filter(areaID != "Non_Conservation_Area" & scale=="site") |>
-                 group_by(objective, bin, areaID, region) |>
-                 reframe(
-                   indicator = unique(areaID),
-                   areaID = unique(region),
-                   score = weighted.mean(score, weight, na.rm = TRUE),
-                   score = if_else(is.nan(score), NA, score),
-                   PPTID = paste(PPTID, collapse = "; ")
-                 ) |>
-                 group_by(bin) |>
-                 mutate(weight = target_bin_weight / n()) |>
-                 ungroup() |>
-
-                 ##### Bind in full data, including Non_Conservation_Area
-                 bind_rows(pedf) |>
+               calc_regional_bin_scores(df = pedf) |>
                  mutate(
                    tab = paste0("tab_", start_id:(start_id+ length(objective) - 1)),
                    # Identify regions vs MPAs
@@ -636,7 +612,8 @@ framework_targets <- list(
   #              for (i in seq_along(x$areaID)) {
   #                message(i)
   #                X <- x[i,]
-  #                keep <- which(pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
+  #                keep <- which(
+  # pillar_ecol_df$areaID == X$areaID & pillar_ecol_df$indicator == X$indicator)
   #                x$weight[i] <- pillar_ecol_df$weight[keep]
   #              }
   #              x
