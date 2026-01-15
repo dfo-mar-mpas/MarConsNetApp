@@ -826,6 +826,7 @@ app <- function() {
         }
         return(NULL)
       } else {
+        if (input$indicator_mode == 'ebm') {
         dt <- datatable(
           ddff,
           rownames = FALSE,
@@ -844,6 +845,24 @@ app <- function() {
             pageLength = 100
           )
         )
+      } else {
+        dt <- datatable(
+          ddff,
+          rownames = FALSE,
+          selection = "single",
+          extensions = "RowGroup",
+          escape = FALSE,
+          options = list(
+            rowGroup = list(dataSrc = which(names(ddff) == "THEME") - 1),
+            columnDefs = list(
+              list(visible = FALSE, targets = which(names(ddff) == "THEME") - 1),
+              list(visible = FALSE, targets = which(names(ddff) == "PPTID") - 1)
+            ),
+            pageLength = 100
+          )
+        )
+
+      }
         return(dt)
 
       }
@@ -1069,7 +1088,7 @@ app <- function() {
           req(input$indicator_mode)
         }
 
-        if ((input$tab0_subtabs == "Ecosystem Overview" && input$indicator_mode == "ebm") | input$tab0_subtabs == "Threats") {
+        if ((input$tab0_subtabs == "Ecosystem Overview") | input$tab0_subtabs == "Threats") {
           if (!(is.null(input$filter_ind_type)) | !(is.null(input$filter_ind_scale))) {
 
           # Ecological Overview
@@ -1090,7 +1109,7 @@ app <- function() {
           }
 
 
-          table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement')]
+          table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement', 'theme')]
 
           ddff <- table_ped %>%
             left_join(
@@ -1102,7 +1121,7 @@ app <- function() {
               #readiness = NA_real_,
               cost      = NA_real_
             ) %>%
-            dplyr::select(grouping, bin, indicator, source, score, readiness, quality_statement, cost, PPTID, areaID) %>%
+            dplyr::select(grouping, bin, indicator, source, score, readiness, quality_statement, cost, PPTID, areaID, theme) %>%
             dplyr::arrange(grouping, bin) %>%
             setNames(toupper(names(.)))
 
@@ -1147,66 +1166,6 @@ app <- function() {
 
 
         }
-        } else {
-
-          ## THEME
-          if (!(is.null(input$filter_ind_type)) | !(is.null(input$filter_ind_scale))) {
-          if (state$mpas %in% regions$NAME_E) {
-            table_ped <- theme_table[which(!(theme_table$areaID %in% regions$NAME_E)),]
-
-          } else {
-            table_ped <- theme_table[which(theme_table$areaID == state$mpas),]
-          }
-          if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
-            table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
-          }
-
-          table_ped <- table_ped[,c("theme", "indicator", "source", "score", "weight", "PPTID", 'readiness', 'quality_statement')]
-
-
-
-          ddff <- table_ped %>%
-            # Add placeholders for readiness, quality, cost
-            mutate(
-              #readiness = NA_real_,
-              cost      = NA_real_
-            ) %>%
-            # Select columns in the desired order
-            dplyr::select(theme, indicator, source, score, readiness, quality_statement, cost, PPTID) %>%
-            # Arrange by theme and indicator
-            dplyr::arrange(theme, indicator) %>%
-            # Capitalize column names
-            setNames(toupper(names(.)))
-
-          if (state$mpas %in% regions$NAME_E) {
-            # FIXME!!!!!
-
-            ddff_unique <- ddff %>%
-              rowwise() %>%
-              mutate(
-                SCORE = weighted.mean(
-                  x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$theme == THEME],
-                  w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$theme == THEME],
-                  na.rm = TRUE
-                )
-              ) %>%
-              ungroup() %>%
-              distinct(THEME,INDICATOR, SOURCE, SCORE, READINESS, QUALITY_STATEMENT, COST, PPTID)
-
-          } else {
-            ddff_unique <- ddff
-          }
-
-          } else {
-            ddff_display <- old_pillar_ecol_df[0, ]  # empty df
-            names(ddff_display) <- toupper(names(ddff_display))
-            ddff_unique <- ddff_display
-
-
-          }
-
-        }
-
         if (!(length(ddff_unique$PPTID) == 0)) {
           for (i in seq_along(unique(ddff_unique$PPTID))) {
             ppt <- unique(ddff_unique$PPTID)[i]
@@ -1227,7 +1186,6 @@ app <- function() {
 
             }
           }
-
           if (input$tab0_subtabs == "Threats") {
             ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
 
@@ -1267,7 +1225,17 @@ app <- function() {
             )
           )
 
-        ddff_display
+        if (!(input$tab0_subtabs == "Threats")) {
+        if (input$indicator_mode == "ebm") {
+          DF <- ddff_display[, !names(ddff_display) %in% "THEME"]
+          } else {
+            DF <- ddff_display[, !names(ddff_display) %in% c("BIN", "GROUPING")]
+          }
+        } else {
+          DF <- ddff_display
+        }
+        }
+        return(DF)
       }
 
     })
@@ -2455,14 +2423,12 @@ app <- function() {
       req(input$tabs)
       if (input$tabs == "tab_0") {
         NAME <- state$mpas
-        #browser()
-
         ind_ped <- calc_regional_bin_scores(df = pillar_ecol_df|>
                                               filter(!(indicator %in% MPAs$NAME_E)))
           if (state$mpas %in% MPAs$NAME_E) {
             ind_ped <- ind_ped[which(pillar_ecol_df$areaID == state$mpas),]
           } else {
-            ind_ped <- ind_ped[which(is.na(ind_ped$scale)),]
+            ind_ped <- ind_ped[-(which(is.na(ind_ped$scale))),]
           }
           ind_ped$score[which(!(ind_ped$type %in% input$filter_ind_type))] <- NA
 
@@ -2473,32 +2439,6 @@ app <- function() {
                                               max_score=100,
                                               min_score=0,
                                               title=NAME)
-
-
-
-
-          ### OLD
-        # NAME <- state$mpas
-        # ind_ped <- calc_regional_bin_scores(df = filtered_pillar_ecol_df()|>
-        #                                       filter(!(indicator %in% MPAs$NAME_E)))
-        # flower_df <- ind_ped[which(ind_ped$areaID == NAME),]
-        # if (NAME %in% regions$NAME_E) {
-        #   # Removing design targets in the plot because they already exist in the site 'indicators'
-        #   # (see issue 219)
-        #   flower_df <- flower_df[which(is.na(flower_df$scale)),]
-        # } else {
-        # flower_df$score[which(!(flower_df$type %in% input$filter_ind_type))] <- NA
-        # }
-        #
-        #
-        # MarConsNetAnalysis::plot_flowerplot(flower_df,
-        #                                     grouping = "objective",
-        #                                     labels = "bin",
-        #                                     score = "score",
-        #                                     max_score=100,
-        #                                     min_score=0,
-        #                                     title=NAME
-        # )
       }
 
 
@@ -2676,6 +2616,7 @@ app <- function() {
     observeEvent(list(input$projects, input$tabs, input$mpas), {
       req(input$tabs)
 
+
       tab_changed <- !identical(last_tab(), input$tabs)
       mpa_changed <- !identical(last_mpa(), input$mpas)
 
@@ -2683,9 +2624,7 @@ app <- function() {
       last_mpa(input$mpas)
 
       projects <- input$projects
-      # if (!(is.null(projects))) {
-      # browser()
-      # }
+
 
       if (is.null(projects)) projects <- character(0)
 
@@ -2734,7 +2673,12 @@ app <- function() {
               keep_projects <- which(all_project_geoms$project_short_title %in% proj_short)
             }
 
+
             APJ_filtered <- all_project_geoms[keep_projects, ]
+
+            if (!(is.null(projects))) {
+              browser() # JAIM
+            }
 
             if (!(proj_id == "NA")) {
               if (suppressWarnings(is.na(as.numeric(proj_id)))) {
