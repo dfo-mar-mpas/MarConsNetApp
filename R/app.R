@@ -1094,12 +1094,33 @@ app <- function() {
           # Ecological Overview
 
           if (state$mpas %in% regions$NAME_E) {
-            k1 <- which(!(filtered_pillar_ecol_df()$areaID %in% regions$NAME_E))
-            k2 <- which(grepl("Network design", filtered_pillar_ecol_df()$indicator))
-            table_ped <- filtered_pillar_ecol_df()[sort(c(k1,k2)),]
-            if (!(length(k2) == 0)) { # This is now due to if we remove network targets from indicator type
-            table_ped <- table_ped[-(which(grepl("Network design", table_ped$indicator) & (!(table_ped$areaID %in% regions$NAME_E)))),]
-            }
+            k1 <- which(filtered_pillar_ecol_df()$areaID == state$mpas & (!(is.na(filtered_pillar_ecol_df()$scale))))
+
+
+            k2 <- which(filtered_pillar_ecol_df()$region == state$mpas & (!is.na(filtered_pillar_ecol_df()$scale)))
+
+            net_inds <- filtered_pillar_ecol_df()$indicator[k1]
+
+            # remove site-level rows whose indicator is already at network
+            k2 <- k2[!(filtered_pillar_ecol_df()$indicator[k2] %in% net_inds)]
+
+
+
+            ind_avg <- filtered_pillar_ecol_df()[k2,] %>%
+              filter(!is.na(score)) %>%
+              group_by(indicator, objective, bin, PPTID, readiness, theme, source) %>%
+              reframe(score = weighted.mean(score,weight,na.rm=TRUE),
+                      weight = sum(weight),
+                      quality_statement = paste("This score is a weighted average of",
+                                                n(), "sites"))
+
+
+
+            table_ped <- filtered_pillar_ecol_df()[k1,] |>
+              bind_rows(ind_avg) |>
+              select(bin,objective, indicator, PPTID, source,theme, quality_statement, readiness, score, status_statement)
+
+
 
           } else {
             table_ped <- filtered_pillar_ecol_df()[which(filtered_pillar_ecol_df()$areaID == state$mpas),]
@@ -1109,9 +1130,11 @@ app <- function() {
           }
 
 
+          if (!(state$mpas %in% regions$NAME_E)) {
           table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement', 'theme')]
+          }
 
-          ddff <- table_ped %>%
+            ddff_unique <- table_ped %>%
             left_join(
               Ecological %>% dplyr::select(labels, grouping),
               by = c("bin" = "labels")   # bin in table_ped matches labels in Ecological
@@ -1121,44 +1144,10 @@ app <- function() {
               #readiness = NA_real_,
               cost      = NA_real_
             ) %>%
-            dplyr::select(grouping, bin, indicator, source, score, readiness, quality_statement, cost, PPTID, areaID, theme) %>%
+            dplyr::select(grouping, bin, indicator, source, score, readiness, quality_statement, cost, PPTID, theme) %>%
             dplyr::arrange(grouping, bin) %>%
             setNames(toupper(names(.)))
 
-          if (state$mpas %in% regions$NAME_E) {
-            # FIXME!!!!!
-            ddff_unique <- ddff %>%
-              rowwise() %>%
-              mutate(
-                SCORE = if_else(
-                  grepl("Network design", INDICATOR),
-
-                  # 🔹 WHEN TRUE → use actual score
-                  table_ped$score[
-                    table_ped$indicator == INDICATOR &
-                      table_ped$bin == BIN
-                  ][1],
-
-                  # 🔹 WHEN FALSE → weighted mean (your existing logic)
-                  weighted.mean(
-                    x = table_ped$score[
-                      table_ped$indicator == INDICATOR &
-                        table_ped$bin == BIN
-                    ],
-                    w = table_ped$weight[
-                      table_ped$indicator == INDICATOR &
-                        table_ped$bin == BIN
-                    ],
-                    na.rm = TRUE
-                  )
-                )
-              ) %>%
-              ungroup() %>%
-              distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY_STATEMENT, COST, PPTID)
-
-          } else {
-            ddff_unique <- ddff
-          }
           } else {
             ddff_display <- old_pillar_ecol_df[0, ]  # empty df
             names(ddff_display) <- toupper(names(ddff_display))
@@ -2676,9 +2665,9 @@ app <- function() {
 
             APJ_filtered <- all_project_geoms[keep_projects, ]
 
-            if (!(is.null(projects))) {
-              browser() # JAIM
-            }
+            # if (!(is.null(projects))) {
+            #   browser() # JAIM
+            # }
 
             if (!(proj_id == "NA")) {
               if (suppressWarnings(is.na(as.numeric(proj_id)))) {
