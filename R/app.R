@@ -1883,7 +1883,7 @@ app <- function() {
       )
     })
 
-    dfdt_r <- reactive({
+    dfdt_r <- reactive({ # HERE NOW
       req(input$tabs)
       info <- calculated_info()
       if (length(info$indicator_names) == 0) {
@@ -2481,6 +2481,8 @@ app <- function() {
         grades <- NULL
         grade_colors <- NULL
 
+        #browser() # HERE NOW
+
         for (i in seq_along(filtered_odf$objectives)) {
           #message(i)
           links[i] <- sprintf(
@@ -2665,9 +2667,16 @@ app <- function() {
 
             APJ_filtered <- all_project_geoms[keep_projects, ]
 
+            #type_filters <- unlist(strsplit(unique(APJ_filtered$type), "\\s*;;\\s*"))[which(unlist(strsplit(unique(APJ_filtered$type), "\\s*;;\\s*")) %in% input$filter_ind_type)]
+
             # if (!(is.null(projects))) {
-            #   browser() # JAIM
+            #   browser()
             # }
+
+            keep <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$type)) > 0
+
+
+            APJ_filtered <- APJ_filtered[keep, ]
 
             if (!(proj_id == "NA")) {
               if (suppressWarnings(is.na(as.numeric(proj_id)))) {
@@ -2734,8 +2743,9 @@ app <- function() {
             if (length(point_keep) > 0) {
 
               APJ_sub <- APJ[point_keep, ]
-              multipoints <- APJ_sub %>% filter(st_geometry_type(.) == "MULTIPOINT")
-              points <- APJ_sub %>% filter(st_geometry_type(.) == "POINT")
+              multipoints <- APJ_sub %>%
+                filter(st_geometry_type(geometry) == "MULTIPOINT")
+              points <- APJ_sub %>% filter(st_geometry_type(geometry) == "POINT")
               multipoints_expanded <- st_cast(multipoints, "POINT")
               APJ_points <- bind_rows(points, multipoints_expanded)
 
