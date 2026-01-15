@@ -99,7 +99,7 @@ list(
     ecol_obj_biodiversity_df |>
       filter(!map_lgl(data, is.null)) |>
       mutate(data = map(data, process_geom_data)) |>
-      dplyr::select(data, type, project_short_title, PPTID, areaID, source,
+      dplyr::select(data, type, project_short_title, PPTID, areaID, source, scale,
                     climate_expectation, indicator_rationale, bin_rationale, indicator) |>
       unnest(cols = data) |>
       st_as_sf()
@@ -109,7 +109,7 @@ list(
     ecol_obj_habitat_df |>
       filter(!map_lgl(data, is.null)) |>
       mutate(data = map(data, process_geom_data)) |>
-      dplyr::select(data, type, project_short_title, PPTID, areaID, source,
+      dplyr::select(data, type, project_short_title, PPTID, areaID, source, scale,
                     climate_expectation, indicator_rationale, bin_rationale, indicator) |>
       unnest(cols = data) |>
       st_as_sf()
@@ -119,7 +119,7 @@ list(
     ecol_obj_productivity_df |>
       filter(!map_lgl(data, is.null)) |>
       mutate(data = map(data, process_geom_data)) |>
-      dplyr::select(data, type, project_short_title, PPTID, areaID, source,
+      dplyr::select(data, type, project_short_title, PPTID, areaID, source, scale,
                     climate_expectation, indicator_rationale, bin_rationale, indicator) |>
       unnest(cols = data) |>
       st_as_sf()
@@ -144,7 +144,8 @@ list(
   tar_target(all_project_geoms, {
     all_indicator_project_geoms |>
       group_by(project_short_title, areaID, PPTID,source,geometry)|>
-      summarise(type = paste(type,";;")) |>
+      summarise(type = paste(type,";;"),
+                type = paste(scale, ";;")) |>
       st_make_valid() |>
       distinct()
 

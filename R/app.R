@@ -2066,6 +2066,8 @@ app <- function() {
         OB <- names(objective_indicators)[[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]]
         ind_ped$score[which(!grepl(OB, ind_ped$objectives, fixed=TRUE))] <- NA
         ind_ped$score[which(!(ind_ped$type %in% input$filter_ind_type))] <- NA
+        ind_ped$score[which(!(ind_ped$scale %in% input$filter_ind_scale))] <- NA
+
 
         if (!(all(is.na(unique(ind_ped$indicator)))) | !(length(ind_ped$indicator) == 0)) {
           MarConsNetAnalysis::plot_flowerplot(ind_ped,
@@ -2420,6 +2422,8 @@ app <- function() {
             ind_ped <- ind_ped[-(which(is.na(ind_ped$scale))),]
           }
           ind_ped$score[which(!(ind_ped$type %in% input$filter_ind_type))] <- NA
+          ind_ped$score[which(!(ind_ped$scale %in% input$filter_ind_scale))] <- NA
+
 
           MarConsNetAnalysis::plot_flowerplot(ind_ped,
                                               grouping = "objective",
@@ -2667,16 +2671,19 @@ app <- function() {
 
             APJ_filtered <- all_project_geoms[keep_projects, ]
 
-            #type_filters <- unlist(strsplit(unique(APJ_filtered$type), "\\s*;;\\s*"))[which(unlist(strsplit(unique(APJ_filtered$type), "\\s*;;\\s*")) %in% input$filter_ind_type)]
+            keep_type <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$type)) > 0
 
-            # if (!(is.null(projects))) {
-            #   browser()
-            # }
+            if(!(is.null(input$projects))) {
+            browser()
+            }
 
-            keep <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$type)) > 0
+            keep_scale <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$scale)) > 0
+            #
+            # APJ_filtered <- APJ_filtered[keep_type & keep_scale, ]
+
+             APJ_filtered <- APJ_filtered[keep_type, ]
 
 
-            APJ_filtered <- APJ_filtered[keep, ]
 
             if (!(proj_id == "NA")) {
               if (suppressWarnings(is.na(as.numeric(proj_id)))) {
