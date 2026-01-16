@@ -827,6 +827,46 @@ app <- function() {
       #report = NULL
     )
 
+    output$ecosystem_overview_row <- renderUI({
+      req(input$tab0_subtabs)
+      req(input$indicator_mode)
+
+      if (input$tab0_subtabs != "Ecosystem Overview") return(NULL)
+
+      if (input$indicator_mode == "ebm") {
+        # ebm: flower + table
+        fluidRow(
+          column(5,
+                 shiny::uiOutput("conditionalFlower")
+          ),
+          column(7,
+                 style = "padding-left: 5px;",
+                 div(
+                   style = "position: relative;",
+                   div(class = "dt-scroll-indicator", "Scroll →"),
+                   div(class = "plot-container",
+                       DT::DTOutput("ddff_display_tbl")
+                   )
+                 )
+          )
+        )
+      } else {
+        # not ebm: table full width
+        fluidRow(
+          column(12,
+                 div(
+                   style = "position: relative;",
+                   div(class = "dt-scroll-indicator", "Scroll →"),
+                   div(class = "plot-container",
+                       DT::DTOutput("ddff_display_tbl")
+                   )
+                 )
+          )
+        )
+      }
+    })
+
+
     output$ddff_display_tbl <- DT::renderDT({
 
       if (any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))) {
@@ -1001,27 +1041,9 @@ app <- function() {
                                uiOutput('indicator_mode')
                            )
                        ),
-                       fluidRow(
-                         column(5,
-                                conditionalPanel(
-                                  condition = "input.tab0_subtabs == 'Ecosystem Overview'",
-                                  shiny::uiOutput("conditionalFlower")
-                                )
-                         ),
-                         column(7,
-                                style = "padding-left: 5px;",
-
-                                # Try rendering the table directly
-                                div( # ROXANNE
-                                  style = "position: relative;",
-                                  div(class = "dt-scroll-indicator", "Scroll →"),
-                                  div(
-                                    class = "plot-container",
-                                    DT::DTOutput("ddff_display_tbl")
-                                  )
-                                )
-                         )
-                       ),
+                       # Fluid row for Ecosystem Overview
+                       # Case 1: ebm → flower + table
+                       uiOutput("ecosystem_overview_row"),
                        br(),
                        shiny::uiOutput("threats_home_table")
               ),
