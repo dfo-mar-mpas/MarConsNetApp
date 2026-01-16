@@ -765,9 +765,11 @@ app <- function() {
         # buttons section
         div(class = "sidebar-section",
             div(shiny::uiOutput("contextButton"),
-                shiny::uiOutput("filter_button_ui", inline = TRUE)
+                shiny::uiOutput("filter_button_ui", inline = TRUE),
+                shiny::uiOutput("report_button_ui", inline=TRUE)
             )
         ),
+
 
         # indicator selection section
         div(class = "sidebar-section",
