@@ -708,6 +708,26 @@ app <- function() {
         )
     ),
 
+    tags$style(HTML("
+.dt-scroll-hint {
+  position: relative;
+}
+.dt-scroll-hint::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(
+    to left,
+    rgba(240, 242, 245, 1),
+    rgba(240, 242, 245, 0)
+  );
+}
+")),
+
     # Hide tabs CSS
     tags$style(HTML("#mytabs > .tabbable > .nav.nav-tabs { display: none; }")),
 
@@ -989,8 +1009,17 @@ app <- function() {
                                 )
                          ),
                          column(7,
+                                style = "padding-left: 5px;",
+
                                 # Try rendering the table directly
-                                DT::DTOutput("ddff_display_tbl")
+                                div( # ROXANNE
+                                  style = "position: relative;",
+                                  div(class = "dt-scroll-indicator", "Scroll →"),
+                                  div(
+                                    class = "plot-container",
+                                    DT::DTOutput("ddff_display_tbl")
+                                  )
+                                )
                          )
                        ),
                        br(),
@@ -1004,7 +1033,10 @@ app <- function() {
                        div(class = "tab-section-header",
                            h3(class = "tab-section-title", "Threats Assessment")
                        ),
-                       DT::DTOutput("ecosystem_table")
+                       div(
+                         class = "plot-container",
+                         DT::DTOutput("ecosystem_table")
+                       )
               )
             )
           )
