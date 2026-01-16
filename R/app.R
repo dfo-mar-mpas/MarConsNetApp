@@ -1283,9 +1283,15 @@ app <- function() {
 
     })
 
-    observeEvent(input$ecosystem_table_cell_clicked, {
+    observeEvent(list(input$ecosystem_table_cell_clicked, input$ddff_display_tbl_cell_clicked), {
+      req(input$tab0_subtabs)
 
+      if (input$tab0_subtabs == "Threats") {
       info <- input$ecosystem_table_cell_clicked
+      } else {
+      info <- input$ddff_display_tbl_cell_clicked
+      }
+
       req(info$row, info$col)
 
       if (colnames(ddff_display_r())[info$col + 1] == "SOURCE") {
