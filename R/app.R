@@ -1408,8 +1408,13 @@ app <- function() {
 
 
     filtered_MPA_report_card <- reactive({
-    req(filtered_pillar_ecol_df())
-      target_bin_weight <- 1
+      df <- tryCatch(
+        filtered_pillar_ecol_df(),
+        error = function(e) NULL
+      )
+
+      if (!(is.null(df))) {
+    target_bin_weight <- 1
     mpc <- left_join(MPAs, calc_regional_bin_scores(df = filtered_pillar_ecol_df()) |>
                                             filter(indicator %in% MPAs$NAME_E,
                                                    areaID != "Non_Conservation_Area") |>
@@ -1418,8 +1423,11 @@ app <- function() {
                                                                    NA,
                                                                    calc_letter_grade(score))),
                                           by=c("NAME_E"="indicator"))
+      } else {
+        mpc <- NULL
+      }
 
-    return(mpc)
+    #return(mpc)
 
     })
 
@@ -1620,10 +1628,9 @@ app <- function() {
 
 
     filtered_pillar_ecol_df <- reactive({
-
       # Doesn't react when NULL. Never going to hit this for modal.
-      req(input$filter_ind_scale)
-      req(input$filter_ind_type)
+      req(!(is.null(input$filter_ind_scale)))
+      req(!(is.null(input$filter_ind_type)))
 
       filterTypes <- input$filter_ind_type
       filterScales <- input$filter_ind_scale
@@ -2568,6 +2575,11 @@ app <- function() {
     # Render the map with selected coordinates
 
     output$map <- leaflet::renderLeaflet({
+      df <- tryCatch(
+        filtered_pillar_ecol_df(),
+        error = function(e) NULL
+      )
+      req(!(is.null(df)))
 
       map <- leaflet() %>%
         addTiles()
