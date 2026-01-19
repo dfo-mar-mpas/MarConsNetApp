@@ -144,7 +144,8 @@ app <- function() {
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
           border: 1px solid #e5e7eb;
           margin-bottom: 20px;
-          overflow: hidden;
+          overflow: visible !important;   /* 🔴 ensure content is not clipped */
+          height: auto !important;
         }
 
         #tab0_subtabs {
@@ -408,7 +409,7 @@ app <- function() {
         /* Map container */
         .map-container {
           border-radius: 12px;
-          overflow: hidden;
+          overflow: auto !important;      /* 🔴 allow map to scroll without affecting other content */
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           border: 1px solid #e5e7eb;
           height: 550px;
@@ -624,7 +625,8 @@ app <- function() {
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
           border: 1px solid #e5e7eb;
           margin-bottom: 20px;
-          overflow: visible;
+          overflow: visible !important;   /* 🔴 ensure content is not clipped */
+          height: auto !important;
         }
 
         /* Main content should have proper overflow handling */
@@ -632,8 +634,9 @@ app <- function() {
           padding: 25px;
           background: #f0f2f5;
           margin-left: 25%;
-          overflow-y: auto;
-        }
+          margin-top: 2%;
+          overflow-y: visible !important; /* 🔴 was auto, now visible to let text expand */
+          height: auto !important;          }
       "))
     ),
 
@@ -777,7 +780,8 @@ app <- function() {
         div(class = "integrated-tabs-card",
             shiny::uiOutput('mytabs'),
             # Shared content
-            shiny::uiOutput("indicatorText"),
+            #shiny::uiOutput("indicatorText"),
+            shiny::uiOutput("indicatorText", style = "margin-top: 30px;") , # 🔴 shift text down by 20px
             shiny::uiOutput("DT_ui"),
             shiny::uiOutput("conditionalPlot"),
             shiny::uiOutput("conditionalIndicatorMap"),
