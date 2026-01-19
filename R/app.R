@@ -338,57 +338,6 @@ app <- function() {
           background: rgba(255,255,255,0.3);
         }
 
-        /* Context Button */
-        .btn-context-custom {
-          background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          padding: 12px 18px;
-          font-weight: 600;
-          font-size: 14px;
-          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-          transition: all 0.3s ease;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .btn-context-custom:hover {
-          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
-        }
-
-        .btn-context-custom:active {
-          transform: translateY(0);
-          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-        }
-
-        /* Filter Button */
-        .btn-filter-custom {
-          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          padding: 12px 18px;
-          font-weight: 600;
-          font-size: 14px;
-          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-          transition: all 0.3s ease;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .btn-filter-custom:hover {
-          background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
-        }
-
-        .btn-filter-custom:active {
-          transform: translateY(0);
-          box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
-        }
 
         /* Icon styling */
         .btn-context-custom i,
@@ -728,6 +677,28 @@ app <- function() {
 }
 ")),
 
+    tags$style(HTML("
+.button-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+")),
+
+    tags$style(HTML("
+/* Sidebar button row: force blue + smaller size */
+.button-row .btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.button-row .btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+")),
+
     # Hide tabs CSS
     tags$style(HTML("#mytabs > .tabbable > .nav.nav-tabs { display: none; }")),
 
@@ -764,9 +735,11 @@ app <- function() {
 
         # buttons section
         div(class = "sidebar-section",
-            div(shiny::uiOutput("contextButton"),
-                shiny::uiOutput("filter_button_ui", inline = TRUE),
-                shiny::uiOutput("report_button_ui", inline=TRUE)
+            div(
+              class = "button-row",
+              shiny::uiOutput("contextButton"),
+              shiny::uiOutput("filter_button_ui"),
+              shiny::uiOutput("report_button_ui")
             )
         ),
 
@@ -1633,7 +1606,7 @@ app <- function() {
         if (is_button_visible()) {
           shiny::actionButton(
             "filter_button",
-            label = HTML(paste("<i class='fa fa-sliders'></i> ", rv$button_label)),
+            label = HTML(rv$button_label),
             class = "btn btn-filter-custom"
           )
         }
@@ -1648,7 +1621,7 @@ app <- function() {
         if (!(length(keepO) == 0)) {
           shiny::actionButton(
             inputId = "contextButton",
-            label = HTML("<i class='fa fa-info-circle'></i> Area Context"),
+            label = HTML("Area Context"),
             class = "btn btn-context-custom"
           )
         }
@@ -2747,11 +2720,11 @@ app <- function() {
 
             keep_type <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$type)) > 0
 
-            if(!(is.null(input$projects))) {
-            browser()
-            }
+            # if(!(is.null(input$projects))) {
+            # browser()
+            # }
 
-            keep_scale <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$scale)) > 0
+            #keep_scale <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$scale)) > 0
             #
             # APJ_filtered <- APJ_filtered[keep_type & keep_scale, ]
 
