@@ -1601,6 +1601,7 @@ app <- function() {
     # Update the button label when clicked
     shiny::observeEvent(input$filter_button, {
       rv$button_label <- ifelse(rv$button_label == "See All Project Data", "Filter Project Data", "See All Project Data")
+      message(rv$button_label)
     })
 
 
@@ -2657,14 +2658,16 @@ app <- function() {
     plotted_projects <- reactiveVal(character(0))
     last_tab <- reactiveVal(NULL)
     last_mpa <- reactiveVal(NULL)
+    last_filter <- reactiveVal(NULL)
     # Ensure the map is fully rendered
 
-    observeEvent(list(input$projects, input$tabs, input$mpas), {
+    observeEvent(list(input$projects, input$tabs, input$mpas, input$filter_button), {
       req(input$tabs)
 
 
       tab_changed <- !identical(last_tab(), input$tabs)
       mpa_changed <- !identical(last_mpa(), input$mpas)
+      filter_changed <- !identical(last_filter(), input$filter_button)
 
       last_tab(input$tabs)        # update memory
       last_mpa(input$mpas)
@@ -2676,7 +2679,10 @@ app <- function() {
 
       triggered_by_tab <- input$tab
 
-      if (tab_changed || mpa_changed) {
+      if (tab_changed || mpa_changed || filter_changed) {
+        if (!(is.null(input$filter))) {
+        browser()
+        }
         old_projects <- character(0)
         new_projects <- projects
         removed_projects <- plotted_projects()
@@ -2710,12 +2716,17 @@ app <- function() {
 
             proj_id <- sub("^.*\\(([^)]*)\\).*", "\\1", proj)
             proj_short <- sub(" \\(.*", "", proj)
+#
+#             if (rv$button_label == "Filter Project Data") {
+#               browser()
+#             }
 
-            if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) {
+            if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) { # JAIM
               k1 <- which(all_project_geoms$areaID == state$mpas)
               k2 <- which(all_project_geoms$project_short_title %in% proj_short)
               keep_projects <- intersect(k1, k2)
             } else {
+              # Unfilter the data
               keep_projects <- which(all_project_geoms$project_short_title %in% proj_short)
             }
 
