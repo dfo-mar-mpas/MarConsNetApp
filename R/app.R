@@ -2716,10 +2716,6 @@ app <- function() {
 
             proj_id <- sub("^.*\\(([^)]*)\\).*", "\\1", proj)
             proj_short <- sub(" \\(.*", "", proj)
-#
-#             if (rv$button_label == "Filter Project Data") {
-#               browser()
-#             }
 
             if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) { # JAIM
               k1 <- which(all_project_geoms$areaID == state$mpas)
