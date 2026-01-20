@@ -2661,21 +2661,12 @@ app <- function() {
     last_mpa <- reactiveVal(NULL)
     last_filter <- reactiveVal(NULL)
     shown_notification <- reactiveVal(FALSE)
+    drawn_projects <- reactiveVal(character(0))   # 🔴 ADD
+
     # Ensure the map is fully rendered
 
     observeEvent(list(input$projects, input$tabs, input$mpas, input$filter_button), {
       req(input$tabs)
-
-      # message(
-      #   "TESTER TESTER TESTER TESTER Changed:",
-      #   if (!identical(last_tab(), input$tabs)) " tab",
-      #   if (!identical(last_mpa(), input$mpas)) " mpa",
-      #   if (!identical(last_filter(), input$filter_button)) " filter",
-      #   if (!identical(plotted_projects(), input$projects)) " projects"
-      # )
-
-      #message("JAIMIE HERE 1 - shown notification is ", shown_notification())
-
       tab_changed <- !identical(last_tab(), input$tabs)
       mpa_changed <- !identical(last_mpa(), input$mpas)
       filter_changed <- !identical(last_filter(), input$filter_button)
@@ -2689,7 +2680,6 @@ app <- function() {
           !identical(plotted_projects(), input$projects)) {
         shown_notification(FALSE)   # 🔴 MOVE reset here
       }
-
 
       projects <- input$projects
 
@@ -2724,8 +2714,9 @@ app <- function() {
           for (proj in plotted_projects()) {
             proxy <- proxy %>% clearGroup(proj)
           }
-        }
 
+          drawn_projects(character(0))   # 🔴 ADD
+        }
 
         if (length(removed_projects) > 0) {
           for (proj in removed_projects) {
@@ -2766,6 +2757,10 @@ app <- function() {
               }
               next
             }
+
+            drawn_projects(
+              unique(c(drawn_projects(), proj))
+            )
 
 
 
@@ -2870,15 +2865,20 @@ app <- function() {
 
         # ---- Update legend ----
         if (length(projects) > 0) {
+          legend_projects <- drawn_projects()   # 🔴 ADD
+
           proxy %>%
             clearControls() %>%
             addLegend(
               "bottomright",
-              colors = map_palette$Color[map_palette$Project %in% projects],
-              labels = projects,
+              colors = map_palette$Color[
+                match(legend_projects, map_palette$Project)   # 🔴 FIX alignment
+              ],
+              labels = legend_projects,
               opacity = 1,
               layerId = "projectLegend"
             )
+
         } else {
           proxy %>% clearControls()
         }
