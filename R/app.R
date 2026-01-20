@@ -2656,21 +2656,40 @@ app <- function() {
 
     # Track plotted projects globally
     plotted_projects <- reactiveVal(character(0))
+
     last_tab <- reactiveVal(NULL)
     last_mpa <- reactiveVal(NULL)
     last_filter <- reactiveVal(NULL)
+    shown_notification <- reactiveVal(FALSE)
     # Ensure the map is fully rendered
 
     observeEvent(list(input$projects, input$tabs, input$mpas, input$filter_button), {
       req(input$tabs)
 
+      # message(
+      #   "TESTER TESTER TESTER TESTER Changed:",
+      #   if (!identical(last_tab(), input$tabs)) " tab",
+      #   if (!identical(last_mpa(), input$mpas)) " mpa",
+      #   if (!identical(last_filter(), input$filter_button)) " filter",
+      #   if (!identical(plotted_projects(), input$projects)) " projects"
+      # )
+
+      #message("JAIMIE HERE 1 - shown notification is ", shown_notification())
 
       tab_changed <- !identical(last_tab(), input$tabs)
       mpa_changed <- !identical(last_mpa(), input$mpas)
       filter_changed <- !identical(last_filter(), input$filter_button)
 
+
       last_tab(input$tabs)        # update memory
       last_mpa(input$mpas)
+      last_filter(input$filter_button)
+
+      if (tab_changed || mpa_changed ||
+          !identical(plotted_projects(), input$projects)) {
+        shown_notification(FALSE)   # 🔴 MOVE reset here
+      }
+
 
       projects <- input$projects
 
@@ -2680,9 +2699,6 @@ app <- function() {
       triggered_by_tab <- input$tab
 
       if (tab_changed || mpa_changed || filter_changed) {
-        if (!(is.null(input$filter))) {
-        browser()
-        }
         old_projects <- character(0)
         new_projects <- projects
         removed_projects <- plotted_projects()
@@ -2692,17 +2708,24 @@ app <- function() {
         removed_projects <- setdiff(old_projects, projects)
       }
 
-      message("old_projects = ", old_projects)
-      message("new_projects = ", new_projects)
-      message("removed_projects = ", removed_projects)
+      #message("old_projects = ", old_projects)
+      #message("new_projects = ", new_projects)
+      #message("removed_projects = ", removed_projects)
 
       # ---- Remove deselected project layers ----
       if (input$tabs == "tab_0") {
         req(input$map_bounds)
         invalidateLater(1000, session)
 
-        message("ONLY SHOW UP ON TAB_0")
+        #message("ONLY SHOW UP ON TAB_0")
         proxy <- leafletProxy("map")
+
+        if (filter_changed || mpa_changed) {   # 🔴 ADD: force clean redraw
+          for (proj in plotted_projects()) {
+            proxy <- proxy %>% clearGroup(proj)
+          }
+        }
+
 
         if (length(removed_projects) > 0) {
           for (proj in removed_projects) {
@@ -2712,8 +2735,10 @@ app <- function() {
 
         # ---- Add newly selected project layers ----
         if (length(new_projects) > 0) {
-          for (proj in new_projects) {
 
+
+          # START OF LOOP
+          for (proj in new_projects) {
             proj_id <- sub("^.*\\(([^)]*)\\).*", "\\1", proj)
             proj_short <- sub(" \\(.*", "", proj)
 
@@ -2725,6 +2750,23 @@ app <- function() {
               # Unfilter the data
               keep_projects <- which(all_project_geoms$project_short_title %in% proj_short)
             }
+
+
+            if (length(keep_projects) == 0) {
+              #message("JAIMIE HERE 0 - shown notification is ", shown_notification())
+
+
+              if (!shown_notification()) {
+                showNotification(
+                  "No projects in this filtered area. Click \"See all Project Data\" to see the sample locations of this project.",
+                  type = "message",
+                  duration = 6
+                )
+                shown_notification(TRUE)
+              }
+              next
+            }
+
 
 
             APJ_filtered <- all_project_geoms[keep_projects, ]
@@ -2762,9 +2804,9 @@ app <- function() {
             keep <- intersect(k1, k2)
             APJ <- APJ_filtered[keep, ]
 
-            message("proj=", proj)
-            message("nrow(APJ)=", nrow(APJ))
-            message("point color = ", map_palette$Color[map_palette$Project == proj])
+            #message("proj=", proj)
+            #message("nrow(APJ)=", nrow(APJ))
+            #message("point color = ", map_palette$Color[map_palette$Project == proj])
 
             type <- APJ$type
             popupContent <- mapply(
