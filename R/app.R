@@ -144,7 +144,8 @@ app <- function() {
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
           border: 1px solid #e5e7eb;
           margin-bottom: 20px;
-          overflow: hidden;
+          overflow: visible !important;   /* 🔴 ensure content is not clipped */
+          height: auto !important;
         }
 
         #tab0_subtabs {
@@ -338,57 +339,6 @@ app <- function() {
           background: rgba(255,255,255,0.3);
         }
 
-        /* Context Button */
-        .btn-context-custom {
-          background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          padding: 12px 18px;
-          font-weight: 600;
-          font-size: 14px;
-          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-          transition: all 0.3s ease;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .btn-context-custom:hover {
-          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
-        }
-
-        .btn-context-custom:active {
-          transform: translateY(0);
-          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-        }
-
-        /* Filter Button */
-        .btn-filter-custom {
-          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          padding: 12px 18px;
-          font-weight: 600;
-          font-size: 14px;
-          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-          transition: all 0.3s ease;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .btn-filter-custom:hover {
-          background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
-        }
-
-        .btn-filter-custom:active {
-          transform: translateY(0);
-          box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
-        }
 
         /* Icon styling */
         .btn-context-custom i,
@@ -459,7 +409,7 @@ app <- function() {
         /* Map container */
         .map-container {
           border-radius: 12px;
-          overflow: hidden;
+          overflow: auto !important;      /* 🔴 allow map to scroll without affecting other content */
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           border: 1px solid #e5e7eb;
           height: 550px;
@@ -675,7 +625,8 @@ app <- function() {
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
           border: 1px solid #e5e7eb;
           margin-bottom: 20px;
-          overflow: visible;
+          overflow: visible !important;   /* 🔴 ensure content is not clipped */
+          height: auto !important;
         }
 
         /* Main content should have proper overflow handling */
@@ -683,8 +634,9 @@ app <- function() {
           padding: 25px;
           background: #f0f2f5;
           margin-left: 25%;
-          overflow-y: auto;
-        }
+          margin-top: 2%;
+          overflow-y: visible !important; /* 🔴 was auto, now visible to let text expand */
+          height: auto !important;          }
       "))
     ),
 
@@ -707,6 +659,48 @@ app <- function() {
             )
         )
     ),
+
+    tags$style(HTML("
+.dt-scroll-hint {
+  position: relative;
+}
+.dt-scroll-hint::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(
+    to left,
+    rgba(240, 242, 245, 1),
+    rgba(240, 242, 245, 0)
+  );
+}
+")),
+
+    tags$style(HTML("
+.button-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+")),
+
+    tags$style(HTML("
+/* Sidebar button row: force blue + smaller size */
+.button-row .btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.button-row .btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+")),
 
     # Hide tabs CSS
     tags$style(HTML("#mytabs > .tabbable > .nav.nav-tabs { display: none; }")),
@@ -744,10 +738,14 @@ app <- function() {
 
         # buttons section
         div(class = "sidebar-section",
-            div(shiny::uiOutput("contextButton"),
-                shiny::uiOutput("filter_button_ui", inline = TRUE)
+            div(
+              class = "button-row",
+              shiny::uiOutput("contextButton"),
+              shiny::uiOutput("filter_button_ui"),
+              shiny::uiOutput("report_button_ui")
             )
         ),
+
 
         # indicator selection section
         div(class = "sidebar-section",
@@ -782,7 +780,8 @@ app <- function() {
         div(class = "integrated-tabs-card",
             shiny::uiOutput('mytabs'),
             # Shared content
-            shiny::uiOutput("indicatorText"),
+            #shiny::uiOutput("indicatorText"),
+            shiny::uiOutput("indicatorText", style = "margin-top: 30px;") , # 🔴 shift text down by 20px
             shiny::uiOutput("DT_ui"),
             shiny::uiOutput("conditionalPlot"),
             shiny::uiOutput("conditionalIndicatorMap"),
@@ -807,6 +806,46 @@ app <- function() {
       #report = NULL
     )
 
+    output$ecosystem_overview_row <- renderUI({
+      req(input$tab0_subtabs)
+      req(input$indicator_mode)
+
+      if (input$tab0_subtabs != "Ecosystem Overview") return(NULL)
+
+      if (input$indicator_mode == "ebm") {
+        # ebm: flower + table
+        fluidRow(
+          column(5,
+                 shiny::uiOutput("conditionalFlower")
+          ),
+          column(7,
+                 style = "padding-left: 5px;",
+                 div(
+                   style = "position: relative;",
+                   div(class = "dt-scroll-indicator", "Scroll →"),
+                   div(class = "plot-container",
+                       DT::DTOutput("ddff_display_tbl")
+                   )
+                 )
+          )
+        )
+      } else {
+        # not ebm: table full width
+        fluidRow(
+          column(12,
+                 div(
+                   style = "position: relative;",
+                   div(class = "dt-scroll-indicator", "Scroll →"),
+                   div(class = "plot-container",
+                       DT::DTOutput("ddff_display_tbl")
+                   )
+                 )
+          )
+        )
+      }
+    })
+
+
     output$ddff_display_tbl <- DT::renderDT({
 
       if (any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))) {
@@ -826,6 +865,7 @@ app <- function() {
         }
         return(NULL)
       } else {
+        if (input$indicator_mode == 'ebm') {
         dt <- datatable(
           ddff,
           rownames = FALSE,
@@ -844,6 +884,24 @@ app <- function() {
             pageLength = 100
           )
         )
+      } else {
+        dt <- datatable(
+          ddff,
+          rownames = FALSE,
+          selection = "single",
+          extensions = "RowGroup",
+          escape = FALSE,
+          options = list(
+            rowGroup = list(dataSrc = which(names(ddff) == "THEME") - 1),
+            columnDefs = list(
+              list(visible = FALSE, targets = which(names(ddff) == "THEME") - 1),
+              list(visible = FALSE, targets = which(names(ddff) == "PPTID") - 1)
+            ),
+            pageLength = 100
+          )
+        )
+
+      }
         return(dt)
 
       }
@@ -962,18 +1020,9 @@ app <- function() {
                                uiOutput('indicator_mode')
                            )
                        ),
-                       fluidRow(
-                         column(5,
-                                conditionalPanel(
-                                  condition = "input.tab0_subtabs == 'Ecosystem Overview'",
-                                  shiny::uiOutput("conditionalFlower")
-                                )
-                         ),
-                         column(7,
-                                # Try rendering the table directly
-                                DT::DTOutput("ddff_display_tbl") # KYLO
-                         )
-                       ),
+                       # Fluid row for Ecosystem Overview
+                       # Case 1: ebm → flower + table
+                       uiOutput("ecosystem_overview_row"),
                        br(),
                        shiny::uiOutput("threats_home_table")
               ),
@@ -985,7 +1034,10 @@ app <- function() {
                        div(class = "tab-section-header",
                            h3(class = "tab-section-title", "Threats Assessment")
                        ),
-                       DT::DTOutput("ecosystem_table")
+                       div(
+                         class = "plot-container",
+                         DT::DTOutput("ecosystem_table")
+                       )
               )
             )
           )
@@ -1024,7 +1076,7 @@ app <- function() {
     })
 
 
-    output$ecosystem_table <- renderDT({ # JAIM (show modal showing up when it shouldn't)
+    output$ecosystem_table <- renderDT({
       if (any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))) {
         ddff <- old_pillar_ecol_df[0,]
         names(ddff) <- toupper(names(ddff))
@@ -1069,18 +1121,39 @@ app <- function() {
           req(input$indicator_mode)
         }
 
-        if ((input$tab0_subtabs == "Ecosystem Overview" && input$indicator_mode == "ebm") | input$tab0_subtabs == "Threats") {
+        if ((input$tab0_subtabs == "Ecosystem Overview") | input$tab0_subtabs == "Threats") {
           if (!(is.null(input$filter_ind_type)) | !(is.null(input$filter_ind_scale))) {
 
           # Ecological Overview
 
           if (state$mpas %in% regions$NAME_E) {
-            k1 <- which(!(filtered_pillar_ecol_df()$areaID %in% regions$NAME_E))
-            k2 <- which(grepl("Network design", filtered_pillar_ecol_df()$indicator))
-            table_ped <- filtered_pillar_ecol_df()[sort(c(k1,k2)),]
-            if (!(length(k2) == 0)) { # This is now due to if we remove network targets from indicator type
-            table_ped <- table_ped[-(which(grepl("Network design", table_ped$indicator) & (!(table_ped$areaID %in% regions$NAME_E)))),]
-            }
+            k1 <- which(filtered_pillar_ecol_df()$areaID == state$mpas & (!(is.na(filtered_pillar_ecol_df()$scale))))
+
+
+            k2 <- which(filtered_pillar_ecol_df()$region == state$mpas & (!is.na(filtered_pillar_ecol_df()$scale)))
+
+            net_inds <- filtered_pillar_ecol_df()$indicator[k1]
+
+            # remove site-level rows whose indicator is already at network
+            k2 <- k2[!(filtered_pillar_ecol_df()$indicator[k2] %in% net_inds)]
+
+
+
+            ind_avg <- filtered_pillar_ecol_df()[k2,] %>%
+              filter(!is.na(score)) %>%
+              group_by(indicator, objective, bin, PPTID, readiness, theme, source) %>%
+              reframe(score = weighted.mean(score,weight,na.rm=TRUE),
+                      weight = sum(weight),
+                      quality_statement = paste("This score is a weighted average of",
+                                                n(), "sites"))
+
+
+
+            table_ped <- filtered_pillar_ecol_df()[k1,] |>
+              bind_rows(ind_avg) |>
+              select(bin,objective, indicator, PPTID, source,theme, quality_statement, readiness, score, status_statement)
+
+
 
           } else {
             table_ped <- filtered_pillar_ecol_df()[which(filtered_pillar_ecol_df()$areaID == state$mpas),]
@@ -1090,9 +1163,11 @@ app <- function() {
           }
 
 
-          table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement')]
+          if (!(state$mpas %in% regions$NAME_E)) {
+          table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement', 'theme')]
+          }
 
-          ddff <- table_ped %>%
+            ddff_unique <- table_ped %>%
             left_join(
               Ecological %>% dplyr::select(labels, grouping),
               by = c("bin" = "labels")   # bin in table_ped matches labels in Ecological
@@ -1102,114 +1177,17 @@ app <- function() {
               #readiness = NA_real_,
               cost      = NA_real_
             ) %>%
-            dplyr::select(grouping, bin, indicator, source, score, readiness, quality_statement, cost, PPTID, areaID) %>%
+            dplyr::select(grouping, bin, indicator, source, score, readiness, quality_statement, cost, PPTID, theme) %>%
             dplyr::arrange(grouping, bin) %>%
             setNames(toupper(names(.)))
 
-          if (state$mpas %in% regions$NAME_E) {
-            # FIXME!!!!!
-            ddff_unique <- ddff %>%
-              rowwise() %>%
-              mutate(
-                SCORE = if_else(
-                  grepl("Network design", INDICATOR),
-
-                  # 🔹 WHEN TRUE → use actual score
-                  table_ped$score[
-                    table_ped$indicator == INDICATOR &
-                      table_ped$bin == BIN
-                  ][1],
-
-                  # 🔹 WHEN FALSE → weighted mean (your existing logic)
-                  weighted.mean(
-                    x = table_ped$score[
-                      table_ped$indicator == INDICATOR &
-                        table_ped$bin == BIN
-                    ],
-                    w = table_ped$weight[
-                      table_ped$indicator == INDICATOR &
-                        table_ped$bin == BIN
-                    ],
-                    na.rm = TRUE
-                  )
-                )
-              ) %>%
-              ungroup() %>%
-              distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY_STATEMENT, COST, PPTID)
-
           } else {
-            ddff_unique <- ddff
-          }
-          } else {
-          # EVERYTHING IS DE-SELECTED KYLO
             ddff_display <- old_pillar_ecol_df[0, ]  # empty df
             names(ddff_display) <- toupper(names(ddff_display))
             ddff_unique <- ddff_display
 
 
         }
-        } else {
-
-          ## THEME
-          if (!(is.null(input$filter_ind_type)) | !(is.null(input$filter_ind_scale))) {
-
-          if (state$mpas %in% regions$NAME_E) {
-            table_ped <- theme_table[which(!(theme_table$areaID %in% regions$NAME_E)),]
-
-          } else {
-            table_ped <- theme_table[which(theme_table$areaID == state$mpas),]
-          }
-          if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator))) {
-            table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
-          }
-
-          table_ped <- table_ped[,c("theme", "indicator", "source", "score", "weight", "PPTID", 'readiness', 'quality_statement')]
-
-
-
-          ddff <- table_ped %>%
-            # Add placeholders for readiness, quality, cost
-            mutate(
-              #readiness = NA_real_,
-              cost      = NA_real_
-            ) %>%
-            # Select columns in the desired order
-            dplyr::select(theme, indicator, source, score, readiness, quality_statement, cost, PPTID) %>%
-            # Arrange by theme and indicator
-            dplyr::arrange(theme, indicator) %>%
-            # Capitalize column names
-            setNames(toupper(names(.)))
-
-          if (state$mpas %in% regions$NAME_E) {
-            # FIXME!!!!!
-
-            ddff_unique <- ddff %>%
-              rowwise() %>%
-              mutate(
-                SCORE = weighted.mean(
-                  x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$theme == THEME],
-                  w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$theme == THEME],
-                  na.rm = TRUE
-                )
-              ) %>%
-              ungroup() %>%
-              distinct(THEME,INDICATOR, SOURCE, SCORE, READINESS, QUALITY_STATEMENT, COST, PPTID)
-
-          } else {
-            ddff_unique <- ddff
-          }
-
-          } else {
-            # EVERYTHING IS DE-SELECTED KYLO
-            ddff_display <- old_pillar_ecol_df[0, ]  # empty df
-            names(ddff_display) <- toupper(names(ddff_display))
-            ddff_unique <- ddff_display
-
-
-          }
-
-        }
-
         if (!(length(ddff_unique$PPTID) == 0)) {
           for (i in seq_along(unique(ddff_unique$PPTID))) {
             ppt <- unique(ddff_unique$PPTID)[i]
@@ -1230,7 +1208,6 @@ app <- function() {
 
             }
           }
-
           if (input$tab0_subtabs == "Threats") {
             ddff_unique <- ddff_unique[which(grepl("Threats", ddff_unique$BIN)),]
 
@@ -1270,14 +1247,30 @@ app <- function() {
             )
           )
 
-        ddff_display
+        if (!(input$tab0_subtabs == "Threats")) {
+        if (input$indicator_mode == "ebm") {
+          DF <- ddff_display[, !names(ddff_display) %in% "THEME"]
+          } else {
+            DF <- ddff_display[, !names(ddff_display) %in% c("BIN", "GROUPING")]
+          }
+        } else {
+          DF <- ddff_display
+        }
+        }
+        return(DF)
       }
 
     })
 
-    observeEvent(input$ecosystem_table_cell_clicked, {
+    observeEvent(list(input$ecosystem_table_cell_clicked, input$ddff_display_tbl_cell_clicked), {
+      req(input$tab0_subtabs)
 
+      if (input$tab0_subtabs == "Threats") {
       info <- input$ecosystem_table_cell_clicked
+      } else {
+      info <- input$ddff_display_tbl_cell_clicked
+      }
+
       req(info$row, info$col)
 
       if (colnames(ddff_display_r())[info$col + 1] == "SOURCE") {
@@ -1439,7 +1432,6 @@ app <- function() {
       req(input$filter_ind_type)
       req(filtered_pillar_ecol_df())
 
-
       filter_ppt <- unique(filtered_pillar_ecol_df()$PPTID)
       filter_ppt <- filter_ppt[-(which(grepl(";", filter_ppt)))]
       filtered_labels <- labels[
@@ -1450,6 +1442,31 @@ app <- function() {
       ]
 
       filtered_labels
+
+    })
+
+
+    filtered_MPA_report_card <- reactive({
+      df <- tryCatch(
+        filtered_pillar_ecol_df(),
+        error = function(e) NULL
+      )
+
+      if (!(is.null(df))) {
+    target_bin_weight <- 1
+    mpc <- left_join(MPAs, calc_regional_bin_scores(df = filtered_pillar_ecol_df()) |>
+                                            filter(indicator %in% MPAs$NAME_E,
+                                                   areaID != "Non_Conservation_Area") |>
+                                            calc_group_score(grouping_var = "indicator") |>
+                                            mutate(grade = if_else(is.nan(score),
+                                                                   NA,
+                                                                   calc_letter_grade(score))),
+                                          by=c("NAME_E"="indicator"))
+      } else {
+        mpc <- NULL
+      }
+
+    #return(mpc)
 
     })
 
@@ -1511,7 +1528,7 @@ app <- function() {
     })
 
 
-    output$objectives <- shiny::renderUI({ # JAIM
+    output$objectives <- shiny::renderUI({
       req(input$tabs)
       if (input$tabs == "tab_0" && !(is.null(state$mpas)) && input$tab0_subtabs == "Management Effectiveness") {
         if (!(state$mpas %in% regions$NAME_E)) {
@@ -1584,6 +1601,7 @@ app <- function() {
     # Update the button label when clicked
     shiny::observeEvent(input$filter_button, {
       rv$button_label <- ifelse(rv$button_label == "See All Project Data", "Filter Project Data", "See All Project Data")
+      message(rv$button_label)
     })
 
 
@@ -1593,7 +1611,7 @@ app <- function() {
         if (is_button_visible()) {
           shiny::actionButton(
             "filter_button",
-            label = HTML(paste("<i class='fa fa-sliders'></i> ", rv$button_label)),
+            label = HTML(rv$button_label),
             class = "btn btn-filter-custom"
           )
         }
@@ -1608,7 +1626,7 @@ app <- function() {
         if (!(length(keepO) == 0)) {
           shiny::actionButton(
             inputId = "contextButton",
-            label = HTML("<i class='fa fa-info-circle'></i> Area Context"),
+            label = HTML("Area Context"),
             class = "btn btn-context-custom"
           )
         }
@@ -1635,15 +1653,7 @@ app <- function() {
         choices = choices,
         selected = choices
       )
-
-      # selectInput(
-      #   inputId = "filter_ind_type",
-      #   label = "Indicator Type:",
-      #   choices = choices,
-      #   selected = choices,  # default selection
-      #   multiple = TRUE
-      # )
-    })
+     })
 
     output$filter_ind_scale_ui <- shiny::renderUI({
       choices <- unique(pillar_ecol_df$scale)
@@ -1658,17 +1668,18 @@ app <- function() {
 
 
     filtered_pillar_ecol_df <- reactive({
-
       # Doesn't react when NULL. Never going to hit this for modal.
-      req(input$filter_ind_scale)
-      req(input$filter_ind_type)
+      req(!(is.null(input$filter_ind_scale)))
+      req(!(is.null(input$filter_ind_type)))
 
       filterTypes <- input$filter_ind_type
       filterScales <- input$filter_ind_scale
       filterTypes[filterTypes == ""] <- NA
       filterScales[filterScales == ""] <- NA
 
-      pillar_ecol_df <- old_pillar_ecol_df |>
+      pillar_ecol_df <- old_pillar_ecol_df
+
+      pillar_ecol_df <- pillar_ecol_df %>%
         filter(type %in% filterTypes &
                  scale %in% filterScales &
                  areaID != "Non_Conservation_Area")
@@ -1919,7 +1930,7 @@ app <- function() {
       )
     })
 
-    dfdt_r <- reactive({
+    dfdt_r <- reactive({ # HERE NOW
       req(input$tabs)
       info <- calculated_info()
       if (length(info$indicator_names) == 0) {
@@ -2090,7 +2101,7 @@ app <- function() {
     })
 
 
-    output$objective_flower <- shiny::renderPlot({ # JAIM
+    output$objective_flower <- shiny::renderPlot({
       req(input$tabs)
       req(input$mpas)
       if (input$tabs %in% objective_tabs$tab) {
@@ -2102,7 +2113,8 @@ app <- function() {
         OB <- names(objective_indicators)[[which(names(objective_indicators) == objective_tabs$objectives[which(objective_tabs$tab == input$tabs)])]]
         ind_ped$score[which(!grepl(OB, ind_ped$objectives, fixed=TRUE))] <- NA
         ind_ped$score[which(!(ind_ped$type %in% input$filter_ind_type))] <- NA
-        #browser()
+        ind_ped$score[which(!(ind_ped$scale %in% input$filter_ind_scale))] <- NA
+
 
         if (!(all(is.na(unique(ind_ped$indicator)))) | !(length(ind_ped$indicator) == 0)) {
           MarConsNetAnalysis::plot_flowerplot(ind_ped,
@@ -2292,7 +2304,7 @@ app <- function() {
     output$conditionalFlower <- shiny::renderUI({
       req(state$mpas)
       req(input$tabs)
-      if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview") {
+      if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview" & input$indicator_mode == 'ebm') { # ROXANNE
         plotOutput("flowerPlot",click="flower_click")
       } else {
         NULL
@@ -2448,28 +2460,25 @@ app <- function() {
       req(state$mpas)
       req(input$tabs)
       if (input$tabs == "tab_0") {
-        #browser()
-        # JAIM - filtered_pillar_ecol_df()
         NAME <- state$mpas
-        ind_ped <- pillar_ecol_df
-        flower_df <- ind_ped[which(ind_ped$areaID == NAME),]
-        if (NAME %in% regions$NAME_E) {
-          # Removing design targets in the plot because they already exist in the site 'indicators'
-          # (see issue 219)
-          flower_df <- flower_df[which(is.na(flower_df$scale)),]
-        } else {
-        flower_df$score[which(!(flower_df$type %in% input$filter_ind_type))] <- NA
-        }
+        ind_ped <- calc_regional_bin_scores(df = pillar_ecol_df|>
+                                              filter(!(indicator %in% MPAs$NAME_E)))
+          if (state$mpas %in% MPAs$NAME_E) {
+            ind_ped <- ind_ped[which(pillar_ecol_df$areaID == state$mpas),]
+          } else {
+            ind_ped <- ind_ped[-(which(is.na(ind_ped$scale))),]
+          }
+          ind_ped$score[which(!(ind_ped$type %in% input$filter_ind_type))] <- NA
+          ind_ped$score[which(!(ind_ped$scale %in% input$filter_ind_scale))] <- NA
 
 
-        MarConsNetAnalysis::plot_flowerplot(flower_df,
-                                            grouping = "objective",
-                                            labels = "bin",
-                                            score = "score",
-                                            max_score=100,
-                                            min_score=0,
-                                            title=NAME
-        )
+          MarConsNetAnalysis::plot_flowerplot(ind_ped,
+                                              grouping = "objective",
+                                              labels = "bin",
+                                              score = "score",
+                                              max_score=100,
+                                              min_score=0,
+                                              title=NAME)
       }
 
 
@@ -2522,6 +2531,8 @@ app <- function() {
         links <- character(length(filtered_odf$objectives))
         grades <- NULL
         grade_colors <- NULL
+
+        #browser() # HERE NOW
 
         for (i in seq_along(filtered_odf$objectives)) {
           #message(i)
@@ -2604,29 +2615,35 @@ app <- function() {
     # Render the map with selected coordinates
 
     output$map <- leaflet::renderLeaflet({
+      df <- tryCatch(
+        filtered_pillar_ecol_df(),
+        error = function(e) NULL
+      )
+      req(!(is.null(df)))
+
       map <- leaflet() %>%
         addTiles()
       if (!(is.null(state$mpas)) && !(state$mpas %in% unique(pillar_ecol_df$region))) {
-        selected <- which(MPA_report_card$NAME_E == state$mpas)
+        selected <- which(filtered_MPA_report_card()$NAME_E == state$mpas)
         map <- map %>% leaflet::addPolygons(
-          data=MPA_report_card[selected,]$geoms,
-          fillColor=ifelse(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED"),
+          data=filtered_MPA_report_card()[selected,]$geoms,
+          fillColor=ifelse(!is.na(filtered_MPA_report_card()$grade[selected]), flowerPalette[filtered_MPA_report_card()$grade[selected]], "#EDEDED"),
           opacity=1,
           fillOpacity = 1,
           weight = 1,
-          color=ifelse(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey")
+          color=ifelse(!is.na(filtered_MPA_report_card()$grade[selected]), "black", "lightgrey")
         )
 
       } else if (state$mpas %in% unique(pillar_ecol_df$region)) {
-        selected <- which(MPA_report_card$region %in% state$mpas)
+        selected <- which(filtered_MPA_report_card()$region %in% state$mpas)
         map <- map %>%
-          leaflet::addPolygons(data=MPA_report_card$geoms[selected],
-                               fillColor = unname(if_else(!is.na(MPA_report_card$grade[selected]), flowerPalette[MPA_report_card$grade[selected]], "#EDEDED")),
+          leaflet::addPolygons(data=filtered_MPA_report_card()$geoms[selected],
+                               fillColor = unname(if_else(!is.na(filtered_MPA_report_card()$grade[selected]), flowerPalette[filtered_MPA_report_card()$grade[selected]], "#EDEDED")),
                                opacity=1,
                                fillOpacity = 1,
                                weight = 1,
-                               color = if_else(!is.na(MPA_report_card$grade[selected]), "black", "lightgrey"),
-                               popup = MPA_report_card$NAME_E[selected])
+                               color = if_else(!is.na(filtered_MPA_report_card()$grade[selected]), "black", "lightgrey"),
+                               popup = filtered_MPA_report_card()$NAME_E[selected])
       }
 
       message(">>> renderLeaflet ran again <<<")
@@ -2635,30 +2652,43 @@ app <- function() {
 
     })
 
-
     # ---- Incremental project plotting ----
 
     # Track plotted projects globally
     plotted_projects <- reactiveVal(character(0))
+
     last_tab <- reactiveVal(NULL)
     last_mpa <- reactiveVal(NULL)
+    last_filter <- reactiveVal(NULL)
+    shown_notification <- reactiveVal(FALSE)
+    drawn_projects <- reactiveVal(character(0))   # 🔴 ADD
+
     # Ensure the map is fully rendered
 
-    observeEvent(list(input$projects, input$tabs, input$mpas), {
+    observeEvent(list(input$projects, input$tabs, input$mpas, input$filter_button), {
       req(input$tabs)
-
       tab_changed <- !identical(last_tab(), input$tabs)
       mpa_changed <- !identical(last_mpa(), input$mpas)
+      filter_changed <- !identical(last_filter(), input$filter_button)
+
 
       last_tab(input$tabs)        # update memory
       last_mpa(input$mpas)
+      last_filter(input$filter_button)
+
+      if (tab_changed || mpa_changed ||
+          !identical(plotted_projects(), input$projects)) {
+        shown_notification(FALSE)   # 🔴 MOVE reset here
+      }
 
       projects <- input$projects
+
+
       if (is.null(projects)) projects <- character(0)
 
       triggered_by_tab <- input$tab
 
-      if (tab_changed || mpa_changed) {
+      if (tab_changed || mpa_changed || filter_changed) {
         old_projects <- character(0)
         new_projects <- projects
         removed_projects <- plotted_projects()
@@ -2668,17 +2698,25 @@ app <- function() {
         removed_projects <- setdiff(old_projects, projects)
       }
 
-      message("old_projects = ", old_projects)
-      message("new_projects = ", new_projects)
-      message("removed_projects = ", removed_projects)
+      #message("old_projects = ", old_projects)
+      #message("new_projects = ", new_projects)
+      #message("removed_projects = ", removed_projects)
 
       # ---- Remove deselected project layers ----
       if (input$tabs == "tab_0") {
         req(input$map_bounds)
         invalidateLater(1000, session)
 
-        message("ONLY SHOW UP ON TAB_0")
+        #message("ONLY SHOW UP ON TAB_0")
         proxy <- leafletProxy("map")
+
+        if (filter_changed || mpa_changed) {   # 🔴 ADD: force clean redraw
+          for (proj in plotted_projects()) {
+            proxy <- proxy %>% clearGroup(proj)
+          }
+
+          drawn_projects(character(0))   # 🔴 ADD
+        }
 
         if (length(removed_projects) > 0) {
           for (proj in removed_projects) {
@@ -2688,20 +2726,59 @@ app <- function() {
 
         # ---- Add newly selected project layers ----
         if (length(new_projects) > 0) {
-          for (proj in new_projects) {
 
+
+          # START OF LOOP
+          for (proj in new_projects) {
             proj_id <- sub("^.*\\(([^)]*)\\).*", "\\1", proj)
             proj_short <- sub(" \\(.*", "", proj)
 
-            if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) {
+            if (!(rv$button_label == "Filter Project Data") && !(state$mpas %in% "Maritimes")) { # JAIM
               k1 <- which(all_project_geoms$areaID == state$mpas)
               k2 <- which(all_project_geoms$project_short_title %in% proj_short)
               keep_projects <- intersect(k1, k2)
             } else {
+              # Unfilter the data
               keep_projects <- which(all_project_geoms$project_short_title %in% proj_short)
             }
 
+
+            if (length(keep_projects) == 0) {
+              #message("JAIMIE HERE 0 - shown notification is ", shown_notification())
+
+
+              if (!shown_notification()) {
+                showNotification(
+                  "No projects in this filtered area. Click \"See all Project Data\" to see the sample locations of this project.",
+                  type = "message",
+                  duration = 6
+                )
+                shown_notification(TRUE)
+              }
+              next
+            }
+
+            drawn_projects(
+              unique(c(drawn_projects(), proj))
+            )
+
+
+
             APJ_filtered <- all_project_geoms[keep_projects, ]
+
+            keep_type <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$type)) > 0
+
+            # if(!(is.null(input$projects))) {
+            # browser()
+            # }
+
+            #keep_scale <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$scale)) > 0
+            #
+            # APJ_filtered <- APJ_filtered[keep_type & keep_scale, ]
+
+             APJ_filtered <- APJ_filtered[keep_type, ]
+
+
 
             if (!(proj_id == "NA")) {
               if (suppressWarnings(is.na(as.numeric(proj_id)))) {
@@ -2722,9 +2799,9 @@ app <- function() {
             keep <- intersect(k1, k2)
             APJ <- APJ_filtered[keep, ]
 
-            message("proj=", proj)
-            message("nrow(APJ)=", nrow(APJ))
-            message("point color = ", map_palette$Color[map_palette$Project == proj])
+            #message("proj=", proj)
+            #message("nrow(APJ)=", nrow(APJ))
+            #message("point color = ", map_palette$Color[map_palette$Project == proj])
 
             type <- APJ$type
             popupContent <- mapply(
@@ -2768,8 +2845,9 @@ app <- function() {
             if (length(point_keep) > 0) {
 
               APJ_sub <- APJ[point_keep, ]
-              multipoints <- APJ_sub %>% filter(st_geometry_type(.) == "MULTIPOINT")
-              points <- APJ_sub %>% filter(st_geometry_type(.) == "POINT")
+              multipoints <- APJ_sub %>%
+                filter(st_geometry_type(geometry) == "MULTIPOINT")
+              points <- APJ_sub %>% filter(st_geometry_type(geometry) == "POINT")
               multipoints_expanded <- st_cast(multipoints, "POINT")
               APJ_points <- bind_rows(points, multipoints_expanded)
 
@@ -2787,15 +2865,20 @@ app <- function() {
 
         # ---- Update legend ----
         if (length(projects) > 0) {
+          legend_projects <- drawn_projects()   # 🔴 ADD
+
           proxy %>%
             clearControls() %>%
             addLegend(
               "bottomright",
-              colors = map_palette$Color[map_palette$Project %in% projects],
-              labels = projects,
+              colors = map_palette$Color[
+                match(legend_projects, map_palette$Project)   # 🔴 FIX alignment
+              ],
+              labels = legend_projects,
               opacity = 1,
               layerId = "projectLegend"
             )
+
         } else {
           proxy %>% clearControls()
         }

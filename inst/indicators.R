@@ -70,6 +70,7 @@ indicator_targets <- list(
                x$readiness <- "Ready"
                x$scale <- 'site'
                x$theme <- "Ocean Structure and Movement"
+               x$SME <- "Unknown"
 
 
                # Doing the score and statement status
@@ -258,6 +259,7 @@ indicator_targets <- list(
                                    "Contribute to the recovery and conservation of depleted species"
                                  ),
                                  theme = "Fish and Fishery Resources",
+                                 SME="Unknown",
                                  plot_lm=FALSE)
 
                x
@@ -290,6 +292,7 @@ indicator_targets <- list(
                                  plot_type = c("violin", "map"),
                                  plot_lm=FALSE,
                                  theme = "Fish and Fishery Resources",
+                                 SME="Unknown",
                                  objectives = c(
                                    "Maintain productivity of harvested species",
                                    "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
@@ -328,6 +331,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type = c("violin", "map"),
                                  plot_lm=FALSE,
+                                 SME="Unknown",
                                  theme = "Fish and Fishery Resources",
                                  objectives = c(
                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
@@ -369,6 +373,7 @@ indicator_targets <- list(
                                  plot_type = c("violin", "map"),
                                  plot_lm=FALSE,
                                  theme = "Fish and Fishery Resources",
+                                 SME="Unknown",
                                  objectives = c(
                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
                                    "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
@@ -404,6 +409,7 @@ indicator_targets <- list(
                                  plot_type=c('time-series','map'),
                                  plot_lm=FALSE,
                                  theme = "Secondary Production",
+                                 SME="Unknown",
                                  objectives = c(
                                    "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -441,6 +447,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type=c('community-composition', 'map'),
                                  plot_lm=FALSE,
+                                 SME="Unknown",
                                  theme = "Secondary Production",
                                  objectives = c(
                                    "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
@@ -471,6 +478,7 @@ indicator_targets <- list(
                                  climate = TRUE,
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
+                                 SME="Unknown",
                                  bin_rationale="FIXME",
                                  areas = MPAs,
                                  plot_type=c('time-series','map'),
@@ -501,6 +509,7 @@ indicator_targets <- list(
                                  plot_type = c('time-series','map'),
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
+                                 SME="Unknown",
                                  objectives = c(
                                    "Control alteration of nutrient concentrations affecting primary production",
                                    "Maintain/promote ecosystem structure and functioning",
@@ -527,6 +536,7 @@ indicator_targets <- list(
                                  source="Glider Program",
                                  project_short_title = "Glider Program",
                                  climate = TRUE,
+                                 SME="Unknown",
                                  climate_expectation="FIXME",
                                  indicator_rationale="Deoxygenation can impact marine life and its ecosystem directly and indirectly, and lead to changes in the abundance and distribution of fish, which, in turn, affects fisheries and productivity (e.g., Kim et al. 2023). This variable may be particularly important to monitor in deep habitats, where oxygen levels are depleted.",
                                  bin_rationale="FIXME",
@@ -565,6 +575,7 @@ indicator_targets <- list(
                                       indicator_rationale="Stratification of the mixed layer plays a complementary role in phytoplankton blooms (e.g., Greenan et al. 2004).",
                                       bin_rationale="FIXME",
                                       other_nest_variables="depth",
+                                      SME="Unknown",
                                       areas = MPAs,
                                       plot_type = c('time-series','map'),
                                       plot_lm=FALSE,
@@ -597,6 +608,7 @@ indicator_targets <- list(
                                  other_nest_variables="depth",
                                  areas = MPAs,
                                  plot_type = c('time-series','map'),
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
                                  objectives = c(
@@ -627,6 +639,7 @@ indicator_targets <- list(
                                  other_nest_variables="depth",
                                  areas = MPAs[-(which(MPAs$NAME_E =="Musquash Estuary Marine Protected Area")),],
                                  plot_type = c('time-series','map'),
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
                                  objectives = c(
@@ -655,6 +668,7 @@ indicator_targets <- list(
                                  other_nest_variables="depth",
                                  areas = MPAs,
                                  climate_expectation="FIXME",
+                                 SME="Unknown",
                                  indicator_rationale="Salinity changes can impact ocean biological functions and may produce community shifts including trophic cascades (e.g., Röthig et al. 2023). Changes in salinity can also adversely affect the temperature tolerance of aquatic organisms (e.g., Farias et al. 2024)",
                                  bin_rationale="FIXME",
                                  plot_type=c('time-series','map'),
@@ -685,6 +699,7 @@ indicator_targets <- list(
                                       other_nest_variables="depth",
                                       areas = MPAs,
                                       climate_expectation="FIXME",
+                                      SME="Unknown",
                                       indicator_rationale="Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
                                       bin_rationale="FIXME",
                                       plot_type=c('time-series','map'),
@@ -714,6 +729,7 @@ indicator_targets <- list(
                                  source="AZMP",
                                  project_short_title = "AZMP",
                                  other_nest_variables="depth",
+                                 SME="Unknown",
                                  areas = MPAs,
                                  climate_expectation="FIXME",
                                  indicator_rationale="Chlorophyll a measurements are typically used as a proxy for primary production at the ocean surface, which, in turn, can influence ocean bottom conditions through benthic/pelagic coupling.",
@@ -768,6 +784,7 @@ indicator_targets <- list(
                                  project_short_title = "AZMP",
                                  areas = MPAs,
                                  plot_type = c("time-series","map"),
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
                                  objectives = c(
@@ -817,6 +834,7 @@ indicator_targets <- list(
                                  project_short_title = "AZMP",
                                  areas = MPAs,
                                  plot_type = c("time-series","map"),
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Primary Production",
                                  objectives = c(
@@ -861,6 +879,7 @@ indicator_targets <- list(
                                  indicator_rationale="Phytoplankton constitutes the base of the marine food web and, consequently, their production sets an upper limit on the production of all higher trophic levels.",
                                  bin_rationale="FIXME",
                                  project_short_title = "AZMP",
+                                 SME="Unknown",
                                  areas = MPAs,
                                  plot_type=c('time-series','map'),
                                  plot_lm=FALSE,
@@ -892,6 +911,7 @@ indicator_targets <- list(
                                  project_short_title = "Biogenic Habitat",
                                  areas = MPAs[MPAs$region %in% c("Quebec","Gulf"),],
                                  plot_type='map',
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Benthic Environment",
                                  objectives = c(
@@ -924,6 +944,7 @@ indicator_targets <- list(
                                  project_short_title = "Biogenic Habitat",
                                  areas = MPAs,
                                  plot_type='map',
+                                 SME="Unknown",
                                  plot_lm=FALSE,
                                  theme = "Benthic Environment", #TODO This theme is probably not correct?
                                  objectives = c(
@@ -965,6 +986,7 @@ indicator_targets <- list(
                                  areas = MPAs,
                                  plot_type='map',
                                  plot_lm=FALSE,
+                                 SME="Unknown",
                                  theme = "Anthropogenic Pressure and Impacts", #TODO This theme is probably not correct?
                                  objectives = c(
                                    "Ensure the conservation and protection of threatened or endangered species",
@@ -1000,6 +1022,7 @@ indicator_targets <- list(
                                  other_nest_variables = "subclass",
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
+                                 SME="Unknown",
                                  areas = MPAs,
                                  plot_type='map-species',
                                  plot_lm=FALSE,
@@ -1036,6 +1059,7 @@ indicator_targets <- list(
                                  project_short_title = "Advancing eDNA",
                                  bin_rationale="FIXME",
                                  climate_expectation="FIXME",
+                                 SME="Unknown",
                                  indicator_rationale="FIXME",
                                  areas = MPAs,
                                  plot_type=c('time-series', 'map'),
@@ -1065,6 +1089,7 @@ indicator_targets <- list(
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
                                  bin_rationale="FIXME",
+                                 SME="Unknown",
                                  project_short_title = "Cumulative Impacts",
                                  areas = MPAs[MPAs$region=="Maritimes",],
                                  plot_type='map',
@@ -1107,6 +1132,7 @@ indicator_targets <- list(
                                  PPTID = NA,
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
+                                 SME="Unknown",
                                  bin_rationale="FIXME",
                                  source="Open Data (DFO)",
                                  project_short_title = "Biofouling AIS",
@@ -1157,6 +1183,7 @@ indicator_targets <- list(
                                       project_short_title = "Musquash benthic monitoring",
                                       areas = MPAs,
                                       plot_type='map-species',
+                                      SME="Unknown",
                                       plot_lm=FALSE,
                                       theme = "Fish and Fishery Resources", #TODO This theme is probably not correct?
                                       objectives = c(
@@ -1183,6 +1210,7 @@ indicator_targets <- list(
                                  scoring = "representation: cumulative distribution with regional thresholds",
                                  PPTID = NA,
                                  source="Eastern Charlotte Waterways",
+                                 SME="Unknown",
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
                                  bin_rationale="FIXME",
@@ -1213,8 +1241,9 @@ indicator_targets <- list(
                                  scoring = "desired state: increase",
                                  PPTID = NA,
                                  source="Eastern Charlotte Waterways",
-                                 project_short_title = "ECW Project",
+                                 project_short_title = "Water Quality",
                                  climate = TRUE,
+                                 SME="Unknown",
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
                                  bin_rationale="FIXME",
@@ -1247,7 +1276,8 @@ indicator_targets <- list(
                                  scoring = "desired state: increase",
                                  PPTID = NA,
                                  source="Eastern Charlotte Waterways",
-                                 project_short_title = NA,
+                                 SME="Unknown",
+                                 project_short_title = "Water Quality",
                                  climate = TRUE,
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
@@ -1280,7 +1310,8 @@ indicator_targets <- list(
                                  scoring = "desired state: increase",
                                  PPTID = NA,
                                  source="Eastern Charlotte Waterways",
-                                 project_short_title = NA,
+                                 SME="Unknown",
+                                 project_short_title = "Water Quality",
                                  climate = TRUE,
                                  climate_expectation="FIXME",
                                  indicator_rationale="Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020).",
@@ -1314,7 +1345,8 @@ indicator_targets <- list(
                                  scoring = "desired state: increase",
                                  PPTID = NA,
                                  source="Eastern Charlotte Waterways",
-                                 project_short_title = NA,
+                                 SME="Unknown",
+                                 project_short_title = "Water Quality",
                                  climate = TRUE,
                                  climate_expectation="FIXME",
                                  indicator_rationale="The secchi depth can be a powerful indicator of water clarity and can reveal important information about ecosystem health. A higher secchi depth (clearer water) often implies low turbidity, fewer suspended sediments, and potentially lower levels of pollution or eutrophication. Lower secchi depth can indicator higher nutrient inputs, runoff, algal blooms, or sediment disturbance - possibly from nearby land use, fishing activity or climate events.",
@@ -1346,7 +1378,8 @@ indicator_targets <- list(
                                  scoring = "desired state: decrease",
                                  PPTID = NA,
                                  source="Eastern Charlotte Waterways",
-                                 project_short_title = NA,
+                                 SME='Unknown',
+                                 project_short_title = "Water Quality",
                                  climate_expectation="FIXME",
                                  indicator_rationale="FIXME",
                                  bin_rationale="FIXME",
@@ -1389,6 +1422,7 @@ indicator_targets <- list(
                                       other_nest_variables="depth",
                                       areas = MPAs,
                                       plot_type = c('outside-comparison','map'),
+                                      SME="Unknown",
                                       plot_lm=FALSE,
                                       control_polygon=control_polygons,
                                       theme = "Primary Production",
@@ -1420,6 +1454,7 @@ indicator_targets <- list(
                                       climate = TRUE,
                                       other_nest_variables="depth",
                                       areas = MPAs,
+                                      SME="Unknown",
                                       climate_expectation="FIXME",
                                       indicator_rationale="Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
                                       bin_rationale="FIXME",
@@ -1457,7 +1492,8 @@ indicator_targets <- list(
                                       indicator_rationale="FIXME",
                                       bin_rationale="FIXME",
                                       source="Eastern Charlotte Waterways",
-                                      project_short_title = NA,
+                                      SME="Unknown",
+                                      project_short_title = "Water Quality",
                                       climate = TRUE,
                                       areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                                       plot_type=c('outside-comparison','map'),
@@ -1495,12 +1531,13 @@ indicator_targets <- list(
                                       type = "Discrete Occupations Sections",
                                       units = "MPN",
                                       scoring = "control site linear trend: less inside",
+                                      SME="Unknown",
                                       PPTID = NA,
                                       climate_expectation="FIXME",
                                       indicator_rationale="FIXME",
                                       bin_rationale="FIXME",
                                       source="Eastern Charlotte Waterways",
-                                      project_short_title = NA,
+                                      project_short_title = "Water Quality",
                                       climate = TRUE,
                                       areas = MPAs[MPAs$NAME_E=="Musquash Estuary Marine Protected Area",],
                                       plot_type=c('outside-comparison','map'),
@@ -1525,6 +1562,7 @@ indicator_targets <- list(
       areaID = areaID,
       region="Maritimes",
       indicator = "Birds Sample Coverage",
+      SME="Unknown",
       type = "Observations",
       units = NA,
       scoring = "custom",
@@ -1590,6 +1628,7 @@ indicator_targets <- list(
                         type = "Model",
                         units = NA,
                         scoring = "custom",
+                        SME="Unknown",
                         PPTID = NA,
                         source = NA,
                         project_short_title = "ProtConn",
@@ -1666,7 +1705,7 @@ indicator_targets <- list(
                         scoring = ifelse(type == "Commercial fishery landing","coverage: landings","coverage"),
                         PPTID = NA,
                         source = "Open Data (DFO)",
-                        project_short_title = "",
+                        project_short_title = "MARXAN",
                         climate = FALSE,
                         design_target = TRUE,
                         other_nest_variables = ifelse(type == "Commercial fishery landing","WEIGHTMT",NA),
@@ -1682,6 +1721,7 @@ indicator_targets <- list(
                         objectives = NA,
                         readiness="Ready",
                         scale = "region-site",
+                        SME="Unknown",
                         plot_type = "map")
 
 
@@ -1700,53 +1740,53 @@ indicator_targets <- list(
 
   tar_target(name = ind_sst,
              command = {
-               ind_placeholder(ind_name="Sea Surface Temperature", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available", source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"))
+               ind_placeholder(ind_name="Sea Surface Temperature", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available", source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"), theme="Ocean Conditions")
              }), # Environmental Representativity
 
   tar_target(name = ind_temp_at_depth,
              command = {
                ind_placeholder(ind_name="Temperature at Depth", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available",
-                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"))
+                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
 
   tar_target(name = ind_sea_surface_salinity,
              command = {
                ind_placeholder(ind_name="Sea Surface Salinity", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available",
-                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"))
+                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_subsurface_salinity,
              command = {
                ind_placeholder(ind_name="Subsurface Salinity", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available",
-                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"))
+                               source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_oxygen_saturation,
              command = {
                ind_placeholder(ind_name="Oxygen Saturation", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available",
                                source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                               "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                               "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_ave_ph_level,
              command = {
                ind_placeholder(ind_name="Average pH Level", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available",
                                source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                               "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                               "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_carbonate,
              command = {
                ind_placeholder(ind_name="Carbonate", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available",
                                source = "AZMP", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                               "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                               "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_ave_mixed_layer_depth,
              command = {
                ind_placeholder(ind_name="Average Mixed Layer Depth", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "BNAM", objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"))
+                               source = "BNAM", objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
 
@@ -1754,13 +1794,13 @@ indicator_targets <- list(
              command = {
                ind_placeholder(ind_name="Average Position of Shelf Slope Front", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "BNAM", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                               "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"))
+                                                               "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions?
 
   tar_target(name = ind_wind_speed_and_storminess,
              command = {
                ind_placeholder(ind_name="Wind Speed and Storminess", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "Gliders", objectives = c("Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                               source = "Gliders", objectives = c("Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_chlorophyll_a,
@@ -1768,7 +1808,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Chlorophyll a", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "AZMP", objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                                "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)",
-                                                               "Control alteration of nutrient concentrations affecting primary production"))
+                                                               "Control alteration of nutrient concentrations affecting primary production"), theme="Primary Production")
              }), # Structure and Function, Primary Production
 
   tar_target(name = ind_phytoplankton_biomass_and_diversity,
@@ -1776,161 +1816,161 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Phytoplankton Biomass and Diversity", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "AZMP", objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                                "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)",
-                                                               "Control alteration of nutrient concentrations affecting primary production"))
+                                                               "Control alteration of nutrient concentrations affecting primary production"), theme="Primary Production")
              }), # Biomass Metrics, Primary Production
 
   tar_target(name = ind_spring_bloom,
              command = {
                ind_placeholder(ind_name="Start Date of Spring Bloom", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "AZMP", objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                               "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                               "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Primary Production")
              }), # Structure and Function, Primary Production
 
   tar_target(name = ind_calanus_finmarchicus,
              command = {
                ind_placeholder(ind_name="Biomass of Calanus finmarchicus", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "AZMP", objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"))
+                               source = "AZMP", objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"), theme="Secondary Production")
              }), # Biomass Metrics, Secondary Production
 
   tar_target(name = ind_fish_eggs_and_larve,
              command = {
                ind_placeholder(ind_name="Fish Eggs and Larve", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "Dedicated Surveys", objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
-                                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"))
+                                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_seasonal_presence_cetaceans,
              command = {
                ind_placeholder(ind_name="Seasonal Presence/Absence of Cetaceans", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "Passive Acoustics", objectives = c("Protect unique, rare, or sensitive ecological features"))
+                               source = "Passive Acoustics", objectives = c("Protect unique, rare, or sensitive ecological features"), theme="Marine Mammals and Other Top Predators")
              }), # Connectivity, Marine Mammals other top Predators
 
   tar_target(name = ind_seasonal_presence_seals,
              command = {
                ind_placeholder(ind_name="Seasonal Presence/Absence of Seals", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "Tagging", objectives = c("Protect unique, rare, or sensitive ecological features"))
+                               source = "Tagging", objectives = c("Protect unique, rare, or sensitive ecological features"), theme="Marine Mammals and Other Top Predators")
              }), # Connectivity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_seasonal_presence_pelagics,
              command = {
                ind_placeholder(ind_name="Seasonal Presence/Absence of Large Pelagics", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "Tagging", objectives = c("Protect unique, rare, or sensitive ecological features"))
+                               source = "Tagging", objectives = c("Protect unique, rare, or sensitive ecological features"), theme="Marine Mammals and Other Top Predators")
              }), # Connectivity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_seasonal_presence_seabirds,
              command = {
                ind_placeholder(ind_name="Seasonal Presence/Absence of Seabirds", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "CWS Data", objectives = c("Protect unique, rare, or sensitive ecological features"))
+                               source = "CWS Data", objectives = c("Protect unique, rare, or sensitive ecological features"), theme="Marine Mammals and Other Top Predators")
              }), # Connectivity, Marine Mammals and other Top Predators?
 
   tar_target(name = ind_proportion_demersal_fish,
              command = {
                ind_placeholder(ind_name="Proportion of Large and Small Demersal Fish Species", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "RV Survey", objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                               source = "RV Survey", objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Fish and Fishery Resources")
              }), # Structure and Function, Fish and Fishery Resources
 
 
   tar_target(name = ind_abundance_invasive_species_webmr,
              command = {
                ind_placeholder(ind_name="Abundance of Aquatic Invasive Species in WEBMER", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "RV Survey", objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                               source = "RV Survey", objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Trophic Structure and Function")
              }), # Biomass Metrics, Trophic Structure and Function
 
   tar_target(name = ind_biomass_groundfish_prey_webmr,
              command = {
                ind_placeholder(ind_name="Biomass of Groundfish Prey Species within WEBMR", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "RV Survey", objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                                    "Maintain/promote ecosystem structure and functioning"))
+                                                                    "Maintain/promote ecosystem structure and functioning"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_abundance_sea_pens_webmr,
              command = {
                ind_placeholder(ind_name="Abundance of Sea Pens within WEBMR", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                                    "conserve and protect benthic (seabed) habitats"))
+                                                                    "conserve and protect benthic (seabed) habitats"), theme="Benthic Environment")
              }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_epibenthic_infaunal,
              command = {
                ind_placeholder(ind_name="Diversity of Epibenthic and Infaunal Communities", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "RV Survey", objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes",
-                                                                    "Maintain Species Biodiversity"))
+                                                                    "Maintain Species Biodiversity"), theme="Benthic Environment")
              }), # Species Diversity, Benthic Environment
 
   tar_target(name = ind_community_comp_epibenthic_infaunal,
              command = {
                ind_placeholder(ind_name="Community Composition of Epibenthic and Infaunal Benthic Communities", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "RV Survey", objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes",
-                                                                    "Maintain Species Biodiversity"))
+                                                                    "Maintain Species Biodiversity"), theme="Benthic Environment")
              }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_biomass_bioturbators,
              command = {
                ind_placeholder(ind_name="Biomass of Bioturbators", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
-                               source = "RV Survey", objectives = c("Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                               source = "RV Survey", objectives = c("Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Benthic Environment")
              }), #  Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_spatial_extent_ebsa_webmr,
              command = {
                ind_placeholder(ind_name="Spatial Extent of EBSA with WEBMR", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "Dedicated Surveys", objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                                            "Protect unique, rare, or sensitive ecological features"))
+                                                                            "Protect unique, rare, or sensitive ecological features"), theme="Ocean Structure and Movement")
              }), # Environmental Representativity, Ocean Structure and Movement?
 
   tar_target(name = ind_rel_abundance_groundfish,
              command = {
                ind_placeholder(ind_name="Relative abundance and biomass of select groundfish species", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available",
                                source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_size_distribution_groundfish,
              command = {
                ind_placeholder(ind_name="Size Distribution of Select Groundfish Species", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_condition_groundfish,
              command = {
                ind_placeholder(ind_name="Condition of Select Groundfish Species", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_fecundity_groundfish,
              command = {
                ind_placeholder(ind_name="Fecundity of Select Groundfish Species", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_community_comp_demersal,
              command = {
                ind_placeholder(ind_name="Community Composition of Demersal Fish", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available",
                                source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_distribution_juv_haddock_habitat,
              command = {
                ind_placeholder(ind_name="Distriburion of Juvenile Haddock Habitat", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Fish and Fishery Resources")
              }), # Key Fish Habitat, Fish and Fishery Resources?
 
   tar_target(name = ind_distribution_key_fish_habitat,
              command = {
                ind_placeholder(ind_name="Distribution of Key Fish Species Habitat", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Readily Available",
                                source = "RV Survey", objectives = c("Protect continental shelf habitats and associated benthic and demersal communities",
-                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"))
+                                                                    "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"), theme="Fish and Fishery Resources")
              }), # Key Fish Habitat, Fish and Fishery Resources?
 
   tar_target(name = ind_unauthorized_fishing,
              command = {
                ind_placeholder(ind_name="Amount of Unauthorized Fishing", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "C&P", objectives = c("Manage human activities to minimize impacts on other commercial and non-commercial living resources",
-                                                              "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"))
+                                                              "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Productivity, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_seabed_disruption_in_around_webmr_fishing,
@@ -1939,14 +1979,14 @@ indicator_targets <- list(
                                source = "AIS Data", objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                                    "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
                                                                    "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                                   "conserve and protect benthic (seabed) habitats"))
+                                                                   "conserve and protect benthic (seabed) habitats"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_total_annual_landings,
              command = {
                ind_placeholder(ind_name="Total annual landings form 4W for directed groundfish fisheries and common bycatch only stocks", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "Commercial Catch Information", objectives = c("Manage human activities to minimize impacts on other commercial and non-commercial living resources",
-                                                                                       "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"))
+                                                                                       "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Productivity, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_seabed_disruption_in_around_webmr_research,
@@ -1955,7 +1995,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
                                                            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                           "conserve and protect benthic (seabed) habitats"))
+                                                           "conserve and protect benthic (seabed) habitats"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_vessel_traffic,
@@ -1963,14 +2003,14 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Vessel Traffic Intensity", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "VMS", objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
                                                               "Control unintended incidental mortality for all species",
-                                                              "Limit disturbing activity in important reproductive areas/seasons"))
+                                                              "Limit disturbing activity in important reproductive areas/seasons"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_ocean_sound,
              command = {
                ind_placeholder(ind_name="Ocean Sound", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "VMS", objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
-                                                              "Limit disturbing activity in important reproductive areas/seasons"))
+                                                              "Limit disturbing activity in important reproductive areas/seasons"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_cables,
@@ -1979,7 +2019,7 @@ indicator_targets <- list(
                                source = "NRCan", objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                                 "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
                                                                 "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                                "conserve and protect benthic (seabed) habitats"))
+                                                                "conserve and protect benthic (seabed) habitats"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_well_proximity,
@@ -1988,14 +2028,14 @@ indicator_targets <- list(
                                source = "Offshore Energy Regulator", objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                                                     "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
                                                                                     "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                                                    "conserve and protect benthic (seabed) habitats"))
+                                                                                    "conserve and protect benthic (seabed) habitats"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_offshore_wind_developments,
              command = {
                ind_placeholder(ind_name="Number of offshore wind developments within in the vacinity of WEBMR", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = "Offshore Energy Regulator", objectives = c("Manage human activities to minimize impacts on other commercial and non-commercial living resources",
-                                                                                    "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                                                    "Habitat required for all species, particularly priority species, is maintained and protected"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_contaminant_concentration,
@@ -2003,7 +2043,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Concentrations of Contaminants by Type", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = NA, objectives = c("Manage human activities to minimize impacts on other commercial and non-commercial living resources",
                                                            "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"))
+                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_anthropogenic_debris,
@@ -2011,27 +2051,27 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Quantity of Anthropogenic Debris", areas = MPAs[which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),], readiness = "Unknown",
                                source = NA, objectives = c("Manage human activities to minimize impacts on other commercial and non-commercial living resources",
                                                            "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"))
+                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_biomass_abund_distribution_musquash,
              command = {
                ind_placeholder(ind_name="Total biomass, abundance, and dustribution of key species in each trophic level", areas = MPAs[which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain productivity of harvested species",
-                                                           "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"))
+                                                           "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"), theme="Trophic Structure and Function")
              }), # Biomass Metrics, Trophic Structure and Function
 
   tar_target(name = ind_species_per_trophic,
              command = {
                ind_placeholder(ind_name="Species per trophic level within each habitat type", areas = MPAs[which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain productivity of harvested species",
-                                                           "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"))
+                                                           "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"), theme="Trophic Structure and Function")
              }), # Functional Diversity, Trophic Structure and Function
 
   tar_target(name = ind_species_at_risk,
              command = {
                ind_placeholder(ind_name="Number of at risk species within MPA", areas = MPAs[which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),], readiness = "Unknown",
-                               source = NA, objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
+                               source = NA, objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"), theme="Trophic Structure and Function")
              }), # Biomass Metrics, Trophic Structure and Function?
 
   tar_target(name = ind_disturbed_area,
@@ -2039,7 +2079,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Total area and location of habitat type and proportion and frequency disturbed or lost", areas = MPAs[which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Protect representative examples of identified ecosystem and habitat types",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
 
@@ -2049,7 +2089,7 @@ indicator_targets <- list(
              command = {
                ind_placeholder(ind_name="Hydrodynamic and sediment regime in estuary", areas = MPAs[which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality
-"))
+"), theme="Ocean Structure and Movement")
              }), # Environmental Representativity, Ocean Structure and Movement
 
   tar_target(name = ind_nutrients,
@@ -2057,7 +2097,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Nutrient Concentrations", areas = MPAs[which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)",
-                                                           "Control alteration of nutrient concentrations affecting primary production"))
+                                                           "Control alteration of nutrient concentrations affecting primary production"), theme="Ocean Conditions")
              }), # Environmental Representataivity, Ocean Conditions
 
   tar_target(name = ind_cpue,
@@ -2066,21 +2106,21 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
                                                            "Distribute population component mortality in relation to component biomass",
-                                                           "Keep fishing and other forms of mortality moderate"))
+                                                           "Keep fishing and other forms of mortality moderate"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_bycatch,
              command = {
                ind_placeholder(ind_name="By-catch number per impacted species", areas = MPAs[which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes",
-                                                           "Control unintended incidental mortality for all species"))
+                                                           "Control unintended incidental mortality for all species"), theme="Anthropogenic Pressure and Impacts")
              }), # Biomass Metrics, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_nonindigenous_rel_indigenous,
              command = {
                ind_placeholder(ind_name="Number of non-indigenous species relative to indigenous species in MPA", areas = MPAs[which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes",
-                                                           "Minimize unintended introduction and transmission of invasive species"))
+                                                           "Minimize unintended introduction and transmission of invasive species"), theme="Trophic Structure and Function")
              }), # Biomass Metrics, Trophic Structure and Function?
 
   tar_target(name = ind_human_perturbation,
@@ -2088,7 +2128,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Degree of human induced perturbation or loss", areas = MPAs[which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Protect representative examples of identified ecosystem and habitat types",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_abundance_nbw,
@@ -2096,7 +2136,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Abundance of Northern Bottlenose Whales", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
                                                            "Protect unique, rare, or sensitive ecological features",
-                                                           "Contribute to the recovery and conservation of depleted species"))
+                                                           "Contribute to the recovery and conservation of depleted species"), theme="Marine Mammals and other Top Predators")
              }), # Biomass Metrics, Marine Mammals and Other Top Predators
 
   tar_target(name = ind_mpa_use_nbw,
@@ -2105,7 +2145,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
                                                            "Protect unique, rare, or sensitive ecological features",
                                                            "Contribute to the recovery and conservation of depleted species",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme="Marine Mammals and other Top Predators")
              }), # Connectivity?, Marine Mammals and other Top Predators
 
   tar_target(name = ind_population_characteristics,
@@ -2114,7 +2154,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
                                                            "Contribute to the recovery and conservation of depleted species",
                                                            "Ensure the conservation and protection of threatened or endangered species",
-                                                           "promote the recovery of at-risk whales and wolffish"))
+                                                           "promote the recovery of at-risk whales and wolffish"), theme="Marine Mammals and other Top Predators")
              }), # Structure and Function, Marine Mammals and other Top Predators
 
   tar_target(name = ind_fresh_scars,
@@ -2123,7 +2163,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
                                                            "Control unintended incidental mortality for all species",
                                                            "Ensure the conservation and protection of threatened or endangered species",
-                                                           "promote the recovery of at-risk whales and wolffish"))
+                                                           "promote the recovery of at-risk whales and wolffish"), theme="Marine Mammals and other Top Predators")
              }), # Threats to Habitat, Marine Mammals and other Top Predators
 
   tar_target(name = ind_genetic_diversity_nbw,
@@ -2131,7 +2171,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Genetic diversity within the Northern Bottlenose Whales", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
                                                            "Maintain biodiversity of individual species, communities and populations within the different ecotypes",
-                                                           "Ensure the conservation and protection of threatened or endangered species"))
+                                                           "Ensure the conservation and protection of threatened or endangered species"), theme="Marine Mammals and other Top Predators")
              }), # Genetic Diversity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_blubber_contaminants,
@@ -2140,19 +2180,19 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain and monitor the quality of water and sediments of the Gully; and",
                                                            "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Minimize harmful impacts from human activities on cetacean populations and their habitats",
-                                                           "Ensure the conservation and protection of threatened or endangered species"))
+                                                           "Ensure the conservation and protection of threatened or endangered species"), theme="Marine Mammals and other Top Predators")
              }), # Threats to Productivity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_rel_abundance_cetaceans,
              command = {
                ind_placeholder(ind_name="Relative abundances of cetaceans beside Northern Bottlenose Whales in The Gully", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
-                               source = NA, objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
+                               source = NA, objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"), theme="Marine Mammals and other Top Predators")
              }), # Biomass Metrics, Marine Mammals and other Top Predators
 
   tar_target(name = ind_cetacean_presence,
              command = {
                ind_placeholder(ind_name="Cetacean presence and activity in the MPA, year-round", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
-                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats"))
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats"), theme="Marine Mammals and other Top Predators")
              }), # Structure and Function, Marine Mammals and other Top Predators
 
   tar_target(name = ind_strandings,
@@ -2160,7 +2200,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Number of reported strandings of Scotian Shelf Northern Bottlenose Whales", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
                                                            "Ensure the conservation and protection of threatened or endangered species",
-                                                           "Control unintended incidental mortality for all species"))
+                                                           "Control unintended incidental mortality for all species"), theme="Marine Mammals and other Top Predators")
              }), # Threats to Productivity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_ship_strikes,
@@ -2168,7 +2208,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Number of reported ship strikes on cetaceans in or near the Gully and of strikes on Scotian Shelf Northern Bottlenose Whales elsewhere", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
                                                            "Control unintended incidental mortality for all species",
-                                                           "Ensure the conservation and protection of threatened or endangered species"))
+                                                           "Ensure the conservation and protection of threatened or endangered species"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Marine Mammals and other Top Predators, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_entanglement_gully,
@@ -2176,14 +2216,14 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Number of reported gear entanglements of cetaceans in or near the Gully and of entanglements of Scotian Shelf Northern Bottlenose Whales elsewhere", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
                                                            "Control unintended incidental mortality for all species",
-                                                           "Ensure the conservation and protection of threatened or endangered species"))
+                                                           "Ensure the conservation and protection of threatened or endangered species"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Marine Mammals and other Top Predators, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_human_interaction,
              command = {
                ind_placeholder(ind_name="Number of reports of other interactions between human activities and cetaceans in or near the Gully and of interactions with Scotian Shelf Northern Bottlenose Whales", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
-                                                           "Control unintended incidental mortality for all species"))
+                                                           "Control unintended incidental mortality for all species"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Marine Mammals and other Top Predators, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_coral_distribution,
@@ -2191,7 +2231,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Coral distribution, density, and size structure by species at select monitoring sites", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Protect cold-water corals",
                                                            "Protect cold-water corals and deep water frontier area",
-                                                           "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel"))
+                                                           "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel"), theme="Benthic Environment")
              }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_coral_diversity,
@@ -2199,7 +2239,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Coral Diversity at selcted monitoring sites", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Protect cold-water corals",
                                                            "Protect cold-water corals and deep water frontier area",
-                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"), theme="Benthic Environment")
              }), # Species Diversity, Benthic Environment
 
   tar_target(name = ind_coral_proportions,
@@ -2207,7 +2247,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Proportions of live and dead corals, by species, at selected monitoring sites within the MPA", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Protect cold-water corals",
                                                            "Protect cold-water corals and deep water frontier area",
-                                                           "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel"))
+                                                           "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel"), theme="Benthic Environment")
              }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_zoanthid_overgrowth,
@@ -2215,7 +2255,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Proportion on live corals at selected monitoring sites with the MPA that show zoanthid over-growths, and extent of over-growth in affected colonies", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Protect cold-water corals",
                                                            "Protect cold-water corals and deep water frontier area",
-                                                           "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel"))
+                                                           "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel"), theme="Trophic Structure and Function")
              }), # Threats to Productivity, Benthic Environment, Trophic Structure and Function
 
   tar_target(name = ind_trawl_vunerable,
@@ -2224,7 +2264,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
                                                            "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_longline_vunerable,
@@ -2233,7 +2273,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
                                                            "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_trap_vunerable,
@@ -2242,7 +2282,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
                                                            "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"), theme="Fish and Fishery Resources")
              }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_mesopelagic_nektonic,
@@ -2250,7 +2290,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Relative abundances, size distributions and diversity of selected mesopelagic nektonic species in Zones 1 and 2 of the MPA", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
+                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"), theme="Trophic Structure and Function")
              }), # Biomass Metrics,Trophic Structure and Function
 
   tar_target(name = ind_environmental_conditions_near_seabed,
@@ -2258,7 +2298,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Temperature, salinity, oxygen concentration, alkalinity, pH, light levels, chlorophyll, pigments and nutrients in water column within the MPA, including in close proximity to the seabed", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Maintain and monitor the quality of water and sediments of the Gully; and",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_environmental_conditions_azmp_lines,
@@ -2266,7 +2306,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Temperature, salinity, oxygen concentration, light levels, chlorophyll, pigments and nutrients in waters flowing into and past the MPA, as measured on the Louisbourg Line, the Halifax Line and the Extended Halifax Line", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Maintain and monitor the quality of water and sediments of the Gully; and",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_physical_biological_surface_properties,
@@ -2274,7 +2314,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Physical (temperature, salinity, wind, sea-surface height) and biological (ocean colour) sea surface properties in the MPA and the surrounding region", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Maintain and monitor the quality of water and sediments of the Gully; and",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_weather_station_buoy_sites,
@@ -2282,7 +2322,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Weather conditions at the Sable Island weather station, Banquereau and Laurentian Fan weather-buoy sites, including wind direction and speed, air pressure and sea-level air temperatures, and at buoy sites sea surface temperatures, wave height and dominant wave period", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Maintain and monitor the quality of water and sediments of the Gully; and",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_water_masses,
@@ -2290,32 +2330,33 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Three-dimensional distribution and movements of water masses within and around the MPA", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Maintain and monitor the quality of water and sediments of the Gully; and",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Ocean Structure and Movement")
              }), # Environmental Representativity, Ocean Structure and Movement
 
   tar_target(name = ind_acoustic_scattering,
              command = {
                ind_placeholder(ind_name="Acoustic scattering in the water column within the MPA (as a measure of mesopelagic and zooplankton densities and distribution)", areas =MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"),
+                               theme="Secondary Production")
              }), # Biomass Metrics, Secondary Production
 
   tar_target(name = ind_seabird_abundance,
              command = {
                ind_placeholder(ind_name="Distribution and abundance of seabird species within the MPA, including an index of planktivorous seabird species", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
-                               source = NA, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"))
+                               source = NA, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"), theme="Trophic Structure and Function")
              }), # Biomass Metrics, Trophic Structure and Function
 
   tar_target(name = ind_vessel_transits,
              command = {
                ind_placeholder(ind_name="Number of transits of the MPA by vessels other than pleasure craft, broken down into mercantile vessels, surface naval vessels and fishing vessels not fishing in the area", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
-                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats"))
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthorpogenic Pressure and Impacts
 
   tar_target(name = ind_vessel_operation,
              command = {
                ind_placeholder(ind_name="Hours of operation within the MPA by vessels other than commercial fishing vessels or pleasure craft, broken down into research and monitoring vessels, other government vessels, and ecotourism vessels", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
-                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats"))
+                               source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_fishing_effort,
@@ -2323,7 +2364,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Commercial fishing effort within the MPA", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Manage human activities to minimize impacts on other commercial and non-commercial living resources",
-                                                           "Keep fishing and other forms of mortality moderate"))
+                                                           "Keep fishing and other forms of mortality moderate"), theme="Anthropogenic Pressure and Impacts")
              }), # Biomass Metrics, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_fishing_effort_nearby,
@@ -2331,7 +2372,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Commercial fishing effort in close proximity to the MPA boundary", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Manage human activities to minimize impacts on other commercial and non-commercial living resources",
-                                                           "Keep fishing and other forms of mortality moderate"))
+                                                           "Keep fishing and other forms of mortality moderate"), theme="Anthropogenic Pressure and Impacts")
              }), #Biomass Metrics, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_corals_removed,
@@ -2340,7 +2381,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Protect cold-water corals",
                                                            "Protect cold-water corals and deep water frontier area",
                                                            "Protect corals, particularly significant concentrations of sea pens, from harm due to human activities (e.g., fishing, oil and gas exploratory drilling, submarine cable installation and anchoring) in the Laurentian Channel",
-                                                           "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities"))
+                                                           "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities"), theme="Anthropogenic Pressure and Impacts")
              }), # Biomass Metrics, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_target_org_removed_gully,
@@ -2349,7 +2390,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Manage human activities to minimize impacts on other commercial and non-commercial living resources",
                                                            "Control unintended incidental mortality for all species",
-                                                           "Keep fishing and other forms of mortality moderate"))
+                                                           "Keep fishing and other forms of mortality moderate"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Productivity, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_organisms_removed,
@@ -2357,7 +2398,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Quantities of organisms besides corals removed from the MPA by research activities", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Manage human activities to minimize impacts on other commercial and non-commercial living resources",
-                                                           "Control unintended incidental mortality for all species"))
+                                                           "Control unintended incidental mortality for all species"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Productivity, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_seabed_swept,
@@ -2366,7 +2407,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
                                                            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_seabed_occupied,
@@ -2375,14 +2416,14 @@ indicator_targets <- list(
                                source = NA, objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
                                                            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_petroleum_activity,
              command = {
                ind_placeholder(ind_name="Number and types of offshore-petroleum exploration and development activities on the eastern Scotian Shelf", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-                                                           "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities"))
+                                                           "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_ballast,
@@ -2390,7 +2431,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Number of ships’ ballast-water exchanges in the proximity of the MPA and the quantities of ballast exchanged", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain and monitor the quality of water and sediments of the Gully; and",
                                                            "Control introduction and proliferation of disease/pathogens",
-                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"))
+                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_other_discharge,
@@ -2399,14 +2440,14 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain and monitor the quality of water and sediments of the Gully; and",
                                                            "Control introduction and proliferation of disease/pathogens",
                                                            "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-                                                           "Minimize unintended introduction and transmission of invasive species"))
+                                                           "Minimize unintended introduction and transmission of invasive species"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_floating_debris_gully,
              command = {
                ind_placeholder(ind_name="Quantity of floating debris (i.e., large objects) in the Gully MPA", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
-                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"))
+                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_seabed_debris_gully,
@@ -2414,28 +2455,29 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Quantity of anthropogenic debris on the seabed at selected monitoring sites in the Gully MPA", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"))
+                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"),
+                               theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_invasive_gully,
              command = {
                ind_placeholder(ind_name="Reports of known invasive species in the Gully MPA", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize unintended introduction and transmission of invasive species",
-                                                           "Control introduction and proliferation of disease/pathogens"))
+                                                           "Control introduction and proliferation of disease/pathogens"), theme="Trophic Structure and Function")
              }), # Threats to Productivity, Trophic Structure and Function
 
   tar_target(name = ind_anthropogenic_sound,
              command = {
                ind_placeholder(ind_name="Quantitative characteristics of anthropogenic sound within the MPA", areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
-                                                           "Limit disturbing activity in important reproductive areas/seasons"))
+                                                           "Limit disturbing activity in important reproductive areas/seasons"), theme="Anthropogenic Pressure and Impacts")
              }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_physandbio_properties,
              command = {
                ind_placeholder(ind_name="Temperature, salinity, oxygen concentration, light levels, chlorophyll, pigments, nutrients and zooplankton within the AOI and both upstream and downstream", areas =MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = "AZMP", objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                             "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                             "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Ocean Conditions")
              }), #Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_physandbio_seasurface_properties,
@@ -2443,20 +2485,20 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Physical (e.g. temperature, salinity, wind, sea-surface height) and biological (e.g. ocean colour) sea surface properties in the MPA and the surrounding region", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"))
+                                                           "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"), theme="Ocean Conditions")
              }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_weather_condition,
              command = {
                ind_placeholder(ind_name="Weather conditions at the Sydney Airport and Fourchu Head weather stations, including wind direction and speed, air pressure and sea-level air temperature", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
-                               source = NA, objectives = c("Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                               source = NA, objectives = c("Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Ocean Structure and Movement")
              }), # Environmental Representativity, Ocean Conditions, Ocean Structure and Movement
 
   tar_target(name = ind_ice_cover,
              command = {
                ind_placeholder(ind_name="Extent of ice cover within and around the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)",
-                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"))
+                                                           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"), theme='Ocean Conditions')
              }), # Environmenntal Representativity, Ocean Conditions
 
   tar_target(name = ind_fluxes,
@@ -2464,7 +2506,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Fluxes, other than those of nekton, across the boundaries of the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Trophic Structure and Function")
              }), # Connectivity, Trophic structure and Function?
 
   tar_target(name = ind_exchanges,
@@ -2472,7 +2514,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Bentho-pelagic exchanges", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Trophic Structure and Function")
              }), # Structure and Function, Trophic Structure and Function?
 
   tar_target(name = ind_plankton_production,
@@ -2480,7 +2522,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Phytoplankton production and the timing and intensity of the spring bloom in the MPA and the surrounding region", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Primary Production")
              }), # Biomass Metrics, Primary Production
 
   tar_target(name = ind_mesozooplankton_community,
@@ -2489,7 +2531,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                            "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)",
-                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
+                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"), theme="Secondary Production")
              }), # Biomass Metrics, Secondary Production
 
   tar_target(name = ind_harmful_algae,
@@ -2497,7 +2539,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Blooms of harmful algal in or near the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Trophic Structure and Function")
              }), # Threats to Productivity, Trophic structure and Function?
 
   tar_target(name = ind_benthic_characteristics,
@@ -2506,7 +2548,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Habitat required for all species, particularly priority species, is maintained and protected",
-                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
+                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"), theme="Benthic Environment")
              }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_compared_benthic_characteristics,
@@ -2515,7 +2557,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Habitat required for all species, particularly priority species, is maintained and protected",
-                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
+                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"), theme="Benthic Environment")
              }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_distinctive_benthic_characteristics,
@@ -2524,7 +2566,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Habitat required for all species, particularly priority species, is maintained and protected",
-                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
+                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"), theme="Benthic Environment")
              }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_seabed_feature_extent,
@@ -2532,7 +2574,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Spatial extent of identified distinctive seabed features of the AOI", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Protect unique, rare, or sensitive ecological features",
                                                            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme="Ocean Structure and Movement")
              }), # Uniqueness, Ocean Structure and Movement?
 
   tar_target(name = ind_resource_species_abundance,
@@ -2541,7 +2583,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                            "Maintain biodiversity of individual species, communities and populations within the different ecotypes",
-                                                           "Allow sufficient escapement from exploitation for spawning"))
+                                                           "Allow sufficient escapement from exploitation for spawning"), theme= "Fish and Fishery Resources")
              }), #Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_groundfish_abundance_sab,
@@ -2549,14 +2591,14 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Relative abundances, biomasses, size distributions and population fecundities of selected groundfish and invertebrates, plus diversity and community composition of trawl-vulnerable species, in appropriate portions of the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"))
+                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"), theme= "Fish and Fishery Resources")
              }), #Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_nekton_abundance,
              command = {
                ind_placeholder(ind_name="Relative abundances, biomasses and size distributions of selected mesopelagic nekton and micronekton species in the Laurentian Channel portion of the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"))
+                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"), theme="Trophic Structure and Function")
              }), #Biomass Metrics, Trophic Structure and Function?
 
   tar_target(name = ind_compared_groundfish_abundance,
@@ -2564,7 +2606,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Relative abundances, biomasses, size distributions and population fecundities of selected groundfish and invertebrates, plus diversity and community composition of trawl-vulnerable species, in comparable areas outside the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"))
+                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"), theme="Fish and Fishery Resources")
              }), #Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_compared_longline_vunerable,
@@ -2572,14 +2614,14 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Relative abundances, biomasses, size distributions and population fecundities of selected longline-vulnerable species in comparable areas outside the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain productivity of harvested species",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"))
+                                                           "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"), theme="Anthropogenic Pressure and Impacts")
              }), #Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_large_wolffish,
              command = {
                ind_placeholder(ind_name="Abundance of large wolffish in sub-tidal rocky areas along the coastline adjacent to the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("promote the recovery of at-risk whales and wolffish",
-                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
+                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"), theme="Trophic Structure and Function")
              }), #Biomass Metrics, Trophic Structure and Function
 
   tar_target(name = ind_fish_nekton_fluxes,
@@ -2587,7 +2629,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Fluxes of fish and other nekton across the boundaries of the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Trophic Structure and Function")
              }), #Connectivity, Trophic Structure and Function
 
   tar_target(name = ind_mammal_bird_reptile,
@@ -2595,7 +2637,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Distributions, relative abundances, diversity, community composition and activities of mammals, birds and reptiles in the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                            "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
-                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"))
+                                                           "Maintain biodiversity of individual species, communities and populations within the different ecotypes"), theme="Marine Mammals and Other Top Predators")
              }), #Biomass Metrics, Marine Mammals and other Top Predators
 
   tar_target(name = ind_seal_breeding,
@@ -2603,7 +2645,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Grey and harp seal breeding in the vicinity of the AOI", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                            "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme="Marine Mammals and Other Top Predators")
              }), #Biomass Metrics, Marine Mammals and other Top Predator
 
   tar_target(name = ind_seabird_nesting,
@@ -2611,7 +2653,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Seabird nesting in the vicinity of the AOI", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
                                                            "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme= "Trophic Structure and Function")
              }), #Biomass Metrics, Trophic Structure and Function?
 
   tar_target(name = ind_trophic_relationships,
@@ -2619,7 +2661,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Trophic relationships in the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme= "Trophic Structure and Function")
              }), #Structure and Function, Trophic Structure and Function
 
   tar_target(name = ind_ecosystem_function,
@@ -2627,13 +2669,13 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Ecosystem function in the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
                                                            "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"))
+                                                           "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"), theme= "Trophic Structure and Function")
              }), #Structure and Function, Trophic Structure and Function
 
   tar_target(name = ind_marxan_input,
              command = {
                ind_placeholder(ind_name="Data inputs to the MARXAN analysis", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
-                               source = NA, objectives = NA)
+                               source = NA, objectives = NA, theme='Ocean Conditions')
              }), #Environmental Representation, ??
 
   tar_target(name = ind_bottomset_length,
@@ -2641,7 +2683,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Length of bottom-set fixed commercial fishing, research and monitoring lines set within the MPA, both as totals and subdivided by zone or seabed habitat type", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme='Anthropogenic Pressure and Impacts')
              }), #Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_vertical_lines,
@@ -2649,14 +2691,14 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Number of vertical lines and length of midwater lines set within the MPA as part of commercial fishing, research or monitoring gears, both as a total and subdivided by zone", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme='Anthropogenic Pressure and Impacts')
              }), #Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_bait,
              command = {
                ind_placeholder(ind_name="Quantities and types of baits introduced to the MPA as part of commercial fishing, research or monitoring gears, both as a total and subdivided by zone", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Maintain productivity of harvested species",
-                                                           "Minimize unintended introduction and transmission of invasive species"))
+                                                           "Minimize unintended introduction and transmission of invasive species"), theme='Anthropogenic Pressure and Impacts')
              }), #Threats to Productivity, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_development_sab,
@@ -2664,7 +2706,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Number and types of seabed cables, offshore-petroleum exploration and development activities, other mineral exploration and development activities, channel dredging projects or other large-scale engineering works in the general vicinity of the MPA, including any within the MPA itself", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme='Anthropogenic Pressure and Impacts')
              }), #Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_anchoring,
@@ -2672,7 +2714,7 @@ indicator_targets <- list(
                ind_placeholder(ind_name="Incidents of vessels anchoring within the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
                                                            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-                                                           "Habitat required for all species, particularly priority species, is maintained and protected"))
+                                                           "Habitat required for all species, particularly priority species, is maintained and protected"), theme='Anthropogenic Pressure and Impacts')
              }), #Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_other_discharge_offshore,
@@ -2681,7 +2723,7 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain and monitor the quality of water and sediments of the Gully; and",
                                                           "Control introduction and proliferation of disease/pathogens",
                                                           "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-                                                          "Minimize unintended introduction and transmission of invasive species"))
+                                                          "Minimize unintended introduction and transmission of invasive species"), theme='Anthropogenic Pressure and Impacts')
              }), #Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_other_discharge_coastal,
@@ -2690,13 +2732,13 @@ indicator_targets <- list(
                                source = NA, objectives = c("Maintain and monitor the quality of water and sediments of the Gully; and",
                                                            "Control introduction and proliferation of disease/pathogens",
                                                            "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-                                                           "Minimize unintended introduction and transmission of invasive species"))
+                                                           "Minimize unintended introduction and transmission of invasive species"), theme='Anthropogenic Pressure and Impacts')
              }), #Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_ocean_noise_sab,
              command = {
                ind_placeholder(ind_name="Characterization of deep-water natural and anthropogenic noise within the MPA", areas = MPAs[which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),], readiness = "Unknown",
                                source = NA, objectives = c("Minimize harmful impacts from human activities on cetacean populations and their habitats",
-                                                           "Limit disturbing activity in important reproductive areas/seasons"))
+                                                           "Limit disturbing activity in important reproductive areas/seasons"), theme='Anthropogenic Pressure and Impacts')
              }) #Threats to Habitat,Anthropogenic Pressure and Impacts
 )
