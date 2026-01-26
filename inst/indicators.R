@@ -4,37 +4,6 @@ indicator_targets <- list(
 
   # INDICATORS WITH DATA ----
 
-  tar_target(ind_otn_number_of_recievers,
-             command={
-
-
-               # Looking at number of receivers
-
-               DF <- data_otn_recievers[-which(is.na(data_otn_recievers$stn_lat) | is.na(data_otn_recievers$stn_long)),]
-               df <- DF %>%
-                 st_as_sf(coords = c("stn_long", "stn_lat"), crs = 4326) %>%  # create geometry
-                 dplyr::select(FID, deploy_date, geometry)
-
-               df_with_areaID <- st_join(df, MPAs %>% dplyr::select(NAME_E), left = TRUE)
-
-               # Rename for clarity
-               df_with_areaID <- df_with_areaID %>%
-                 rename(areaID = NAME_E)
-
-               number_receivers_in_mpas <- list()
-
-               for (i in seq_along(unique(df_with_areaID$areaID))) {
-                 if (!(is.na(unique(df_with_areaID$areaID)[i]))) {
-                   number_receivers_in_mpas[[i]] <- length(which(df_with_areaID$areaID == unique(df_with_areaID$areaID)[i]))
-                 } else {
-                   number_receivers_in_mpas[[i]] <- length(which(is.na(df_with_areaID$areaID)))
-
-                 }
-               }
-               names(number_receivers_in_mpas) <- unique(df_with_areaID$areaID)
-
-             }),
-
   tar_target(ind_otn_proportion_tags_detected_in_multiple_mpas,
              command={
 
