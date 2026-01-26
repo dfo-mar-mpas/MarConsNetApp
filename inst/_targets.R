@@ -324,7 +324,14 @@ list(
 
   tar_target(name = N_Objectives,
              command = {
-               NO <- data_objectives(type="network")
+
+               STORE <- path_to_store()
+               obj <- paste0(dirname(STORE),"/data/objectives.xlsx")
+               obj_excel <-read_excel(obj)
+
+               NO <- obj_excel$Objective[obj_excel$Framework == "Maritimes"]
+
+               #NO <- data_objectives(type="network")
 
                no <- vector(mode="list", length(NO))
                for (i in seq_along(NO)) {
@@ -332,7 +339,7 @@ list(
 
                  NO[[i]] <- newLine(O)
                }
-               unlist(NO)
+               paste0("-", unlist(NO), "\n")
              }),
 
   tar_target(name = Context,
