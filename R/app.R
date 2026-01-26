@@ -2660,21 +2660,30 @@ app <- function() {
     last_tab <- reactiveVal(NULL)
     last_mpa <- reactiveVal(NULL)
     last_filter <- reactiveVal(NULL)
+    last_type <- reactiveVal(NULL)
+    last_scale <- reactiveVal(NULL)
     shown_notification <- reactiveVal(FALSE)
     drawn_projects <- reactiveVal(character(0))   # 🔴 ADD
 
     # Ensure the map is fully rendered
 
-    observeEvent(list(input$projects, input$tabs, input$mpas, input$filter_button), {
+    observeEvent(list(input$projects, input$tabs, input$mpas, input$filter_button, input$filter_ind_type, input$filter_ind_scale), {
       req(input$tabs)
       tab_changed <- !identical(last_tab(), input$tabs)
       mpa_changed <- !identical(last_mpa(), input$mpas)
       filter_changed <- !identical(last_filter(), input$filter_button)
+      type_changed <- !identical(last_type(), input$filter_ind_type)
+      scale_changed <- !identical(last_scale(), input$filter_ind_scale)
+
 
 
       last_tab(input$tabs)        # update memory
       last_mpa(input$mpas)
       last_filter(input$filter_button)
+      last_type(input$filter_ind_type)
+      last_scale(input$filter_ind_scale)
+
+
 
       if (tab_changed || mpa_changed ||
           !identical(plotted_projects(), input$projects)) {
@@ -2688,7 +2697,7 @@ app <- function() {
 
       triggered_by_tab <- input$tab
 
-      if (tab_changed || mpa_changed || filter_changed) {
+      if (tab_changed || mpa_changed || filter_changed || type_changed || scale_changed) {
         old_projects <- character(0)
         new_projects <- projects
         removed_projects <- plotted_projects()
@@ -2710,7 +2719,7 @@ app <- function() {
         #message("ONLY SHOW UP ON TAB_0")
         proxy <- leafletProxy("map")
 
-        if (filter_changed || mpa_changed) {   # 🔴 ADD: force clean redraw
+        if (filter_changed || mpa_changed || type_changed || scale_changed) {   # 🔴 ADD: force clean redraw
           for (proj in plotted_projects()) {
             proxy <- proxy %>% clearGroup(proj)
           }
@@ -2729,6 +2738,7 @@ app <- function() {
 
 
           # START OF LOOP
+          added_any <- FALSE
           for (proj in new_projects) {
             proj_id <- sub("^.*\\(([^)]*)\\).*", "\\1", proj)
             proj_short <- sub(" \\(.*", "", proj)
@@ -2757,10 +2767,6 @@ app <- function() {
               }
               next
             }
-
-            drawn_projects(
-              unique(c(drawn_projects(), proj))
-            )
 
 
 
@@ -2798,6 +2804,15 @@ app <- function() {
             k2 <- which(APJ_filtered$project_short_title == proj_short)
             keep <- intersect(k1, k2)
             APJ <- APJ_filtered[keep, ]
+
+            if (nrow(APJ) > 0) {
+              drawn_projects(
+                unique(c(drawn_projects(), proj))
+              )
+            }
+
+            message("proj=", proj, " nrow(APJ)=", nrow(APJ))
+
 
             #message("proj=", proj)
             #message("nrow(APJ)=", nrow(APJ))
@@ -2865,7 +2880,12 @@ app <- function() {
 
         # ---- Update legend ----
         if (length(projects) > 0) {
-          legend_projects <- drawn_projects()   # 🔴 ADD
+          message("---- LEGEND DEBUG ----")
+          message("projects (input): ", paste(projects, collapse = ", "))
+          message("drawn_projects(): ", paste(drawn_projects(), collapse = ", "))
+          message("----------------------")
+
+          legend_projects <- projects   # 🔴 ADD
 
           proxy %>%
             clearControls() %>%
