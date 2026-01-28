@@ -2,30 +2,60 @@
 % Please edit documentation in R/save_plots.R
 \name{save_plots}
 \alias{save_plots}
-\title{Save plots}
+\title{Save indicator plots to disk}
 \usage{
 save_plots(df, STORE = dirname(path_to_store()))
 }
 \arguments{
-\item{df}{one of the objective dataframes. Must contain columns: data, plot, areaID, indicator}
+\item{df}{A data frame containing at minimum the columns:
+\describe{
+  \item{\code{plot}}{A list column of ggplot objects.}
+  \item{\code{areaID}}{Character identifier for the conservation area.}
+  \item{\code{indicator}}{Character identifier for the indicator.}
+}}
 
-\item{STORE}{path to store (default as the dirname(path_to_store()))}
+\item{STORE}{Character string giving the base directory in which plots will
+be saved. Defaults to the parent directory of the MarConsNet
+targets store as determined by \code{\link{path_to_store}}.}
 }
 \value{
-character vector of filenames where plots were saved
+A character vector of file paths corresponding to plots that
+were successfully saved.
 }
 \description{
-Save plots
+Iterates over a data frame containing ggplot objects and saves
+each valid plot to disk using a standardized file naming
+convention based on area and indicator identifiers.
+}
+\details{
+Plots associated with non-conservation areas or missing plot
+objects are skipped.
+
+
+For each row in \code{df}, this function:
+\enumerate{
+  \item Skips rows where the \code{plot} object is \code{NULL}.
+  \item Skips rows associated with \code{"Non_Conservation_Area"}.
+  \item Saves the plot as a PNG file under
+        \code{STORE/data/plot/}.
+  \item Constructs filenames of the form
+        \code{plot_<areaID>_<indicator>.png}.
+}
+
+Filenames are sanitized using \code{make.names()} to ensure
+compatibility across operating systems.
 }
 \examples{
-\dontrun{
-# Example data frame
-df <- data.frame(
- data = I(list(mtcars, mtcars)),
- plot = I(list(ggplot2::qplot(mpg, wt, data = mtcars), ggplot2::qplot(mpg, wt, data = mtcars))),
- areaID = c("Area1", "Area2"),
- indicator = c("Indicator1", "Indicator2")
- )
- save_plots(df)
- }
+#' \dontrun{
+# Save plots generated for indicator scoring
+plot_files <- save_plots(plot_df)
+
+# Inspect saved file paths
+print(plot_files)
+}
+
+}
+\seealso{
+\code{\link{path_to_store}} for determining the base storage
+location.
 }

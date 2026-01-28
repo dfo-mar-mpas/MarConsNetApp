@@ -2,16 +2,53 @@
 % Please edit documentation in R/path_to_store.R
 \name{path_to_store}
 \alias{path_to_store}
-\title{path_to_store}
+\title{Locate the MarConsNet targets data store}
 \usage{
 path_to_store()
 }
 \value{
-character
+A character string giving the file path to the selected
+MarConsNet targets data store.
 }
 \description{
-Convenience function that returns our commonly used paths to the targets data store
+Determines the appropriate file path to the
+\code{MarConsNetTargets/app_targets} directory based on the
+execution environment. The function checks a series of
+predefined locations corresponding to common deployment
+scenarios (e.g. Shiny Server, Linux samba share, Windows samba
+share, or OneDrive-synchronized directories) and returns the
+first valid path found.
+}
+\details{
+If no expected directory is found, a warning is issued and the
+current working directory is returned as a fallback.
+
+A message is printed indicating which data store path is being
+used.
+
+
+The function checks for the data store in the following order:
+\enumerate{
+  \item \code{MarConsNetTargets/app_targets} relative to the
+        current project directory (e.g. Shiny Server deployment)
+  \item Linux samba share path
+        (\code{/srv/sambashare/MarConsNet/...})
+  \item Windows samba share UNC path
+        (\code{//wpnsbio9039519.mar.dfo-mpo.ca/...})
+  \item A OneDrive-synchronized directory defined by the
+        \code{OneDriveCommercial} environment variable
+}
+
+This approach allows the same application code to run across
+development, server, and analyst environments without manual
+path reconfiguration.
 }
 \examples{
-STORE <- path_to_store()
+\dontrun{
+# Determine which data store will be used
+library(targets)
+store_path <- path_to_store()
+tar_load(APPTABS, store = store_path)
+}
+
 }

@@ -2,26 +2,31 @@
 % Please edit documentation in R/app.R
 \name{app}
 \alias{app}
-\title{MarConsNetApp Conserved and Protected Area App}
+\title{Launch the MarConsNetApp Shiny Application}
 \usage{
 app()
 }
 \description{
-This function creates a shiny app for the Maritimes region.
-It addressed the following goals:
-Site-Level Goals
-- Report on what scientific work is occurring, and resources
-allocated for this
-- Report on how the scientific work being done is contributing to
-indicators and therefore conservation objectives (CO)
-- Report on the status of the sites, based on existing data
-Network-level Goals
-- How are individual sites contributing to network objectives
-- How are science projects contributing to network objectives
-- Provide scientific data to support status claims
+`app()` initializes and runs the Maritimes Conservation Network
+interactive dashboard built with Shiny. This application provides:
+* Geographic and ecological overview of Marine Protected Areas (MPAs) in
+  the Maritimes region.
+* Filtering and exploration of indicator data by region, site, and project.
+* Tabbed content including Management Effectiveness, Effectiveness Contributions,
+Ecosystem Overview, and Threat Assessments.
+* Dynamic plots, maps, tables, and interactive UI elements
+  driven by reactive inputs and user selections.
+}
+\details{
+The app loads pre-processed data targets from a **targets** data store, located
+internally on the wpnsbio9039519.mar.dfo-mpo server and
+uses the `MarConsNetAnalysis` package for indicator scoring and visualization.
+It also provides exportable reports and contextual information for
+selected MPAs. Without access to the internal server, this app will not run.
 }
 \examples{
 \dontrun{
+# Launch the interactive Maritimes Conservation Network app
 app()
 }
 }

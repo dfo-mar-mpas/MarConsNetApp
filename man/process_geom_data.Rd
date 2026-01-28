@@ -2,16 +2,56 @@
 % Please edit documentation in R/process_geom_data.R
 \name{process_geom_data}
 \alias{process_geom_data}
-\title{Process Geometric Data}
+\title{Standardize and clean geometry data for spatial processing}
 \usage{
 process_geom_data(x)
 }
 \arguments{
-\item{x}{an sf object or data frame containing geometric data}
+\item{x}{An object containing spatial data. Can be an \code{sf} object
+or a data frame with a geometry-like column (e.g. \code{geoms}
+or \code{Shape}).}
 }
 \value{
-an sf object with 'year' and 'geometry' columns
+An \code{sf} object containing unique geometries with a numeric
+\code{year} column.
 }
 \description{
-Process Geometric Data
+Converts an input object to a valid \code{sf} object and
+standardizes geometry and year fields to ensure consistent
+downstream spatial operations. The function harmonizes
+geometry column names, enforces a numeric \code{year} field,
+and returns a simplified, unique geometry set.
+}
+\details{
+The function performs the following steps:
+\enumerate{
+  \item Converts \code{x} to an \code{sf} object if it is not
+        already one.
+  \item Renames alternative geometry columns (\code{geoms} or
+        \code{Shape}) to the standard \code{geometry} column.
+  \item Adds a \code{year} column if missing and coerces it to
+        numeric.
+  \item Casts geometries to \code{GEOMETRY} to ensure consistent
+        geometry types.
+  \item Retains only the \code{year} and \code{geometry} columns
+        and removes duplicate geometries.
+}
+
+This helper is primarily intended to prepare spatial layers
+for mapping and spatial joins within the MarConsNet
+application.
+}
+\examples{
+\dontrun{
+# Example usage
+library(sf)
+df <- data.frame(
+ id = 1:3,
+ year = c(2000, 2001, 2002),
+ lon = c(-100, -101, -102),
+ lat = c(40, 41, 42)
+ )
+ sf_data <- st_as_sf(df, coords = c("lon", "lat"), crs = 4326)
+ processed_data <- process_geom_data(sf_data)
+}
 }
