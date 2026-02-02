@@ -1992,6 +1992,7 @@ app <- function() {
           Trend = info$indicatorTrend[good],
           Projects = Projects[good],
           Source=info$Source[good],
+          Code = "View",
           Score=info$indicatorGrade[good],
           Method=info$indicatorScore[good],
           stringsAsFactors = FALSE
@@ -2031,6 +2032,10 @@ app <- function() {
         } else {
           NULL
         }
+        dfdt <- dfdt[, c(
+          "Indicator", "Rationale", "areaID", "Status", "Trend",
+          "Projects", "Source", "Code", "Score", "Method"
+        )]
         return(dfdt)
       } else {
         NULL
@@ -2066,10 +2071,10 @@ app <- function() {
       info <- input$DT_cell_clicked
       req(info$row, info$col)
       # Only trigger when SOURCE column is clicked
-      if (colnames(dfdt_r())[info$col] == "Source") {
+      if (colnames(dfdt_r())[info$col] == "Code") {
+        #browser()
 
-
-        source_clicked <- gsub("<[^>]+>", "", dfdt_r()$Source[info$row])
+        source_clicked <- dfdt_r()$Source[info$row]
         indicator_clicked <- gsub("<[^>]+>", "", dfdt_r()$Indicator[info$row])
 
         k1 <- which(unique_table$indicator == indicator_clicked)
