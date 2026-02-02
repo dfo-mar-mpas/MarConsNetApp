@@ -788,8 +788,7 @@ app <- function() {
         div(class = "integrated-tabs-card",
             shiny::uiOutput('mytabs'),
             # Shared content
-            #shiny::uiOutput("indicatorText"),
-            shiny::uiOutput("indicatorText", style = "margin-top: 30px;") , # 🔴 shift text down by 20px
+            shiny::uiOutput("indicatorText", style = "margin-top: 30px;"),
             shiny::uiOutput("DT_ui"),
             shiny::uiOutput("conditionalPlot"),
             shiny::uiOutput("conditionalIndicatorMap"),
@@ -1247,11 +1246,17 @@ app <- function() {
 
 
         ddff_display$SCORE <- round(ddff_display$SCORE,2)
+        ddff_display <- ddff_display %>%
+          mutate(
+            CODE = "Click to see indicator code"
+          )
+        ddff_display <- ddff_display %>%
+          relocate(CODE, .after = SOURCE)
 
         ddff_display <- ddff_display %>%
           mutate(
-            SOURCE = paste0(
-              '<a href="#" class="source-link">', SOURCE, '</a>'  # ••• Make SOURCE look like a link
+            CODE =  paste0(
+              '<a href="#" class="code-link">View</a>'
             )
           )
 
@@ -1281,7 +1286,7 @@ app <- function() {
 
       req(info$row, info$col)
 
-      if (colnames(ddff_display_r())[info$col + 1] == "SOURCE") {
+      if (colnames(ddff_display_r())[info$col + 1] == "CODE") {
         indicator_clicked <- ddff_display_r()$INDICATOR[info$row]
         source_clicked <- gsub("<[^>]+>", "", ddff_display_r()$SOURCE[info$row])
         k1 <- which(unique_table$indicator == indicator_clicked)
@@ -1932,7 +1937,7 @@ app <- function() {
           "<p>", info$flower, "</p>",
           "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>",
           "<p><strong><span style='background-color: yellow;'>",
-          "Click on each source to see the code to produce that specific indicator",
+          "Click on each code column to see the code to produce that specific indicator",
           "</span></strong></p>"
         )
       )
