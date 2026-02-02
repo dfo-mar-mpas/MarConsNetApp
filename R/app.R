@@ -727,14 +727,14 @@ app <- function() {
         ),
 
         # Legend section
-        div(class = "sidebar-section",
-            div(class = "legend-box",
-                div(class = "legend-title", "LEGEND"),
-                div(class = "legend-items",
-                    shiny::uiOutput("legendUI")
-                )
-            )
-        ),
+        # div(class = "sidebar-section",
+        #     div(class = "legend-box",
+        #         div(class = "legend-title", "LEGEND"),
+        #         div(class = "legend-items",
+        #             shiny::uiOutput("legendUI")
+        #         )
+        #     )
+        # ),
 
         # Filters section
         div(class = "sidebar-section",
@@ -989,24 +989,113 @@ app <- function() {
               id = "tab0_subtabs",
 
               # Management Effectiveness Tab
-              tabPanel("Management Effectiveness",
-                       p("This tab considers only the effectiveness indicators that directly inform objectives that the site is managed for"),
-                       hr(),
+              tabPanel(
+                "Management Effectiveness",
 
-                       # Management Effectiveness specific
-                       hr(),
-                       fluidRow(
-                         uiOutput("network_column"),
-                         column(6, shiny::uiOutput("objectives"))
-                       )
+                # Collapsible preamble section
+                tags$details(
+                  open = TRUE,  # start expanded
+                  style = "border:1px solid #ddd; padding:10px; border-radius:5px; background-color:#f9f9f9;",
+
+                  # Summary line with default triangle (no text needed)
+                  tags$summary(
+                    style = "font-weight:bold; font-size:16px; cursor:pointer; margin-bottom:10px;",
+                    "\u25B6 About this tab"  # ► Unicode black right-pointing triangle
+                  ),
+
+                  tags$div(
+                    style = "margin-top:10px;",
+
+                    # Preamble text
+                    p("Management Effectiveness summarizes how well a site is performing against its stated conservation objectives, based on the best available indicators and data."),
+                    p("For each conservation objective, relevant indicators are grouped and scored to provide an overall assessment of progress toward that objective. These scores are intended to support interpretation and comparison, not to represent a definitive measure of success or failure."),
+                    p("Where data are limited or unavailable, this is explicitly indicated and reflected in the resulting score. As such, scores should be interpreted in the context of data availability, indicator coverage, and monitoring effort, and not as a complete or final evaluation of management outcomes."),
+
+                    # Inline score legend with descriptions
+                    tags$div(
+                      style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
+
+                      tags$div(style="display:flex; align-items:center; gap:5px;",
+                               tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
+                               "A — Strong evidence the objective is being met"),
+
+                      tags$div(style="display:flex; align-items:center; gap:5px;",
+                               tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
+                               "B — Evidence shows the objective is mostly being met"),
+
+                      tags$div(style="display:flex; align-items:center; gap:5px;",
+                               tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
+                               "C — Mixed or uncertain evidence about objective progress"),
+
+                      tags$div(style="display:flex; align-items:center; gap:5px;",
+                               tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
+                               "D — Limited evidence that objective is being met / emerging concerns"),
+
+                      tags$div(style="display:flex; align-items:center; gap:5px;",
+                               tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
+                               "F — Insufficient evidence / objective not met")
+                    )
+
+                  )
+                ),
+
+                # Existing content
+                fluidRow(
+                  uiOutput("network_column"),
+                  column(6, uiOutput("objectives"))
+                )
               ),
 
               # Effectiveness Contributions Tab
               tabPanel("Effectiveness Contributions",
-                       p("This tab considers only the effectiveness indicators that inform objectives for which the site is NOT managed. These are considered additional contributions of the site."),
-                       hr(),
 
-                       # Effectiveness Contributions specific
+                       tags$details(
+                         open = TRUE,  # start expanded
+                         style = "border:1px solid #ddd; padding:10px; border-radius:5px; background-color:#f9f9f9;",
+
+                         # Summary line with default triangle (no text needed)
+                         tags$summary(
+                           style = "font-weight:bold; font-size:16px; cursor:pointer; margin-bottom:10px;",
+                           "\u25B6 About this tab"  # ► Unicode black right-pointing triangle
+                         ),
+
+                         tags$div(
+                           style = "margin-top:10px;",
+
+                           # Preamble text
+                           p("Effectiveness Contributions summarizes indicators for conservation objectives that the site is not directly managed for. While the site is not managed with these objectives in mind, protection and management can still influence outcomes."),
+
+                           p("Scores reflect the actual status of each indicator, showing how well the objective is being met, even if indirectly. These scores are intended for interpretation and comparison, and do not represent a direct management outcome."),
+
+                           p("Where data are limited or unavailable, this is explicitly indicated. Scores should always be interpreted in the context of data availability, coverage, and monitoring effort."),
+
+                           # Inline score legend with descriptions
+                           tags$div(
+                             style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
+                                      "A — Strong evidence the objective is being met"),
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
+                                      "B — Evidence shows the objective is mostly being met"),
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
+                                      "C — Mixed or uncertain evidence about objective progress"),
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
+                                      "D — Limited evidence that objective is being met / emerging concerns"),
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
+                                      "F — Insufficient evidence / objective not met")
+                           )
+
+                         )
+                       ),
                        hr(),
                        div(class = "tab-section-header",
                            h3(class = "tab-section-title", "Conservation Framework")
@@ -1020,15 +1109,76 @@ app <- function() {
 
               # Ecosystem Overview Tab
               tabPanel("Ecosystem Overview",
-                       p(
-                         "Readiness Score Explained: ",
-                         strong("Ready"), " – Code is developed and data is integrated into the app, ",
-                         strong("Readily Available"), " – Data is being collected and stored but requires some work to integrate into the app, ",
-                         strong("Not currently collected"), " – Data is not yet being collected, ",
-                         strong("Conceptual"), " – There is no means of collecting this type of data. ",
-                         strong("Unknown"), " – More work needed to determine readiness score."
+                       tags$details(
+                         open = TRUE,  # start expanded
+                         style = "border:1px solid #ddd; padding:10px; border-radius:5px; background-color:#f9f9f9;",
+
+                         # Summary line with default triangle (no text needed)
+                         tags$summary(
+                           style = "font-weight:bold; font-size:16px; cursor:pointer; margin-bottom:10px;",
+                           "\u25B6 About this tab"  # ► Unicode black right-pointing triangle
+                         ),
+
+                         tags$div(
+                           style = "margin-top:10px;",
+
+                           # Preamble text
+                           # Indicator-level legend paragraph
+                           p("The Ecosystem Overview tab presents all indicators measured in the selected area, regardless of whether they contribute to specific conservation objectives. ",
+                             "The flowerplot provides a visual summary of overall ecosystem health. Scores here reflect the integrated condition of the ecosystem based on all available indicators: ",
+                             tags$div(
+                               style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
+                               # A
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
+                                        "A — Strong ecosystem health; key ecosystem components are thriving"),
+                               # B
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
+                                        "B — Ecosystem generally healthy with minor concerns"),
+                               # C
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
+                                        "C — Some ecosystem components under stress; mixed condition"),
+                               # D
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
+                                        "D — Limited ecosystem health; emerging concerns across multiple components"),
+                               # F
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
+                                        "F — Poor ecosystem health; insufficient data or widespread impacts")
+                             )
+                           ),
+                           p("On the right table, each indicator is scored from A–F as follows: ",
+                             tags$div(
+                               style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
+                               # A
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
+                                        " Indicator is fully monitored and performing optimally"),
+                               # B
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
+                                        " Indicator is monitored with minor issues"),
+                               # C
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
+                                        " Indicator shows mixed results; some targets met"),
+                               # D
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
+                                        " Indicator shows emerging concerns or limited monitoring"),
+                               # F
+                               tags$div(style="display:flex; align-items:center; gap:5px;",
+                                        tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
+                                        " Indicator has insufficient data or is performing poorly")
+                             )
+                           )
+
+
+                         )
                        ),
-                       hr(),
                        div(style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #e5e7eb;",
                            h3(style = "margin: 0; font-size: 18px; font-weight: 600; color: #1f2937;", "Ecosystem Overview"),
                            div(style = "display: flex; align-items: center; gap: 10px;",
@@ -1045,8 +1195,66 @@ app <- function() {
 
               # Threats Tab
               tabPanel("Threats",
-                       p("This tab shows threat indicators and their status across the network."),
-                       hr(),
+                       tags$details(
+                         open = TRUE,  # start expanded
+                         style = "border:1px solid #ddd; padding:10px; border-radius:5px; background-color:#f9f9f9;",
+
+                         # Summary line with default triangle (no text needed)
+                         tags$summary(
+                           style = "font-weight:bold; font-size:16px; cursor:pointer; margin-bottom:10px;",
+                           "\u25B6 About this tab"  # ► Unicode black right-pointing triangle
+                         ),
+
+                         tags$div(
+                           style = "margin-top:10px;",
+
+                           # Preamble text
+                           p(
+                             "The Threats tab focuses specifically on indicators that measure pressures and threats to the ecosystem. ",
+                             "All relevant indicators for the area of interest are included, regardless of whether they contribute to a conservation objective. ",
+                             "Scores reflect the severity or status of each threat, providing a snapshot of potential risks to ecosystem health. ",
+                             "The accompanying table lists each indicator's bin, source, code, score, readiness, quality statement, and cost. ",
+                             "Readiness scores are explained as follows: "
+                           ),
+
+                           p(
+                             tags$span(strong("Ready"), " – Code is developed and data is integrated into the app; "),
+                             tags$span(strong("Readily Available"), " – Data is being collected and stored but requires some work to integrate into the app; "),
+                             tags$span(strong("Not currently collected"), " – Data is not yet being collected; "),
+                             tags$span(strong("Conceptual"), " – There is no means of collecting this type of data; "),
+                             tags$span(strong("Unknown"), " – More work needed to determine readiness score.")
+                           ),
+
+                           # Inline score legend with descriptions
+                           tags$div(
+                             style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
+                                      "A — Strong evidence the threat indicator is performing well"),
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
+                                      "B — Evidence indicates the threat indicator is generally positive"),
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
+                                      "C — Mixed or uncertain performance of the threat indicator"),
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
+                                      "D — Limited evidence / emerging concerns for the threat indicator"),
+
+                             tags$div(style="display:flex; align-items:center; gap:5px;",
+                                      tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
+                                      "F — Insufficient data / poor performance of the threat indicator")
+                           )
+
+
+
+
+                         )
+                       ),
                        div(class = "tab-section-header",
                            h3(class = "tab-section-title", "Threats Assessment")
                        ),
@@ -1361,36 +1569,36 @@ app <- function() {
 
     })
 
-    output$legendUI <- renderUI({
-      req(state$mpas)
-      req(input$tabs)
-      # Generate legend items
-      if (input$tabs == "tab_0") {
-        PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
-      } else {
-        PALETTE <- indicatorFlower
-      }
-      legendItems <- lapply(names(PALETTE), function(name) {
-        div(
-          style = paste0(
-            "display: flex; align-items: center; margin-right: 20px;"
-          ),
-          div(
-            style = paste0(
-              "width: 20px; height: 20px; background-color: ",
-              PALETTE[name],
-              "; margin-right: 5px; border: 1px solid black;"
-            )
-          ),
-          span(name) # Label
-        )
-      })
-      # Wrap the items in a horizontal flex container
-      div(
-        style = "display: flex; flex-wrap: wrap; align-items: center;",
-        legendItems
-      )
-    })
+    # output$legendUI <- renderUI({
+    #   req(state$mpas)
+    #   req(input$tabs)
+    #   # Generate legend items
+    #   if (input$tabs == "tab_0") {
+    #     PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
+    #   } else {
+    #     PALETTE <- indicatorFlower
+    #   }
+    #   legendItems <- lapply(names(PALETTE), function(name) {
+    #     div(
+    #       style = paste0(
+    #         "display: flex; align-items: center; margin-right: 20px;"
+    #       ),
+    #       div(
+    #         style = paste0(
+    #           "width: 20px; height: 20px; background-color: ",
+    #           PALETTE[name],
+    #           "; margin-right: 5px; border: 1px solid black;"
+    #         )
+    #       ),
+    #       span(name) # Label
+    #     )
+    #   })
+    #   # Wrap the items in a horizontal flex container
+    #   div(
+    #     style = "display: flex; flex-wrap: wrap; align-items: center;",
+    #     legendItems
+    #   )
+    # })
 
     observeEvent(input$about, {
       req(input$about)
