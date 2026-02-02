@@ -70,6 +70,7 @@ app <- function() {
   condition <- paste0('input.tabs === "tab_0"')
 
   ## FILTERING FOR
+  pillar_ecol_df$theme[which(pillar_ecol_df$theme == "Anthropogenic Pressure and Impacts")] <- "Pressure and Impacts"
 
   old_pillar_ecol_df <- pillar_ecol_df
   old_all_project_geoms <- all_project_geoms
