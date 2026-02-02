@@ -862,7 +862,8 @@ app <- function() {
       ddff <- ddff_display_r()
         }
       if (length(ddff$INDICATOR) == 0) {
-        if (input$tabs == "tab_0") {
+        if (input$tabs == "tab_0" && input$tab0_subtabs %in% c("Ecosystem Overview", "Threats")) {
+          #browser()
         showModal(modalDialog(
           title = "No indicators Available",
           "There are no indicators that match your filter. Try adding more selections in the 'Type' filter.",
@@ -1287,7 +1288,6 @@ app <- function() {
       req(info$row, info$col)
 
       if (colnames(ddff_display_r())[info$col + 1] == "CODE") {
-        #browser()
         indicator_clicked <- ddff_display_r()$INDICATOR[info$row]
         source_clicked <- gsub("<[^>]+>", "", ddff_display_r()$SOURCE[info$row])
         k1 <- which(unique_table$indicator == indicator_clicked)
@@ -2077,8 +2077,6 @@ app <- function() {
       req(info$row, info$col)
       # Only trigger when SOURCE column is clicked
       if (colnames(dfdt_r())[info$col] == "Code") {
-        #browser()
-
         source_clicked <- dfdt_r()$Source[info$row]
         indicator_clicked <- gsub("<[^>]+>", "", dfdt_r()$Indicator[info$row])
 
