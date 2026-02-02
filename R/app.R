@@ -871,7 +871,6 @@ app <- function() {
         }
       if (length(ddff$INDICATOR) == 0) {
         if (input$tabs == "tab_0" && input$tab0_subtabs %in% c("Ecosystem Overview", "Threats")) {
-          #browser()
         showModal(modalDialog(
           title = "No indicators Available",
           "There are no indicators that match your filter. Try adding more selections in the 'Type' filter.",
@@ -882,6 +881,8 @@ app <- function() {
         return(NULL)
       } else {
         if (input$indicator_mode == 'ebm') {
+          ddff$SCORE_LETTER <- calc_letter_grade(ddff$SCORE)
+
         dt <- datatable(
           ddff,
           rownames = FALSE,
@@ -895,12 +896,28 @@ app <- function() {
               list(
                 visible = FALSE,
                 targets = which(names(ddff) == "PPTID") - 1
-              )
+              ),
+              list(visible = FALSE, targets = which(names(ddff) == "SCORE_LETTER") - 1)
             ),
             pageLength = 100
           )
         )
+
+        dt <- DT::formatStyle(
+          dt,
+          "SCORE",
+          backgroundColor = DT::styleEqual(
+            c("A", "B", "C", "D", "F"),
+            c("#2C7BB6", "#ABD9E9", "#FFFFBF", "#FDAE61", "#D7191C")
+          ),
+          valueColumns = "SCORE_LETTER",  # 🔴 THIS is the key line
+          color = "black",
+          fontWeight = "bold"
+        )
+
       } else {
+        ddff$SCORE_LETTER <- calc_letter_grade(ddff$SCORE)
+
         dt <- datatable(
           ddff,
           rownames = FALSE,
@@ -911,13 +928,32 @@ app <- function() {
             rowGroup = list(dataSrc = which(names(ddff) == "THEME") - 1),
             columnDefs = list(
               list(visible = FALSE, targets = which(names(ddff) == "THEME") - 1),
-              list(visible = FALSE, targets = which(names(ddff) == "PPTID") - 1)
+              list(visible = FALSE, targets = which(names(ddff) == "PPTID") - 1),
+              list(visible = FALSE, targets = which(names(ddff) == "SCORE_LETTER") - 1)
+
             ),
             pageLength = 100
           )
         )
 
+        dt <- DT::formatStyle(
+          dt,
+          "SCORE",
+          backgroundColor = DT::styleEqual(
+            c("A", "B", "C", "D", "F"),
+            c("#2C7BB6", "#ABD9E9", "#FFFFBF", "#FDAE61", "#D7191C")
+          ),
+          valueColumns = "SCORE_LETTER",  # 🔴 THIS is the key line
+          color = "black",
+          fontWeight = "bold"
+        )
+
       }
+
+
+
+        #browser() #JAIM
+
         return(dt)
 
       }
@@ -1317,7 +1353,8 @@ app <- function() {
         return(NULL)
 
       } else {
-      datatable(
+      ddff$SCORE_LETTER <- calc_letter_grade(ddff$SCORE)
+      dt <- datatable(
         ddff,
         rownames = FALSE,
         selection='single',
@@ -1326,12 +1363,26 @@ app <- function() {
         options = list(
           rowGroup = list(dataSrc = 0),                        # group by GROUPING
           columnDefs = list(
-            list(visible = FALSE, targets = 0),               # hide GROUPING column
+            list(visible = FALSE, targets = 0),
+            list(visible = FALSE, targets = which(names(ddff) == "SCORE_LETTER") - 1),# hide GROUPING column
             list(visible = FALSE, targets = (which(names(ddff_display_r()) == "PPTID") - 1))
           ),
           pageLength = 100
         )
       )
+
+      dt <- DT::formatStyle(
+        dt,
+        "SCORE",
+        backgroundColor = DT::styleEqual(
+          c("A", "B", "C", "D", "F"),
+          c("#2C7BB6", "#ABD9E9", "#FFFFBF", "#FDAE61", "#D7191C")
+        ),
+        valueColumns = "SCORE_LETTER",  # 🔴 USE letter grade to drive color
+        color = "black",
+        fontWeight = "bold"
+      )
+      return(dt)
       }
     })
 
@@ -2332,21 +2383,28 @@ app <- function() {
       if (length(dfdt_r()$Indicator) == 0) {
         DT::datatable(dfdt_r())
       } else {
-      DT::datatable(dfdt_r(),
+        ddff <- dfdt_r()
+        ddff$SCORE_LETTER <- calc_letter_grade(dfdt_r()$Score)
+        ddff$Score <- round(ddff$Score, 2)
+
+      dt <- DT::datatable(ddff,
                     escape = FALSE,
                     options = list(
                       pageLength = 100,
                       columnDefs = list(
-                        list(targets = ncol(dfdt_r()), visible = FALSE)  # Hide the Grade column (last column)
-                      )
-                    )) %>%
-        DT::formatStyle(
-          columns = colnames(dfdt_r()),  # Apply styling to all columns
-          target = 'row',  # Target the entire row for styling
+                        list(visible = FALSE, targets = which(names(ddff) == "SCORE_LETTER"))
+                        )
+                    ))
+        dt <- DT::formatStyle(
+          dt,
+          "Score",
           backgroundColor = DT::styleEqual(
-            names(flowerPalette),  # Map based on letter grades
-            flowerPalette[names(flowerPalette)]  # Apply corresponding colors
-          )
+            c("A", "B", "C", "D", "F"),
+            c("#2C7BB6", "#ABD9E9", "#FFFFBF", "#FDAE61", "#D7191C")
+          ),
+          valueColumns = "SCORE_LETTER",  # 🔴 USE letter grade to drive color
+          color = "black",
+          fontWeight = "bold"
         )
       }
 
