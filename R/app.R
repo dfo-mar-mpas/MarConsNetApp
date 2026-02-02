@@ -756,11 +756,19 @@ app <- function() {
 
 
         # indicator selection section
-        div(class = "sidebar-section",
-            h4("INDICATOR SELECTION"),
-            shiny::uiOutput("filter_ind_type_ui", inline = TRUE),
-            shiny::uiOutput("filter_ind_scale_ui", inline = TRUE
+        div(
+          class = "sidebar-section",
+          h4("INDICATOR FILTERS"),
+          fluidRow(
+            column(
+              width = 6,
+              shiny::uiOutput("filter_ind_type_ui")
+            ),
+            column(
+              width = 6,
+              shiny::uiOutput("filter_ind_scale_ui")
             )
+          )
         ),
 
       ),
@@ -1667,7 +1675,7 @@ app <- function() {
 
       shiny::checkboxGroupInput(
         inputId = "filter_ind_type",
-        label = "Indicator Type:",
+        label = "Type:",
         choices = choices,
         selected = choices
       )
@@ -1677,7 +1685,7 @@ app <- function() {
       choices <- unique(pillar_ecol_df$scale)
       shiny::checkboxGroupInput(
         inputId = "filter_ind_scale",
-        label = "Indicator Scale:",
+        label = "Scale:",
         choices = choices,
         selected = choices
       )
