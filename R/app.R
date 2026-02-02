@@ -2147,22 +2147,87 @@ app <- function() {
 
     output$indicatorText <- shiny::renderUI({
       info <- calculated_info()
-      req(info)  # Ensure the info is available
-      shiny::HTML(
-        paste(
-          "<p><strong>", info$CO_label, "</strong></p>",
-          "<p>", info$objective, "</p>",
-          "<p><strong>Area:</strong></p>",
-          "<p>", info$area, "</p>",
-          "<p><strong>", info$indicator_label, "</strong></p>",
-          "<p>", info$flower, "</p>",
-          "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>",
-          "<p><strong><span style='background-color: yellow;'>",
-          "Click on each code column to see the code to produce that specific indicator",
-          "</span></strong></p>"
+      req(info)
+
+      tagList(
+
+        ## ---- existing indicator text ----
+        shiny::HTML(
+          paste(
+            "<p><strong>", info$CO_label, "</strong></p>",
+            "<p>", info$objective, "</p>",
+            "<p><strong>Area:</strong></p>",
+            "<p>", info$area, "</p>",
+            "<p><strong>", info$indicator_label, "</strong></p>",
+            "<p>", info$flower, "</p>",
+            "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>",
+            "<p><strong><span style='background-color: yellow;'>",
+            "Click on each code column to see the code to produce that specific indicator",
+            "</span></strong></p>"
+          )
+        ),
+
+        ## ---- Ecosystem (flowerplot) legend: CONDITIONAL ----
+        if (input$tabs %in% objective_tabs$tab) tagList( # GEOFF
+
+          p("Flowerplot scores summarize how well a site is performing for that specific conservation objectives:"),
+
+          tags$div(
+            style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
+
+            tags$div(style="display:flex; align-items:center; gap:5px;",
+                     tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
+                     "A — Strong evidence the objective is being met"),
+
+            tags$div(style="display:flex; align-items:center; gap:5px;",
+                     tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
+                     "B — Evidence shows the objective is mostly being met"),
+
+            tags$div(style="display:flex; align-items:center; gap:5px;",
+                     tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
+                     "C — Mixed or uncertain evidence about objective progress"),
+
+            tags$div(style="display:flex; align-items:center; gap:5px;",
+                     tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
+                     "D — Limited evidence that objective is being met / emerging concerns"),
+
+            tags$div(style="display:flex; align-items:center; gap:5px;",
+                     tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
+                     "F — Insufficient evidence / objective not met")
+          )
+        ),
+
+        ## ---- Indicator legend: ALWAYS SHOWN ----
+        hr(),
+        p("Indicator scores in the table reflect individual indicator performance:"),
+
+        tags$div(
+          style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
+
+          tags$div(style="display:flex; align-items:center; gap:5px;",
+                   tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
+                   " Indicator is fully monitored and performing optimally"),
+
+          tags$div(style="display:flex; align-items:center; gap:5px;",
+                   tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
+                   " Indicator is monitored with minor issues"),
+
+          tags$div(style="display:flex; align-items:center; gap:5px;",
+                   tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
+                   " Indicator shows mixed results; some targets met"),
+
+          tags$div(style="display:flex; align-items:center; gap:5px;",
+                   tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
+                   " Indicator shows emerging concerns or limited monitoring"),
+
+          tags$div(style="display:flex; align-items:center; gap:5px;",
+                   tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
+                   " Indicator has insufficient data or is performing poorly")
         )
       )
     })
+
+
 
     dfdt_r <- reactive({ # HERE NOW
       req(input$tabs)
