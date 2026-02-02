@@ -1287,11 +1287,16 @@ app <- function() {
       req(info$row, info$col)
 
       if (colnames(ddff_display_r())[info$col + 1] == "CODE") {
+        #browser()
         indicator_clicked <- ddff_display_r()$INDICATOR[info$row]
         source_clicked <- gsub("<[^>]+>", "", ddff_display_r()$SOURCE[info$row])
         k1 <- which(unique_table$indicator == indicator_clicked)
         k2 <- which(unique_table$source == source_clicked)
         keep <- intersect(k1,k2)
+
+        if (length(keep) == 0) { # Tweak for network designs - this may be a bandaid (issue 256)
+          keep <- k1
+        }
 
         showModal(
           modalDialog(
@@ -2080,6 +2085,10 @@ app <- function() {
         k1 <- which(unique_table$indicator == indicator_clicked)
         k2 <- which(unique_table$source == source_clicked)
         keep <- intersect(k1,k2)
+
+        if(length(keep) == 0) {
+          keep <- k1
+        }
 
         showModal(
           modalDialog(
