@@ -526,24 +526,41 @@ app <- function() {
         }
 
         /* Grid layout for objectives */
-        .objectives-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 20px;
-        }
+       .objectives-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
 
-        .objective-card {
-          background: #f9fafb;
-          border-radius: 10px;
-          padding: 20px;
-          border: 1px solid #e5e7eb;
-          transition: all 0.2s;
-        }
+/* 🔴 UPDATED */
+.objective-card {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
 
-        .objective-card:hover {
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-          transform: translateY(-2px);
-        }
+  overflow-x: auto;        /* 🔴 prevent long tables from breaking the card */
+}
+
+/* 🔴 ADD */
+.objective-card table {
+  width: 100%;
+  table-layout: fixed;     /* 🔴 prevents long headers from expanding the card */
+}
+
+/* 🔴 ADD */
+.objective-card th,
+.objective-card td {
+  white-space: normal;     /* 🔴 allow wrapping */
+  word-break: break-word; /* 🔴 break long column names */
+}
+
+/* unchanged */
+.objective-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
 
         /* Scrollbar styling */
         ::-webkit-scrollbar {
@@ -954,26 +971,6 @@ app <- function() {
       }
     }
    )
-
-    output$network_column <- renderUI({
-      req(state$mpas)
-
-      # Check condition
-      in_list <- state$mpas %in% MPAs$NAME_E
-
-      # If ANY selected MPA is in the list → width = 6
-      width_val <- 3
-      #width_val <- if (any(in_list)) 6 else 12
-
-      column(
-        width = width_val,
-        br(),
-        style = "border-left: 1px solid #ccc; border-right: 1px solid #ccc;",
-        uiOutput("networkObjectiveText")
-      )
-    })
-
-
 
     rv <- shiny::reactiveValues(button_label = "See All Project Data")
 
