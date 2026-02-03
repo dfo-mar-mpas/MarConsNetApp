@@ -1400,7 +1400,6 @@ app <- function() {
           # Ecological Overview
 
           if (state$mpas %in% regions$NAME_E) {
-            #browser()
             k1 <- which(filtered_pillar_ecol_df()$areaID == state$mpas & (!(is.na(filtered_pillar_ecol_df()$scale))))
 
 
@@ -1851,7 +1850,7 @@ app <- function() {
             links <- character(length(filtered_odfS$objectives))
             site_grades <- NULL
             site_color <- NULL
-
+            number_of_indicators <- NULL
             for (i in seq_along(filtered_odfS$objectives)) {
               links[i] <- sprintf(
                 '<a href="#%1$s" style="color: black; font-weight: bold; text-decoration: underline"
@@ -1865,6 +1864,7 @@ app <- function() {
 
               KEEP <- filtered_pillar_ecol_df()[which(filtered_pillar_ecol_df()$areaID == state$mpas),]
               KEEP$score[which(!(grepl(textO[i], KEEP$objectives, fixed=TRUE)))] <- NA
+              number_of_indicators[i] <- length(which(!is.na(KEEP$score)))
 
               KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
                                           score_var = "score",
@@ -1882,6 +1882,7 @@ app <- function() {
             dt_data <- data.frame(
               Objective = links,
               Grade=site_grades,
+              Number_Of_Indicators=number_of_indicators,
               stringsAsFactors = FALSE
             )
 
@@ -1890,14 +1891,19 @@ app <- function() {
               h3("Site Conservation Objectives"),  # 🔴 header
               DT::datatable(
                 dt_data,
-                escape = FALSE,      # 🔴 render HTML links
+                escape = FALSE,
                 rownames = FALSE,
                 options = list(dom = 't', paging = FALSE)
               ) %>%
                 DT::formatStyle(
-                  columns = names(dt_data),
-                  target = "row",
-                  backgroundColor = DT::styleEqual(dt_data$Grade, site_color))
+                  "Grade",                     # 🔴 column to style
+                  backgroundColor = DT::styleEqual(
+                    dt_data$Grade,             # values
+                    site_color                  # corresponding colors
+                  ),
+                  color = "black",
+                  fontWeight = "bold"
+                )
             )
 
           }
@@ -2917,6 +2923,7 @@ app <- function() {
         links <- character(length(filtered_odf$objectives))
         grades <- NULL
         grade_colors <- NULL
+        number_of_indicators <- NULL
 
         for (i in seq_along(filtered_odf$objectives)) {
           #message(i)
@@ -2938,6 +2945,14 @@ app <- function() {
           }
           KEEP$score[which(!(grepl(n_objectives[i], KEEP$objectives, fixed=TRUE)))] <- NA
 
+          if (state$mpas %in% MPAs$NAME_E) {
+          number_of_indicators[i] <- length(which(!is.na(KEEP$score)))
+          } else {
+            # How many unique indicators at network level
+            number_of_indicators[i] <- length(unique(KEEP$indicator[which(!(is.na(KEEP$score)))]))
+          }
+
+
           KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
                                       score_var = "score",
                                       weight_var = "weight")
@@ -2949,11 +2964,12 @@ app <- function() {
           }
         }
 
-
+#JAIMIE
 
         dt_data <- data.frame(
           Objective = links,
           Grade = grades,
+          Number_Of_Indicators=number_of_indicators,
           stringsAsFactors = FALSE
         )
         tagList(
@@ -2965,9 +2981,13 @@ app <- function() {
             options = list(dom = 't', paging = FALSE)
           ) %>%
             DT::formatStyle(
-              columns = names(dt_data),
-              target = "row",
-              backgroundColor = DT::styleEqual(dt_data$Grade, grade_colors)
+              "Grade",                     # 🔴 column to style
+              backgroundColor = DT::styleEqual(
+                dt_data$Grade,             # values
+                grade_colors                  # corresponding colors
+              ),
+              color = "black",
+              fontWeight = "bold"
             )
         )
       }
