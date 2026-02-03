@@ -759,14 +759,14 @@ app <- function() {
         ),
 
         # Legend section
-        # div(class = "sidebar-section",
-        #     div(class = "legend-box",
-        #         div(class = "legend-title", "LEGEND"),
-        #         div(class = "legend-items",
-        #             shiny::uiOutput("legendUI")
-        #         )
-        #     )
-        # ),
+        div(class = "sidebar-section",
+            div(class = "legend-box",
+                div(class = "legend-title", "LEGEND"),
+                div(class = "legend-items",
+                    shiny::uiOutput("legendUI")
+                )
+            )
+        ),
 
         # Filters section
         div(class = "sidebar-section",
@@ -1564,36 +1564,36 @@ app <- function() {
 
     })
 
-    # output$legendUI <- renderUI({
-    #   req(state$mpas)
-    #   req(input$tabs)
-    #   # Generate legend items
-    #   if (input$tabs == "tab_0") {
-    #     PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
-    #   } else {
-    #     PALETTE <- indicatorFlower
-    #   }
-    #   legendItems <- lapply(names(PALETTE), function(name) {
-    #     div(
-    #       style = paste0(
-    #         "display: flex; align-items: center; margin-right: 20px;"
-    #       ),
-    #       div(
-    #         style = paste0(
-    #           "width: 20px; height: 20px; background-color: ",
-    #           PALETTE[name],
-    #           "; margin-right: 5px; border: 1px solid black;"
-    #         )
-    #       ),
-    #       span(name) # Label
-    #     )
-    #   })
-    #   # Wrap the items in a horizontal flex container
-    #   div(
-    #     style = "display: flex; flex-wrap: wrap; align-items: center;",
-    #     legendItems
-    #   )
-    # })
+    output$legendUI <- renderUI({
+      req(state$mpas)
+      req(input$tabs)
+      # Generate legend items
+      if (input$tabs == "tab_0") {
+        PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
+      } else {
+        PALETTE <- indicatorFlower
+      }
+      legendItems <- lapply(names(PALETTE), function(name) {
+        div(
+          style = paste0(
+            "display: flex; align-items: center; margin-right: 20px;"
+          ),
+          div(
+            style = paste0(
+              "width: 20px; height: 20px; background-color: ",
+              PALETTE[name],
+              "; margin-right: 5px; border: 1px solid black;"
+            )
+          ),
+          span(name) # Label
+        )
+      })
+      # Wrap the items in a horizontal flex container
+      div(
+        style = "display: flex; flex-wrap: wrap; align-items: center;",
+        legendItems
+      )
+    })
 
     observeEvent(input$about, {
       req(input$about)
@@ -2118,7 +2118,9 @@ app <- function() {
               Source=pillar_ecol_df$source[keepind],
               indicatorProject = pillar_ecol_df$PPTID[keepind],
               indicatorScore = pillar_ecol_df$scoring[keepind],
-              Rationale=pillar_ecol_df$indicator_rationale[keepind]
+              Rationale=pillar_ecol_df$indicator_rationale[keepind],
+              indicatorWeight=pillar_ecol_df$weight[keepind],
+              quality=pillar_ecol_df$quality_statement[keepind]
             ))
           } else {
             return(list(
@@ -2138,7 +2140,11 @@ app <- function() {
               Source=pillar_ecol_df$source[keepind],
               indicatorProject = pillar_ecol_df$PPTID[keepind],
               indicatorScore = pillar_ecol_df$scoring[keepind],
-              Rationale=pillar_ecol_df$indicator_rationale[keepind]
+              Rationale=pillar_ecol_df$indicator_rationale[keepind],
+              indicatorWeight=pillar_ecol_df$weight[keepind],
+              quality=pillar_ecol_df$quality_statement[keepind]
+
+
             ))
           }
         }
@@ -2151,6 +2157,49 @@ app <- function() {
       info <- calculated_info()
       req(info)
 
+      if (input$tabs %in% objective_tabs$tab) {
+
+        # Compute weighted letter grade
+        weighted_grade <- calc_letter_grade(
+          weighted.mean(info$indicatorGrade, info$indicatorWeight, na.rm = TRUE)
+        )
+
+        # Get grade description
+        grade_text <- grade_description('objective')[[weighted_grade]]
+
+        # Count number of indicators with non-NA grades
+        n_indicators <- length(unique(info$indicator_names[!is.na(info$indicatorGrade)]))
+
+        # Extract last year from quality field if it exists
+        years <- str_extract(unique(str_extract(info$quality, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
+        years_num <- as.numeric(years)
+        latest_year <- ifelse(length(years_num) > 0, max(years_num, na.rm = TRUE), NA)
+
+        # Build message
+        sowhat <- paste0(
+          "This objective has a score of ", weighted_grade,
+          " indicating ", grade_text, ".",
+
+          if (n_indicators < 4) {
+            paste0(" It should be noted that this assessment is only based on the score of ", n_indicators, " unique indicators and further research is recommended.")
+          } else {
+            paste0(" This assessment is based on ", n_indicators, " indicators.")
+          },
+
+          if (!is.na(latest_year)) {
+            paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
+          } else {
+            " More sampling/modelling is needed for this objective."
+          },
+          " The overall flowerplot grade is based on the weighted means of the individual (clickable) indicators shown below: "
+        )
+
+        #browser()
+
+      } else if (input$tabs %in% pillar_ecol_df$tab) {
+        sowhat <- 'No interpretation of results available'
+      }
+
       tagList(
 
         ## ---- existing indicator text ----
@@ -2162,26 +2211,30 @@ app <- function() {
             "<p>", info$area, "</p>",
             "<p><strong>", info$indicator_label, "</strong></p>",
             "<p>", info$flower, "</p>",
-            "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>",
-            "<p><strong><span style='background-color: yellow;'>",
-            "Click on each code column to see the code to produce that specific indicator",
-            "</span></strong></p>"
+            "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>"
           )
         ),
 
         ## ---- Ecosystem (flowerplot) legend: CONDITIONAL ----
-        if (input$tabs %in% objective_tabs$tab) tagList( # GEOFF
+        #if (input$tabs %in% objective_tabs$tab) tagList(
 
-          p("Flowerplot scores summarize how well a site is performing for that specific conservation objectives:"),
+         # p("Flowerplot scores summarize how well a site is performing for that specific conservation objectives:"),
 
-          gradeLegendUI("objective")
-        ),
+        #  gradeLegendUI("objective")
+        #),
 
         ## ---- Indicator legend: ALWAYS SHOWN ----
         hr(),
-        p("Indicator scores in the table reflect individual indicator performance:"),
+        #p("Indicator scores in the table reflect individual indicator performance:"),
 
-        gradeLegendUI("indicator")
+        #gradeLegendUI("indicator"),
+        tags$p(
+          tags$strong("INTERPRETATION OF RESULTS"),
+          p(sowhat),
+          style = "font-size: 20px;"  # adjust size as needed
+        ),
+        br(),
+
       )
     })
 
