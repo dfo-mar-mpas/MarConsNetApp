@@ -2171,9 +2171,14 @@ app <- function() {
         n_indicators <- length(unique(info$indicator_names[!is.na(info$indicatorGrade)]))
 
         # Extract last year from quality field if it exists
+        if (!(state$mpas %in% regions$NAME_E)) {
         years <- str_extract(unique(str_extract(info$quality, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
         years_num <- as.numeric(years)
         latest_year <- ifelse(length(years_num) > 0, max(years_num, na.rm = TRUE), NA)
+        } else {
+          latest_year <- NA
+        }
+        #browser()
 
         # Build message
         sowhat <- paste0(
@@ -2189,7 +2194,7 @@ app <- function() {
           if (!is.na(latest_year)) {
             paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
           } else {
-            " More sampling/modelling is needed for this objective."
+            " "
           },
           " The overall flowerplot grade is based on the weighted means of the individual (clickable) indicators shown below: "
         )
