@@ -967,7 +967,8 @@ app <- function() {
       in_list <- state$mpas %in% MPAs$NAME_E
 
       # If ANY selected MPA is in the list → width = 6
-      width_val <- if (any(in_list)) 6 else 12
+      width_val <- 3
+      #width_val <- if (any(in_list)) 6 else 12
 
       column(
         width = width_val,
@@ -1025,6 +1026,7 @@ app <- function() {
               id = "tab0_subtabs",
 
               # Management Effectiveness Tab
+              if (state$mpas %in% MPAs$NAME_E) {
               tabPanel(
                 "Management Effectiveness",
 
@@ -1077,10 +1079,10 @@ app <- function() {
 
                 # Existing content
                 fluidRow(
-                  uiOutput("network_column"),
-                  column(6, uiOutput("objectives"))
+                  column(12, uiOutput("objectives"))
                 )
-              ),
+              )
+              },
 
               # Effectiveness Contributions Tab
               tabPanel("Effectiveness Contributions",
@@ -1137,6 +1139,7 @@ app <- function() {
                            h3(class = "tab-section-title", "Conservation Framework")
                        ),
                        div(class = "objectives-grid",
+                           div(class = "objective-card", shiny::uiOutput('networkObjectiveText')),
                            div(class = "objective-card", shiny::uiOutput('gbf_objectives')),
                            div(class = "objective-card", shiny::uiOutput("ebm_objectives")),
                            div(class = "objective-card", shiny::uiOutput('network_design'))
@@ -2888,7 +2891,7 @@ app <- function() {
     output$networkObjectiveText <- shiny::renderUI({
       req(input$tabs)
 
-      if (input$tabs == "tab_0" && !(is.null(state$mpas)) && "Maritimes" %in% state$region && input$tab0_subtabs == "Management Effectiveness") {
+      if (input$tabs == "tab_0" && !(is.null(state$mpas)) && "Maritimes" %in% state$region && input$tab0_subtabs == "Effectiveness Contributions") {
         n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
         filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
 
