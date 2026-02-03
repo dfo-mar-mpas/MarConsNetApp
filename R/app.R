@@ -54,6 +54,21 @@ app <- function() {
     plotted_projects = character()  # keeps track of already plotted projects
   )
 
+  gradeLegendUI <- function(type = "indicator") {
+    grades <- grade_description(type)
+
+    tags$div(
+      style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
+      lapply(names(grades), function(g) {
+        tags$div(
+          style = "display:flex; align-items:center; gap:5px;",
+          tags$div(style = paste0("width:20px; height:20px; background-color:", flowerPalette[g], "; border:1px solid #000;")),
+          paste0(g, " — ", grades[[g]])
+        )
+      })
+    )
+  }
+
   # find the path to the targets data store
   STORE <- path_to_store()
 
@@ -1042,30 +1057,7 @@ app <- function() {
                     p("Where data are limited or unavailable, this is explicitly indicated and reflected in the resulting score. As such, scores should be interpreted in the context of data availability, indicator coverage, and monitoring effort, and not as a complete or final evaluation of management outcomes."),
 
                     # Inline score legend with descriptions
-                    tags$div(
-                      style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
-
-                      tags$div(style="display:flex; align-items:center; gap:5px;",
-                               tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
-                               "A — Strong evidence the objective is being met"),
-
-                      tags$div(style="display:flex; align-items:center; gap:5px;",
-                               tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
-                               "B — Evidence shows the objective is mostly being met"),
-
-                      tags$div(style="display:flex; align-items:center; gap:5px;",
-                               tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
-                               "C — Mixed or uncertain evidence about objective progress"),
-
-                      tags$div(style="display:flex; align-items:center; gap:5px;",
-                               tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
-                               "D — Limited evidence that objective is being met / emerging concerns"),
-
-                      tags$div(style="display:flex; align-items:center; gap:5px;",
-                               tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
-                               "F — Insufficient evidence / objective not met")
-                    )
-
+                    gradeLegendUI("objective")
                   )
                 ),
 
@@ -1100,29 +1092,7 @@ app <- function() {
                            p("Where data are limited or unavailable, this is explicitly indicated. Scores should always be interpreted in the context of data availability, coverage, and monitoring effort."),
 
                            # Inline score legend with descriptions
-                           tags$div(
-                             style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
-                                      "A — Strong evidence the objective is being met"),
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
-                                      "B — Evidence shows the objective is mostly being met"),
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
-                                      "C — Mixed or uncertain evidence about objective progress"),
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
-                                      "D — Limited evidence that objective is being met / emerging concerns"),
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
-                                      "F — Insufficient evidence / objective not met")
-                           )
+                           gradeLegendUI("objective")
 
                          )
                        ),
@@ -1157,54 +1127,10 @@ app <- function() {
                            # Indicator-level legend paragraph
                            p("The Ecosystem Overview tab presents all indicators measured in the selected area, regardless of whether they contribute to specific conservation objectives. ",
                              "The flowerplot provides a visual summary of overall ecosystem health. Scores here reflect the integrated condition of the ecosystem based on all available indicators: ",
-                             tags$div(
-                               style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
-                               # A
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
-                                        "A — Strong ecosystem health; key ecosystem components are thriving"),
-                               # B
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
-                                        "B — Ecosystem generally healthy with minor concerns"),
-                               # C
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
-                                        "C — Some ecosystem components under stress; mixed condition"),
-                               # D
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
-                                        "D — Limited ecosystem health; emerging concerns across multiple components"),
-                               # F
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
-                                        "F — Poor ecosystem health; insufficient data or widespread impacts")
-                             )
+                             gradeLegendUI("ecosystem_health")
                            ),
                            p("On the right table, each indicator is scored from A–F as follows: ",
-                             tags$div(
-                               style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
-                               # A
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
-                                        " Indicator is fully monitored and performing optimally"),
-                               # B
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
-                                        " Indicator is monitored with minor issues"),
-                               # C
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
-                                        " Indicator shows mixed results; some targets met"),
-                               # D
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
-                                        " Indicator shows emerging concerns or limited monitoring"),
-                               # F
-                               tags$div(style="display:flex; align-items:center; gap:5px;",
-                                        tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
-                                        " Indicator has insufficient data or is performing poorly")
-                             )
+                             gradeLegendUI("indicator")
                            )
 
 
@@ -2248,58 +2174,14 @@ app <- function() {
 
           p("Flowerplot scores summarize how well a site is performing for that specific conservation objectives:"),
 
-          tags$div(
-            style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
-
-            tags$div(style="display:flex; align-items:center; gap:5px;",
-                     tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
-                     "A — Strong evidence the objective is being met"),
-
-            tags$div(style="display:flex; align-items:center; gap:5px;",
-                     tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
-                     "B — Evidence shows the objective is mostly being met"),
-
-            tags$div(style="display:flex; align-items:center; gap:5px;",
-                     tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
-                     "C — Mixed or uncertain evidence about objective progress"),
-
-            tags$div(style="display:flex; align-items:center; gap:5px;",
-                     tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
-                     "D — Limited evidence that objective is being met / emerging concerns"),
-
-            tags$div(style="display:flex; align-items:center; gap:5px;",
-                     tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
-                     "F — Insufficient evidence / objective not met")
-          )
+          gradeLegendUI("objective")
         ),
 
         ## ---- Indicator legend: ALWAYS SHOWN ----
         hr(),
         p("Indicator scores in the table reflect individual indicator performance:"),
 
-        tags$div(
-          style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
-
-          tags$div(style="display:flex; align-items:center; gap:5px;",
-                   tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
-                   " Indicator is fully monitored and performing optimally"),
-
-          tags$div(style="display:flex; align-items:center; gap:5px;",
-                   tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
-                   " Indicator is monitored with minor issues"),
-
-          tags$div(style="display:flex; align-items:center; gap:5px;",
-                   tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
-                   " Indicator shows mixed results; some targets met"),
-
-          tags$div(style="display:flex; align-items:center; gap:5px;",
-                   tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
-                   " Indicator shows emerging concerns or limited monitoring"),
-
-          tags$div(style="display:flex; align-items:center; gap:5px;",
-                   tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
-                   " Indicator has insufficient data or is performing poorly")
-        )
+        gradeLegendUI("indicator")
       )
     })
 
