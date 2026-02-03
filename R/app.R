@@ -949,11 +949,6 @@ app <- function() {
         )
 
       }
-
-
-
-        #browser() #JAIM
-
         return(dt)
 
       }
@@ -1405,6 +1400,7 @@ app <- function() {
           # Ecological Overview
 
           if (state$mpas %in% regions$NAME_E) {
+            #browser()
             k1 <- which(filtered_pillar_ecol_df()$areaID == state$mpas & (!(is.na(filtered_pillar_ecol_df()$scale))))
 
 
@@ -1442,7 +1438,7 @@ app <- function() {
 
 
           if (!(state$mpas %in% regions$NAME_E)) {
-          table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement', 'theme')]
+          table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement', 'theme', "objectives")]
           }
 
             ddff_unique <- table_ped %>%
@@ -1455,7 +1451,11 @@ app <- function() {
               #readiness = NA_real_,
               cost      = NA_real_
             ) %>%
-            dplyr::select(grouping, bin, indicator, source, score, readiness, quality_statement, cost, PPTID, theme) %>%
+              dplyr::select(
+                grouping, bin, indicator, source, score, readiness,
+                quality_statement, cost, PPTID, theme,
+                if (state$mpas %in% MPAs$NAME_E) objectives else NULL
+              ) %>%
             dplyr::arrange(grouping, bin) %>%
             setNames(toupper(names(.)))
 
@@ -1540,6 +1540,25 @@ app <- function() {
         } else {
           DF <- ddff_display
         }
+
+        if (state$mpas %in% MPAs$NAME_E) {
+          excluded_frameworks <- setdiff(MPAs$NAME_E, state$mpas)
+
+          valid_objectives <- obj_excel |>
+            dplyr::filter(!Framework %in% excluded_frameworks) |>
+            dplyr::pull(Objective)
+
+          DF$OBJECTIVES <- vapply(
+            DF$OBJECTIVES,
+            function(x) {
+              objs <- trimws(unlist(strsplit(x, ";;;")))
+              objs <- objs[objs %in% valid_objectives]
+              paste(objs, collapse = " ;;; ")
+            },
+            character(1)
+          )
+        }
+
         }
         return(DF)
       }
@@ -2283,7 +2302,7 @@ app <- function() {
 
 
 
-    dfdt_r <- reactive({ # HERE NOW
+    dfdt_r <- reactive({
       req(input$tabs)
       info <- calculated_info()
       if (length(info$indicator_names) == 0) {
