@@ -2184,9 +2184,10 @@ ddff_unique <- ddff_unique %>%
 
         years <- str_extract(unique(str_extract(info$quality, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
         years_num <- as.numeric(years)
-        latest_year <- ifelse(length(years_num) > 0, max(years_num, na.rm = TRUE), NA)
+        latest_year <- ifelse(length(years_num) > 0 && any(!is.na(years_num)),max(years_num, na.rm = TRUE),NA)
         if (input$tabs %in% objective_tabs$tab) {
           grade_text <- grade_description('objective')[[weighted_grade]]
+          #browser()
 
 
         sowhat <- paste0(
@@ -2208,7 +2209,6 @@ ddff_unique <- ddff_unique %>%
         )
         } else if (input$tabs %in% APPTABS$tab) {
           # BINS
-          #browser()
           grade_text <- grade_description('ecosystem_health')[[weighted_grade]]
 
           sowhat <- paste0(
@@ -2229,6 +2229,23 @@ ddff_unique <- ddff_unique %>%
             " The overall indicator bin grade is based on the weighted means of the individual (clickable) indicators shown below: "
           )
           # JAIM
+        } else {
+          #Indicator level
+          if (!(weighted_grade == "NA")) {
+          grade_text <- grade_description('indicator')[[weighted_grade]]
+          } else {
+            grade_text <- 'more information is needed for this indicator'
+          }
+
+          sowhat <- paste0(
+            info$indicator_names, " has a score of ", weighted_grade,
+            " indicating ", tolower(grade_text)," in ", info$areaID, ".",
+            if (!is.na(latest_year)) {
+              paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
+            } else {
+              " "
+            }
+          )
         }
 
 
