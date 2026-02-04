@@ -2509,11 +2509,42 @@ ddff_unique <- ddff_unique %>%
     output$conditional_ind_Flower <- shiny::renderUI({
       req(state$mpas)
       req(input$tabs)
+
       if (input$tabs %in% objective_tabs$tab) {
-        plotOutput("objective_flower")
+
+        tagList(
+          plotOutput("objective_flower"),
+
+          actionButton(
+            "enlarge_flower_objective",
+            "Click to enlarge flower plot",
+            icon = icon("search-plus"),
+            style = "margin-top: 10px;"
+          )
+        )
+
       } else {
         NULL
       }
+    })
+
+    observeEvent(input$enlarge_flower_objective, {
+
+      showModal(
+        modalDialog(
+          title = "Flower plot (expanded view)",
+
+          plotOutput(
+            "objective_flower",  # 🔴 already correct
+            height = "700px"
+          ),
+
+          easyClose = TRUE,
+          footer = modalButton("Close"),
+          size = "l"
+        )
+      )
+
     })
 
 
