@@ -2678,12 +2678,50 @@ ddff_unique <- ddff_unique %>%
     output$conditionalFlower <- shiny::renderUI({
       req(state$mpas)
       req(input$tabs)
-      if (input$tabs == "tab_0" & input$tab0_subtabs == "Ecosystem Overview" & input$indicator_mode == 'ebm') {
-        plotOutput("flowerPlot",click="flower_click")
+
+      if (input$tabs == "tab_0" &
+          input$tab0_subtabs == "Ecosystem Overview" &
+          input$indicator_mode == 'ebm') {
+
+        tagList(
+          plotOutput("flowerPlot", click = "flower_click"),
+          actionButton(
+            "enlarge_flower",
+            "Click to enlarge flower plot",
+            icon = icon("search-plus"),
+            style = "margin-top: 10px;"
+          )
+        )
+
       } else {
         NULL
       }
     })
+
+    observeEvent(input$enlarge_flower, {
+      #browser()
+
+      showModal(
+        modalDialog(
+          title = "Flower plot (expanded view)",
+
+
+          plotOutput(
+            "flowerPlot", click='flower_click',
+            height = "700px"
+          ),
+
+          easyClose = TRUE,
+          footer = modalButton("Close"),
+          size = "l"
+        )
+      )
+
+    })
+
+    observeEvent(input$flower_click, {
+      removeModal()
+    }, ignoreInit = TRUE)
 
 
     output$ebm_objectives <- renderUI({
