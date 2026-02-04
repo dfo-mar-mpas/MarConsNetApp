@@ -1358,28 +1358,41 @@ app <- function() {
             table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
           }
 
-
           if (!(state$mpas %in% regions$NAME_E)) {
           table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement', 'theme', "objectives")]
           }
 
-            ddff_unique <- table_ped %>%
-            left_join(
-              Ecological %>% dplyr::select(labels, grouping),
-              by = c("bin" = "labels")   # bin in table_ped matches labels in Ecological
-            ) %>%
-            # Add placeholders for readiness, quality, cost
-            mutate(
-              #readiness = NA_real_,
-              cost      = NA_real_
-            ) %>%
-              dplyr::select(
-                grouping, bin, indicator, source, score, readiness,
-                quality_statement, cost, PPTID, theme,
-                if (state$mpas %in% MPAs$NAME_E) objectives else NULL
-              ) %>%
-            dplyr::arrange(grouping, bin) %>%
-            setNames(toupper(names(.)))
+#browser()
+ddff_unique <- table_ped %>%
+  left_join(
+    Ecological %>% dplyr::select(labels, grouping),
+    by = c("bin" = "labels")
+  ) %>%
+  mutate(
+    cost = NA_real_
+  )
+
+if (state$mpas %in% MPAs$NAME_E) {
+
+  ddff_unique <- ddff_unique %>%
+    dplyr::select(
+      grouping, bin, indicator, source, score, readiness,
+      quality_statement, cost, PPTID, theme,
+      objectives
+    )
+
+} else {
+
+  ddff_unique <- ddff_unique %>%
+    dplyr::select(
+      grouping, bin, indicator, source, score, readiness,
+      quality_statement, cost, PPTID, theme
+    )
+}
+
+ddff_unique <- ddff_unique %>%
+  dplyr::arrange(grouping, bin) %>%
+  setNames(toupper(names(.)))
 
           } else {
             ddff_display <- old_pillar_ecol_df[0, ]  # empty df
@@ -2156,31 +2169,26 @@ app <- function() {
     output$indicatorText <- shiny::renderUI({
       info <- calculated_info()
       req(info)
-
-      if (input$tabs %in% objective_tabs$tab) {
+      req(!(input$tabs == "tab_0"))
 
         # Compute weighted letter grade
         weighted_grade <- calc_letter_grade(
           weighted.mean(info$indicatorGrade, info$indicatorWeight, na.rm = TRUE)
         )
 
-        # Get grade description
-        grade_text <- grade_description('objective')[[weighted_grade]]
 
         # Count number of indicators with non-NA grades
         n_indicators <- length(unique(info$indicator_names[!is.na(info$indicatorGrade)]))
 
         # Extract last year from quality field if it exists
-        if (!(state$mpas %in% regions$NAME_E)) {
+
         years <- str_extract(unique(str_extract(info$quality, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
         years_num <- as.numeric(years)
         latest_year <- ifelse(length(years_num) > 0, max(years_num, na.rm = TRUE), NA)
-        } else {
-          latest_year <- NA
-        }
-        #browser()
+        if (input$tabs %in% objective_tabs$tab) {
+          grade_text <- grade_description('objective')[[weighted_grade]]
 
-        # Build message
+
         sowhat <- paste0(
           "This objective has a score of ", weighted_grade,
           " indicating ", grade_text, ".",
@@ -2198,12 +2206,31 @@ app <- function() {
           },
           " The overall flowerplot grade is based on the weighted means of the individual (clickable) indicators shown below: "
         )
+        } else if (input$tabs %in% APPTABS$tab) {
+          # BINS
+          #browser()
+          grade_text <- grade_description('ecosystem_health')[[weighted_grade]]
 
-        #browser()
+          sowhat <- paste0(
+            info$flower, " has a score of ", weighted_grade,
+            " indicating from an ",tolower(info$flower)," lens, the ", tolower(grade_text)," in ", state$mpas, ".",
 
-      } else if (input$tabs %in% pillar_ecol_df$tab) {
-        sowhat <- 'No interpretation of results available'
-      }
+            if (n_indicators < 4) {
+              paste0(" It should be noted that this assessment is only based on the score of ", n_indicators, " unique indicators and further research is recommended.")
+            } else {
+              paste0(" This assessment is based on ", n_indicators, " indicators.")
+            },
+
+            if (!is.na(latest_year)) {
+              paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
+            } else {
+              " "
+            },
+            " The overall indicator bin grade is based on the weighted means of the individual (clickable) indicators shown below: "
+          )
+          # JAIM
+        }
+
 
       tagList(
 
