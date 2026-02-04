@@ -2496,7 +2496,8 @@ ddff_unique <- ddff_unique %>%
                                               score = "score",
                                               max_score=100,
                                               min_score=0,
-                                              title=" ")
+                                              title=paste0("Objective flower plot with number of indicators indicated on each petal"),
+                                              showNumbers=TRUE)
 
         } else {
           NULL
@@ -2851,7 +2852,8 @@ ddff_unique <- ddff_unique %>%
                                               score = "score",
                                               max_score=100,
                                               min_score=0,
-                                              title=NAME)
+                                              title=paste0(NAME, " flower plot with number of indicators indicated on each petal"),
+                                              showNumbers=TRUE)
       }
 
 
