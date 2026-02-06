@@ -40,6 +40,8 @@ indicator_targets <- list(
                x$scale <- 'site'
                x$theme <- "Ocean Structure and Movement"
                x$SME <- "Unknown"
+               x$assumptions <- NA
+               x$caveats <- NA
 
 
                # Doing the score and statement status
@@ -1007,17 +1009,10 @@ indicator_targets <- list(
 
   tar_target(name = ind_species_richness_eDNA,
              command = {
+               data_edna_data
+               message(class(data_edna_data))
 
-               data <- MarConsNetData::data_eDNA()
-               data <- data[-(which(is.na(data$latitude))),]
-
-               df_sf <- sf::st_as_sf(data,
-                                     coords = c("longitude", "latitude"),   # your coordinate column names
-                                     crs = 4326)
-
-               df_sf <- df_sf[,c("year", "species_richness", "geometry")]
-
-               x <- process_indicator(data = df_sf,
+               x <- process_indicator(data = data_edna_data,
                                  indicator_var_name = "species_richness",
                                  indicator = "Species Richness (eDNA)",
                                  type = "Observations",
@@ -1616,7 +1611,10 @@ indicator_targets <- list(
                         indicator_rationale = "The exchange of individuals between conservation sites can support ecosystem resilience, population recovery, genetic exchange, and the maintenance of biodiversity",
                         bin_rationale = "FIXME",
                         readiness="Ready",
-                        theme = "Fish and Fishery Resources" #TODO This theme is probably not correct?
+                        theme = "Fish and Fishery Resources",
+                        SME='Unknown',
+                        assumptions= NA,
+                        caveats =NA
                  )
              }),
 

@@ -10,7 +10,6 @@ raw_data_targets <- list(
                MPAs
                # sf::sf_use_s2(FALSE)
 
-               mpa_combined <- MPAs |>
                  filter(NAME_E != "Non_Conservation_Area") |>
                  st_union() |>
                  st_as_sf() |>
@@ -815,8 +814,27 @@ raw_data_targets <- list(
                  st_as_sf()
              }),
 
-  tar_target(name=data_edna,command={
-    MarConsNetData::data_eDNA()
+  tar_target(name=data_edna_data,
+             command={
+    data <- MarConsNetData::data_eDNA()
+
+
+    data <- data[-(which(is.na(data$latitude))),]
+
+    df_sf <- sf::st_as_sf(data,
+                          coords = c("longitude", "latitude"),   # your coordinate column names
+                          crs = 4326)
+
+    df_sf <- df_sf[,c("year", "species_richness", "geometry")]
+
+
+    DATA2 <- add_assumptions(df_sf,
+                            assumptions ='The eDNA dataset represents complete and accurate sample metadata (IDs, dates, locations) such that species richness derived from non-zero detections is a valid proxy for local biodiversity.',
+                            caveats = 'The data contain known inconsistencies in naming conventions, date formats, and coordinate signs, meaning some samples may be mismatched, inferred, or excluded, potentially affecting spatial and temporal interpretation.'
+                            )
+    DATA2
+
+
 
   }),
 
