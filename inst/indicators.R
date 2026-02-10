@@ -1697,6 +1697,9 @@ indicator_targets <- list(
     )
     ind$readiness <- 'Ready'
     ind$scale <- 'site'
+    ind$SME <- NA
+    ind$adjacent_data <- I(list(data_musquash_MMMP_birds))
+    ind$adjacent_score <- NA
 
     ind <- as_tibble(ind)
 
