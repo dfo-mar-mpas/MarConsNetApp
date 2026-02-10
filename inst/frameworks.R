@@ -107,8 +107,6 @@ framework_targets <- list(
                                        ind_designtarget_Seabird_surface_seizing_planktivore,
                                        ind_designtarget_Seabird_surface_shallow_diving_coastal_piscivore,
                                        ind_designtarget_Seabird_surface_shallow_diving_piscivore)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_biodiversity_GeneticDiversity_df,
@@ -119,8 +117,6 @@ framework_targets <- list(
                                        weights_sum = 1,
                                        ind_placeholder_df,
                                        ind_genetic_diversity_nbw)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_biodiversity_SpeciesDiversity_df,
@@ -168,8 +164,6 @@ framework_targets <- list(
                                        ind_designtarget_WhiteHake4VW,
                                        ind_designtarget_WhiteHake4X,
                                        ind_designtarget_WinterSkate4VsW)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_habitat_Connectivity_df,
@@ -187,8 +181,6 @@ framework_targets <- list(
                                        ind_mpa_use_nbw,
                                        ind_fluxes,
                                        ind_fish_nekton_fluxes)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_habitat_EnvironmentalRepresentativity_df,
@@ -259,8 +251,6 @@ framework_targets <- list(
                                        ind_designtarget_NaturalDisturbance_Low,
                                        ind_designtarget_NaturalDisturbance_Medium,
                                        ind_designtarget_NaturalDisturbance_VeryHigh)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_habitat_KeyFishHabitat_df,
@@ -283,8 +273,6 @@ framework_targets <- list(
                                        ind_designtarget_SmallGorgonian_SDM,
                                        ind_designtarget_SoftCoral_KDE,
                                        ind_designtarget_Vazella_KDE)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_habitat_ThreatstoHabitat_df,
@@ -332,8 +320,6 @@ framework_targets <- list(
                                        ind_other_discharge_offshore,
                                        ind_other_discharge_coastal,
                                        ind_ocean_noise_sab)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_habitat_Uniqueness_df,
@@ -353,8 +339,6 @@ framework_targets <- list(
                                        ind_designtarget_BiophysicalUnits_LaurentianSlope,
                                        ind_designtarget_BiophysicalUnits_SlopeRiseandAbyss,
                                        ind_designtarget_BiophysicalUnits_WesternandSableIslandBanks)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_productivity_BiomassMetrics_df,
@@ -453,8 +437,6 @@ framework_targets <- list(
                                        ind_designtarget_Shrimp_MobileGear,
                                        ind_designtarget_SilverHake_MobileGear,
                                        ind_designtarget_Swordfish)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_productivity_StructureandFunction_df,
@@ -471,8 +453,6 @@ framework_targets <- list(
                                        ind_exchanges,
                                        ind_trophic_relationships,
                                        ind_ecosystem_function)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
   tar_target(bin_productivity_ThreatstoProductivity_df,
@@ -492,8 +472,6 @@ framework_targets <- list(
                                        ind_invasive_gully,
                                        ind_harmful_algae,
                                        ind_bait)
-               save_plots(dplyr::select(bin,-data))
-               dplyr::select(bin,-plot)
              }
   ),
 
