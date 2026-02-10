@@ -42,8 +42,8 @@ indicator_targets <- list(
                x$SME <- "Unknown"
                x$assumptions <- NA
                x$caveats <- NA
-               adjacent_data <- NA
-               adjacent_score <- NA
+               x$adjacent_data <- NA
+               x$adjacent_score <- NA
 
 
 
@@ -197,6 +197,9 @@ indicator_targets <- list(
                }
 
                x <- as_tibble(x)
+
+               x$adjacent_data <- vector("list", nrow(x))
+
 
                save_plots(dplyr::select(x,-data, -adjacent_data))
                dplyr::select(x,-plot)
