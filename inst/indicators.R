@@ -196,8 +196,10 @@ indicator_targets <- list(
                  }
                }
 
-               as_tibble(x)
+               x <- as_tibble(x)
 
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
 
              }
   ),
@@ -237,7 +239,8 @@ indicator_targets <- list(
                                  control_polygon = control_polygons,
                                  plot_lm=FALSE)
 
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }
   ),
 
@@ -251,7 +254,7 @@ indicator_targets <- list(
                         year = YEAR)  |>
                  dplyr::select(longitude, latitude, year, fish_weight)
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "fish_weight",
                                  indicator = "Fish Weight",
                                  type = "Ecosystem Trawl Survey",
@@ -275,6 +278,9 @@ indicator_targets <- list(
                                    "Allow sufficient escapement from exploitation for spawning",
                                    "Contribute to the recovery and conservation of depleted species"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }
   ),
 
@@ -292,7 +298,7 @@ indicator_targets <- list(
                  data <- data[-which(is.na(data$latitude) | is.na(data$longitude)),]
                }
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "haddock_counts",
                                  indicator = "Haddock Number per Tow",
                                  type = "Ecosystem Trawl Survey",
@@ -318,6 +324,9 @@ indicator_targets <- list(
                                    "Allow sufficient escapement from exploitation for spawning",
                                    "Contribute to the recovery and conservation of depleted species"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_haddock_biomass,
@@ -334,7 +343,7 @@ indicator_targets <- list(
                  data <- data[-which(is.na(data$latitude) | is.na(data$longitude)),]
                }
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "haddock_biomass",
                                  indicator = "Biomass of Haddock per Tow",
                                  type = "Ecosystem Trawl Survey",
@@ -361,6 +370,9 @@ indicator_targets <- list(
                                    "Contribute to the recovery and conservation of depleted species"
                                  )
                )
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
 
@@ -371,7 +383,7 @@ indicator_targets <- list(
                  mutate(Calanus_finmarchicus_biomass = Calanus_finmarchicus_log10)  |>
                  dplyr::select(longitude, latitude, year, Calanus_finmarchicus_biomass)
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator = "Biomass of Zooplankton (Calanus finmarchicus)",
                                  indicator_var_name = "Calanus_finmarchicus_biomass",
                                  type = "Zooplankton Net Tows",
@@ -395,6 +407,9 @@ indicator_targets <- list(
                                    "Maintain Functional Biodiversity",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
 
@@ -410,7 +425,7 @@ indicator_targets <- list(
                data <- data[-which(is.na(data$relative_biomass)),]
 
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator = "Zooplankton Community Composition",
                                  indicator_var_name = "relative_biomass",
                                  type = "Zooplankton Net Tows",
@@ -435,6 +450,9 @@ indicator_targets <- list(
                                    "Maintain Functional Biodiversity",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
 
@@ -446,7 +464,7 @@ indicator_targets <- list(
                  left_join(data_azmp_fixed_stations, by = "station")  |>
                  dplyr::select(longitude, latitude, year, sea_surface_height)
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "sea_surface_height",
                                  indicator = "sea surface height",
                                  type = "derived (AZMP)",
@@ -466,13 +484,16 @@ indicator_targets <- list(
                                  plot_lm=FALSE,
                                  theme = "Ocean Structure and Movement",
                                  objectives=NA)
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_nitrate,
              command={
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, nitrate)
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "nitrate",
                                  indicator = "Nutrient Conditions (Nitrate)",
                                  type = "Discrete Occupations Sections",
@@ -498,6 +519,9 @@ indicator_targets <- list(
                                    "Maintain Ecosystem Resistance",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_oxygen,
@@ -508,7 +532,7 @@ indicator_targets <- list(
                data2$year <- year
                data2 <- data2[which(!is.na(data2$DOXY)),]
                data2 <- data2[,c("longitude", "latitude", "year", "DOXY", "depth")]
-               process_indicator(data = data2,
+               x <- process_indicator(data = data2,
                                  indicator_var_name = "DOXY",
                                  indicator = "Oxygen",
                                  type = "Gliders",
@@ -533,6 +557,9 @@ indicator_targets <- list(
                                    "Maintain Ecosystem Resistance",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
 
              }),
 
@@ -565,7 +592,8 @@ indicator_targets <- list(
                                       plot_lm=FALSE,
                                       theme = "Ocean Structure and Movement",
                                       objectives=NA)
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
 
              }),
 
@@ -576,7 +604,7 @@ indicator_targets <- list(
              command={
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, silicate)
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "silicate",
                                  indicator = "Nutrient Conditions (Silicate)",
                                  type = "Discrete Occupations Sections",
@@ -602,13 +630,16 @@ indicator_targets <- list(
                                    "Maintain Ecosystem Resistance",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_phosphate,
              command={
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, phosphate)
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "phosphate",
                                  indicator = "Nutrient Conditions (Phosphate)",
                                  type = "Discrete Occupations Sections",
@@ -634,6 +665,9 @@ indicator_targets <- list(
                                    "Maintain Ecosystem Resistance",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
 
@@ -642,7 +676,7 @@ indicator_targets <- list(
 
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, salinity)
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "salinity",
                                  indicator = "Salinity",
                                  type = "Discrete Occupations Sections",
@@ -666,6 +700,9 @@ indicator_targets <- list(
                                    "Maintain Ecosystem Resistance",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_temperature,
@@ -698,7 +735,8 @@ indicator_targets <- list(
                                         "Maintain Ecosystem Resistance",
                                         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                       ))
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_chlorophyll,
@@ -707,7 +745,7 @@ indicator_targets <- list(
                  dplyr::select(longitude, latitude, year, depth, chlorophyll)
 
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "chlorophyll",
                                  indicator = "Chlorophyll",
                                  type = "Discrete Occupations Sections",
@@ -731,6 +769,9 @@ indicator_targets <- list(
                                    "Maintain Functional Biodiversity",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_bloom_amplitude,
@@ -759,7 +800,7 @@ indicator_targets <- list(
 
 
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "bloom_amplitude",
                                  indicator = "Bloom Amplitude",
                                  type = "Remote Sensing",
@@ -782,6 +823,9 @@ indicator_targets <- list(
                                    "Maintain Functional Biodiversity",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }
   ),
 
@@ -810,7 +854,7 @@ indicator_targets <- list(
                  st_make_valid()
 
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "bloom_start",
                                  indicator = "Bloom Start (Timing)",
                                  type = "Remote Sensing",
@@ -833,6 +877,9 @@ indicator_targets <- list(
                                    "Maintain Functional Biodiversity",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }
   ),
 
@@ -858,7 +905,7 @@ indicator_targets <- list(
 
 
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator = "Abundance of Phytoplankton (Diatoms, Dinoflagellates,Flagellates)",
                                  indicator_var_name = "sum_phytoplankton",
                                  type = "Continuous Plankton Recorder",
@@ -882,6 +929,9 @@ indicator_targets <- list(
                                    "Maintain Functional Biodiversity",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
 
 
              }),
@@ -917,7 +967,8 @@ indicator_targets <- list(
                                    "Protect representative examples of identified ecosystem and habitat types",
                                    "Habitat required for all species, particularly priority species, is maintained and protected"
                                  ))
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(name = ind_ebsa_representation,
@@ -950,7 +1001,8 @@ indicator_targets <- list(
                                    "Habitat required for all species, particularly priority species, is maintained and protected"
                                  )
                )
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(name = ind_SAR_CH_representation,
@@ -964,7 +1016,7 @@ indicator_targets <- list(
                  reframe(geoms = st_make_valid(st_union(Shape))) |>
                  st_as_sf()
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "name",
                                  indicator = "Species At Risk Critical Habitat Representation",
                                  type = "Model",
@@ -989,6 +1041,9 @@ indicator_targets <- list(
                                    "Protect unique, rare, or sensitive ecological features",
                                    "Habitat required for all species, particularly priority species, is maintained and protected"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(name = ind_species_representation,
@@ -1001,7 +1056,7 @@ indicator_targets <- list(
                  ungroup() |>
                  st_as_sf()
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "scientificName",
                                  indicator = "Species Richness (OBIS)",
                                  type = "Observations",
@@ -1026,6 +1081,9 @@ indicator_targets <- list(
                                    "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(name = ind_species_richness_eDNA,
@@ -1058,12 +1116,13 @@ indicator_targets <- list(
                                    "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(name = ind_MAR_cum_impact,
              command = {
-               process_indicator(data = data_MAR_cumulative_impacts$Cumul_Impact_Maritimes_ALL.tif,
+               x <- process_indicator(data = data_MAR_cumulative_impacts$Cumul_Impact_Maritimes_ALL.tif,
                                  indicator_var_name = "Cumul_Impact_Maritimes_ALL.tif",
                                  indicator = "Cumulative Impacts",
                                  type = "Model",
@@ -1098,6 +1157,9 @@ indicator_targets <- list(
                                    "Promote the survival and recovery of Northern Wolffish by minimizing risk of harm from human activities (e.g., bycatch in the commercial fishery) in the Laurentian Channel",
                                    "Promote the survival and recovery of Leatherback Sea Turtles by minimizing risk of harm from human activities (e.g., entanglement in commercial fishing gear, seismic activities) in the Laurentian Channel"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(name = ind_MAR_biofouling_AIS,
@@ -1108,7 +1170,7 @@ indicator_targets <- list(
                  reframe(geoms = st_make_valid(st_union(Shape))) |>
                  st_as_sf()
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "species_name",
                                  indicator = "Biofouling AIS representation",
                                  type = "Observations",
@@ -1130,6 +1192,9 @@ indicator_targets <- list(
                                    "Minimize unintended introduction and transmission of invasive species",
                                    "Prevent and Mitigate Invasive Alien Species"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(name = ind_musquash_infaunal_diversity,
@@ -1180,7 +1245,8 @@ indicator_targets <- list(
                                         "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
                                         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                       ))
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
   tar_target(name = ind_musquash_nekton_diversity,
              command = {
@@ -1189,7 +1255,7 @@ indicator_targets <- list(
                  reframe(geoms = st_make_valid(st_union(geometry))) |>
                  st_as_sf()
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "scientificName",
                                  indicator = "Nekton Diversity (ECW)",
                                  type = "Observations",
@@ -1214,6 +1280,9 @@ indicator_targets <- list(
                                    "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(name=ind_musquash_ph,
@@ -1247,7 +1316,8 @@ indicator_targets <- list(
                                    "Maintain Ecosystem Resistance",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
 
              }
   ),
@@ -1257,7 +1327,7 @@ indicator_targets <- list(
                  rename(DO_mg_L= `DO (mg/L)`) |>
                  dplyr::select(Lon, Lat, DO_mg_L, year)
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "DO_mg_L",
                                  indicator = "Dissolved Oxygen",
                                  type = "Discrete Occupations Sections",
@@ -1283,6 +1353,9 @@ indicator_targets <- list(
                                    "Maintain Ecosystem Resistance",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }
   ),
 
@@ -1292,7 +1365,7 @@ indicator_targets <- list(
                  rename(phosphate= `tot P (mg/L)`) |>
                  dplyr::select(Lon, Lat, phosphate, year)
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "phosphate",
                                  indicator = "Nutrient Conditions (Phosphate)",
                                  type = "Discrete Occupations Sections",
@@ -1319,6 +1392,9 @@ indicator_targets <- list(
                                    "Maintain Ecosystem Resistance",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }
   ),
 
@@ -1328,7 +1404,7 @@ indicator_targets <- list(
                  rename(secchi= `Secchi  (m)`) |>
                  dplyr::select(Lon, Lat, secchi, year)
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "secchi",
                                  indicator = "Secchi Depth",
                                  type = "Discrete Occupations Sections",
@@ -1354,6 +1430,9 @@ indicator_targets <- list(
                                    "Maintain Functional Biodiversity",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }
   ),
 
@@ -1362,7 +1441,7 @@ indicator_targets <- list(
                data <- data_musquash_coliform |>
                  dplyr::select(latitude, longitude, MPN, year)
 
-               process_indicator(data = data,
+               x <- process_indicator(data = data,
                                  indicator_var_name = "MPN",
                                  indicator = "Coliform",
                                  type = "Discrete Occupations Sections",
@@ -1386,6 +1465,9 @@ indicator_targets <- list(
                                    "Pollution is prevented and reduced",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }
   ),
 
@@ -1425,7 +1507,8 @@ indicator_targets <- list(
                                         "Maintain Ecosystem Resistance",
                                         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                       ))
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_temperature_inside_outside,
@@ -1460,7 +1543,8 @@ indicator_targets <- list(
                                         "Maintain Ecosystem Resistance",
                                         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                       ))
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
 
@@ -1501,7 +1585,8 @@ indicator_targets <- list(
                                         "Maintain Ecosystem Resistance",
                                         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                       ))
-               x
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_musquash_coliform_inside_outside,
@@ -1542,6 +1627,9 @@ indicator_targets <- list(
                                         "Pollution is prevented and reduced",
                                         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                       ))
+
+               save_plots(dplyr::select(x,-data, -adjacent_data))
+               dplyr::select(x,-plot)
              }),
 
   tar_target(ind_musquash_birds_sample_coverage, command = {
@@ -1610,7 +1698,10 @@ indicator_targets <- list(
     ind$readiness <- 'Ready'
     ind$scale <- 'site'
 
-    as_tibble(ind)
+    ind <- as_tibble(ind)
+
+    save_plots(dplyr::select(ind,-data, -adjacent_data))
+    dplyr::select(ind,-plot)
   }),
 
   tar_target(ind_protconn,
@@ -1693,7 +1784,7 @@ indicator_targets <- list(
         }
       }
 
-      process_indicator(data = cp,
+      x <- process_indicator(data = cp,
                         indicator_var_name = "layername",
                         indicator = paste("Network design target:", filter_type,type,plainname,sep=" - "),
                         type = "Network-Design Consevation Target",
@@ -1719,6 +1810,9 @@ indicator_targets <- list(
                         scale = "region-site",
                         SME="Unknown",
                         plot_type = "map")
+
+      save_plots(dplyr::select(x,-data, -adjacent_data))
+      dplyr::select(x,-plot)
 
 
     }
