@@ -7,7 +7,7 @@ raw_data_targets <- list(
 
   tar_target(control_polygons,
              command= {
-               MPAs
+               mpa_combined <- MPAs |>
                # sf::sf_use_s2(FALSE)
 
                  filter(NAME_E != "Non_Conservation_Area") |>
