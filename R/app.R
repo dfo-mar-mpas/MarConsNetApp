@@ -2320,6 +2320,7 @@ ddff_unique <- ddff_unique %>%
     dfdt_r <- reactive({
       req(input$tabs)
       info <- calculated_info()
+
       if (length(info$indicator_names) == 0) {
         ddff <- as.data.frame(
           setNames(
@@ -2353,6 +2354,7 @@ ddff_unique <- ddff_unique %>%
       }
 
       if (!(length(info$indicator_names) == 1 && "<a href=" %in% info$ind_tabs)) {
+        #browser()
         # The below line puts the links in the proper format to direct us to the relevant tab when it is clicked on.
         formatted_indicators <- trimws(gsub("\n", "", paste0("<a href=", unlist(strsplit(as.character(info$ind_tabs), "<a href="))[nzchar(unlist(strsplit(as.character(info$ind_tabs), "<a href=")))])), "both")
 
@@ -2389,9 +2391,9 @@ ddff_unique <- ddff_unique %>%
 
             dfdt$Grade <- sapply(dfdt$Score, calc_letter_grade)
             # NEW 2025/07/07
-            if (any(is.na(dfdt$Trend))) {
-              dfdt <- dfdt[-(which(is.na(dfdt$Trend))),]
-            }
+            # if (any(is.na(dfdt$Trend))) {
+            #   dfdt <- dfdt[-(which(is.na(dfdt$Trend))),]
+            # }
 
           } else {
             # MODAL
@@ -2406,6 +2408,7 @@ ddff_unique <- ddff_unique %>%
         } else {
           NULL
         }
+
         dfdt <- dfdt[, c(
           "Indicator", "Rationale", "areaID", "Status", "Trend",
           "Projects", "Source", "Code", "Score", "Method"
@@ -2420,6 +2423,7 @@ ddff_unique <- ddff_unique %>%
       if (length(dfdt_r()$Indicator) == 0) {
         DT::datatable(dfdt_r())
       } else {
+        #browser()
         ddff <- dfdt_r()
         ddff$SCORE_LETTER <- calc_letter_grade(dfdt_r()$Score)
         ddff$Score <- round(ddff$Score, 2)
@@ -2443,6 +2447,8 @@ ddff_unique <- ddff_unique %>%
           color = "black",
           fontWeight = "bold"
         )
+        # it's ok here
+        return(dt)
       }
 
 
