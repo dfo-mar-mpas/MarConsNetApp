@@ -145,7 +145,7 @@ list(
     all_indicator_project_geoms |>
       group_by(project_short_title, areaID, PPTID,source,geometry)|>
       summarise(type = paste(type,";;"),
-                type = paste(scale, ";;")) |>
+                scale = paste(scale, ";;")) |>
       st_make_valid() |>
       distinct()
 
