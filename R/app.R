@@ -2730,8 +2730,6 @@ ddff_unique <- ddff_unique %>%
     })
 
     observeEvent(input$enlarge_flower, {
-      #browser()
-
       showModal(
         modalDialog(
           title = "Flower plot (expanded view)",
@@ -3230,13 +3228,9 @@ ddff_unique <- ddff_unique %>%
 
             keep_type <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$type)) > 0
 
-            # if(!(is.null(input$projects))) {
-            # browser()
-            # }
+            keep_scale <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$scale)) > 0
 
-            #keep_scale <- rowSums(sapply(input$filter_ind_type, grepl, x = APJ_filtered$scale)) > 0
-            #
-            # APJ_filtered <- APJ_filtered[keep_type & keep_scale, ]
+             APJ_filtered <- APJ_filtered[keep_type & keep_scale, ]
 
              APJ_filtered <- APJ_filtered[keep_type, ]
 
