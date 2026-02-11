@@ -2133,7 +2133,10 @@ ddff_unique <- ddff_unique %>%
               indicatorScore = pillar_ecol_df$scoring[keepind],
               Rationale=pillar_ecol_df$indicator_rationale[keepind],
               indicatorWeight=pillar_ecol_df$weight[keepind],
-              quality=pillar_ecol_df$quality_statement[keepind]
+              quality=pillar_ecol_df$quality_statement[keepind],
+              assumptions=pillar_ecol_df$assumptions[keepind],
+              caveats=pillar_ecol_df$caveats[keepind]
+
             ))
           } else {
             return(list(
@@ -2155,9 +2158,9 @@ ddff_unique <- ddff_unique %>%
               indicatorScore = pillar_ecol_df$scoring[keepind],
               Rationale=pillar_ecol_df$indicator_rationale[keepind],
               indicatorWeight=pillar_ecol_df$weight[keepind],
-              quality=pillar_ecol_df$quality_statement[keepind]
-
-
+              quality=pillar_ecol_df$quality_statement[keepind],
+              assumptions=pillar_ecol_df$assumptions[keepind],
+              caveats=pillar_ecol_df$caveats[keepind]
             ))
           }
         }
@@ -2207,6 +2210,9 @@ ddff_unique <- ddff_unique %>%
           },
           " The overall flowerplot grade is based on the weighted means of the individual (clickable) indicators shown below: "
         )
+
+        #browser()
+
         } else if (input$tabs %in% APPTABS$tab) {
           # BINS
           grade_text <- grade_description('ecosystem_health')[[weighted_grade]]
@@ -2228,7 +2234,6 @@ ddff_unique <- ddff_unique %>%
             },
             " The overall indicator bin grade is based on the weighted means of the individual (clickable) indicators shown below: "
           )
-          # JAIM
         } else {
           #Indicator level
           if (!(weighted_grade == "NA")) {
@@ -2246,12 +2251,24 @@ ddff_unique <- ddff_unique %>%
               " "
             }
           )
+
+          #browser()
+
         }
 
+
+
+        assump_txt  <- paste(unique(info$assumptions), collapse = " ")
+        caveat_txt  <- paste(unique(info$caveats), collapse = " ")
+
+        has_assump  <- !is.na(assump_txt) && nzchar(trimws(assump_txt))
+        has_caveat  <- !is.na(caveat_txt) && nzchar(trimws(caveat_txt))
 
       tagList(
 
         ## ---- existing indicator text ----
+        if (!(input$tabs %in% pillar_ecol_df$tab)) {
+
         shiny::HTML(
           paste(
             "<p><strong>", info$CO_label, "</strong></p>",
@@ -2262,7 +2279,8 @@ ddff_unique <- ddff_unique %>%
             "<p>", info$flower, "</p>",
             "<p>", paste0(info$formatted_projects, collapse = "<br>"), "</p>"
           )
-        ),
+        )
+          },
 
         ## ---- Ecosystem (flowerplot) legend: CONDITIONAL ----
         #if (input$tabs %in% objective_tabs$tab) tagList(
@@ -2283,6 +2301,16 @@ ddff_unique <- ddff_unique %>%
           style = "font-size: 20px;"  # adjust size as needed
         ),
         br(),
+        if ((has_assump || has_caveat) && input$tabs %in% pillar_ecol_df$tab) {
+          tags$p(
+            tags$strong("ASSUMPTIONS / CAVEATS"),
+            br(),
+            if (has_assump) p(assump_txt),
+            if (has_caveat) p(caveat_txt)
+          )
+        } else {
+          NULL
+        }
 
       )
     })
