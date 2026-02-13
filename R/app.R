@@ -1362,7 +1362,6 @@ app <- function() {
           table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "areaID", 'readiness', 'quality_statement', 'theme', "objectives")]
           }
 
-#browser()
 ddff_unique <- table_ped %>%
   left_join(
     Ecological %>% dplyr::select(labels, grouping),
@@ -2135,8 +2134,8 @@ ddff_unique <- ddff_unique %>%
               indicatorWeight=pillar_ecol_df$weight[keepind],
               quality=pillar_ecol_df$quality_statement[keepind],
               assumptions=pillar_ecol_df$assumptions[keepind],
-              caveats=pillar_ecol_df$caveats[keepind]
-
+              caveats=pillar_ecol_df$caveats[keepind],
+              adjacent_score=pillar_ecol_df$adjacent_score[keepind]
             ))
           } else {
             return(list(
@@ -2160,7 +2159,8 @@ ddff_unique <- ddff_unique %>%
               indicatorWeight=pillar_ecol_df$weight[keepind],
               quality=pillar_ecol_df$quality_statement[keepind],
               assumptions=pillar_ecol_df$assumptions[keepind],
-              caveats=pillar_ecol_df$caveats[keepind]
+              caveats=pillar_ecol_df$caveats[keepind],
+              adjacent_score=pillar_ecol_df$adjacent_score[keepind]
             ))
           }
         }
@@ -2179,9 +2179,14 @@ ddff_unique <- ddff_unique %>%
           weighted.mean(info$indicatorGrade, info$indicatorWeight, na.rm = TRUE)
         )
 
+        weighted_outside_grade <-  calc_letter_grade(
+          weighted.mean(info$adjacent_score, info$indicatorWeight, na.rm = TRUE)
+        )
 
         # Count number of indicators with non-NA grades
         n_indicators <- length(unique(info$indicator_names[!is.na(info$indicatorGrade)]))
+        n_indicators_outside <- length(unique(info$indicator_names[!is.na(info$adjacent_score)]))
+
 
         # Extract last year from quality field if it exists
 
@@ -2190,12 +2195,10 @@ ddff_unique <- ddff_unique %>%
         latest_year <- ifelse(length(years_num) > 0 && any(!is.na(years_num)),max(years_num, na.rm = TRUE),NA)
         if (input$tabs %in% objective_tabs$tab) {
           grade_text <- grade_description('objective')[[weighted_grade]]
-          #browser()
-
 
         sowhat <- paste0(
           "This objective has a score of ", weighted_grade,
-          " indicating ", grade_text, ".",
+          " indicating ", tolower(grade_text), ".",
 
           if (n_indicators < 4) {
             paste0(" It should be noted that this assessment is only based on the score of ", n_indicators, " unique indicators and further research is recommended.")
@@ -2208,10 +2211,12 @@ ddff_unique <- ddff_unique %>%
           } else {
             " "
           },
+
+          if (!(all(is.na(info$adjacent_score)))) {
+            paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ', tolower(grade_description('objective')[[weighted_outside_grade]]), ". This outside assessment is based on ",n_indicators_outside, " indicators.")
+          },
           " The overall flowerplot grade is based on the weighted means of the individual (clickable) indicators shown below: "
         )
-
-        #browser()
 
         } else if (input$tabs %in% APPTABS$tab) {
           # BINS
@@ -2232,6 +2237,9 @@ ddff_unique <- ddff_unique %>%
             } else {
               " "
             },
+            if (!(all(is.na(info$adjacent_score)))) {
+              paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ', tolower(grade_description('ecosystem_health')[[weighted_outside_grade]]), ". This outside assessment is based on ",n_indicators_outside, " indicators.")
+            },
             " The overall indicator bin grade is based on the weighted means of the individual (clickable) indicators shown below: "
           )
         } else {
@@ -2249,11 +2257,11 @@ ddff_unique <- ddff_unique %>%
               paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
             } else {
               " "
+            },
+            if (!(all(is.na(info$adjacent_score)))) {
+              paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ', tolower(grade_description('indicator')[[weighted_outside_grade]]), ".")
             }
           )
-
-          #browser()
-
         }
 
 
@@ -2354,7 +2362,6 @@ ddff_unique <- ddff_unique %>%
       }
 
       if (!(length(info$indicator_names) == 1 && "<a href=" %in% info$ind_tabs)) {
-        #browser()
         # The below line puts the links in the proper format to direct us to the relevant tab when it is clicked on.
         formatted_indicators <- trimws(gsub("\n", "", paste0("<a href=", unlist(strsplit(as.character(info$ind_tabs), "<a href="))[nzchar(unlist(strsplit(as.character(info$ind_tabs), "<a href=")))])), "both")
 
@@ -2423,7 +2430,6 @@ ddff_unique <- ddff_unique %>%
       if (length(dfdt_r()$Indicator) == 0) {
         DT::datatable(dfdt_r())
       } else {
-        #browser()
         ddff <- dfdt_r()
         ddff$SCORE_LETTER <- calc_letter_grade(dfdt_r()$Score)
         ddff$Score <- round(ddff$Score, 2)
