@@ -2173,28 +2173,33 @@ ddff_unique <- ddff_unique %>%
       info <- calculated_info()
       req(info)
       req(!(input$tabs == "tab_0"))
-
         # Compute weighted letter grade
         weighted_grade <- calc_letter_grade(
           weighted.mean(info$indicatorGrade, info$indicatorWeight, na.rm = TRUE)
         )
 
+
+        if (!(state$mpas %in% regions$NAME_E)) {
         weighted_outside_grade <-  calc_letter_grade(
           weighted.mean(info$adjacent_score, info$indicatorWeight, na.rm = TRUE)
         )
+        n_indicators_outside <- length(unique(info$indicator_names[!is.na(info$adjacent_score)]))
+        }
 
         # Count number of indicators with non-NA grades
         n_indicators <- length(unique(info$indicator_names[!is.na(info$indicatorGrade)]))
-        n_indicators_outside <- length(unique(info$indicator_names[!is.na(info$adjacent_score)]))
 
 
         # Extract last year from quality field if it exists
 
+
         years <- str_extract(unique(str_extract(info$quality, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
         years_num <- as.numeric(years)
         latest_year <- ifelse(length(years_num) > 0 && any(!is.na(years_num)),max(years_num, na.rm = TRUE),NA)
+
         if (input$tabs %in% objective_tabs$tab) {
           grade_text <- grade_description('objective')[[weighted_grade]]
+
 
         sowhat <- paste0(
           "This objective has a score of ", weighted_grade,
@@ -2210,13 +2215,17 @@ ddff_unique <- ddff_unique %>%
             paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
           } else {
             " "
-          },
+          })
 
           if (!(all(is.na(info$adjacent_score)))) {
-            paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ', tolower(grade_description('objective')[[weighted_outside_grade]]), ". This outside assessment is based on ",n_indicators_outside, " indicators.")
-          },
-          " The overall flowerplot grade is based on the weighted means of the individual (clickable) indicators shown below: "
-        )
+            sowhatoutside <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ',
+                                    tolower(grade_description('objective')[[weighted_outside_grade]]), ". This outside assessment is based on
+                                    ",n_indicators_outside, " indicators.")
+          }
+        if (!(state$mpas %in% regions$NAME_E)) {
+        sowhatestablishment <- paste("Since the establishment of the protected area, .... The overall flowerplot grade is based on the weighted means of the individual (clickable) indicators shown below: ")
+        }
+
 
         } else if (input$tabs %in% APPTABS$tab) {
           # BINS
@@ -2236,12 +2245,20 @@ ddff_unique <- ddff_unique %>%
               paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
             } else {
               " "
-            },
+            })
+
+          #browser()
+
+          if (!(state$mpas %in% regions$NAME_E)) {
             if (!(all(is.na(info$adjacent_score)))) {
-              paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ', tolower(grade_description('ecosystem_health')[[weighted_outside_grade]]), ". This outside assessment is based on ",n_indicators_outside, " indicators.")
-            },
-            " The overall indicator bin grade is based on the weighted means of the individual (clickable) indicators shown below: "
-          )
+              sowhatoutside <-  paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ', tolower(grade_description('ecosystem_health')[[weighted_outside_grade]]), ". This outside assessment is based on ",n_indicators_outside, " indicators.")
+            }
+          }
+
+          if (!(state$mpas %in% regions$NAME_E)) {
+          sowhatestablishment <- paste("Since the establishment of the protected area, .... The overall flowerplot grade is based on the weighted means of the individual (clickable) indicators shown below: ")
+          }
+
         } else {
           #Indicator level
           if (!(weighted_grade == "NA")) {
@@ -2257,11 +2274,16 @@ ddff_unique <- ddff_unique %>%
               paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
             } else {
               " "
-            },
+            })
+
+          if (!(state$mpas %in% regions$NAME_E)) {
             if (!(all(is.na(info$adjacent_score)))) {
-              paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ', tolower(grade_description('indicator')[[weighted_outside_grade]]), ".")
+              sowhatoutside <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ', tolower(grade_description('indicator')[[weighted_outside_grade]]), ".")
             }
-          )
+
+          sowhatestablishment <- paste("Since the establishment of the protected area, .... The overall flowerplot grade is based on the weighted means of the individual (clickable) indicators shown below: ")
+          }
+
         }
 
 
@@ -2290,24 +2312,31 @@ ddff_unique <- ddff_unique %>%
         )
           },
 
-        ## ---- Ecosystem (flowerplot) legend: CONDITIONAL ----
-        #if (input$tabs %in% objective_tabs$tab) tagList(
-
-         # p("Flowerplot scores summarize how well a site is performing for that specific conservation objectives:"),
-
-        #  gradeLegendUI("objective")
-        #),
-
         ## ---- Indicator legend: ALWAYS SHOWN ----
         hr(),
         #p("Indicator scores in the table reflect individual indicator performance:"),
 
         #gradeLegendUI("indicator"),
-        tags$p(
-          tags$strong("INTERPRETATION OF RESULTS"),
-          p(sowhat),
-          style = "font-size: 20px;"  # adjust size as needed
-        ),
+        if (state$mpas %in% regions$NAME_E) {
+          tags$p(
+            tags$strong("INTERPRETATION OF RESULTS"),
+            p(sowhat),
+            style = "font-size: 20px;"
+          )
+
+        } else {
+
+          tags$p(
+            tags$strong("INTERPRETATION OF RESULTS"),
+            p(sowhat),
+            tags$strong("INSIDE/ OUTSIDE COMPARISON"),
+            p(sowhatoutside),
+            tags$strong("BEFORE VS AFTER PROTECTED AREA ESTABLISHMENT"),
+            p(sowhatestablishment),
+            style = "font-size: 20px;"
+          )
+
+        },
         br(),
         if ((has_assump || has_caveat) && input$tabs %in% pillar_ecol_df$tab) {
           tags$p(
