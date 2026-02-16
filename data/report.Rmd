@@ -110,6 +110,7 @@ image_files <- list.files(image_folder, full.names = TRUE)
 
 ## PREP FOR KEY FINDINGS
 
+
 # AREA GRADE
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
 string <- params$mpas
@@ -153,7 +154,7 @@ com <- cost_of_mpas[which(cost_of_mpas$area == params$mpas & !(cost_of_mpas$perc
 
 if (length(com$project_id) != 0) {
   proj_titles <- sapply(com$project_id, function(pid) {
-    unique(pillar_ecol_df2$project_short_title[which(pillar_ecol_df2$PPTID == pid)])
+    unique(pillar_ecol_df2$project_short_title[which(pillar_ecol_df2$PPTID == pid & !(pillar_ecol_df2$indicator %in% MPAs$NAME_E))])
   })
   proj <- unique(com$project_id)
   
@@ -174,6 +175,22 @@ if (length(com$project_id) != 0) {
     }
   }
   
+  ## QUALITY
+  # QUALITY
+  QUALITY_SAMPLES <- NULL
+for (i in seq_along(proj)) {
+quality_statements <- pillar_ecol_df2$quality_statement[which(pillar_ecol_df2$PPTID == proj[i])]
+if (any(is.na(quality_statements))) {
+  quality_statements <- quality_statements[-which(is.na(quality_statements))]
+}
+
+sample_years <- as.numeric(unlist(strsplit(gsub("[()]", "", unlist(regmatches(quality_statements, gregexpr("\\(([^)]+)\\)", quality_statements)))), "-")))
+QUALITY_SAMPLES[[i]] <- range(sample_years, na.rm = TRUE)
+}
+
+  
+  # END QUALITY
+  
   final_funding <- lapply(adjusted_ps, function(x) sum(x$amount))
   
   names(final_funding) <- names(ps)
@@ -188,9 +205,18 @@ if (length(com$project_id) != 0) {
   
   money_percentage <- round(percent_funding$Funding_pct[which(percent_funding$MPA == params$mpas)]*100, 2)
   
-  investment <- paste0("The following DFO projects have sampled in ",
-                       params$mpas, " : ",
-                       paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; "), " which accounted for ", money_percentage, "% of O&M funding to the protected areas.")
+  proj_text <- paste0(
+  proj, " (", proj_titles, ") ",
+  "(", sapply(QUALITY_SAMPLES, function(x) paste(range(x), collapse = "-")), ")"
+)
+
+investment <- paste0(
+  "The following DFO projects have sampled in ",
+  params$mpas, " : ",
+  paste(proj_text, collapse = "; "),
+  " which accounted for ", money_percentage,
+  "% of O&M funding to the protected areas based on the data embedded in this project."
+)
 } else {
   investment <- paste0("No identified DFO projects have sampled in ", params$mpas, " and therefore there is no identified O&M investment.")
 }
@@ -254,18 +280,18 @@ div(
     "It should be noted that no data exists for the following ecological bins: ",
     paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
     ". Further research is recommended."
-  ))
+  )),
+   tags$p(paste0("Data from ", params$mpas, ' has also contributed to another of other objectives including Network Objectives, Ecosystem Based Management Objectives, and Global Biodiversity Targets.'))
 )
 
 
 ```
 
-
-
-
 ## At-a-glance
 
 ```{r, echo=FALSE,comment=NA, results='asis'}
+cat("Protected Area was established in ", MPAs$date_of_establishment[which(MPAs$NAME_E == params$mpas)], ".")
+cat("")
 if (!(length(Context[[string]]) == 0)) {
 cat(paste(Context[[string]], collapse = "<br>"), "\n")
 } else {
@@ -275,21 +301,35 @@ cat(paste(Context[[string]], collapse = "<br>"), "\n")
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
-cat("The entirety of this report follows this legend:\n\n")
+# cat("The entirety of this report follows this legend:\n\n")
+# 
+# cat("<div style='display: flex; gap: 10px;'>")
+# cat("<br>")
+# 
+# PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
+# for (name in names(PALETTE)) {
+#   color <- PALETTE[name]
+#   cat(sprintf("<div style='width: 50px; height: 20px; background-color: %s; text-align: center; 
+#                color: black; border: 1px solid #000; line-height: 20px;'>%s</div>", 
+#                color, name))
+# }
+# cat("</div>")
+# 
+# cat("<br>")
+```
 
-cat("<div style='display: flex; gap: 10px;'>")
-cat("<br>")
+## Research Activity
 
-PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
-for (name in names(PALETTE)) {
-  color <- PALETTE[name]
-  cat(sprintf("<div style='width: 50px; height: 20px; background-color: %s; text-align: center; 
-               color: black; border: 1px solid #000; line-height: 20px;'>%s</div>", 
-               color, name))
-}
-cat("</div>")
+```{r, echo=FALSE, message=FALSE, results='asis'}
+cat("Samples in the last calendar year,", as.numeric(format(Sys.time(), "%Y"))-1, ", are as follows. Note this is based solely on data that have a time component associated with them.")
+```
 
-cat("<br>")
+
+```{r, echo=FALSE, message=FALSE, results='asis'}
+apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID == params$mpas),]
+
+apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),] 
+
 ```
 
 ```{r, echo=FALSE, results='asis'}
@@ -307,10 +347,142 @@ border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
 maps <- maps %>% 
   addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == params$mpas)], fillOpacity = 0.05, weight=2, color=border_color)
 
+
+
+## Adding sample locations
+
+proj_ids_samples <- apj_mpa_last_year %>%
+  mutate(
+    project_id = ifelse(
+      is.na(PPTID),
+      paste0("External: ", source),
+      paste0("PPTID: ", PPTID)
+    ),
+    project_label = ifelse(
+      is.na(PPTID),
+      project_id,
+      paste0(project_id, " (", project_short_title, ")")
+    )
+  ) %>%
+  # count number of samples per project
+  group_by(project_id) %>%
+  mutate(n_samples = n()) %>%
+  ungroup()
+
+proj_pal <- colorFactor(
+  palette = "Dark2",
+  domain = proj_ids_samples$project_id
+)
+
+maps <- maps %>%
+  addCircleMarkers(
+    data = proj_ids_samples,
+    color = ~proj_pal(project_id),
+    label = ~paste0(project_id, " — ", n_samples, " samples"),
+    popup = ~paste0("<b>", project_id, "</b><br>",
+                    n_samples, " samples"),
+    radius = 6,
+    fillOpacity = 0.9
+  ) %>%
+  addLegend(
+    "bottomright",
+    pal = proj_pal,
+    values = proj_ids_samples$project_id,
+    title = "Projects"
+  )
+
+
+## END
+
+
 maps
+
+# FINDING SAMPLE INFORMATION
+
+apj_proj <- apj_mpa %>%
+  mutate(
+    project_id = ifelse(
+      is.na(PPTID),
+      paste0("External: ", source),
+      paste0("PPTID: ", PPTID)
+    ),
+    project_label = ifelse(
+      is.na(PPTID),
+      project_id,
+      paste0(project_id, " (", project_short_title, ")")
+    )
+  )
+
+proj_year_info <- apj_proj %>%
+  sf::st_drop_geometry() %>%
+  group_by(project_id, areaID) %>%
+  summarise(
+    has_date_info = any(!is.na(year)),
+    .groups = "drop"
+  )
+
+
+proj_sample_counts <- proj_sample_counts %>%
+  left_join(MPAs %>% select(NAME_E, date_of_establishment), 
+            by = c("areaID" = "NAME_E")) %>%
+  rowwise() %>%
+  mutate(
+    samples_post_doe = sum(apj_proj$year[apj_proj$project_id == project_id & 
+                                         apj_proj$areaID == areaID] >= date_of_establishment,
+                           na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+proj_sample_counts <- proj_sample_counts %>%
+  left_join(proj_year_info, by = c("project_id", "areaID"))
+
+
+proj_statements <- proj_sample_counts %>%
+  mutate(
+    sentence = paste0(
+      project_label, ": ", total_samples, " samples in total; ",
+      samples_post_doe, " samples taken in or after date of establishment."
+    )
+  )
+
+# Combine into one paragraph
+proj_statements <- proj_sample_counts %>%
+  mutate(
+    sentence = ifelse(
+      !has_date_info,
+      paste0(project_label, " collected ", total_samples,
+             " samples, but no date information is available."),
+      paste0(project_label, " collected ", total_samples,
+             " samples in total, with ", samples_post_doe,
+             " collected after the area was established.")
+    )
+  )
+
+summary_sentence <- paste(proj_statements$sentence, collapse = " ")
+
+
+
+# END SAMPLE INFORMATION
+
+
+
+sample_statement <- paste0(
+  "Sampling effort by project in ", as.numeric(format(Sys.time(), "%Y"))-1, ": ",
+  paste(
+    unique(paste0(proj_ids_samples$project_label,
+                  " (", proj_ids_samples$n_samples, " samples)")),
+    collapse = "; "
+  ),
+  "."
+)
 
 cat("<br>")
 cat(paste0("Figure 1: Location of ", string, " color coded for overall ecological status score"))
+
+cat(sample_statement)
+cat(paste0("Sample effort by project in total: ", summary_sentence))
+
+
 
 ```
 
@@ -1115,7 +1287,6 @@ webshot(tmp_html, file = tmp_png, vwidth = 1000, vheight = 1000)
 ```
 
 ```{r cost_projects, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
-
 if (length(com$project_id) != 0) {
   cat(paste0("<p>The investment information is based on the following internal DFO projects that have had samples in ",
              params$mpas, " : ",
