@@ -2261,8 +2261,6 @@ ddff_unique <- ddff_unique %>%
 
         }
 
-
-
         assump_txt  <- paste(unique(info$assumptions), collapse = " ")
         caveat_txt  <- paste(unique(info$caveats), collapse = " ")
 
