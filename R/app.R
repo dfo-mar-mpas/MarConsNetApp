@@ -1183,32 +1183,7 @@ app <- function() {
                            ),
 
                            # Inline score legend with descriptions
-                           tags$div(
-                             style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#2C7BB6; border:1px solid #000;"),
-                                      "A — Strong evidence the threat indicator is performing well"),
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#ABD9E9; border:1px solid #000;"),
-                                      "B — Evidence indicates the threat indicator is generally positive"),
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#FFFFBF; border:1px solid #000;"),
-                                      "C — Mixed or uncertain performance of the threat indicator"),
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#FDAE61; border:1px solid #000;"),
-                                      "D — Limited evidence / emerging concerns for the threat indicator"),
-
-                             tags$div(style="display:flex; align-items:center; gap:5px;",
-                                      tags$div(style="width:20px; height:20px; background-color:#D7191C; border:1px solid #000;"),
-                                      "F — Insufficient data / poor performance of the threat indicator")
-                           )
-
-
-
+                           gradeLegendUI("threats")
 
                          )
                        ),
