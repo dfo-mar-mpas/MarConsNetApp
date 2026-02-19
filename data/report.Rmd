@@ -649,7 +649,7 @@ cat(sprintf(
      <summary style="
         cursor: pointer;
         font-weight: bold;
-        font-size: 1.2em;
+        font-size: 1.1em;
         padding: 4px 8px;
         border-radius: 4px;
         margin-bottom: 5px;">
@@ -666,16 +666,24 @@ cat(sprintf(
     k2 <- which(pillar_ecol_df2$areaID == params$mpas)
   }
   keep <- intersect(k1,k2)
+  keep_na <- NULL
+  
   if (!(length(keep) == 0)) {
+    if (any(is.na(pillar_ecol_df2$score[keep]))) {
+      keep_na <- keep[which(is.na(pillar_ecol_df2$score[keep]))]
+    }
+    
+    keep <- keep[which(!is.na(pillar_ecol_df2$score[keep]))]
+  
     
     # Flower plot for objectives
     
-    # JAIM HERE
     objective_flower <- pillar_ecol_df2[k2,]
     objective_flower$score[which(!(grepl(textO[i], objective_flower$objectives, fixed=TRUE)))] <- NA
-    
+    if (!(length(keep) == 0)) {
     cat("The objective has the following score: \n")
     cat("<br>")
+    }
 
 
     if (!(all(is.na(objective_flower$score)))) {
@@ -737,8 +745,10 @@ cat(sprintf(
         cat(sowhatoutside)
         cat("<br>")
     }
-    
+        cat("<br>")
+if (!(length(keep) == 0)) {
     cat("Below highlights the list of indicators used to inform each objective: \n")
+}
 
     cat("<br>")
     cat("<br>")
@@ -746,7 +756,7 @@ cat(sprintf(
 
     
     # end flower plot
-
+if (!(length(keep) == 0)) {
   for (j in seq_along(keep)) {
  # cat(sprintf(
  #    "<details>\n<summary><b>Indicator: %s</b></summary>\n\n",
@@ -757,7 +767,7 @@ cat(sprintf(
       keep1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE, fixed=TRUE)) # Which are from the correct area
       keep2 <- which(grepl(make.names(pillar_ecol_df2$indicator[keep[j]]), image_files, ignore.case=TRUE, fixed=TRUE)) # Which ones have the correct indicator name
       KEEP <- intersect(keep1,keep2)
-  cat(sprintf(
+cat(sprintf(
   '<details>
      <summary style="
         cursor: pointer;
@@ -766,11 +776,11 @@ cat(sprintf(
         padding: 4px 6px;
         border-radius: 4px;
         margin-bottom: 5px;">
-        <u>%s <span style="background-color:%s; color:white; padding:2px 6px; border-radius:4px;">%s</span></u>
+        %s <span style="background-color:%s; color:white; padding:2px 6px; border-radius:4px;">%s</span>
      </summary>\n\n',
-  pillar_ecol_df2$indicator[keep[j]],   # indicator text
-  ifelse(is.na(pillar_ecol_df2$score[keep[j]]) | pillar_ecol_df2$score[keep[j]] == "NA", "#EDEDED", unname(flowerPalette[calc_letter_grade(pillar_ecol_df2$score[keep[j]])])), # background color
-  ifelse(is.na(pillar_ecol_df2$score[keep[j]]) | pillar_ecol_df2$score[keep[j]] == "NA", " ", pillar_ecol_df2$score[keep[j]])                         # grade to display
+  pillar_ecol_df2$indicator[keep[j]],
+  ifelse(is.na(pillar_ecol_df2$score[keep[j]]) | pillar_ecol_df2$score[keep[j]] == "NA", "#EDEDED", unname(flowerPalette[calc_letter_grade(pillar_ecol_df2$score[keep[j]])])),
+  ifelse(is.na(pillar_ecol_df2$score[keep[j]]) | pillar_ecol_df2$score[keep[j]] == "NA", " ", pillar_ecol_df2$score[keep[j]])
 ))
       
       if (length(KEEP) > 1) {
@@ -841,7 +851,7 @@ cat(sprintf(
       
       
       
-## Adding indicator so-what jaim
+## Adding indicator so-what
       weighted_grade_ind <-  calc_letter_grade(
           weighted.mean(pillar_ecol_df2$score[keep[j]], pillar_ecol_df2$weight[keep[j]], na.rm = TRUE)
         )
@@ -883,7 +893,7 @@ if (!(weighted_grade_ind == "NA")) {
           }      
       
       
-# END indicator so what jaim
+# END indicator so what
       
       cat(knitr::kable(
   table_df,
@@ -902,12 +912,27 @@ if (!(weighted_grade_ind == "NA")) {
   
   }
   } else {
+        cat("There are no indicators in this area that support this objective")
+
+  }
+  } else {
     cat("There are no indicators in this area that support this objective")
   }
+    if (!(is.null(keep_na))) {
+          cat("<br>")
+
+  cat("The following indicators were identified as indicators that inform this objective, but we do not yet have data for.")
+  cat("<br>")
+  cat(paste0(pillar_ecol_df2$indicator[keep_na], collapse=", "))
+    }
+    cat("<br>")
+
   cat("</details>\n\n")
+  
 }
-    
+
 cat('<br>\n')
+
 
 
 }
@@ -1004,7 +1029,7 @@ cat(sprintf(
     objective_flower <- pillar_ecol_df2[k2,]
     objective_flower$score[which(!(grepl(n_objectives[i], objective_flower$objectives, fixed=TRUE)))] <- NA
     
-    cat("The objective has the following score: \n")
+    #cat("The objective has the following score: \n")
     cat("<br>")
 
     
