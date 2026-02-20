@@ -1328,6 +1328,60 @@ plot_flowerplot(pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),],
                                             max_score=100,
                                             min_score=0,
                                             title="Flower plot framework", showNumbers = TRUE)
+
+subset_ped <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
+grade_text <- grade_description('ecosystem_health')[[calc_letter_grade(weighted.mean(subset_ped$score, subset_ped$weight, na.rm=TRUE))]]
+    n_indicators <- length(which(!(is.na(subset_ped$score))))
+    
+      years <- str_extract(unique(str_extract(subset_ped$quality_statement, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
+      years_num <- as.numeric(years)
+      latest_year <- ifelse(length(years_num) > 0 && any(!is.na(years_num)),max(years_num, na.rm = TRUE),NA)
+      
+      weighted_outside_grade <- calc_letter_grade(
+          weighted.mean(subset_ped$adjacent_score, subset_ped$weight, na.rm = TRUE)
+        )
+      
+              n_indicators_outside <- length(unique(subset_ped$objective[!is.na(subset_ped$adjacent_score)]))
+
+        
+        
+cat("<br>")
+        sowhat <- paste0(
+          "This objective has a score of ", grade_text,
+          " indicating ", tolower(grade_text), ".",
+
+          if (n_indicators < 4) {
+            paste0(" It should be noted that this assessment is only based on the score of ", n_indicators, " unique indicators and further research is recommended.")
+          } else {
+            paste0(" This assessment is based on ", n_indicators, " indicators.")
+          },
+
+          if (!is.na(latest_year)) {
+            paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
+          } else {
+            " "
+          })
+        
+        
+          if (!(all(is.na(subset_ped$adjacent_score)))) {
+            sowhatoutside <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ',
+                                    tolower(grade_description('ecosystem_health')[[weighted_outside_grade]]), ". This outside assessment is based on
+                                    ",n_indicators_outside, " indicators.")
+          } else {
+            sowhatoutside <- ""
+          }
+        
+        cat(sowhat)
+        cat("<br>")
+        cat(sowhatoutside)
+        cat("<br>")
+        cat("<br>")
+
+
+## ADD SO WHAT
+
+
+## END SO WHAT
 ```
 
 
@@ -1446,7 +1500,7 @@ for (i in seq_along(BINS)) {
 
 names(keeper2) <- BINS
 
-cat('Click each indicator to see information on relevant indicators.\n')
+#cat('Click each indicator to see information on relevant indicators.\n')
 
 for (i in seq_along(keeper2)) {
   # TEST
@@ -1487,7 +1541,7 @@ for (i in seq_along(keeper2)) {
       bin_display <- bin_display[-which(is.na(bin_display$SCORE)),]
     }
     
-    # SUMMARY TABLE jaim
+    # SUMMARY TABLE
        cat('<h4 style="text-align:left; margin-bottom:10px;">Table: Ecological Overview Summary</h4>\n')
 cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
 cat('<thead><tr>',
@@ -1562,8 +1616,6 @@ cat('</tbody></table>')
 ))
       
       plot_file <- image_files[KEEP]
-    # JAIM
-    # END PLOT
       if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
             # Read the image
@@ -1594,8 +1646,6 @@ cat('</tbody></table>')
       tmp_file
     ))
     
-    # JAIM
-
       }
       } else {
         cat("There is no image available for this indicator as it was not sampled in this area.")
