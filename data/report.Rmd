@@ -4,9 +4,8 @@ output:
   html_document:
     self_contained: true
     toc: true
-    toc_depth: 3
-    toc_float: false
-  mpas: "Western and Emerald Banks Marine Refuge"
+    toc_depth: 4
+    toc_float: true
 ---
 
 ## Key Findings
@@ -582,12 +581,9 @@ try({
 
 ## Results
 
+<h3 style="display:none;">MANAGEMENT EFFECTIVENESS</h3>
 <details>
-<summary style="
-    font-size: 1.5em;       /* make the text bigger */
-    font-weight: bold;       /* make it bold */
-    cursor: pointer;         /* show pointer on hover */
-">
+<summary style="font-size:1.5em; font-weight:bold; cursor:pointer;">
 MANAGEMENT EFFECTIVENESS
 </summary>
 
@@ -604,7 +600,7 @@ cat("<br>")
 ```
 
 ```{r, echo=FALSE,comment=NA, results="asis", warning=FALSE}
-cat('<h3>Site Conservation Objectives</h2>\n')
+cat('Site Conservation Objectives\n')
 cat('Select each objective to see information on relevant indicators.\n')
 
 if (exists("S_Objectives")) {
@@ -649,7 +645,8 @@ OBJECTIVES_GAP_INDICATORS <- vector("list", length(textO))
 for (i in seq_along(textO)) {
   
 cat(sprintf(
-  '<details>
+  '<h4 style="display:none;">Objective: %s</h4>
+   <details>
      <summary style="
         cursor: pointer;
         font-weight: bold;
@@ -659,10 +656,12 @@ cat(sprintf(
         margin-bottom: 5px;">
         <u>Objective: %s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
      </summary>\n\n',
-  toupper(textO[i]),        # objective text
-  site_color[i],            # background color only for grade
-  ifelse(!(dt_data$Grade[i] == "NA"), dt_data$Grade[i], "  ")          # grade to display
+  toupper(textO[i]),
+  toupper(textO[i]),
+  site_color[i],
+  ifelse(!(dt_data$Grade[i] == "NA"), dt_data$Grade[i], "  ")
 ))
+  
   k1 <- which(grepl(textO[i], pillar_ecol_df2$objectives, fixed=TRUE))
   if (params$mpas %in% regions$NAME_E) {
     k2 <- k1
@@ -951,12 +950,10 @@ cat('<br>\n')
 }
 ```
 
-</details> <details>
-<summary style="
-    font-size: 1.5em;       /* make the text bigger */
-    font-weight: bold;       /* make it bold */
-    cursor: pointer;         /* show pointer on hover */
-">
+</details>
+<h3 style="display:none;">BONUS CONTRIBUTIONS</h3>
+<details>
+<summary style="font-size:1.5em; font-weight:bold; cursor:pointer;">
 BONUS CONTRIBUTIONS
 </summary>
 
@@ -970,7 +967,7 @@ cat("<br>")
 gradeLegendUI("objective")
 cat("<br>")
 
-cat('<h3>Network Conservation Objectives</h2>\n')
+cat('Network Conservation Objectives\n')
 
 cat('Click each objective to see information on relevant indicators.')
 
@@ -1029,7 +1026,8 @@ cat("<br>")
 ```{r, echo=FALSE, comment=NA, results='asis', warning=FALSE}
 for (i in seq_along(n_objectives)) {
 cat(sprintf(
- '<details>
+  '<h4 style="display:none;">Objective: %s</h4>
+   <details>
      <summary style="
         cursor: pointer;
         font-weight: bold;
@@ -1039,10 +1037,11 @@ cat(sprintf(
         margin-bottom: 5px;">
         <u>Objective: %s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
      </summary>\n\n',
-  toupper(n_objectives[i]),      # objective text
-  grade_colors_network[i],       # background color only for grade
-  ifelse(!(grades_network[i] == "NA"), grades_network[i], "  ") 
-)) 
+  toupper(n_objectives[i]),             # hidden heading for TOC
+  toupper(n_objectives[i]),             # visible objective text
+  grade_colors_network[i],              # background color
+  ifelse(!(grades_network[i] == "NA"), grades_network[i], "  ")  # grade text
+))
   
   k1 <- which(grepl(n_objectives[i], pillar_ecol_df2$objectives, fixed=TRUE))
   if (params$mpas %in% regions$NAME_E) {
@@ -1311,14 +1310,13 @@ if (!(weighted_grade_ind == "NA")) {
 
 ```
 
-</details> <details>
-<summary style="
-    font-size: 1.5em;       /* make the text bigger */
-    font-weight: bold;       /* make it bold */
-    cursor: pointer;         /* show pointer on hover */
-">
-ECOLOGICAL OVERVIEW
+</details>
+<h3 style="display:none;">ECOSYSTEM OVERVIEW</h3>
+<details>
+<summary style="font-size:1.5em; font-weight:bold; cursor:pointer;">
+ECOSYSTEM OVERVIEW
 </summary>
+
 
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
@@ -1520,8 +1518,9 @@ for (i in seq_along(keeper2)) {
     GRADE_COLOR <- "#EDEDED"
   }
 
-  cat(sprintf(
-  '<details>
+cat(sprintf(
+  '<h4 style="display:none;">%s</h4>
+   <details>
      <summary style="
         cursor: pointer;
         font-weight: bold;
@@ -1531,10 +1530,10 @@ for (i in seq_along(keeper2)) {
         margin-bottom: 5px;">
         <u>%s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
      </summary>\n\n',
-  toupper(BINS[i]),      # objective text
-  GRADE_COLOR,       # background color only for grade
-  ifelse(!(is.na(BIN_GRADE)), BIN_GRADE, "  ")
-  #BIN_GRADE              # grade to display
+  toupper(BINS[i]),          # hidden heading for TOC
+  toupper(BINS[i]),          # visible text in the summary
+  GRADE_COLOR,               # background color for grade
+  ifelse(!(is.na(BIN_GRADE)), BIN_GRADE, "  ")  # grade to display
 ))
   
   if (!(length(keeper2[[i]]$Indicator) == 0)) {
@@ -1596,7 +1595,7 @@ for (i in seq_along(keeper2)) {
     ## END SO WHAT
     
     # SUMMARY TABLE
-       cat('<h4 style="text-align:left; margin-bottom:10px;">Table: Ecological Overview Summary</h4>\n')
+       cat('<h5 style="text-align:left; margin-bottom:10px;">Table: Ecological Overview Summary</h5>\n')
 cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
 cat('<thead><tr>',
     paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "GRADE", "READINESS", "QUALITY_STATEMENT", "COST"), '</th>', collapse=""),
@@ -1796,12 +1795,10 @@ if (!(weighted_grade_ind_eo == "NA")) {
 
 names(SOWHATBIN) <- names(keeper2)
 ```
-</details> <details>
-<summary style="
-    font-size: 1.5em;       /* make the text bigger */
-    font-weight: bold;       /* make it bold */
-    cursor: pointer;         /* show pointer on hover */
-">
+</details>
+<h3 style="display:none;">THREATS</h3>
+<details>
+<summary style="font-size:1.5em; font-weight:bold; cursor:pointer;">
 THREATS
 </summary>
 
