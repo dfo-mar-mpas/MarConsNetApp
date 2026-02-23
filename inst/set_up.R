@@ -44,7 +44,8 @@ pkgs <- c("sf",
           "qs2",
           "odbc",
           "rvest",
-          "tarchetypes")
+          "tarchetypes",
+          "magick")
 shelf(pkgs)
 
 # Set target options here if they will be used in many targets, otherwise, you can set target specific packages in tar_targets below

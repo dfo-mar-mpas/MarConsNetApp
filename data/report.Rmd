@@ -870,7 +870,7 @@ if (!(weighted_grade_ind == "NA")) {
           sowhatind <- paste0(
             pillar_ecol_df2$indicator[keep[j]], " has a score of ", calc_letter_grade(pillar_ecol_df2$score[keep[j]]),
             " indicating ", tolower(grade_text)," in ", pillar_ecol_df2$areaID[keep[j]], ".",
-            if (!is.na(latest_year)) {
+            if (!is.na(latest_year_ind)) {
               paste0(" The latest data we have that supports this objective is as of ", latest_year_ind, ".")
             } else {
               " "
@@ -907,7 +907,8 @@ if (!(weighted_grade_ind == "NA")) {
   ),
   "\n\n"
 )
-     cat("</details>\n\n")  # close the collapsible
+
+cat("</details>\n\n")  # close the collapsible
 
   
   }
@@ -1376,12 +1377,6 @@ cat("<br>")
         cat(sowhatoutside)
         cat("<br>")
         cat("<br>")
-
-
-## ADD SO WHAT
-
-
-## END SO WHAT
 ```
 
 
@@ -1478,6 +1473,8 @@ for (i in seq_along(BINS)) {
     KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))),]
   }
   
+  # JAIM
+  
   keeper2[[i]] <- data.frame(
     Indicator = KK$indicator,
     Status = KK$status_statement,
@@ -1492,6 +1489,7 @@ for (i in seq_along(BINS)) {
     weight = KK$weight,
     assumptions=KK$assumptions,
     caveats=KK$caveats,
+    quality=KK$quality_statement,
     adjacent_score=KK$adjacent_score,
     stringsAsFactors = FALSE
   )
@@ -1684,8 +1682,49 @@ cat('</tbody></table>')
   ),
   "\n\n"
 )
-      cat("</details>\n\n") 
-  } # END HERE
+      ## Adding indicator so-what for ecological overview jaim
+      weighted_grade_ind_eo <-  calc_letter_grade(
+          weighted.mean(keeper2[[i]]$Grade[j], keeper2[[i]]$weight[j], na.rm = TRUE)
+        )
+if (!(weighted_grade_ind_eo == "NA")) {
+          grade_text_eo <- grade_description('indicator')[[calc_letter_grade(keeper2[[i]]$Grade[j])]]
+          
+          
+           years_ind_eo <- as.numeric(str_extract(unique(str_extract(keeper2[[i]]$quality[j], "\\(([^)]*)\\)")), "(?<=-)[0-9]+"))
+      latest_year_ind_eo <- ifelse(length(years_ind_eo) > 0 && any(!is.na(years_ind_eo)),max(years_ind_eo, na.rm = TRUE),NA)
+          
+          
+          } else {
+            grade_text_eo <- 'more information is needed for this indicator'
+          }
+
+          sowhatind_eo <- paste0(
+            keeper2[[i]]$Indicator[j], " has a score of ", calc_letter_grade(keeper2[[i]]$Grade[j]),
+            " indicating ", tolower(grade_text_eo), ".",
+            if (!is.na(latest_year_ind_eo)) {
+              paste0(" The latest data we have that supports this objective is as of ", latest_year_ind_eo, ".")
+            } else {
+              " "
+            })
+          
+          cat(sowhatind_eo)
+          cat("<br>")
+
+          if (!(state$mpas %in% regions$NAME_E)) {
+            if (!(all(is.na(keeper2[[i]]$adjacent_score[j])))) {
+              weighted_outside_grade_ind_eo <- calc_letter_grade(
+          weighted.mean(keeper2[[i]]$adjacent_score[j], keeper2[[i]]$weight[j], na.rm = TRUE)
+        )
+              sowhatoutsideind_eo <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade_ind_eo, ' indicating ', tolower(grade_description('indicator')[[weighted_outside_grade_ind_eo]]), ".")
+            
+               cat(sowhatoutsideind_eo)
+          cat("<br>")
+              
+            }
+          }
+  cat("</details>\n\n") 
+
+  } # END HERE INDICATOR
   } else {
   cat("There are no indicators in the app for this indicator bin.")
   }
