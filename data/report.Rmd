@@ -638,7 +638,8 @@ cat("<br>")
 ```
 
 ```{r, echo=FALSE,comment=NA, results="asis", warning=FALSE}
-cat('Site Conservation Objectives\n')
+cat("**Site Conservation Objectives**\n")
+cat("<br>")
 cat('Select each objective to see information on relevant indicators.\n')
 
 if (exists("S_Objectives")) {
@@ -1005,8 +1006,8 @@ cat("<br>")
 gradeLegendUI("objective")
 cat("<br>")
 
-cat('Network Conservation Objectives\n')
-
+cat("**Network Conservation Objectives**\n")
+cat("<br>")
 cat('Click each objective to see information on relevant indicators.')
 
 n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
