@@ -403,6 +403,36 @@ sample_statement <- paste0(
   "."
 )
 
+## Creature feature
+ filtered_creature_feature <- creature_feature |>
+      filter(NAME_E == params$mpas) |>
+      arrange(desc(n)) |>
+      dplyr::select(commonname, image_column, scientificName, n, kingdom, phylum, class, years)
+ 
+ 
+ 
+ if (any(grepl(as.numeric(format(Sys.time(), "%Y"))-1, filtered_creature_feature$years))) {
+yr <- as.numeric(format(Sys.time(), "%Y"))-1
+
+rows <- filtered_creature_feature[grepl(yr, filtered_creature_feature$years), ]
+
+counts <- sub(".*\\((\\d+)\\).*", "\\1", rows$years)
+
+parts <- paste(counts, rows$scientificName)
+
+creature_feature_sentence <- paste0(
+  "In ", yr, ", there ",
+  if(length(parts) == 1) "was " else "were ",
+  paste(parts, collapse = " and "),
+  " identified based on iNaturalist."
+)
+
+} else {
+  creature_feature_sentence <- paste0("No species were identified in ", params$mpas, " in ",as.numeric(format(Sys.time(), "%Y"))-1, " according to iNaturalist.")
+}
+ 
+ 
+
 
 ##
 
@@ -410,6 +440,7 @@ div(
   style = "border: 2px solid black; padding: 10px; border-radius: 5px; background-color: #f9f9f9;",
   tags$p(investment),
   tags$p(sample_statement),
+  tags$p(creature_feature_sentence),
   tags$p(status_objectives),
   tags$p(paste0(params$mpas, " has an overall ecological status score of ", area_grade, ".")),
   tags$p(paste0(
@@ -523,11 +554,6 @@ cat("<br>")
 
 
 try({
-  filtered_creature_feature <- creature_feature |>
-      filter(NAME_E == params$mpas) |>
-      arrange(desc(n)) |>
-      dplyr::select(commonname, image_column, scientificName, n, kingdom, phylum, class, years)
-  
   return(datatable(
     filtered_creature_feature,
 
@@ -587,34 +613,9 @@ try({
 
 
 ```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
-try({
-if (any(grepl(as.numeric(format(Sys.time(), "%Y"))-1, filtered_creature_feature$years))) {
-yr <- as.numeric(format(Sys.time(), "%Y"))-1
-
-rows <- filtered_creature_feature[grepl(yr, filtered_creature_feature$years), ]
-
-counts <- sub(".*\\((\\d+)\\).*", "\\1", rows$years)
-
-parts <- paste(counts, rows$scientificName)
-
-sentence <- paste0(
-  "In ", yr, ", there ",
-  if(length(parts) == 1) "was " else "were ",
-  paste(parts, collapse = " and "),
-  " identified based on iNaturalist."
-)
-
 cat("<br>")
-cat(sentence)
+cat(creature_feature_sentence)
 cat("<br>")
-    
-} else {
-    cat("<br>")
-    cat(paste0("No species were identified in ", params$mpas, " in ",as.numeric(format(Sys.time(), "%Y"))-1, " according to iNaturalist."))
-    cat("<br>")
-}
-})
-
 ```
 
 ## Results
