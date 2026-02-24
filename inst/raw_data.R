@@ -1008,22 +1008,39 @@ raw_data_targets <- list(
   tar_target(name = creature_feature,
              command = {
                sptable <- data_inaturalist |>
-                 filter(!is.na(NAME_E)&NAME_E!="Non_Conservation_Area") |>
+                 filter(!is.na(NAME_E) & NAME_E != "Non_Conservation_Area") |>
                  as.data.frame() |>
                  filter(!is.na(speciesKey),
-                        kingdom != "Plantae"|genus == "Zostera", # remove plants except eelgrass
-                        class!="Mammalia"|family %in% c("Phocidae","Otarioidea"), #remove mammals except seals
-                        class!="Testudines"|family %in% c("Cheloniidae","Dermochelyidae"),# remove reptiles except sea turtles
-                        phylum!="Basidiomycota",phylum!="Ascomycota", # remove mushrooms and lichens
-                        !(class %in% c("Insecta", "Arachnida", "Squamata","Amphibia")) # remove all insects, spiders, amphibians, and snakes
+                        kingdom != "Plantae" | genus == "Zostera",
+                        class != "Mammalia" | family %in% c("Phocidae","Otarioidea"),
+                        class != "Testudines" | family %in% c("Cheloniidae","Dermochelyidae"),
+                        phylum != "Basidiomycota",
+                        phylum != "Ascomycota",
+                        !(class %in% c("Insecta","Arachnida","Squamata","Amphibia"))
                  ) |>
-                 group_by(speciesKey,scientificName,kingdom, phylum, class,NAME_E) |>
-                 reframe(n=n(),
-                         exampleurl = occurrenceID[1],
-                         rightsHolder = rightsHolder[1]) |>
-                 mutate(commonname = NA_character_,
-                        imageurl = NA_character_,
-                        image_column = NA_character_)
+
+                 # count records per species × area × year
+                 group_by(speciesKey, scientificName, kingdom, phylum, class, NAME_E, year) |>
+                 summarise(
+                   n_year = n(),
+                   exampleurl = occurrenceID[1],
+                   rightsHolder = rightsHolder[1],
+                   .groups = "drop_last"
+                 ) |>
+
+                 # collapse years into one column + total n
+                 reframe(
+                   n = sum(n_year),
+                   years = paste0(year, " (", n_year, ")", collapse = ", "),
+                   exampleurl = exampleurl[1],
+                   rightsHolder = rightsHolder[1]
+                 ) |>
+
+                 mutate(
+                   commonname = NA_character_,
+                   imageurl = NA_character_,
+                   image_column = NA_character_
+                 )
 
 
                conns_before <- showConnections()

@@ -289,6 +289,13 @@ if (!(length(S_Objectives) == 0)) {
    status_objectives <- "No site objective status available."
 }
 
+## Adding in last year sampling
+apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID == params$mpas),]
+
+apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),]
+
+##
+
 div(
   style = "border: 2px solid black; padding: 10px; border-radius: 5px; background-color: #f9f9f9;",
   tags$p(investment),
@@ -340,9 +347,9 @@ cat(paste(Context[[string]], collapse = "<br>"), "\n")
 
 
 ```{r, echo=FALSE, message=FALSE, results='asis'}
-apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID == params$mpas),]
-
-apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),] 
+# apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID == params$mpas),]
+# 
+# apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),]
 
 ```
 
@@ -519,12 +526,15 @@ cat(paste0("Sample effort by project in total: ", summary_sentence))
 cat(paste0("Table 1: Species detected in ", string, " according to iNaturalist"))
 cat("<br>")
 
+
 try({
-  datatable(
-    creature_feature |>
+  filtered_creature_feature <- creature_feature |>
       filter(NAME_E == params$mpas) |>
       arrange(desc(n)) |>
-      dplyr::select(commonname, image_column, scientificName, n, kingdom, phylum, class),
+      dplyr::select(commonname, image_column, scientificName, n, kingdom, phylum, class, years)
+  
+  return(datatable(
+    filtered_creature_feature,
 
     # Disable sorting for the image column
     options = list(
@@ -564,7 +574,8 @@ try({
       "iNaturalist Observations",
       "Kingdom",
       "Phylum",
-      "Class"
+      "Class",
+      "Year"
     ),
 
     # Escape HTML to allow image rendering
@@ -575,8 +586,40 @@ try({
 
     # Add footer for filtering
     filter = "bottom"
-  )
+  ))
 })
+```
+
+
+```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
+try({
+if (any(grepl(as.numeric(format(Sys.time(), "%Y"))-1, filtered_creature_feature$years))) {
+yr <- as.numeric(format(Sys.time(), "%Y"))-1
+
+rows <- filtered_creature_feature[grepl(yr, filtered_creature_feature$years), ]
+
+counts <- sub(".*\\((\\d+)\\).*", "\\1", rows$years)
+
+parts <- paste(counts, rows$scientificName)
+
+sentence <- paste0(
+  "In ", yr, ", there ",
+  if(length(parts) == 1) "was " else "were ",
+  paste(parts, collapse = " and "),
+  " identified based on iNaturalist."
+)
+
+cat("<br>")
+cat(sentence)
+cat("<br>")
+    
+} else {
+    cat("<br>")
+    cat(paste0("No species were identified in ", params$mpas, " in ",as.numeric(format(Sys.time(), "%Y"))-1, " according to iNaturalist."))
+    cat("<br>")
+}
+})
+
 ```
 
 ## Results
