@@ -294,82 +294,6 @@ apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID 
 
 apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),]
 
-##
-
-div(
-  style = "border: 2px solid black; padding: 10px; border-radius: 5px; background-color: #f9f9f9;",
-  tags$p(investment),
-  tags$p(status_objectives),
-  tags$p(paste0(params$mpas, " has an overall ecological status score of ", area_grade, ".")),
-  tags$p(paste0(
-    "It should be noted that no data exists for the following ecological bins: ",
-    paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
-    ". Further research is recommended."
-  )),
-   tags$p(paste0("Data from ", params$mpas, ' has also contributed to another of other objectives including Network Objectives, Ecosystem Based Management Objectives, and Global Biodiversity Targets.'))
-)
-
-
-```
-
-## At-a-glance
-
-```{r, echo=FALSE,comment=NA, results='asis'}
-cat("This protected area was established in ", MPAs$date_of_establishment[which(MPAs$NAME_E == params$mpas)], ".")
-cat("<br>")
-if (!(length(Context[[string]]) == 0)) {
-cat(paste(Context[[string]], collapse = "<br>"), "\n")
-} else {
-  cat("There is no available context for this area.")
-}
-```
-
-
-```{r, echo=FALSE, comment=NA, results="asis"}
-# cat("The entirety of this report follows this legend:\n\n")
-# 
-# cat("<div style='display: flex; gap: 10px;'>")
-# cat("<br>")
-# 
-# PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
-# for (name in names(PALETTE)) {
-#   color <- PALETTE[name]
-#   cat(sprintf("<div style='width: 50px; height: 20px; background-color: %s; text-align: center; 
-#                color: black; border: 1px solid #000; line-height: 20px;'>%s</div>", 
-#                color, name))
-# }
-# cat("</div>")
-# 
-# cat("<br>")
-```
-
-## Research Activity
-
-
-```{r, echo=FALSE, message=FALSE, results='asis'}
-# apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID == params$mpas),]
-# 
-# apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),]
-
-```
-
-```{r, echo=FALSE, results='asis'}
-maps <- leaflet() %>%
-  addTiles()
-
-fill_color <- ifelse(
-  is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == params$mpas)]),
-  "#EDEDED",
-  flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == params$mpas)]]]
-)
-
-border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
-
-maps <- maps %>% 
-  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == params$mpas)], fillOpacity = 0.05, weight=2, color=border_color)
-
-
-
 ## Adding sample locations
 
 proj_ids_samples <- apj_mpa_last_year %>%
@@ -394,29 +318,6 @@ proj_pal <- colorFactor(
   palette = "Dark2",
   domain = proj_ids_samples$project_id
 )
-
-maps <- maps %>%
-  addCircleMarkers(
-    data = proj_ids_samples,
-    color = ~proj_pal(project_id),
-    label = ~paste0(project_id, " — ", n_samples, " samples"),
-    popup = ~paste0("<b>", project_id, "</b><br>",
-                    n_samples, " samples"),
-    radius = 6,
-    fillOpacity = 0.9
-  ) %>%
-  addLegend(
-    "bottomright",
-    pal = proj_pal,
-    values = proj_ids_samples$project_id,
-    title = "Projects"
-  )
-
-
-## END
-
-
-maps
 
 # FINDING SAMPLE INFORMATION
 
@@ -492,9 +393,6 @@ proj_statements <- proj_sample_counts %>%
 summary_sentence <- paste(proj_statements$sentence, collapse = " ")
 
 
-
-# END SAMPLE INFORMATION
-
 sample_statement <- paste0(
   "Sampling effort by project in ", as.numeric(format(Sys.time(), "%Y"))-1, ": ",
   paste(
@@ -504,6 +402,103 @@ sample_statement <- paste0(
   ),
   "."
 )
+
+
+##
+
+div(
+  style = "border: 2px solid black; padding: 10px; border-radius: 5px; background-color: #f9f9f9;",
+  tags$p(investment),
+  tags$p(sample_statement),
+  tags$p(status_objectives),
+  tags$p(paste0(params$mpas, " has an overall ecological status score of ", area_grade, ".")),
+  tags$p(paste0(
+    "It should be noted that no data exists for the following ecological bins: ",
+    paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
+    ". Further research is recommended."
+  )),
+   tags$p(paste0("Data from ", params$mpas, ' has also contributed to another of other objectives including Network Objectives, Ecosystem Based Management Objectives, and Global Biodiversity Targets.'))
+)
+
+
+```
+
+## At-a-glance
+
+```{r, echo=FALSE,comment=NA, results='asis'}
+cat("This protected area was established in ", MPAs$date_of_establishment[which(MPAs$NAME_E == params$mpas)], ".")
+cat("<br>")
+if (!(length(Context[[string]]) == 0)) {
+cat(paste(Context[[string]], collapse = "<br>"), "\n")
+} else {
+  cat("There is no available context for this area.")
+}
+```
+
+
+```{r, echo=FALSE, comment=NA, results="asis"}
+# cat("The entirety of this report follows this legend:\n\n")
+# 
+# cat("<div style='display: flex; gap: 10px;'>")
+# cat("<br>")
+# 
+# PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
+# for (name in names(PALETTE)) {
+#   color <- PALETTE[name]
+#   cat(sprintf("<div style='width: 50px; height: 20px; background-color: %s; text-align: center; 
+#                color: black; border: 1px solid #000; line-height: 20px;'>%s</div>", 
+#                color, name))
+# }
+# cat("</div>")
+# 
+# cat("<br>")
+```
+
+## Research Activity
+
+
+```{r, echo=FALSE, message=FALSE, results='asis'}
+# apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID == params$mpas),]
+# 
+# apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),]
+
+```
+
+```{r, echo=FALSE, results='asis'}
+maps <- leaflet() %>%
+  addTiles()
+
+fill_color <- ifelse(
+  is.na(MPA_report_card$grade[which(MPA_report_card$NAME_E == params$mpas)]),
+  "#EDEDED",
+  flowerPalette[[MPA_report_card$grade[which(MPA_report_card$NAME_E == params$mpas)]]]
+)
+
+border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
+
+maps <- maps %>% 
+  addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == params$mpas)], fillOpacity = 0.05, weight=2, color=border_color)
+
+
+maps <- maps %>%
+  addCircleMarkers(
+    data = proj_ids_samples,
+    color = ~proj_pal(project_id),
+    label = ~paste0(project_id, " — ", n_samples, " samples"),
+    popup = ~paste0("<b>", project_id, "</b><br>",
+                    n_samples, " samples"),
+    radius = 6,
+    fillOpacity = 0.9
+  ) %>%
+  addLegend(
+    "bottomright",
+    pal = proj_pal,
+    values = proj_ids_samples$project_id,
+    title = "Projects"
+  )
+
+maps
+
 
 cat("<br>")
 
