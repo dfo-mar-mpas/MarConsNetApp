@@ -991,10 +991,10 @@ cat('<br>\n')
 ```
 
 </details>
-<h3 style="display:none;">BONUS CONTRIBUTIONS</h3>
+<h3 style="display:none;">EFFECTIVENESS CONTRIBUTIONS</h3>
 <details>
 <summary style="font-size:1.5em; font-weight:bold; cursor:pointer;">
-BONUS CONTRIBUTIONS
+EFFECTIVENESS CONTRIBUTIONS
 </summary>
 
 ```{r, echo=FALSE, results='asis', warning=FALSE}
