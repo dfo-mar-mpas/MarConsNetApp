@@ -1,0 +1,77 @@
+---
+title: "Objectives Drill-Down Demo"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: false
+---
+```{r, results='asis', echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(knitr)
+set.seed(1)
+
+# ---- Simple fake data ----
+objectives <- tibble(
+  objective_id = c("WQ", "BIO"),
+  objective = c("Water Quality", "Biodiversity"),
+  grade = c("B", "A"),
+  n_indicators = c(2, 3)
+)
+
+indicators <- tibble(
+  objective_id = c("WQ", "WQ", "BIO", "BIO", "BIO"),
+  indicator_id = paste0("IND", 1:5),
+  indicator = paste("Indicator", 1:5),
+  score = sample(c("Good","Fair","Poor"), 5, replace = TRUE)
+)
+
+# ---- CSS to hide sections ----
+cat('<style>
+.drill-section { display: none; }
+.drill-section:target { display: block; }
+</style>\n\n')
+
+# ---- Objectives table ----
+cat("## Objectives Summary\n\n")
+objectives %>%
+  mutate(objective = paste0("[", objective, "](#obj_", objective_id, ")")) %>%
+  select(Objective = objective, Grade = grade, Indicators = n_indicators) %>%
+  kable(escape = FALSE) %>%
+  print()
+
+# ---- Objective sections ----
+for (obj in objectives$objective_id) {
+  obj_name <- objectives$objective[objectives$objective_id == obj]
+  inds <- indicators %>% filter(objective_id == obj)
+
+  cat("\n\n<div id='obj_", obj, "' class='drill-section'>\n", sep = "")
+  cat("## ", obj_name, "\n\n", sep = "")
+  cat("<details><summary><strong>View indicators</strong></summary>\n\n")
+
+  inds %>%
+    mutate(indicator = paste0("[", indicator, "](#ind_", indicator_id, ")")) %>%
+    select(Indicator = indicator, Score = score) %>%
+    kable(escape = FALSE) %>%
+    print()
+
+  cat("\n</details>\n")
+  cat("</div>\n\n")
+}
+
+# ---- Indicator sections ----
+for (i in 1:nrow(indicators)) {
+  id <- indicators$indicator_id[i]
+  name <- indicators$indicator[i]
+
+  cat("\n\n<div id='ind_", id, "' class='drill-section'>\n", sep = "")
+  cat("### ", name, "\n\n", sep = "")
+  cat("<details><summary><strong>Show plot & info</strong></summary>\n\n")
+
+  print(plot(rnorm(10), main = name))
+
+  cat("\nExample description text for this indicator.\n\n")
+  cat("</details>\n")
+  cat("</div>\n\n")
+}
+```

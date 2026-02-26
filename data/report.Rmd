@@ -4,15 +4,13 @@ output:
   html_document:
     self_contained: true
     toc: true
-    toc_depth: 3
-    toc_float: false
-params:
-  mpas: "Western and Emerald Banks Marine Refuge"
+    toc_depth: 4
+    toc_float: true
 ---
 
 ## Key Findings
 
-```{r, echo=FALSE, message=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 if(!require(librarian)) install.packages("librarian")
 pkgs <- c("sf",
           "targets",
@@ -62,6 +60,22 @@ pkgs <- c("sf",
           "webshot2")
 shelf(pkgs)
 
+gradeLegendUI <- function(type = "indicator") {
+    grades <- grade_description(type)
+
+    tags$div(
+      style = "display:flex; gap:15px; flex-wrap:nowrap; align-items:center; margin-top:10px;",
+      lapply(names(grades), function(g) {
+        tags$div(
+          style = "display:flex; align-items:center; gap:5px;",
+          tags$div(style = paste0("width:20px; height:20px; background-color:", flowerPalette[g], "; border:1px solid #000;")),
+          paste0(g, " — ", grades[[g]])
+        )
+      })
+    )
+ }
+ 
+
 tar_load(c(MPAs,
            pillar_ecol_df,
            Context,
@@ -80,7 +94,11 @@ tar_load(c(MPAs,
            csas,
            climate_change,
            salary,
-           objective_tabs), store=path_to_store())
+           objective_tabs,
+           all_indicator_project_geoms), store=path_to_store())
+
+# FIXME (REMOVE)
+MPAs$date_of_establishment <- 2017
 
 embed_image <- function(file_path, width = 600) {
     mime <- paste0("image/", tools::file_ext(file_path))
@@ -109,6 +127,7 @@ image_files <- list.files(image_folder, full.names = TRUE)
 
 
 ## PREP FOR KEY FINDINGS
+
 
 # AREA GRADE
 last_year <- paste0((as.numeric(format(Sys.time(), "%Y"))-1),"-", format(Sys.time(), "%Y"))
@@ -153,7 +172,7 @@ com <- cost_of_mpas[which(cost_of_mpas$area == params$mpas & !(cost_of_mpas$perc
 
 if (length(com$project_id) != 0) {
   proj_titles <- sapply(com$project_id, function(pid) {
-    unique(pillar_ecol_df2$project_short_title[which(pillar_ecol_df2$PPTID == pid)])
+    unique(pillar_ecol_df2$project_short_title[which(pillar_ecol_df2$PPTID == pid & !(pillar_ecol_df2$indicator %in% MPAs$NAME_E))])
   })
   proj <- unique(com$project_id)
   
@@ -174,6 +193,22 @@ if (length(com$project_id) != 0) {
     }
   }
   
+  ## QUALITY
+  # QUALITY
+  QUALITY_SAMPLES <- NULL
+for (i in seq_along(proj)) {
+quality_statements <- pillar_ecol_df2$quality_statement[which(pillar_ecol_df2$PPTID == proj[i])]
+if (any(is.na(quality_statements))) {
+  quality_statements <- quality_statements[-which(is.na(quality_statements))]
+}
+
+sample_years <- as.numeric(unlist(strsplit(gsub("[()]", "", unlist(regmatches(quality_statements, gregexpr("\\(([^)]+)\\)", quality_statements)))), "-")))
+QUALITY_SAMPLES[[i]] <- range(sample_years, na.rm = TRUE)
+}
+
+  
+  # END QUALITY
+  
   final_funding <- lapply(adjusted_ps, function(x) sum(x$amount))
   
   names(final_funding) <- names(ps)
@@ -188,9 +223,18 @@ if (length(com$project_id) != 0) {
   
   money_percentage <- round(percent_funding$Funding_pct[which(percent_funding$MPA == params$mpas)]*100, 2)
   
-  investment <- paste0("The following DFO projects have sampled in ",
-                       params$mpas, " : ",
-                       paste0(paste(proj, " (", proj_titles, ")", sep = ""), collapse="; "), " which accounted for ", money_percentage, "% of O&M funding to the protected areas.")
+  proj_text <- paste0(
+  proj, " (", proj_titles, ") ",
+  "(", sapply(QUALITY_SAMPLES, function(x) paste(range(x), collapse = "-")), ")"
+)
+
+investment <- paste0(
+  "The following DFO projects have sampled in ",
+  params$mpas, " : ",
+  paste(proj_text, collapse = "; "),
+  " which accounted for ", money_percentage,
+  "% of O&M funding to the protected areas based on the data included in this project."
+)
 } else {
   investment <- paste0("No identified DFO projects have sampled in ", params$mpas, " and therefore there is no identified O&M investment.")
 }
@@ -245,27 +289,176 @@ if (!(length(S_Objectives) == 0)) {
    status_objectives <- "No site objective status available."
 }
 
+## Adding in last year sampling
+apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID == params$mpas),]
+
+apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),]
+
+## Adding sample locations
+
+proj_ids_samples <- apj_mpa_last_year %>%
+  mutate(
+    project_id = ifelse(
+      is.na(PPTID),
+      paste0("External: ", source),
+      paste0("PPTID: ", PPTID)
+    ),
+    project_label = ifelse(
+      is.na(PPTID),
+      project_id,
+      paste0(project_id, " (", project_short_title, ")")
+    )
+  ) %>%
+  # count number of samples per project
+  group_by(project_id) %>%
+  mutate(n_samples = n()) %>%
+  ungroup()
+
+proj_pal <- colorFactor(
+  palette = "Dark2",
+  domain = proj_ids_samples$project_id
+)
+
+# FINDING SAMPLE INFORMATION
+
+apj_proj <- apj_mpa %>%
+  mutate(
+    project_id = ifelse(
+      is.na(PPTID),
+      paste0("External: ", source),
+      paste0("PPTID: ", PPTID)
+    ),
+    project_label = ifelse(
+      is.na(PPTID),
+      project_id,
+      paste0(project_id, " (", project_short_title, ")")
+    )
+  )
+
+proj_year_info <- apj_proj %>%
+  sf::st_drop_geometry() %>%
+  group_by(project_id, areaID) %>%
+  summarise(
+    has_date_info = any(!is.na(year)),
+    .groups = "drop"
+  )
+
+date_of_establishment <- MPAs$date_of_establishment[MPAs$NAME_E == params$mpas]
+
+proj_sample_counts <- apj_proj %>%
+  sf::st_drop_geometry() %>%   # ← THIS fixes your error
+  group_by(project_id, project_label, areaID) %>%
+  summarise(
+    total_samples = n(),
+    .groups = "drop"
+  )
+
+
+proj_sample_counts <- proj_sample_counts %>%
+  left_join(MPAs %>% select(NAME_E, date_of_establishment), 
+            by = c("areaID" = "NAME_E")) %>%
+  rowwise() %>%
+  mutate(
+    samples_post_doe = sum(apj_proj$year[apj_proj$project_id == project_id & 
+                                         apj_proj$areaID == areaID] >= date_of_establishment,
+                           na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+proj_sample_counts <- proj_sample_counts %>%
+  left_join(proj_year_info, by = c("project_id", "areaID"))
+
+
+proj_statements <- proj_sample_counts %>%
+  mutate(
+    sentence = paste0(
+      project_label, ": ", total_samples, " samples in total; ",
+      samples_post_doe, " samples taken in or after date of establishment."
+    )
+  )
+
+# Combine into one paragraph
+proj_statements <- proj_sample_counts %>%
+  mutate(
+    sentence = ifelse(
+      !has_date_info,
+      paste0(project_label, " collected ", total_samples,
+             " samples, but no date information is available."),
+      paste0(project_label, " collected ", total_samples,
+             " samples in total, with ", samples_post_doe,
+             " collected after the area was established.")
+    )
+  )
+
+summary_sentence <- paste(proj_statements$sentence, collapse = " ")
+
+
+sample_statement <- paste0(
+  "Sampling effort by project in ", as.numeric(format(Sys.time(), "%Y"))-1, ": ",
+  paste(
+    unique(paste0(proj_ids_samples$project_label,
+                  " (", proj_ids_samples$n_samples, " samples)")),
+    collapse = "; "
+  ),
+  "."
+)
+
+## Creature feature
+ filtered_creature_feature <- creature_feature |>
+      filter(NAME_E == params$mpas) |>
+      arrange(desc(n)) |>
+      dplyr::select(commonname, image_column, scientificName, n, kingdom, phylum, class, years)
+ 
+ 
+ 
+ if (any(grepl(as.numeric(format(Sys.time(), "%Y"))-1, filtered_creature_feature$years))) {
+yr <- as.numeric(format(Sys.time(), "%Y"))-1
+
+rows <- filtered_creature_feature[grepl(yr, filtered_creature_feature$years), ]
+
+counts <- sub(".*\\((\\d+)\\).*", "\\1", rows$years)
+
+parts <- paste(counts, rows$scientificName)
+
+creature_feature_sentence <- paste0(
+  "In ", yr, ", there ",
+  if(length(parts) == 1) "was " else "were ",
+  paste(parts, collapse = " and "),
+  " identified based on iNaturalist."
+)
+
+} else {
+  creature_feature_sentence <- paste0("No species were identified in ", params$mpas, " in ",as.numeric(format(Sys.time(), "%Y"))-1, " according to iNaturalist.")
+}
+ 
+ 
+
+
+##
+
 div(
   style = "border: 2px solid black; padding: 10px; border-radius: 5px; background-color: #f9f9f9;",
   tags$p(investment),
+  tags$p(sample_statement),
+  tags$p(creature_feature_sentence),
   tags$p(status_objectives),
   tags$p(paste0(params$mpas, " has an overall ecological status score of ", area_grade, ".")),
   tags$p(paste0(
     "It should be noted that no data exists for the following ecological bins: ",
     paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
     ". Further research is recommended."
-  ))
+  )),
+   tags$p(paste0("Data from ", params$mpas, ' has also contributed to another of other objectives including Network Objectives, Ecosystem Based Management Objectives, and Global Biodiversity Targets.'))
 )
 
 
 ```
 
-
-
-
 ## At-a-glance
 
 ```{r, echo=FALSE,comment=NA, results='asis'}
+cat("This protected area was established in ", MPAs$date_of_establishment[which(MPAs$NAME_E == params$mpas)], ".")
+cat("<br>")
 if (!(length(Context[[string]]) == 0)) {
 cat(paste(Context[[string]], collapse = "<br>"), "\n")
 } else {
@@ -275,21 +468,31 @@ cat(paste(Context[[string]], collapse = "<br>"), "\n")
 
 
 ```{r, echo=FALSE, comment=NA, results="asis"}
-cat("The entirety of this report follows this legend:\n\n")
+# cat("The entirety of this report follows this legend:\n\n")
+# 
+# cat("<div style='display: flex; gap: 10px;'>")
+# cat("<br>")
+# 
+# PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
+# for (name in names(PALETTE)) {
+#   color <- PALETTE[name]
+#   cat(sprintf("<div style='width: 50px; height: 20px; background-color: %s; text-align: center; 
+#                color: black; border: 1px solid #000; line-height: 20px;'>%s</div>", 
+#                color, name))
+# }
+# cat("</div>")
+# 
+# cat("<br>")
+```
 
-cat("<div style='display: flex; gap: 10px;'>")
-cat("<br>")
+## Research Activity
 
-PALETTE <- append(flowerPalette,list("NA" = "#EDEDED"))
-for (name in names(PALETTE)) {
-  color <- PALETTE[name]
-  cat(sprintf("<div style='width: 50px; height: 20px; background-color: %s; text-align: center; 
-               color: black; border: 1px solid #000; line-height: 20px;'>%s</div>", 
-               color, name))
-}
-cat("</div>")
 
-cat("<br>")
+```{r, echo=FALSE, message=FALSE, results='asis'}
+# apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID == params$mpas),]
+# 
+# apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),]
+
 ```
 
 ```{r, echo=FALSE, results='asis'}
@@ -307,10 +510,38 @@ border_color <- if (fill_color == "#ABD9E9") "black" else fill_color
 maps <- maps %>% 
   addPolygons(data=MPAs$geoms[which(MPAs$NAME_E == params$mpas)], fillOpacity = 0.05, weight=2, color=border_color)
 
+
+maps <- maps %>%
+  addCircleMarkers(
+    data = proj_ids_samples,
+    color = ~proj_pal(project_id),
+    label = ~paste0(project_id, " — ", n_samples, " samples"),
+    popup = ~paste0("<b>", project_id, "</b><br>",
+                    n_samples, " samples"),
+    radius = 6,
+    fillOpacity = 0.9
+  ) %>%
+  addLegend(
+    "bottomright",
+    pal = proj_pal,
+    values = proj_ids_samples$project_id,
+    title = "Projects"
+  )
+
 maps
 
+
 cat("<br>")
-cat(paste0("Figure 1: Location of ", string, " color coded for overall ecological status score"))
+
+cat(paste0("Figure 1: Location of ", string, " color coded for overall ecological status score. Locations of data collected in ",as.numeric(format(Sys.time(), "%Y"))-1), " also included on the map.")
+cat("<br>")
+cat("<br>")
+
+
+cat(sample_statement)
+cat("<br>")
+
+cat(paste0("Sample effort by project in total: ", summary_sentence))
 
 ```
 
@@ -321,12 +552,10 @@ cat(paste0("Figure 1: Location of ", string, " color coded for overall ecologica
 cat(paste0("Table 1: Species detected in ", string, " according to iNaturalist"))
 cat("<br>")
 
+
 try({
-  datatable(
-    creature_feature |>
-      filter(NAME_E == params$mpas) |>
-      arrange(desc(n)) |>
-      dplyr::select(commonname, image_column, scientificName, n, kingdom, phylum, class),
+  return(datatable(
+    filtered_creature_feature,
 
     # Disable sorting for the image column
     options = list(
@@ -366,7 +595,8 @@ try({
       "iNaturalist Observations",
       "Kingdom",
       "Phylum",
-      "Class"
+      "Class",
+      "Year"
     ),
 
     # Escape HTML to allow image rendering
@@ -377,35 +607,416 @@ try({
 
     # Add footer for filtering
     filter = "bottom"
-  )
+  ))
 })
+```
+
+
+```{r, echo = FALSE, comment=NA, results="asis", warning=FALSE}
+cat("<br>")
+cat(creature_feature_sentence)
+cat("<br>")
 ```
 
 ## Results
 
+<h3 style="display:none;">MANAGEMENT EFFECTIVENESS</h3>
 <details>
-<summary style="
-    font-size: 1.8em;       /* make the text bigger */
-    font-weight: bold;       /* make it bold */
-    padding: 8px 12px;       /* space inside the box */
-    border: 2px solid black; /* draw a box around the header */
-    border-radius: 5px;      /* rounded corners */
-    cursor: pointer;         /* show pointer on hover */
-">
+<summary style="font-size:1.5em; font-weight:bold; cursor:pointer;">
 MANAGEMENT EFFECTIVENESS
 </summary>
 
 ```{r, echo=FALSE, results='asis', warning=FALSE}
 cat("<br>")
-cat('Management effectiveness analyses if conservation objectives are being met\n\n')
-cat('<h3>Network Conservation Objectives</h2>\n')
-cat('Click each objective to see information on relevant indicators.\n')
+cat("Management Effectiveness summarizes how well a site is performing against its stated conservation objectives, based on the best available indicators and data.")
+cat("<br>")
+cat("For each conservation objective, relevant indicators are grouped and scored to provide an overall assessment of progress toward that objective. These scores are intended to support interpretation and comparison, not to represent a definitive measure of success or failure.")
+cat("<br>")
+cat("Where data are limited or unavailable, this is explicitly indicated and reflected in the resulting score. As such, scores should be interpreted in the context of data availability, indicator coverage, and monitoring effort, and not as a complete or final evaluation of management outcomes.")
+cat("<br>")
+gradeLegendUI("objective")
+cat("<br>")
+```
+
+```{r, echo=FALSE,comment=NA, results="asis", warning=FALSE}
+cat("**Site Conservation Objectives**\n")
+cat("<br>")
+cat('Select each objective to see information on relevant indicators.\n')
+
+if (exists("S_Objectives")) {
+if (!(length(S_Objectives) == 0)) {
+  
+  dt_data <- data.frame(
+    Objective = filtered_odfS$objectives,
+    Grade = site_grades,
+    Number_Of_Indicators = number_of_indicators,
+    stringsAsFactors = FALSE
+  )
+  
+return(datatable(dt_data, rownames = FALSE) %>%
+  formatStyle(
+    'Grade',
+    target = 'cell',
+    backgroundColor = styleEqual(
+      c(names(flowerPalette), "NA"),
+      c(flowerPalette, "#EDEDED")
+    ),
+    color = 'black' # optional: adjust if needed for contrast
+  ))
+
+cat('<br>\n')
+
+} else {
+  cat("There are no site objectives pulled with our tools for this area.")
+}
+} else {
+  cat("There are no site objectives pulled with our tools for this area.")
+
+}
+```
+
+
+```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
+if (exists("textO")) {
+
+OBJECTIVES_SOWHAT <- vector("list", length(textO))
+OBJECTIVES_GAP_INDICATORS <- vector("list", length(textO))
+
+for (i in seq_along(textO)) {
+  
+cat(sprintf(
+  '<h4 style="display:none;">Objective: %s</h4>
+   <details>
+     <summary style="
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.1em;
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-bottom: 5px;">
+        <u>Objective: %s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
+     </summary>\n\n',
+  toupper(textO[i]),
+  toupper(textO[i]),
+  site_color[i],
+  ifelse(!(dt_data$Grade[i] == "NA"), dt_data$Grade[i], "  ")
+))
+  
+  k1 <- which(grepl(textO[i], pillar_ecol_df2$objectives, fixed=TRUE))
+  if (params$mpas %in% regions$NAME_E) {
+    k2 <- k1
+  } else {
+    k2 <- which(pillar_ecol_df2$areaID == params$mpas)
+  }
+  keep <- intersect(k1,k2)
+  keep_na <- NULL
+  
+  if (!(length(keep) == 0)) {
+    if (any(is.na(pillar_ecol_df2$score[keep]))) {
+      keep_na <- keep[which(is.na(pillar_ecol_df2$score[keep]))]
+    }
+    
+    keep <- keep[which(!is.na(pillar_ecol_df2$score[keep]))]
+  
+    
+    # Flower plot for objectives
+    
+    objective_flower <- pillar_ecol_df2[k2,]
+    objective_flower$score[which(!(grepl(textO[i], objective_flower$objectives, fixed=TRUE)))] <- NA
+    if (!(length(keep) == 0)) {
+    cat("The objective has the following score: \n")
+    cat("<br>")
+    }
+
+
+    if (!(all(is.na(objective_flower$score)))) {
+    pp <- MarConsNetAnalysis::plot_flowerplot(objective_flower,
+                                            grouping = "objective",
+                                            labels = "bin",
+                                            score = "score",
+                                            max_score=100,
+                                            min_score=0,
+                                            title=" ",
+                                            showNumbers = TRUE)
+    print(pp)
+    cat("<br>")
+    
+    # NOW DO THE SO-WHAT
+    grade_text <- grade_description('objective')[[dt_data$Grade[i]]]
+    n_indicators <- length(which(!(is.na(objective_flower$score))))
+    
+      years <- str_extract(unique(str_extract(objective_flower$quality_statement, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
+      years_num <- as.numeric(years)
+      latest_year <- ifelse(length(years_num) > 0 && any(!is.na(years_num)),max(years_num, na.rm = TRUE),NA)
+      
+      weighted_outside_grade <- calc_letter_grade(
+          weighted.mean(objective_flower$adjacent_score, objective_flower$weight, na.rm = TRUE)
+        )
+      
+      n_indicators_outside <- length(unique(objective_flower$objective[!is.na(objective_flower$adjacent_score)]))
+
+        
+        
+
+        sowhat <- paste0(
+          "This objective has a score of ", dt_data$Grade[i],
+          " indicating ", tolower(grade_text), ".",
+
+          if (n_indicators < 4) {
+            paste0(" It should be noted that this assessment is only based on the score of ", n_indicators, " unique indicators and further research is recommended.")
+          } else {
+            paste0(" This assessment is based on ", n_indicators, " indicators.")
+          },
+
+          if (!is.na(latest_year)) {
+            paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
+          } else {
+            " "
+          })
+        
+        
+          if (!(all(is.na(objective_flower$adjacent_score)))) {
+            sowhatoutside <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ',
+                                    tolower(grade_description('objective')[[weighted_outside_grade]]), ". This outside assessment is based on
+                                    ",n_indicators_outside, " indicators.")
+          } else {
+            sowhatoutside <- ""
+          }
+        
+        cat(sowhat)
+        cat("<br>")
+        cat(sowhatoutside)
+        cat("<br>")
+        
+        OBJECTIVES_SOWHAT[[i]] <- paste0(sowhat, ".", sowhatoutside)
+    }
+        cat("<br>")
+if (!(length(keep) == 0)) {
+    cat("Below highlights the list of indicators used to inform each objective: \n")
+}
+
+    cat("<br>")
+    cat("<br>")
+
+
+    
+    # end flower plot
+if (!(length(keep) == 0)) {
+  for (j in seq_along(keep)) {
+ # cat(sprintf(
+ #    "<details>\n<summary><b>Indicator: %s</b></summary>\n\n",
+ #    pillar_ecol_df2$indicator[keep[j]]
+ #  ))
+ #    
+    # FINDING PLOT
+      keep1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE, fixed=TRUE)) # Which are from the correct area
+      keep2 <- which(grepl(make.names(pillar_ecol_df2$indicator[keep[j]]), image_files, ignore.case=TRUE, fixed=TRUE)) # Which ones have the correct indicator name
+      KEEP <- intersect(keep1,keep2)
+cat(sprintf(
+  '<details>
+     <summary style="
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.1em;
+        padding: 4px 6px;
+        border-radius: 4px;
+        margin-bottom: 5px;">
+        Indicator: %s <span style="background-color:%s; color:white; padding:2px 6px; border-radius:4px;">%s</span>
+     </summary>\n\n',
+  pillar_ecol_df2$indicator[keep[j]],
+  ifelse(is.na(pillar_ecol_df2$score[keep[j]]) | pillar_ecol_df2$score[keep[j]] == "NA", "#EDEDED", unname(flowerPalette[calc_letter_grade(pillar_ecol_df2$score[keep[j]])])),
+  ifelse(is.na(pillar_ecol_df2$score[keep[j]]) | pillar_ecol_df2$score[keep[j]] == "NA", " ", round(pillar_ecol_df2$score[keep[j]],0))
+))
+      
+      if (length(KEEP) > 1) {
+        KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == pillar_ecol_df2$indicator[keep[j]])]
+      }
+      plot_file <- image_files[KEEP]
+    
+    # END PLOT
+      if (length(plot_file) > 0) {
+          for (p in seq_along(plot_file)) {
+    
+    # Read the image
+    img <- image_read(plot_file[p])
+    
+    # Get image info
+    info <- image_info(img)
+    
+    # Crop 10% from top and bottom (keep 80% of height)
+    crop_height <- info$height * 0.6
+    img_cropped <- image_crop(
+      img,
+      geometry = geometry_area(
+        width = info$width,
+        height = crop_height,
+        x = 0,
+        y = info$height * 0.1  # start 10% down
+      )
+    )
+    
+    # Overwrite original file or create temp file
+    tmp_file <- tempfile(fileext = ".png")
+    image_write(img_cropped, path = tmp_file)
+    
+    # Embed cropped image
+    cat(sprintf(
+      '<img src="%s" style="width:600px; display:block; margin:0; padding:0;" />\n\n',
+      tmp_file
+    ))
+    
+          }
+        
+      } else {
+        cat("There is no image available for this indicator as it was not sampled in this area.")
+        cat("<br>")
+      }
+      
+      if (is.na(pillar_ecol_df2$trend_statement[keep[j]])) {
+        trendy <- "No temporal analysis completed for this indicator."
+      } else if (!(pillar_ecol_df2$trend_statement[keep[j]] == "There is no temporal dimension in this data.")) {
+      trendy <- pillar_ecol_df2$trend_statement[keep[j]]
+      } else {
+        trendy <- pillar_ecol_df2$trend_statement[keep[j]]
+      }
+      
+      
+      
+      table_df <- data.frame(
+        "Assumptions"=pillar_ecol_df2$assumptions[keep[j]],
+        "Caveats"=pillar_ecol_df2$caveats[keep[j]],
+        "Rationale"=pillar_ecol_df2$indicator_rationale[keep[j]],
+                             "Status"=pillar_ecol_df2$status_statement[keep[j]],
+                             "Trend"= trendy,
+                             "Score"= round(pillar_ecol_df2$score[keep[j]],0),
+                             "Scoring_Scheme"=pillar_ecol_df2$scoring[keep[j]],
+                             "Source"=ifelse(is.na(pillar_ecol_df2$PPTID[keep[j]]), pillar_ecol_df2$source[keep[j]], pillar_ecol_df2$project_short_title[keep[j]]),
+                             "Quality"= pillar_ecol_df2$quality_statement[keep[j]]
+      )
+      
+      
+      
+## Adding indicator so-what
+      weighted_grade_ind <-  calc_letter_grade(
+          weighted.mean(pillar_ecol_df2$score[keep[j]], pillar_ecol_df2$weight[keep[j]], na.rm = TRUE)
+        )
+if (!(weighted_grade_ind == "NA")) {
+          grade_text <- grade_description('indicator')[[calc_letter_grade(pillar_ecol_df2$score[keep[j]])]]
+          
+          
+           years_ind <- as.numeric(str_extract(unique(str_extract(pillar_ecol_df2$quality_statement[keep[j]], "\\(([^)]*)\\)")), "(?<=-)[0-9]+"))
+      latest_year_ind <- ifelse(length(years_ind) > 0 && any(!is.na(years_ind)),max(years_ind, na.rm = TRUE),NA)
+          
+          
+          } else {
+            grade_text <- 'more information is needed for this indicator'
+          }
+
+          sowhatind <- paste0(
+            pillar_ecol_df2$indicator[keep[j]], " has a score of ", calc_letter_grade(pillar_ecol_df2$score[keep[j]]),
+            " indicating ", tolower(grade_text)," in ", pillar_ecol_df2$areaID[keep[j]], ".",
+            if (!is.na(latest_year_ind)) {
+              paste0(" The latest data we have that supports this objective is as of ", latest_year_ind, ".")
+            } else {
+              " "
+            })
+          
+          cat(sowhatind)
+          cat("<br>")
+
+          if (!(state$mpas %in% regions$NAME_E)) {
+            if (!(all(is.na(pillar_ecol_df2$adjacent_score[keep[j]])))) {
+              weighted_outside_grade_ind <- calc_letter_grade(
+          weighted.mean(pillar_ecol_df2$adjacent_score[keep[j]], pillar_ecol_df2$weight[keep[j]], na.rm = TRUE)
+        )
+              sowhatoutsideind <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade_ind, ' indicating ', tolower(grade_description('indicator')[[weighted_outside_grade_ind]]), ".")
+            
+               cat(sowhatoutsideind)
+          cat("<br>")
+              
+              }
+          }      
+      
+      
+# END indicator so what
+      
+      cat(knitr::kable(
+  table_df,
+  format = "html",
+  table.attr = 'style="width:80%; margin-left:auto; margin-right:auto; border-collapse:collapse;"'
+) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE,
+    position = "center"
+  ),
+  "\n\n"
+)
+
+cat("</details>\n\n")  # close the collapsible
+
+  
+  }
+  } else {
+        cat("There are no indicators in this area that support this objective")
+
+  }
+  } else {
+    cat("There are no indicators in this area that support this objective")
+  }
+    if (!(is.null(keep_na))) {
+          cat("<br>")
+
+  cat("The following indicators were identified as indicators that inform this objective, but we do not yet have data for.")
+  cat("<br>")
+  
+  OBJECTIVES_GAP_INDICATORS[[i]] <- paste0(pillar_ecol_df2$indicator[keep_na], collapse=", ")
+  cat(paste0(pillar_ecol_df2$indicator[keep_na], collapse=", "))
+    }
+    cat("<br>")
+    cat("<br>")
+
+
+  cat("</details>\n\n")
+  
+}
+
+names(OBJECTIVES_SOWHAT) <- textO
+
+cat('<br>\n')
+
+
+
+}
+```
+
+</details>
+<h3 style="display:none;">EFFECTIVENESS CONTRIBUTIONS</h3>
+<details>
+<summary style="font-size:1.5em; font-weight:bold; cursor:pointer;">
+EFFECTIVENESS CONTRIBUTIONS
+</summary>
+
+```{r, echo=FALSE, results='asis', warning=FALSE}
+cat("Effectiveness Contributions summarizes indicators for conservation objectives that the site is not directly managed for. While the site is not managed with these objectives in mind, protection and management can still influence outcomes.")
+cat("<br>")
+cat("Scores reflect the actual status of each indicator, showing how well the objective is being met, even if indirectly. These scores are intended for interpretation and comparison, and do not represent a direct management outcome.")
+cat("<br>")
+cat("Where data are limited or unavailable, this is explicitly indicated. Scores should always be interpreted in the context of data availability, coverage, and monitoring effort.")
+cat("<br>")
+gradeLegendUI("objective")
+cat("<br>")
+
+cat("**Network Conservation Objectives**\n")
+cat("<br>")
+cat('Click each objective to see information on relevant indicators.')
 
 n_objectives <- trimws(substr(gsub("\n", "", N_Objectives), 2, nchar(gsub("\n", "", N_Objectives))), 'both')
 filtered_odf <- objective_tabs[which(objective_tabs$objectives %in% n_objectives),]
 
 grades_network <- NULL
 grade_colors_network <- NULL
+number_of_indicators_network <- NULL
 
 for (i in seq_along(filtered_odf$objectives)) {
   # GRADES
@@ -419,6 +1030,7 @@ for (i in seq_along(filtered_odf$objectives)) {
   KEEP_df <- calc_group_score(df=KEEP,grouping_var = "bin",
                                score_var = "score",
                                weight_var = "weight")
+  number_of_indicators_network[i] <- length(!(is.na(unique(KEEP$score))))
   grades_network[i] <- as.character(calc_letter_grade(weighted.mean(x=KEEP_df$score, w=KEEP_df$weight, na.rm=TRUE)))
   
   if (!(all(is.na(KEEP$score)))) {
@@ -428,38 +1040,48 @@ for (i in seq_along(filtered_odf$objectives)) {
   }
 }
 
-
-
 dt_data_network <- data.frame(
   Objective = filtered_odf$objectives,
   Grade = grades_network,
+  Number_Of_Indicators=number_of_indicators_network,
   stringsAsFactors = FALSE
 )
+
+return(datatable(dt_data_network, rownames = FALSE) %>%
+           formatStyle(
+               'Grade',
+               target = 'cell',
+               backgroundColor = styleEqual(
+                   c(names(flowerPalette), "NA"),
+                   c(flowerPalette, "#EDEDED")
+               ),
+               color = 'black' # optional: adjust if needed for contrast
+           ))
+
 cat("<br>")
 
 ```
 
 
-
 ```{r, echo=FALSE, comment=NA, results='asis', warning=FALSE}
 for (i in seq_along(n_objectives)) {
 cat(sprintf(
-  '<details>
+  '<h4 style="display:none;">Objective: %s</h4>
+   <details>
      <summary style="
         cursor: pointer;
         font-weight: bold;
-        font-size: 1.2em;
+        font-size: 1.1em;
         padding: 4px 8px;
         border-radius: 4px;
         margin-bottom: 5px;">
-        <u>%s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
+        <u>Objective: %s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
      </summary>\n\n',
-  toupper(n_objectives[i]),      # objective text
-  grade_colors_network[i],       # background color only for grade
-  ifelse(!(grades_network[i] == "NA"), grades_network[i], "  ") 
-)) 
-  
-  
+  toupper(n_objectives[i]),             # hidden heading for TOC
+  toupper(n_objectives[i]),             # visible objective text
+  grade_colors_network[i],              # background color
+  ifelse(!(grades_network[i] == "NA"), grades_network[i], "  ")  # grade text
+))
   
   k1 <- which(grepl(n_objectives[i], pillar_ecol_df2$objectives, fixed=TRUE))
   if (params$mpas %in% regions$NAME_E) {
@@ -468,12 +1090,31 @@ cat(sprintf(
     k2 <- which(pillar_ecol_df2$areaID == params$mpas)
   }
   keep <- intersect(k1,k2)
+  
+  keep_na <- NULL
+  
   if (!(length(keep) == 0)) {
+    if (any(is.na(pillar_ecol_df2$score[keep]))) {
+      keep_na <- keep[which(is.na(pillar_ecol_df2$score[keep]))]
+    }
+    
+    keep <- keep[which(!is.na(pillar_ecol_df2$score[keep]))]
+    
+  
+  
+  if (!(length(keep) == 0)) {
+      if (any(is.na(pillar_ecol_df2$score[keep]))) {
+      keep_na <- keep[which(is.na(pillar_ecol_df2$score[keep]))]
+    }
+    
+    keep <- keep[which(!is.na(pillar_ecol_df2$score[keep]))]
+    
+    
     # FLOWER
     objective_flower <- pillar_ecol_df2[k2,]
     objective_flower$score[which(!(grepl(n_objectives[i], objective_flower$objectives, fixed=TRUE)))] <- NA
     
-    cat("The objective has the following score: \n")
+    #cat("The objective has the following score: \n")
     cat("<br>")
 
     
@@ -483,22 +1124,70 @@ cat(sprintf(
                                             score = "score",
                                             max_score=100,
                                             min_score=0,
-                                            title=" ")
+                                            title=" ",
+                                            showNumbers = TRUE)
     print(p)
+    cat("<br>")
+    cat("<br>")
+    # TEST
+    # NOW DO THE SO-WHAT
+    grade_text <- grade_description('objective')[[dt_data_network$Grade[i]]]
+    n_indicators <- length(which(!(is.na(objective_flower$score))))
+    
+      years <- str_extract(unique(str_extract(objective_flower$quality_statement, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
+      years_num <- as.numeric(years)
+      latest_year <- ifelse(length(years_num) > 0 && any(!is.na(years_num)),max(years_num, na.rm = TRUE),NA)
+      
+      weighted_outside_grade <- calc_letter_grade(
+          weighted.mean(objective_flower$adjacent_score, objective_flower$weight, na.rm = TRUE)
+        )
+      
+      n_indicators_outside <- length(unique(objective_flower$objective[!is.na(objective_flower$adjacent_score)]))
+              
+        sowhat <- paste0(
+          "This objective has a score of ", grade_text,
+          " indicating ", tolower(grade_text), ".",
+
+          if (n_indicators < 4) {
+            paste0(" It should be noted that this assessment is only based on the score of ", n_indicators, " unique indicators and further research is recommended.")
+          } else {
+            paste0(" This assessment is based on ", n_indicators, " indicators.")
+          },
+
+          if (!is.na(latest_year)) {
+            paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
+          } else {
+            " "
+          })
+        
+        
+          if (!(all(is.na(objective_flower$adjacent_score)))) {
+            sowhatoutside <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ',
+                                    tolower(grade_description('objective')[[weighted_outside_grade]]), ". This outside assessment is based on
+                                    ",n_indicators_outside, " indicators.")
+          } else {
+            sowhatoutside <- ""
+          }
+        
+        cat(sowhat)
+        cat("<br>")
+        cat(sowhatoutside)
+        cat("<br>")
+    }
+        cat("<br>")
+        
+    
+    
+    # END TEST
     
     cat("<br>")
-      cat("<br>")
+    cat("<br>")
 
-    
     cat("Below highlights the list of indicators used to inform each objective: \n")
     cat("<br>")
     cat("<br>")
-
-
-
-
   for (j in seq_along(keep)) {
-    cat(sprintf("<b>Indicator: %s.</b>\n\n", pillar_ecol_df2$indicator[keep[j]]))
+    #cat(sprintf("<b>Indicator: %s.</b>\n\n", pillar_ecol_df2$indicator[keep[j]]))
     
     # FINDING PLOT
       keep1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE, fixed=TRUE)) # Which are from the correct area
@@ -508,172 +1197,60 @@ cat(sprintf(
       if (length(KEEP) > 1) {
         KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == pillar_ecol_df2$indicator[keep[j]])]
       }
-      plot_file <- image_files[KEEP]
-    
-    # END PLOT
-      if (length(plot_file) > 0) {
-      for (p in seq_along(plot_file)) {
-         #cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
-        cat(embed_image(plot_file[p]))
-      }
-      } else {
-        cat("There is no image available for this indicator as it was not sampled in this area.")
-        cat("<br>")
-      }
-
-      if (is.na(pillar_ecol_df2$trend_statement[keep[j]])) {
-        trendy <- "No temporal analysis completed for this indicator."
-      } else if (!(pillar_ecol_df2$trend_statement[keep[j]] == "There is no temporal dimension in this data.")) {
-      trendy <- pillar_ecol_df2$trend_statement[keep[j]]
-      } else {
-        trendy <- pillar_ecol_df2$trend_statement[keep[j]]
-      }
       
-      table_df <- data.frame("Rationale"=pillar_ecol_df2$indicator_rationale[keep[j]],
-                             "Status"=pillar_ecol_df2$status_statement[keep[j]],
-                             "Trend"= trendy,
-                             "Score"= round(pillar_ecol_df2$score[keep[j]],0),
-                             "Scoring_Scheme"=pillar_ecol_df2$scoring[keep[j]],
-                             "Source"=ifelse(is.na(pillar_ecol_df2$PPTID[keep[j]]), pillar_ecol_df2$source[keep[j]], pillar_ecol_df2$project_short_title[keep[j]])
-      )
-      
-      cat(knitr::kable(
-  table_df,
-  format = "html",
-  table.attr = 'style="width:80%; margin-left:auto; margin-right:auto; border-collapse:collapse;"'
-) %>%
-  kableExtra::kable_styling(
-    bootstrap_options = c("striped", "hover", "condensed"),
-    full_width = FALSE,
-    position = "center"
-  ),
-  "\n\n"
-)
-  }
-  } else {
-    cat("There are no indicators in this area that support this objective")
-  }
-    cat("</details>\n\n")
-}
-
-```
-
-
-
-```{r, echo=FALSE,comment=NA, results="asis", warning=FALSE}
-cat('<h3>Site Conservation Objectives</h2>\n')  # 🔴 header
-cat('Select each objective to see information on relevant indicators.\n')
-
-if (exists("S_Objectives")) {
-if (!(length(S_Objectives) == 0)) {
-  
-  dt_data <- data.frame(
-    Objective = filtered_odfS$objectives,
-    Grade = site_grades,
-    stringsAsFactors = FALSE
-  )
-  
-#   cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Site Objective Effectiveness Summary</h3>\n')
-
-cat('<br>\n')
-
-} else {
-  cat("There are no site objectives pulled with our tools for this area.")
-}
-} else {
-  cat("There are no site objectives pulled with our tools for this area.")
-
-}
-
-
-
-```
-
-
-```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
-if (exists("textO")) {
-for (i in seq_along(textO)) {
-  
-cat(sprintf(
+      cat(sprintf(
   '<details>
      <summary style="
         cursor: pointer;
         font-weight: bold;
-        font-size: 1.2em;
-        padding: 4px 8px;
+        font-size: 1.1em;
+        padding: 4px 6px;
         border-radius: 4px;
         margin-bottom: 5px;">
-        <u>%s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
+        Indicator: %s <span style="background-color:%s; color:white; padding:2px 6px; border-radius:4px;">%s</span>
      </summary>\n\n',
-  toupper(textO[i]),        # objective text
-  site_color[i],            # background color only for grade
-  ifelse(!(dt_data$Grade[i] == "NA"), dt_data$Grade[i], "  ")          # grade to display
+  pillar_ecol_df2$indicator[keep[j]],
+  ifelse(is.na(pillar_ecol_df2$score[keep[j]]) | pillar_ecol_df2$score[keep[j]] == "NA", "#EDEDED", unname(flowerPalette[calc_letter_grade(pillar_ecol_df2$score[keep[j]])])),
+  ifelse(is.na(pillar_ecol_df2$score[keep[j]]) | pillar_ecol_df2$score[keep[j]] == "NA", " ", round(pillar_ecol_df2$score[keep[j]],0))
 ))
-
-  
-#cat(sprintf('<details><summary><strong><u>OBJECTIVE: %s</u></strong></summary>\n\n', toupper(textO[i])))
-  k1 <- which(grepl(textO[i], pillar_ecol_df2$objectives, fixed=TRUE))
-  if (params$mpas %in% regions$NAME_E) {
-    k2 <- k1
-  } else {
-    k2 <- which(pillar_ecol_df2$areaID == params$mpas)
-  }
-  keep <- intersect(k1,k2)
-  if (!(length(keep) == 0)) {
-    
-    # Flower plot for objectives
-    objective_flower <- pillar_ecol_df2[k2,]
-    objective_flower$score[which(!(grepl(textO[i], objective_flower$objectives, fixed=TRUE)))] <- NA
-    
-    cat("The objective has the following score: \n")
-    cat("<br>")
-
-
-    
-    pp <- MarConsNetAnalysis::plot_flowerplot(objective_flower,
-                                            grouping = "objective",
-                                            labels = "bin",
-                                            score = "score",
-                                            max_score=100,
-                                            min_score=0,
-                                            title=" ")
-    print(pp)
-    
-    cat("Below highlights the list of indicators used to inform each objective: \n")
-
-    cat("<br>")
-    cat("<br>")
-
-
-    
-    # end flower plot
-
-  for (j in seq_along(keep)) {
-    cat(sprintf("<b>Indicator: %s.</b>\n\n", pillar_ecol_df2$indicator[keep[j]]))
-
-    
-    # FINDING PLOT
-      keep1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE, fixed=TRUE)) # Which are from the correct area
-      keep2 <- which(grepl(make.names(pillar_ecol_df2$indicator[keep[j]]), image_files, ignore.case=TRUE, fixed=TRUE)) # Which ones have the correct indicator name
-      KEEP <- intersect(keep1,keep2)
       
-      if (length(KEEP) > 1) {
-        KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == pillar_ecol_df2$indicator[keep[j]])]
-      }
       plot_file <- image_files[KEEP]
     
     # END PLOT
       if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
-         #cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
-         cat(embed_image(plot_file[p]))
-
+         img <- image_read(plot_file[p])
+    
+    # Get image info
+    info <- image_info(img)
+    
+    # Crop 10% from top and bottom (keep 80% of height)
+    crop_height <- info$height * 0.6
+    img_cropped <- image_crop(
+      img,
+      geometry = geometry_area(
+        width = info$width,
+        height = crop_height,
+        x = 0,
+        y = info$height * 0.1  # start 10% down
+      )
+    )
+    
+    # Overwrite original file or create temp file
+    tmp_file <- tempfile(fileext = ".png")
+    image_write(img_cropped, path = tmp_file)
+    
+    # Embed cropped image
+    cat(sprintf(
+      '<img src="%s" style="width:600px; display:block; margin:0; padding:0;" />\n\n',
+      tmp_file
+    ))
       }
       } else {
         cat("There is no image available for this indicator as it was not sampled in this area.")
         cat("<br>")
       }
-      
+
       if (is.na(pillar_ecol_df2$trend_statement[keep[j]])) {
         trendy <- "No temporal analysis completed for this indicator."
       } else if (!(pillar_ecol_df2$trend_statement[keep[j]] == "There is no temporal dimension in this data.")) {
@@ -682,15 +1259,60 @@ cat(sprintf(
         trendy <- pillar_ecol_df2$trend_statement[keep[j]]
       }
       
-      
-      
-      table_df <- data.frame("Rationale"=pillar_ecol_df2$indicator_rationale[keep[j]],
+      table_df <- data.frame(
+        "Assumptions"=pillar_ecol_df2$assumptions[keep[j]],
+        "Caveats"=pillar_ecol_df2$caveats[keep[j]],
+        "Rationale"=pillar_ecol_df2$indicator_rationale[keep[j]],
                              "Status"=pillar_ecol_df2$status_statement[keep[j]],
                              "Trend"= trendy,
                              "Score"= round(pillar_ecol_df2$score[keep[j]],0),
                              "Scoring_Scheme"=pillar_ecol_df2$scoring[keep[j]],
                              "Source"=ifelse(is.na(pillar_ecol_df2$PPTID[keep[j]]), pillar_ecol_df2$source[keep[j]], pillar_ecol_df2$project_short_title[keep[j]])
       )
+      
+      ## Adding indicator so-what
+      weighted_grade_ind <-  calc_letter_grade(
+          weighted.mean(pillar_ecol_df2$score[keep[j]], pillar_ecol_df2$weight[keep[j]], na.rm = TRUE)
+        )
+if (!(weighted_grade_ind == "NA")) {
+          grade_text <- grade_description('indicator')[[calc_letter_grade(pillar_ecol_df2$score[keep[j]])]]
+          
+          
+           years_ind <- as.numeric(str_extract(unique(str_extract(pillar_ecol_df2$quality_statement[keep[j]], "\\(([^)]*)\\)")), "(?<=-)[0-9]+"))
+      latest_year_ind <- ifelse(length(years_ind) > 0 && any(!is.na(years_ind)),max(years_ind, na.rm = TRUE),NA)
+          
+          
+          } else {
+            grade_text <- 'more information is needed for this indicator'
+          }
+
+          sowhatind <- paste0(
+            pillar_ecol_df2$indicator[keep[j]], " has a score of ", calc_letter_grade(pillar_ecol_df2$score[keep[j]]),
+            " indicating ", tolower(grade_text)," in ", pillar_ecol_df2$areaID[keep[j]], ".",
+            if (!is.na(latest_year)) {
+              paste0(" The latest data we have that supports this objective is as of ", latest_year_ind, ".")
+            } else {
+              " "
+            })
+          
+          cat(sowhatind)
+          cat("<br>")
+
+          if (!(state$mpas %in% regions$NAME_E)) {
+            if (!(all(is.na(pillar_ecol_df2$adjacent_score[keep[j]])))) {
+              weighted_outside_grade_ind <- calc_letter_grade(
+          weighted.mean(pillar_ecol_df2$adjacent_score[keep[j]], pillar_ecol_df2$weight[keep[j]], na.rm = TRUE)
+        )
+              sowhatoutsideind <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade_ind, ' indicating ', tolower(grade_description('indicator')[[weighted_outside_grade_ind]]), ".")
+            
+               cat(sowhatoutsideind)
+          cat("<br>")
+              
+              }
+          }      
+      
+      
+# END indicator so what
       
       cat(knitr::kable(
   table_df,
@@ -704,35 +1326,58 @@ cat(sprintf(
   ),
   "\n\n"
 )
-   
-  
+           cat("</details>\n\n")  # close the collapsible
+
   }
   } else {
     cat("There are no indicators in this area that support this objective")
   }
-  cat("</details>\n\n")
-}
-    
-cat('<br>\n')
+  
+   if (!(is.null(keep_na))) {
+          cat("<br>")
 
-
+  cat("The following indicators were identified as indicators that inform this objective, but we do not yet have data for.")
+  cat("<br>")
+  cat(paste0(pillar_ecol_df2$indicator[keep_na], collapse=", "))
+   }
+  cat("<br>")
+  cat("<br>")
+  
+    cat("</details>\n\n")
 }
+  cat("<br>")
+  cat("<br>")
+
 ```
-</details> <details>
-<summary style="
-    font-size: 1.8em;       /* make the text bigger */
-    font-weight: bold;       /* make it bold */
-    padding: 8px 12px;       /* space inside the box */
-    border: 2px solid black; /* draw a box around the header */
-    border-radius: 5px;      /* rounded corners */
-    cursor: pointer;         /* show pointer on hover */
-">
-ECOLOGICAL OVERVIEW
+
+</details>
+<h3 style="display:none;">ECOSYSTEM OVERVIEW</h3>
+<details>
+<summary style="font-size:1.5em; font-weight:bold; cursor:pointer;">
+ECOSYSTEM OVERVIEW
 </summary>
+
 
 
 ```{r, echo=FALSE, comment=NA, results="asis", warning=FALSE}
 cat("<br>")
+cat("The Ecosystem Overview section presents all indicators measured in the selected area, regardless of whether they contribute to specific conservation objectives. ")
+cat("<br>")
+cat("The flowerplot provides a visual summary of overall ecosystem health. Scores here reflect the integrated condition of the ecosystem based on all available indicators: ")
+cat("<br>")
+gradeLegendUI("ecosystem_health")
+cat("<br>")
+
+cat(
+  "<span><strong>Ready</strong> – Code is developed and data is integrated into the app;</span> ",
+  "<span><strong>Readily Available</strong> – Data is being collected and stored but requires some work to integrate into the app;</span> ",
+  "<span><strong>Not currently collected</strong> – Data is not yet being collected;</span> ",
+  "<span><strong>Conceptual</strong> – There is no means of collecting this type of data;</span> ",
+  "<span><strong>Unknown</strong> – More work needed to determine readiness score.</span>"
+)
+cat("<br>")
+
+
 cat('Ecological overview analyses the health of the overall ecosystem\n\n')
 
 plot_flowerplot(pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),],
@@ -741,7 +1386,57 @@ plot_flowerplot(pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),],
                                             score = "score",
                                             max_score=100,
                                             min_score=0,
-                                            title="Flower plot framework")
+                                            title="Flower plot framework", showNumbers = TRUE)
+
+subset_ped <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas),]
+grade_text <- grade_description('ecosystem_health')[[calc_letter_grade(weighted.mean(subset_ped$score, subset_ped$weight, na.rm=TRUE))]]
+    n_indicators <- length(which(!(is.na(subset_ped$score))))
+    
+      years <- str_extract(unique(str_extract(subset_ped$quality_statement, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
+      years_num <- as.numeric(years)
+      latest_year <- ifelse(length(years_num) > 0 && any(!is.na(years_num)),max(years_num, na.rm = TRUE),NA)
+      
+      weighted_outside_grade <- calc_letter_grade(
+          weighted.mean(subset_ped$adjacent_score, subset_ped$weight, na.rm = TRUE)
+        )
+      
+              n_indicators_outside <- length(unique(subset_ped$objective[!is.na(subset_ped$adjacent_score)]))
+
+        
+        
+cat("<br>")
+        sowhat <- paste0(
+          "The ecosystem health has a score of ", calc_letter_grade(weighted.mean(subset_ped$score, subset_ped$weight, na.rm=TRUE)),
+          " indicating ", tolower(grade_text), ".",
+
+          if (n_indicators < 4) {
+            paste0(" It should be noted that this assessment is only based on the score of ", n_indicators, " unique indicators and further research is recommended.")
+          } else {
+            paste0(" This assessment is based on ", n_indicators, " indicators.")
+          },
+
+          if (!is.na(latest_year)) {
+            paste0(" The latest data we have that supports this objective is as of ", latest_year, ".")
+          } else {
+            " "
+          })
+        
+        
+          if (!(all(is.na(subset_ped$adjacent_score)))) {
+            sowhatoutside <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade, ' indicating ',
+                                    tolower(grade_description('ecosystem_health')[[weighted_outside_grade]]), ". This outside assessment is based on
+                                    ",n_indicators_outside, " indicators.")
+          } else {
+            sowhatoutside <- ""
+          }
+        
+        ECOSYSTEM_HEALTH_SOWHAT <- paste0(sowhat," ", sowhat)
+        
+        cat(sowhat)
+        cat("<br>")
+        cat(sowhatoutside)
+        cat("<br>")
+        cat("<br>")
 ```
 
 
@@ -756,7 +1451,7 @@ if (any(table_ped$indicator == "placeholder") | any(is.na(table_ped$indicator)))
   table_ped <- table_ped[-which(table_ped$indicator == 'placeholder' | is.na(table_ped$indicator)),]
 }
 
-table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "readiness")]
+table_ped <- table_ped[,c("bin", "indicator", "source", "score", "weight", "PPTID", "readiness", "quality_statement")]
 
 
 ddff <- table_ped %>%
@@ -766,31 +1461,15 @@ ddff <- table_ped %>%
   ) %>%
   # Add placeholders for readiness, quality, cost
   mutate(
-    quality   = NA_real_,
     cost      = NA_real_
   ) %>%
-  dplyr::select(grouping, bin, indicator, source, score, readiness, quality, cost, PPTID) %>%
+  dplyr::select(grouping, bin, indicator, source, score, readiness, quality_statement, cost, PPTID) %>%
   arrange(grouping, bin) %>%
   setNames(toupper(names(.)))
 
-if (params$mpas %in% regions$NAME_E) {
-  # FIXME!!!!!
-  
-  ddff_unique <- ddff %>%
-    rowwise() %>%
-    mutate(
-      SCORE = weighted.mean(
-        x = table_ped$score[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
-        w = table_ped$weight[table_ped$indicator == INDICATOR & table_ped$bin == BIN],
-        na.rm = TRUE
-      )
-    ) %>%
-    ungroup() %>%
-    distinct(GROUPING, BIN, INDICATOR, SOURCE, SCORE, READINESS, QUALITY, COST, PPTID)
-  
-} else {
+
   ddff_unique <- ddff
-}
+
 if (!(length(ddff_unique$PPTID) == 0)) {
   costing <- NULL
   for (i in seq_along(unique(ddff_unique$PPTID))) {
@@ -809,50 +1488,7 @@ if (!(length(ddff_unique$PPTID) == 0)) {
         group_by(GROUPING, SOURCE) %>%
         mutate(COST = ifelse(row_number() == 1, COST, "")) %>%  # only first row of each SOURCE shows COST
         ungroup()
-   
-   cat('<h4 style="text-align:left; margin-bottom:10px;">Table 3: Ecological Overview Summary</h4>\n')
-cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
-cat('<thead><tr>',
-    paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "GRADE", "READINESS", "QUALITY", "COST"), '</th>', collapse=""),
-    '</tr></thead>\n')
-cat('<tbody>\n')
-
-for (i in seq_len(nrow(ddff_display))) {
-  
-  # Compute grade
-  grade <- calc_letter_grade(ddff_display$SCORE[i])
-  
-  # Determine cell color (blank or color)
-  if (!is.na(grade) && grade != "NA") {
-    grade_color <- flowerPalette[[grade]]
-  } else {
-    grade_color <- "#EDEDED"
-  }
-
-  # Start row (no background color!)
-  cat('<tr>')
-
-  cat('<td>', ddff_display$GROUPING[i], '</td>')
-  cat('<td>', ddff_display$BIN[i], '</td>')
-  cat('<td>', ddff_display$INDICATOR[i], '</td>')
-  cat('<td>', ddff_display$SOURCE[i], '</td>')
-  cat('<td>', sprintf("%.2f", ddff_display$SCORE[i]), '</td>')
-
-  # ✅ Grade column — blank cell but color-coded background
-  cat(sprintf('<td style="background-color:%s; font-weight:bold; text-align:center;">%s</td>',
-              grade_color,
-              ""))  # empty string, but could be grade if you want to show it
-
-  cat('<td>', ddff_display$READINESS[i], '</td>')
-  cat('<td>', ddff_display$QUALITY[i], '</td>')
-  cat('<td>', ddff_display$COST[i], '</td>')
-
-  cat('</tr>\n')
-}
-
-cat('</tbody></table>')
-
-}
+ }
 
 ```
 
@@ -860,13 +1496,13 @@ cat('</tbody></table>')
 ```{r, echo=FALSE, comment=NA, results="asis",warning=FALSE}
 library(knitr)
 library(leaflet)
+bin_na_indicators <- NULL
 
 keeper <- pillar_ecol_df2[which(pillar_ecol_df2$areaID == params$mpas), ]
 
 BINS <- unique(trimws(tolower(unlist(
   strsplit(keeper$bin, ";")
 )), "both"))
-
 
 keeper2 <- NULL
 
@@ -881,6 +1517,7 @@ for (i in seq_along(BINS)) {
     KK <- KK[-(which(is.na(KK$indicator) | KK$indicator == "placeholder" | is.na(KK$score))),]
   }
   
+
   keeper2[[i]] <- data.frame(
     Indicator = KK$indicator,
     Status = KK$status_statement,
@@ -893,6 +1530,10 @@ for (i in seq_along(BINS)) {
     Scheme=KK$scoring,
     Title=KK$project_short_title,
     weight = KK$weight,
+    assumptions=KK$assumptions,
+    caveats=KK$caveats,
+    quality=KK$quality_statement,
+    adjacent_score=KK$adjacent_score,
     stringsAsFactors = FALSE
   )
   
@@ -900,8 +1541,9 @@ for (i in seq_along(BINS)) {
 
 names(keeper2) <- BINS
 
-cat('Click each indicator to see information on relevant indicators.\n')
-
+#cat('Click each indicator to see information on relevant indicators.\n')
+SOWHATBIN <- vector("list", length(keeper2))
+BIN_GAP_INDICATORS <- vector("list", length(keeper2))
 for (i in seq_along(keeper2)) {
   # TEST
   if (!(length(keeper2[[i]]$Trend) == 0)) {
@@ -916,8 +1558,9 @@ for (i in seq_along(keeper2)) {
     GRADE_COLOR <- "#EDEDED"
   }
 
-  cat(sprintf(
-  '<details>
+cat(sprintf(
+  '<h4 style="display:none;">%s</h4>
+   <details>
      <summary style="
         cursor: pointer;
         font-weight: bold;
@@ -927,16 +1570,117 @@ for (i in seq_along(keeper2)) {
         margin-bottom: 5px;">
         <u>%s <span style="background-color:%s; padding:2px 6px; border-radius:4px;">%s</span></u>
      </summary>\n\n',
-  toupper(BINS[i]),      # objective text
-  GRADE_COLOR,       # background color only for grade
-  ifelse(!(is.na(BIN_GRADE)), BIN_GRADE, "  ")
-  #BIN_GRADE              # grade to display
+  toupper(BINS[i]),          # hidden heading for TOC
+  toupper(BINS[i]),          # visible text in the summary
+  GRADE_COLOR,               # background color for grade
+  ifelse(!(is.na(BIN_GRADE)), BIN_GRADE, "  ")  # grade to display
 ))
-
   
   if (!(length(keeper2[[i]]$Indicator) == 0)) {
+    bin_display <- ddff_display[which(toupper(ddff_display$BIN) == toupper(names(keeper2)[i])),]
+    
+    if (any(is.na(bin_display$SCORE))) {
+      bin_na_indicators <- bin_display$INDICATOR[is.na(bin_display$SCORE)]
+      bin_display <- bin_display[-which(is.na(bin_display$SCORE)),]
+    }
+    
+    grade_text_bin <- grade_description('ecosystem_health')[[calc_letter_grade(weighted.mean(keeper2[[i]]$Grade, keeper2[[i]]$weight, na.rm=TRUE))]]
+    n_indicators_bin <- length(which(!(is.na(keeper2[[i]]$Grade))))
+    
+      years_bin <- str_extract(unique(str_extract(keeper2[[i]]$quality, "\\(([^)]*)\\)")), "(?<=-)[0-9]+")
+      years_num_bin <- as.numeric(years_bin)
+      latest_year_bin <- ifelse(length(years_num_bin) > 0 && any(!is.na(years_num_bin)),max(years_num_bin, na.rm = TRUE),NA)
+      
+      weighted_outside_grade_bin <- calc_letter_grade(
+          weighted.mean(keeper2[[i]]$adjacent_score,keeper2[[i]]$weight, na.rm = TRUE)
+        )
+      
+              n_indicators_outside_bin <- length(unique(keeper2[[i]]$Indicator[!is.na(keeper2[[i]]$adjacent_score)]))
+
+        
+        
+
+        sowhat_bin <- paste0(
+          "This objective has a score of ", calc_letter_grade(weighted.mean(keeper2[[i]]$Grade, keeper2[[i]]$weight, na.rm=TRUE))," indicating ", tolower(grade_text_bin), ".",
+
+          if (n_indicators_bin < 4) {
+            paste0(" It should be noted that this assessment is only based on the score of ", n_indicators, " unique indicators and further research is recommended.")
+          } else {
+            paste0(" This assessment is based on ", n_indicators_bin, " indicators.")
+          },
+
+          if (!is.na(latest_year_bin)) {
+            paste0(" The latest data we have that supports this objective is as of ", latest_year_bin, ".")
+          } else {
+            " "
+          })
+        
+        
+          if (!(all(is.na(keeper2[[i]]$adjacent_score)))) {
+            sowhatoutside_bin <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade_bin, ' indicating ',
+                                    tolower(grade_description('objective')[[weighted_outside_grade_bin]]), ". This outside assessment is based on
+                                    ",n_indicators_outside_bin, " indicators.")
+          } else {
+            sowhatoutside_bin <- ""
+          }
+        
+        cat(sowhat_bin)
+        cat("<br>")
+        cat(sowhatoutside_bin)
+        cat("<br>")
+        
+        SOWHATBIN[[i]] <- paste0(sowhat_bin, " ", sowhatoutside_bin)
+    
+    
+    ## END SO WHAT
+    
+    # SUMMARY TABLE
+       cat('<h5 style="text-align:left; margin-bottom:10px;">Table: Ecological Overview Summary</h5>\n')
+cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
+cat('<thead><tr>',
+    paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "GRADE", "READINESS", "QUALITY_STATEMENT", "COST"), '</th>', collapse=""),
+    '</tr></thead>\n')
+cat('<tbody>\n')
+for (b in seq_len(nrow(bin_display))) {
+  # Compute grade
+  grade <- calc_letter_grade(bin_display$SCORE[b])
+
+  # Determine cell color (blank or color)
+  if (!is.na(grade) && grade != "NA") {
+    grade_color <- flowerPalette[[grade]]
+  } else {
+    grade_color <- "#EDEDED"
+  }
+
+  # Start row (no background color!)
+  cat('<tr>')
+
+  cat('<td>', bin_display$GROUPING[b], '</td>')
+  cat('<td>', bin_display$BIN[b], '</td>')
+  cat('<td>', bin_display$INDICATOR[b], '</td>')
+  cat('<td>', bin_display$SOURCE[b], '</td>')
+  cat('<td>', sprintf("%.2f", bin_display$SCORE[b]), '</td>')
+
+  # ✅ Grade column — blank cell but color-coded background
+  cat(sprintf('<td style="background-color:%s; font-weight:bold; text-align:center;">%s</td>',
+              grade_color,
+              ""))  # empty string, but could be grade if you want to show it
+
+  cat('<td>', bin_display$READINESS[b], '</td>')
+  cat('<td>', bin_display$QUALITY_STATEMENT[b], '</td>')
+  cat('<td>', bin_display$COST[b], '</td>')
+
+  cat('</tr>\n')
+}
+
+cat('</tbody></table>')
+
+
+
+# END SUMMARY TABLE
+    
   for (j in seq_along(keeper2[[i]]$Indicator)) {
-    cat(sprintf("<b>Indicator: %s.</b>\n\n", keeper2[[i]]$Indicator[j]))
+    #cat(sprintf("<b>Indicator: %s.</b>\n\n", keeper2[[i]]$Indicator[j]))
     
     # FINDING PLOT
       k1 <- which(grepl(make.names(params$mpas), image_files, ignore.case=TRUE, fixed=TRUE)) # Which are from the correct area
@@ -947,14 +1691,54 @@ for (i in seq_along(keeper2)) {
         KEEP <- KEEP[which(!(grepl("Inside.Outside", image_files[KEEP], fixed=TRUE, ignore.case=TRUE)))]
         #KEEP <- KEEP[which(sub(".*_(.*?)\\.png$", "\\1", image_files[KEEP]) == keeper2[[i]]$Indicator[j])]
       }
+      
+      cat(sprintf(
+  '<details>
+     <summary style="
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.1em;
+        padding: 4px 6px;
+        border-radius: 4px;
+        margin-bottom: 5px;">
+        Indicator: %s <span style="background-color:%s; color:white; padding:2px 6px; border-radius:4px;">%s</span>
+     </summary>\n\n',
+  keeper2[[i]]$Indicator[j],
+  ifelse(is.na(keeper2[[i]]$Grade[j]) | keeper2[[i]]$Grade[j] == "NA", "#EDEDED", unname(flowerPalette[calc_letter_grade(keeper2[[i]]$Grade[j])])),
+  ifelse(is.na(keeper2[[i]]$Grade[j]) | keeper2[[i]]$Grade[j] == "NA", " ", round(keeper2[[i]]$Grade[j],0))
+))
+      
       plot_file <- image_files[KEEP]
-    
-    # END PLOT
       if (length(plot_file) > 0) {
       for (p in seq_along(plot_file)) {
-         #cat('<img src="', plot_file[p], '" width="600"/>\n\n', sep = "")
-         cat(embed_image(plot_file[p]))
-
+            # Read the image
+    img <- image_read(plot_file[p])
+    
+    # Get image info
+    info <- image_info(img)
+    
+    # Crop 10% from top and bottom (keep 80% of height)
+    crop_height <- info$height * 0.6
+    img_cropped <- image_crop(
+      img,
+      geometry = geometry_area(
+        width = info$width,
+        height = crop_height,
+        x = 0,
+        y = info$height * 0.1  # start 10% down
+      )
+    )
+    
+    # Overwrite original file or create temp file
+    tmp_file <- tempfile(fileext = ".png")
+    image_write(img_cropped, path = tmp_file)
+    
+    # Embed cropped image
+    cat(sprintf(
+      '<img src="%s" style="width:600px; display:block; margin:0; padding:0;" />\n\n',
+      tmp_file
+    ))
+    
       }
       } else {
         cat("There is no image available for this indicator as it was not sampled in this area.")
@@ -968,13 +1752,19 @@ for (i in seq_along(keeper2)) {
         trendy <- keeper2[[i]]$Trend[j]
       }
       
-      table_df <- data.frame("Rationale"=keeper2[[i]]$Rationale[j],
+      table_df <- data.frame(
+        "Assumptions"=keeper2[[i]]$assumptions[j],
+        "Caveats"= keeper2[[i]]$caveats[j],
+        "Rationale"=keeper2[[i]]$Rationale[j],
                              "Status"=keeper2[[i]]$Status[j],
                              "Trend"= trendy,
                              "Score"= round(keeper2[[i]]$Grade[j],0),
                              "Scoring_Scheme"=keeper2[[i]]$Scheme[j],
+        "Quality"=keeper2[[i]]$quality[j],
                              "Source"=ifelse(is.na(keeper2[[i]]$Project[j]), keeper2[[i]]$Source[j], keeper2[[i]]$Title[j])
       )
+      
+
       
       cat(knitr::kable(
   table_df,
@@ -988,29 +1778,98 @@ for (i in seq_along(keeper2)) {
   ),
   "\n\n"
 )
-  } # END HERE
-  
+      ## Adding indicator so-what for ecological overview
+      weighted_grade_ind_eo <-  calc_letter_grade(
+          weighted.mean(keeper2[[i]]$Grade[j], keeper2[[i]]$weight[j], na.rm = TRUE)
+        )
+if (!(weighted_grade_ind_eo == "NA")) {
+          grade_text_eo <- grade_description('indicator')[[calc_letter_grade(keeper2[[i]]$Grade[j])]]
+          
+          
+           years_ind_eo <- as.numeric(str_extract(unique(str_extract(keeper2[[i]]$quality[j], "\\(([^)]*)\\)")), "(?<=-)[0-9]+"))
+      latest_year_ind_eo <- ifelse(length(years_ind_eo) > 0 && any(!is.na(years_ind_eo)),max(years_ind_eo, na.rm = TRUE),NA)
+          
+          
+          } else {
+            grade_text_eo <- 'more information is needed for this indicator'
+          }
+
+          sowhatind_eo <- paste0(
+            keeper2[[i]]$Indicator[j], " has a score of ", calc_letter_grade(keeper2[[i]]$Grade[j]),
+            " indicating ", tolower(grade_text_eo), ".",
+            if (!is.na(latest_year_ind_eo)) {
+              paste0(" The latest data we have that supports this objective is as of ", latest_year_ind_eo, ".")
+            } else {
+              " "
+            })
+          
+          cat(sowhatind_eo)
+          cat("<br>")
+
+          if (!(state$mpas %in% regions$NAME_E)) {
+            if (!(all(is.na(keeper2[[i]]$adjacent_score[j])))) {
+              weighted_outside_grade_ind_eo <- calc_letter_grade(
+          weighted.mean(keeper2[[i]]$adjacent_score[j], keeper2[[i]]$weight[j], na.rm = TRUE)
+        )
+              sowhatoutsideind_eo <- paste0(" For context, outside of the protected area has scored a ", weighted_outside_grade_ind_eo, ' indicating ', tolower(grade_description('indicator')[[weighted_outside_grade_ind_eo]]), ".")
+            
+               cat(sowhatoutsideind_eo)
+          cat("<br>")
+              
+            }
+          }
+  cat("</details>\n\n") 
+
+  } # END HERE INDICATOR
   } else {
   cat("There are no indicators in the app for this indicator bin.")
-}
+  }
+  
+  if (!(is.null(bin_na_indicators))) {
+  cat("<br>")
+    BIN_GAP_INDICATORS[[i]] <- paste0(bin_na_indicators, collapse=", ")
+  cat(paste0("The following indicators were identified as indicators that could inform this bin, however, no data has yet been obtained", paste0(bin_na_indicators, collapse=", ")))
+  }
   cat("</details>\n\n")
 }
 
-
+names(SOWHATBIN) <- names(keeper2)
 ```
-</details> <details>
-<summary style="
-    font-size: 1.8em;       /* make the text bigger */
-    font-weight: bold;       /* make it bold */
-    padding: 8px 12px;       /* space inside the box */
-    border: 2px solid black; /* draw a box around the header */
-    border-radius: 5px;      /* rounded corners */
-    cursor: pointer;         /* show pointer on hover */
-">
-THREATS</summary>
+</details>
+<h3 style="display:none;">THREATS</h3>
+<details>
+<summary style="font-size:1.5em; font-weight:bold; cursor:pointer;">
+THREATS
+</summary>
 
 ```{r threats, echo=FALSE, results='asis'}
 cat("<br>")
+
+
+ # Preamble text
+cat(
+  "The Threats section focuses specifically on indicators that measure pressures and threats to the ecosystem. ",
+  "All relevant indicators for the area of interest are included, regardless of whether they contribute to a conservation objective. ",
+  "Scores reflect the severity or status of each threat, providing a snapshot of potential risks to ecosystem health. ",
+  "The accompanying table lists each indicator's bin, source, code, score, readiness, quality statement, and cost. ",
+  "Readiness scores are explained as follows: "
+)
+cat("<br>")
+
+
+cat(
+  "<span><strong>Ready</strong> – Code is developed and data is integrated into the app;</span> ",
+  "<span><strong>Readily Available</strong> – Data is being collected and stored but requires some work to integrate into the app;</span> ",
+  "<span><strong>Not currently collected</strong> – Data is not yet being collected;</span> ",
+  "<span><strong>Conceptual</strong> – There is no means of collecting this type of data;</span> ",
+  "<span><strong>Unknown</strong> – More work needed to determine readiness score.</span>"
+)
+cat("<br>")
+
+gradeLegendUI("threats")
+                           
+                           
+
 cat(paste0("Table: Threat indicators in ", string, "\n"))
 
 if (!(length(ddff_unique$PPTID) == 0)) {
@@ -1026,7 +1885,7 @@ if (!(length(ddff_unique$PPTID) == 0)) {
   
   cat('<table border="1" style="border-collapse:collapse; width:100%;">\n')
 cat('<thead><tr>',
-    paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY", "COST", "GRADE"), '</th>', collapse=""),
+    paste0('<th>', c("GROUPING", "BIN", "INDICATOR", "SOURCE", "SCORE", "READINESS", "QUALITY_STATEMENT", "COST", "GRADE"), '</th>', collapse=""),
     '</tr></thead>\n')
 cat('<tbody>\n')
 
@@ -1052,7 +1911,7 @@ for (i in seq_len(nrow(ddff_threats))) {
   cat('<td style="background-color:white;">', ddff_threats$SOURCE[i], '</td>')
   cat('<td style="background-color:white;">', sprintf("%.2f", ddff_threats$SCORE[i]), '</td>')
   cat('<td style="background-color:white;">', ddff_threats$READINESS[i], '</td>')
-  cat('<td style="background-color:white;">', ddff_threats$QUALITY[i], '</td>')
+  cat('<td style="background-color:white;">', ddff_threats$QUALITY_STATEMENT[i], '</td>')
   cat('<td style="background-color:white;">', ddff_threats$COST[i], '</td>')
   
   # ✅ Grade column — last, colored cell, blank inside (or replace "" with grade letter)
@@ -1115,7 +1974,6 @@ webshot(tmp_html, file = tmp_png, vwidth = 1000, vheight = 1000)
 ```
 
 ```{r cost_projects, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
-
 if (length(com$project_id) != 0) {
   cat(paste0("<p>The investment information is based on the following internal DFO projects that have had samples in ",
              params$mpas, " : ",
@@ -1156,8 +2014,8 @@ coords_df <- do.call(rbind, lapply(st_geometry(apg_unique), function(pt) {
 # Add as columns to apg
 apg_unique <- apg_unique %>%
   mutate(
-    lng = coords_df[, "lng"],
-    lat = coords_df[, "lat"]
+    lng = coords_df["lng"],
+    lat = coords_df["lat"]
   )
 
 # Getting colors for polygons
@@ -1299,144 +2157,231 @@ tagList(
 
 cat("### Status\n")
 
-cat(paste0("In ", string, " there is an overall ecological status score of ", area_grade, ". This is based on a total of ", length(unique(ddff_display$INDICATOR)), " indicators. Of these ", length(unique(ddff_display$INDICATOR)), " indicators, ", length(which(ddff_display$SCORE>49)), " indicators are receiving a 'pass' score of 50 or greater. "))
+## START NEW DISCUSSION
 
-if (area_grade %in% c("A", "B", "C")) {
-  cat(paste0("The results suggest that the MPA is maintaining a healthy environmental condition."))
-} else if (area_grade == "NA") {
-  cat(paste0("Insufficient data are available to assess ecological condition, highlighting the need for monitoring to better understand and manage the MPA’s environmental health"))
-} else {
-  cat(paste0("This indicates that ecological conditions are below expectations, highlighting the need for targeted management actions to improce ecosystem health."))
-}
-
-if (length(unique(ddff_display$INDICATOR)) < 5) {
-  cat(paste0("Though, it should be noted that additional work should be considered to add more indicators in this area."))
-}
-
-# Code for print statement
-obj_ex <- read_excel(file.path(dirname(path_to_store()), "data", "objectives.xlsx"))
-
-now_what <- NULL
-for (i in seq_along(textO)) {
-  msg <- paste0(textO[i], 
-    " had a score of ", site_grades[i], 
-    ", that is based on ", number_of_indicators[i], " indicators. "
-  )
+cat("From a management perspective,")
+cat("<br>")
+for (i in seq_along(OBJECTIVES_SOWHAT)) {
+  cat("**", names(OBJECTIVES_SOWHAT)[i], "**\n\n", sep = "")
   
-  # Conditional addition
-  if (length(site_grades)<1){
-    msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
-  } else if( site_grades[i] == "NA") {
-    msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
-  } else if (site_grades[i] %in% c("A", "B", "C")) {
-    msg <- paste0(msg, obj_ex$Success[which(obj_ex$Objective == textO[i])])
+  val <- OBJECTIVES_SOWHAT[[i]]
+  
+  if (is.null(val) || identical(val, "") || length(val) == 0) {
+    cat("No indicators measured for this objective. Further research recommended.\n\n")
+    cat("The following indicators were identified as indicators that will inform this objective that we don't yet have data for. They should be considered for future research: ")
+    cat(OBJECTIVES_GAP_INDICATORS[[i]])
   } else {
-    msg <- paste0(msg, obj_ex$Continue_Work[which(obj_ex$Objective == textO[i])])
+    cat(val, "\n\n")
+    cat("The following indicators were identified as indicators that will inform this objective that we don't yet have data for. They should be considered for future research: ")
+    cat(OBJECTIVES_GAP_INDICATORS[[i]])
     
   }
-  
-  if ( !is.null(number_of_indicators[i])){
-    if (number_of_indicators[i] < 5) {
-      msg <- paste0(msg, "Additional work should also be considered to add more indicators to support this objective.")
-    }
-  }
-  msg <- paste0(msg, '\n\n')
-  
-  now_what[i] <- msg
+  cat("<br>")
 }
 
-cat("\n\n")
-cat(paste0("From a management perspective,"))
-cat("\n\n")
-cat(now_what)
-cat("\n\n")
-
-
-
-cat("### Climate Change\n")
+cat("<br>")
+cat("The establishment of this area has also contributed to knowledge about network objectives, ecosystem-based management objectives, and global biodiversity targets.")
+cat("<br>")
 cat("<br>")
 
-climate_indicators <- unique(pillar_ecol_df2$indicator[which(grepl("Inside", pillar_ecol_df2$indicator) & pillar_ecol_df2$areaID == params$mpas)])
+cat("From a ecosystem health perspective,")
+cat("<br>")
 
-for (i in seq_along(climate_indicators)) {
-  indicator_keep <- which(pillar_ecol_df2$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df2$areaID == params$mpas)
+cat(ECOSYSTEM_HEALTH_SOWHAT)
+cat("<br>")
+cat("<br>")
+
+
+
+
+
+
+for (i in seq_along(SOWHATBIN)) {
+  cat("<br>")
+  cat("**", toupper(names(SOWHATBIN))[i], "**\n\n", sep = "")
   
-  if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df2$trend_statement[indicator_keep]))) {
-    
-    excel_keep <- which(climate_change$Indicator == climate_indicators[i])
-    pillar_keep_inside <- which(pillar_ecol_df2$indicator == climate_indicators[i] & pillar_ecol_df2$areaID == params$mpas)
-    
-    cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
-    
-    cat(climate_change$Context[excel_keep], "\n\n")
-    cat("In our analysis, ")
-    cat(pillar_ecol_df2$trend_statement[indicator_keep])
-    
-    if (!(grepl("There is only one year of data", pillar_ecol_df2$trend_statement[indicator_keep]))) {
-    
-    pval <- str_extract(pillar_ecol_df2$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
-      str_extract("\\d+(\\.\\d+)?") |>
-      as.numeric()
-    
-    if (pval > 0.05) {
-      cat(". The change in this indicator in the MPA is not significant.")
-    } else {
-      cat(". The change in this indicator in the MPA is significant.")
-    }
-    
-    cat(" An inside/outside comparison was done to help understand the impacts of climate change on this variable. Results showed ")
-    
-    result <- pillar_ecol_df2$status_statement[pillar_keep_inside]
-    
-    cat(paste0(tolower(result), "."))
-    
-    if (!(grepl("Protection could therefore be positively impacting this variable", result))) {
-      # No sig dif between the two
-      desired <- sub(".*\\s+", "", pillar_ecol_df2$scoring[indicator_keep])
-      actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df2$trend_statement[indicator_keep])), "increase", "decrease")
-      
-      if (pval > 0.05) { ## This is pval of the variable (not inside/ outside)
-        cat("The rate in which this indicator is changing is not significant (p=", pval,") which suggests that climate change does not seem to have a significant impact on that particular indicator.")
-      } else {
-        # change is significant
-        if (identical(desired, actual_results)) {
-          cat("The results show us that climate change doesn't seem to be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant trend in the opposite direction than we would expect.")
-        } else {
-          #The trend is going in the opposite direction that we would expect and
-          #statistically significant,we point out that according to our analysis
-          cat("The results show us that climate change could be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant
-        trend in the direction than we would expect as a result of climate change.")
-        }
-      }
-    }
-    } else {
-    cat("More sampling is suggested.")
-  }
-  }
+  val <- SOWHATBIN[[i]]
   
-  cat("\n\n")
+  if (is.null(val) || identical(val, "") || length(val) == 0) {
+    cat("No indicators measured for this objective. Further research recommended.\n\n")
+    cat("The following indicators were identified as indicators that will inform this indicator bin that we don't yet have data for. They should be considered for future research: ")
+    cat(BIN_GAP_INDICATORS[[i]])
+  } else {
+    cat(val, "\n\n")
+    cat("The following indicators were identified as indicators that will inform this indicaotor bin that we don't yet have data for. They should be considered for future research: ")
+    cat(BIN_GAP_INDICATORS[[i]])
+    
+  }
+    cat("<br>")
+
 }
 
-cat("### Research Recommendations \n")
-cat(paste0(
-  "The following indicator bins do not have any data: ",
-  paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
-  ". It is recommended to further study these areas.\n"
-))
-cat("\n\n")
-
-# Bad grade table
-badGrade <- which(pillar_ecol_df2$areaID == params$mpas & (!(is.na(pillar_ecol_df2$indicator))) & (!(pillar_ecol_df2$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df2$indicator))) & (pillar_ecol_df2$score < 51 | is.na(pillar_ecol_df2$score)))
-
-badGradeTable <- pillar_ecol_df2[badGrade, ] |> 
-  dplyr::group_by(bin) |>
-  dplyr::ungroup() |>
-  dplyr::select("indicator", "score")
 
 
-cat("The following indicators are scoring low or don't have enough data to properly score. Some additional effort should be considered with these indicators: \n")
 
-print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Explore",row.names=FALSE))
+
+## END DISCUSSION
+
+
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# cat(paste0("In ", string, " there is an overall ecological status score of ", area_grade, ". This is based on a total of ", length(unique(ddff_display$INDICATOR)), " indicators. Of these ", length(unique(ddff_display$INDICATOR)), " indicators, ", length(which(ddff_display$SCORE>49)), " indicators are receiving a 'pass' score of 50 or greater. "))
+# 
+# if (area_grade %in% c("A", "B", "C")) {
+#   cat(paste0("The results suggest that the MPA is maintaining a healthy environmental condition."))
+# } else if (area_grade == "NA") {
+#   cat(paste0("Insufficient data are available to assess ecological condition, highlighting the need for monitoring to better understand and manage the MPA’s environmental health"))
+# } else {
+#   cat(paste0("This indicates that ecological conditions are below expectations, highlighting the need for targeted management actions to improce ecosystem health."))
+# }
+# 
+# if (length(unique(ddff_display$INDICATOR)) < 5) {
+#   cat(paste0("Though, it should be noted that additional work should be considered to add more indicators in this area."))
+# }
+# 
+# # Code for print statement
+# obj_ex <- read_excel(file.path(dirname(path_to_store()), "data", "objectives.xlsx"))
+# 
+# now_what <- NULL
+# for (i in seq_along(textO)) {
+#   msg <- paste0(textO[i], 
+#     " had a score of ", site_grades[i], 
+#     ", that is based on ", number_of_indicators[i], " indicators. "
+#   )
+#   
+#   # Conditional addition
+#   if (length(site_grades)<1){
+#     msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
+#   } else if( site_grades[i] == "NA") {
+#     msg <- paste0(msg, " It is reccomended that further work be considered to support this objective.")
+#   } else if (site_grades[i] %in% c("A", "B", "C")) {
+#     msg <- paste0(msg, obj_ex$Success[which(obj_ex$Objective == textO[i])])
+#   } else {
+#     msg <- paste0(msg, obj_ex$Continue_Work[which(obj_ex$Objective == textO[i])])
+#     
+#   }
+#   
+#   if ( !is.null(number_of_indicators[i])){
+#     if (number_of_indicators[i] < 5) {
+#       msg <- paste0(msg, "Additional work should also be considered to add more indicators to support this objective.")
+#     }
+#   }
+#   msg <- paste0(msg, '\n\n')
+#   
+#   now_what[i] <- msg
+# }
+# 
+# cat("\n\n")
+# cat(paste0("From a management perspective,"))
+# cat("\n\n")
+# cat(now_what)
+# cat("\n\n")
+# 
+# 
+# 
+# cat("### Climate Change\n")
+# cat("<br>")
+# 
+# climate_indicators <- unique(pillar_ecol_df2$indicator[which(grepl("Inside", pillar_ecol_df2$indicator) & pillar_ecol_df2$areaID == params$mpas)])
+# 
+# for (i in seq_along(climate_indicators)) {
+#   indicator_keep <- which(pillar_ecol_df2$indicator == gsub(" Inside Outside Comparison$", "", climate_indicators[i]) & pillar_ecol_df2$areaID == params$mpas)
+#   
+#   if (!(length(indicator_keep) == 0) & !(is.na(pillar_ecol_df2$trend_statement[indicator_keep]))) {
+#     
+#     excel_keep <- which(climate_change$Indicator == climate_indicators[i])
+#     pillar_keep_inside <- which(pillar_ecol_df2$indicator == climate_indicators[i] & pillar_ecol_df2$areaID == params$mpas)
+#     
+#     cat(sprintf("<b>Indicator: %s.</b>\n\n",toupper(climate_indicators[i])))
+#     
+#     cat(climate_change$Context[excel_keep], "\n\n")
+#     cat("In our analysis, ")
+#     cat(pillar_ecol_df2$trend_statement[indicator_keep])
+#     
+#     if (!(grepl("There is only one year of data", pillar_ecol_df2$trend_statement[indicator_keep]))) {
+#     
+#     pval <- str_extract(pillar_ecol_df2$trend_statement[indicator_keep], "pval\\s*=\\s*\\d+(\\.\\d+)?") |>
+#       str_extract("\\d+(\\.\\d+)?") |>
+#       as.numeric()
+#     
+#     if (pval > 0.05) {
+#       cat(". The change in this indicator in the MPA is not significant.")
+#     } else {
+#       cat(". The change in this indicator in the MPA is significant.")
+#     }
+#     
+#     cat(" An inside/outside comparison was done to help understand the impacts of climate change on this variable. Results showed ")
+#     
+#     result <- pillar_ecol_df2$status_statement[pillar_keep_inside]
+#     
+#     cat(paste0(tolower(result), "."))
+#     
+#     if (!(grepl("Protection could therefore be positively impacting this variable", result))) {
+#       # No sig dif between the two
+#       desired <- sub(".*\\s+", "", pillar_ecol_df2$scoring[indicator_keep])
+#       actual_results <- ifelse(grepl("increase", sub("\\..*", ".", pillar_ecol_df2$trend_statement[indicator_keep])), "increase", "decrease")
+#       
+#       if (pval > 0.05) { ## This is pval of the variable (not inside/ outside)
+#         cat("The rate in which this indicator is changing is not significant (p=", pval,") which suggests that climate change does not seem to have a significant impact on that particular indicator.")
+#       } else {
+#         # change is significant
+#         if (identical(desired, actual_results)) {
+#           cat("The results show us that climate change doesn't seem to be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant trend in the opposite direction than we would expect.")
+#         } else {
+#           #The trend is going in the opposite direction that we would expect and
+#           #statistically significant,we point out that according to our analysis
+#           cat("The results show us that climate change could be impacting this indicator the way we would expect, and in fact, the trends are showing a statistically significant
+#         trend in the direction than we would expect as a result of climate change.")
+#         }
+#       }
+#     }
+#     } else {
+#     cat("More sampling is suggested.")
+#   }
+#   }
+#   
+#   cat("\n\n")
+# }
+# 
+# cat("### Research Recommendations \n")
+# cat(paste0(
+#   "The following indicator bins do not have any data: ",
+#   paste0(summary_table$Indicator.Bin[which(summary_table$Grade == "NA")], collapse = ", "),
+#   ". It is recommended to further study these areas.\n"
+# ))
+# cat("\n\n")
+# 
+# # Bad grade table
+# badGrade <- which(pillar_ecol_df2$areaID == params$mpas & (!(is.na(pillar_ecol_df2$indicator))) & (!(pillar_ecol_df2$indicator == "placeholder")) & (!(grepl('Inside Outside', pillar_ecol_df2$indicator))) & (pillar_ecol_df2$score < 51 | is.na(pillar_ecol_df2$score)))
+# 
+# badGradeTable <- pillar_ecol_df2[badGrade, ] |> 
+#   dplyr::group_by(bin) |>
+#   dplyr::ungroup() |>
+#   dplyr::select("indicator", "score")
+# 
+# 
+# cat("The following indicators are scoring low or don't have enough data to properly score. Some additional effort should be considered with these indicators: \n")
+# 
+# 
+# print(knitr::kable(badGradeTable, caption = "Indicator to Potentially Further Explore",row.names=FALSE))
 
 
 ```
