@@ -1,5 +1,7 @@
 ---
-title: "Conservation Area: `r params$mpas`"
+title: |
+  Conservation Area: `r params$mpas`
+  Year in Review: `r as.numeric(format(Sys.time(), "%Y")) - 1`
 output:
   html_document:
     self_contained: true
@@ -98,8 +100,6 @@ tar_load(c(MPAs,
            all_indicator_project_geoms), store=path_to_store())
 
 # FIXME (REMOVE)
-MPAs$date_of_establishment <- 2017
-
 embed_image <- function(file_path, width = 600) {
     mime <- paste0("image/", tools::file_ext(file_path))
     data_uri <- base64enc::dataURI(file = file_path, mime = mime)
@@ -403,6 +403,37 @@ sample_statement <- paste0(
   "."
 )
 
+
+## FINDING NUMBER OF INDICATORS CONTRIBUTING TO THIS AREA
+longtermid <- sub(".*PPTID:\\s*", "", unique(proj_ids_samples$project_id))
+keepO <- which(objective_tabs$area %in% params$mpas)
+S_Objectives <- objective_tabs$objectives[keepO]
+number_of_co <-vector("list", length(longtermid))
+for (i in seq_along(longtermid)) {
+  
+  k1 <- which(as.character(pillar_ecol_df2$PPTID) == longtermid[i])
+  matched_objectives <- NULL
+  
+  for (j in seq_along(S_Objectives)) {
+    hits <- k1[grepl(S_Objectives[j], pillar_ecol_df2$objectives[k1])]
+    if (length(hits) > 0) {
+      matched_objectives <- c(matched_objectives, S_Objectives[j])
+    }
+  }
+  
+  number_of_co[[i]] <- unique(matched_objectives)
+  
+  names(number_of_co)[[i]] <-
+    unique(pillar_ecol_df2$project_short_title[
+      pillar_ecol_df2$PPTID == longtermid[i]
+    ])[!is.na(unique(pillar_ecol_df2$project_short_title[
+      pillar_ecol_df2$PPTID == longtermid[i]
+    ]))]
+}
+#names(number_of_co_indicators) <- longtermid
+
+## end
+
 ## Creature feature
  filtered_creature_feature <- creature_feature |>
       filter(NAME_E == params$mpas) |>
@@ -485,15 +516,7 @@ cat(paste(Context[[string]], collapse = "<br>"), "\n")
 # cat("<br>")
 ```
 
-## Research Activity
-
-
-```{r, echo=FALSE, message=FALSE, results='asis'}
-# apj_mpa <- all_indicator_project_geoms[which(all_indicator_project_geoms$areaID == params$mpas),]
-# 
-# apj_mpa_last_year <- apj_mpa[which(as.numeric(apj_mpa$year) == as.numeric(format(Sys.time(), "%Y"))-1),]
-
-```
+## Research and Monitoring
 
 ```{r, echo=FALSE, results='asis'}
 maps <- leaflet() %>%
@@ -530,18 +553,92 @@ maps <- maps %>%
 
 maps
 
+```
 
+```{r, echo=FALSE, results='asis'}
 cat("<br>")
 
 cat(paste0("Figure 1: Location of ", string, " color coded for overall ecological status score. Locations of data collected in ",as.numeric(format(Sys.time(), "%Y"))-1), " also included on the map.")
 cat("<br>")
 cat("<br>")
 
-
+cat("**Key Research and Monitoring Activities**")
+cat("<br>")
+cat("<br>")
 cat(sample_statement)
 cat("<br>")
-
+cat("<br>")
 cat(paste0("Sample effort by project in total: ", summary_sentence))
+cat("<br>")
+cat("<br>")
+cat("**New Publications**")
+cat("<br>")
+cat("<br>")
+deliv_keep <- which(deliverables$project_id %in% p_subset & deliverables$year == last_year) # Only projects for this area / last year
+
+if (length(deliv_keep > 0)) {
+  delv <- deliverables[deliv_keep,][c("classification_display", "description")]
+  if (any(str_count(delv$description, "\\S+") > 35)) {
+  delv$description[which(str_count(delv$description, "\\S+") > 35)] <- " "
+  }
+  
+  names(delv) <- c("Deliverable", "Description")
+  
+  print(knitr::kable(delv, caption = paste0("Deliverables for " , last_year ),row.names=FALSE))
+} else {
+  cat("There has been no identified deliverables in the Project Planning Tool for projects supporting this area.")
+}
+cat("<br>")
+cat("<br>")
+cat("**CSAS**")
+cat("<br>")
+cat("<br>")
+csas_keep <- which(grepl(paste(params$mpas, collapse = "|"), csas$title)) # params$mpas
+if (params$mpas == "Western and Emerald Banks Marine Refuge") {
+csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
+} else if (params$mpas ==  "St. Anns Bank Marine Protected Area") {
+  csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))
+} else if (params$mpas == "Musquash Estuary Marine Protected Area") {
+  csas_keep <- c(csas_keep, which(grepl("Musquash", csas$title, ignore.case=TRUE)))
+}
+
+if (length(csas_keep) > 0) {
+  CSAS <- csas[csas_keep,]
+  names(CSAS) <- c("Title", "Date")
+  print(knitr::kable(CSAS, caption = paste0("CSAS Processes for " , params$mpas),row.names=FALSE))
+} else {
+  cat("There have been no identified relevant CSAS meetings in the CSAS DMapps related to this area.")
+}
+
+cat("<br>")
+cat("<br>")
+cat("**Long term studies**")
+cat("<br>")
+cat("<br>")
+co_statements <- sapply(names(number_of_co), function(proj) {
+  
+  objs <- number_of_co[[proj]]
+  
+  if (is.null(objs) || length(objs) == 0) {
+    paste0(proj, " did not contribute to any site conservation objectives for this area.")
+    
+  } else if (length(objs) == 1) {
+    paste0(proj, " contributed to the following site conservation objective for this area: ",
+           objs, ".")
+    
+  } else {
+    paste0(proj, " contributed to the following site conservation objectives for this area: ",
+           paste(objs, collapse = "; "), ".")
+  }
+})
+
+cat(paste0(co_statements, collapse = "\n\n"))
+
+cat("<br>")
+cat("<br>")
+cat("**Collaborative Projects**")
+cat("<br>")
+cat("<br>")
 
 ```
 
@@ -2467,49 +2564,6 @@ if (any(p_subset %in% collaborations$project_id)) {
     cat("There have been no identified collaborations/ partnerships for this area using the Project Planning Tool.")
     cat("<br>")
 
-}
-```
-
-
-### Deliverables
-
-```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
-deliv_keep <- which(deliverables$project_id %in% p_subset & deliverables$year == last_year) # Only projects for this area / last year
-
-if (length(deliv_keep > 0)) {
-  delv <- deliverables[deliv_keep,][c("classification_display", "description")]
-  if (any(str_count(delv$description, "\\S+") > 35)) {
-  delv$description[which(str_count(delv$description, "\\S+") > 35)] <- " "
-  }
-  
-  names(delv) <- c("Deliverable", "Description")
-  
-  print(knitr::kable(delv, caption = paste0("Deliverables for " , last_year ),row.names=FALSE))
-} else {
-  cat("There has been no identified deliverables in the Project Planning Tool for projects supporting this area.")
-}
-
-```
-
-### CSAS
-
-```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
-# Which ones to keep
-csas_keep <- which(grepl(paste(params$mpas, collapse = "|"), csas$title)) # params$mpas
-if (params$mpas == "Western and Emerald Banks Marine Refuge") {
-csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
-} else if (params$mpas ==  "St. Anns Bank Marine Protected Area") {
-  csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))
-} else if (params$mpas == "Musquash Estuary Marine Protected Area") {
-  csas_keep <- c(csas_keep, which(grepl("Musquash", csas$title, ignore.case=TRUE)))
-}
-
-if (length(csas_keep) > 0) {
-  CSAS <- csas[csas_keep,]
-  names(CSAS) <- c("Title", "Date")
-  print(knitr::kable(CSAS, caption = paste0("CSAS Processes for " , params$mpas),row.names=FALSE))
-} else {
-  cat("There have been no identified relevant CSAS meetings in the CSAS DMapps related to this area.")
 }
 ```
 
