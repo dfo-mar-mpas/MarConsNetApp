@@ -129,6 +129,7 @@ raw_data_targets <- list(
                ebsa <- get_spatial_layer("https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/ecologically_and_biologically_significant_areas/MapServer/1") |>
                  st_make_valid()|>
                  st_filter(regions)
+               ebsa$year_of_publication <- NA
              }),
 
   tar_target(name = sar_ch,
@@ -160,6 +161,8 @@ raw_data_targets <- list(
                  st_make_valid() |>
                  st_transform(st_crs(regions)) |>
                  st_filter(regions)
+
+               sar_ch$year_of_publication <- NA
              }),
 
   # DMAPPS ----
@@ -818,6 +821,9 @@ raw_data_targets <- list(
                  group_by(layer) |>
                  reframe(geoms = st_make_valid(st_combine(geoms))) |>
                  st_as_sf()
+
+               data$year_of_publication <- 2016
+               data$year_data_collection <- NA
              }),
 
   tar_target(name=data_edna_data,
@@ -837,8 +843,12 @@ raw_data_targets <- list(
     DATA2 <- add_assumptions(df_sf,
                             assumptions ='The eDNA dataset represents complete and accurate sample metadata (IDs, dates, locations) such that species richness derived from non-zero detections is a valid proxy for local biodiversity.',
                             caveats = 'The data contain known inconsistencies in naming conventions, date formats, and coordinate signs, meaning some samples may be mismatched, inferred, or excluded, potentially affecting spatial and temporal interpretation.'
-                            )
+                                                    )
+
+    names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
+    DATA2$year_of_publication <- NA
     DATA2
+
 
 
 
@@ -1229,6 +1239,8 @@ raw_data_targets <- list(
                ## 6. Remove ones that could not get an associated tag
                ooo <- ooo[-bad,]
                ooo$tag_id <- cut2[which(cut2 %in% tags$catalognumber)]
+               names(ooo)[which(names(ooo) == "NAME_E.x")] <- "areaID"
+
 
                ooo
                #tracking <- split(ooo, ooo$tag_id)

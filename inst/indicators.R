@@ -8,10 +8,6 @@ indicator_targets <- list(
              command={
 
                tester <- data_otn_tags
-               names(tester)[which(names(tester) == "NAME_E.x")] <- "areaID"
-
-               #names(data_otn_tags)[which(names(data_otn_tags) == "NAME_E.x")] <- "areaID"
-
                x <- data.frame("areaID"=MPAs$NAME_E, "region"=MPAs$region)
                x$indicator <- "Proportion of Tags Detected in More than One MPA"
                x$type <- "in situ"
@@ -44,8 +40,6 @@ indicator_targets <- list(
                x$caveats <- NA
                x$adjacent_data <- NA
                x$adjacent_score <- NA
-
-
 
                # Doing the score and statement status
 
@@ -102,9 +96,8 @@ indicator_targets <- list(
                # Plotting
                x$plot <- vector("list", nrow(x))
                x$data <- vector("list", nrow(x))
-
+               last_date_sampled <- rep(NA, length(unique(x$areaID)))
                for (i in seq_along(unique(x$areaID))) {
-                 message(i)
                  name_of_interest <- unique(x$areaID)[i]
 
                  k1 <- which(!unname(sapply(otn_areas_old, is.null)))
@@ -178,8 +171,14 @@ indicator_targets <- list(
                    # Store results
                    x$plot[[i]] <- map
                    tester_data <- tester[tester$areaID == name_of_interest,]
-                   tester_data$year <- as.numeric(substr(tester_data$eventDate, 1, 4))
-                   x$data[[i]] <- tester_data[, c("tag_id", "geometry", "year")]
+                   tester_data$year_of_data_collection <- as.numeric(substr(tester_data$eventDate, 1, 4))
+                   tester_data$year_of_publication <- NA
+                   if (!(is.null(unique(tester_data$year_of_data_collection)))) {
+                   last_date_sampled[i] <- max(tester_data$year_of_data_collection)
+                   } else {
+                     last_date_sampled[i] <- NA
+                   }
+                   x$data[[i]] <- tester_data[, c("tag_id", "geometry", "year_of_data_collection", "year_of_publication")]
 
                    desired_order <- c(
                      "areaID", "region", "indicator", "type", "units", "scoring",
@@ -189,16 +188,14 @@ indicator_targets <- list(
                    )
 
                    x <- x[ , desired_order]
-
-
-
-
                  }
                }
 
                x <- as_tibble(x)
 
                x$adjacent_data <- vector("list", nrow(x))
+               x$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
+               x$last_year_sampled <- unlist(last_date_sampled)
 
 
                save_plots(dplyr::select(x,-data, -adjacent_data))
@@ -214,8 +211,9 @@ indicator_targets <- list(
                  mutate(longitude = LONGITUDE,
                         latitude = LATITUDE,
                         fish_length = FLEN,
-                        year = YEAR)  |>
-                 dplyr::select(longitude, latitude, year, fish_length)
+                        year_of_data_collection = YEAR,
+                        year_of_publication = NA)  |>
+                 dplyr::select(longitude, latitude, year_of_data_collection, fish_length, year_of_publication)
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "fish_length",
@@ -254,8 +252,9 @@ indicator_targets <- list(
                  mutate(longitude = LONGITUDE,
                         latitude = LATITUDE,
                         fish_weight = FWT,
-                        year = YEAR)  |>
-                 dplyr::select(longitude, latitude, year, fish_weight)
+                        year_of_data_collection = YEAR,
+                        year_of_publication = NA)  |>
+                 dplyr::select(longitude, latitude, year_of_publication, fish_weight, year_of_publication)
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "fish_weight",
@@ -294,8 +293,9 @@ indicator_targets <- list(
                  mutate(longitude = LONGITUDE,
                         latitude = LATITUDE,
                         haddock_counts = TOTNO,
-                        year = YEAR)  |>
-                 dplyr::select(longitude, latitude, year, haddock_counts)
+                        year_of_data_collection = YEAR,
+                        year_of_publication=NA)  |>
+                 dplyr::select(longitude, latitude, year_of_data_collection, haddock_counts, year_of_publication)
 
                if (any(is.na(data$latitude) | is.na(data$longitude))) {
                  data <- data[-which(is.na(data$latitude) | is.na(data$longitude)),]
@@ -339,8 +339,10 @@ indicator_targets <- list(
                  mutate(longitude = LONGITUDE,
                         latitude = LATITUDE,
                         haddock_biomass = TOTWGT,
-                        year = YEAR)  |>
-                 dplyr::select(longitude, latitude, year, haddock_biomass)
+                        year_of_data_collection = YEAR,
+                        year_of_publication = NA)  |>
+                 dplyr::select(longitude, latitude, year_of_data_collection, haddock_biomass,
+                               year_of_publication)
 
                if (any(is.na(data$latitude) | is.na(data$longitude))) {
                  data <- data[-which(is.na(data$latitude) | is.na(data$longitude)),]
@@ -386,6 +388,9 @@ indicator_targets <- list(
                  mutate(Calanus_finmarchicus_biomass = Calanus_finmarchicus_log10)  |>
                  dplyr::select(longitude, latitude, year, Calanus_finmarchicus_biomass)
 
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
+
                x <- process_indicator(data = data,
                                  indicator = "Biomass of Zooplankton (Calanus finmarchicus)",
                                  indicator_var_name = "Calanus_finmarchicus_biomass",
@@ -424,7 +429,8 @@ indicator_targets <- list(
                  group_by(station, year) %>%
                  mutate(relative_biomass = biomass / sum(biomass, na.rm = TRUE)) %>%
                  ungroup()
-
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
                data <- data[-which(is.na(data$relative_biomass)),]
 
 
@@ -466,6 +472,8 @@ indicator_targets <- list(
                data <- azmpdata::Derived_Monthly_Stations |>
                  left_join(data_azmp_fixed_stations, by = "station")  |>
                  dplyr::select(longitude, latitude, year, sea_surface_height)
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "sea_surface_height",
@@ -496,6 +504,10 @@ indicator_targets <- list(
              command={
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, nitrate)
+
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
+
                x <- process_indicator(data = data,
                                  indicator_var_name = "nitrate",
                                  indicator = "Nutrient Conditions (Nitrate)",
@@ -535,6 +547,9 @@ indicator_targets <- list(
                data2$year <- year
                data2 <- data2[which(!is.na(data2$DOXY)),]
                data2 <- data2[,c("longitude", "latitude", "year", "DOXY", "depth")]
+
+               names(data2)[which(names(data2) == 'year')] <- 'year_of_data_collection'
+               data2$year_of_publication <- NA
                x <- process_indicator(data = data2,
                                  indicator_var_name = "DOXY",
                                  indicator = "Oxygen",
@@ -574,6 +589,10 @@ indicator_targets <- list(
                data$year <- year
                data <- data[which(!is.na(data$mld)),]
                data <- data[,c("longitude", "latitude", "year", "mld", "depth")]
+
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
+
                x <- process_indicator(data = data,
                                       indicator_var_name = "mld",
                                       indicator = "Mixed Layer Depth",
@@ -607,6 +626,10 @@ indicator_targets <- list(
              command={
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, silicate)
+
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
+
                x <- process_indicator(data = data,
                                  indicator_var_name = "silicate",
                                  indicator = "Nutrient Conditions (Silicate)",
@@ -642,6 +665,10 @@ indicator_targets <- list(
              command={
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, phosphate)
+
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
+
                x <- process_indicator(data = data,
                                  indicator_var_name = "phosphate",
                                  indicator = "Nutrient Conditions (Phosphate)",
@@ -679,6 +706,10 @@ indicator_targets <- list(
 
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, salinity)
+
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
+
                x <- process_indicator(data = data,
                                  indicator_var_name = "salinity",
                                  indicator = "Salinity",
@@ -713,6 +744,9 @@ indicator_targets <- list(
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, temperature)
 
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
+
                x <- process_indicator(data = data,
                                       indicator_var_name = "temperature",
                                       indicator = "Temperature",
@@ -746,6 +780,9 @@ indicator_targets <- list(
              command={
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, chlorophyll)
+
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
 
                x <- process_indicator(data = data,
@@ -800,6 +837,9 @@ indicator_targets <- list(
                  st_as_sf() |>
                  dplyr::select(year, bloom_amplitude, geometry) |>
                  st_make_valid()
+
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
 
 
@@ -857,6 +897,9 @@ indicator_targets <- list(
                  dplyr::select(year, bloom_start, geometry) |>
                  st_make_valid()
 
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
+
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "bloom_start",
@@ -906,8 +949,8 @@ indicator_targets <- list(
                  mutate(year=as.numeric(format(date, "%Y")))|>
                  dplyr::select(sum_phytoplankton, year, geometry)
 
-
-
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                  indicator = "Abundance of Phytoplankton (Diatoms, Dinoflagellates,Flagellates)",
@@ -939,7 +982,6 @@ indicator_targets <- list(
 
 
              }),
-
 
   tar_target(name = ind_QC_gulf_biogenic_habitat_representation,
              command = {
@@ -1060,6 +1102,8 @@ indicator_targets <- list(
                  ungroup() |>
                  st_as_sf()
 
+               data$year_of_publication <- as.numeric(format(Sys.Date(), "%Y")) # Special cumulative year
+
                x <- process_indicator(data = data,
                                  indicator_var_name = "scientificName",
                                  indicator = "Species Richness (OBIS)",
@@ -1160,7 +1204,9 @@ indicator_targets <- list(
                                    "Protect Porbeagle sharks from human induced mortality (e.g., bycatch in the commercial fishery, seismic activities) in the Laurentian Channel",
                                    "Promote the survival and recovery of Northern Wolffish by minimizing risk of harm from human activities (e.g., bycatch in the commercial fishery) in the Laurentian Channel",
                                    "Promote the survival and recovery of Leatherback Sea Turtles by minimizing risk of harm from human activities (e.g., entanglement in commercial fishing gear, seismic activities) in the Laurentian Channel"
-                                 ))
+                                 ), data_year_of_publication=as.numeric(format(Sys.Date(), "%Y"))
+
+                                 )
 
                save_plots(dplyr::select(x,-data, -adjacent_data))
                dplyr::select(x,-plot)
@@ -1173,6 +1219,7 @@ indicator_targets <- list(
                  group_by(species_name) |>
                  reframe(geoms = st_make_valid(st_union(Shape))) |>
                  st_as_sf()
+               data$year_of_publication <- 2021
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "species_name",
@@ -1222,6 +1269,7 @@ indicator_targets <- list(
                }
 
                data$subclass <- subclass
+               data$year_of_publication <- 2014
 
                x <- process_indicator(data = data,
                                       indicator_var_name = "scientificName_Nom_scientifique",
@@ -1258,6 +1306,7 @@ indicator_targets <- list(
                  group_by(scientificName) |>
                  reframe(geoms = st_make_valid(st_union(geometry))) |>
                  st_as_sf()
+               data$year_of_publication <- 2021
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "scientificName",
@@ -1293,6 +1342,8 @@ indicator_targets <- list(
              command= {
                data <- data_musquash_eutrophication  |>
                  dplyr::select(Lon, Lat, pH, year)
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "pH",
@@ -1330,6 +1381,8 @@ indicator_targets <- list(
                data <- data_musquash_eutrophication |>
                  rename(DO_mg_L= `DO (mg/L)`) |>
                  dplyr::select(Lon, Lat, DO_mg_L, year)
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "DO_mg_L",
@@ -1368,6 +1421,8 @@ indicator_targets <- list(
                data <- data_musquash_eutrophication |>
                  rename(phosphate= `tot P (mg/L)`) |>
                  dplyr::select(Lon, Lat, phosphate, year)
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "phosphate",
@@ -1407,6 +1462,8 @@ indicator_targets <- list(
                data <- data_musquash_eutrophication |>
                  rename(secchi= `Secchi  (m)`) |>
                  dplyr::select(Lon, Lat, secchi, year)
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "secchi",
@@ -1444,6 +1501,8 @@ indicator_targets <- list(
              command= {
                data <- data_musquash_coliform |>
                  dplyr::select(latitude, longitude, MPN, year)
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                  indicator_var_name = "MPN",
@@ -1484,6 +1543,8 @@ indicator_targets <- list(
                MPAs
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, nitrate)
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                       indicator_var_name = "nitrate",
@@ -1521,6 +1582,8 @@ indicator_targets <- list(
                MPAs
                data <- data_azmp_Discrete_Occupations_Sections  |>
                  dplyr::select(longitude, latitude, year, depth, temperature)
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                       indicator_var_name = "temperature",
@@ -1561,6 +1624,8 @@ indicator_targets <- list(
                data <- data_musquash_eutrophication |>
                  rename(phosphate= `tot P (mg/L)`) |>
                  dplyr::select(Lon, Lat, phosphate, year)
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                x <- process_indicator(data = data,
                                       indicator_var_name = "phosphate",
@@ -1602,6 +1667,9 @@ indicator_targets <- list(
 
                data <- data_musquash_coliform |>
                  dplyr::select(latitude, longitude, MPN, year)
+
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- NA
 
                data <- st_as_sf(data,
                                 coords = c("longitude", "latitude"),
@@ -1704,6 +1772,8 @@ indicator_targets <- list(
     ind$SME <- NA
     ind$adjacent_data <- I(list(data_musquash_MMMP_birds))
     ind$adjacent_score <- NA
+    ind$data_year_of_publication <- format(Sys.Date(), "%Y")
+    ind$last_year_of_data_collection <- NA
 
     ind <- as_tibble(ind)
 
@@ -1741,7 +1811,11 @@ indicator_targets <- list(
                         theme = "Fish and Fishery Resources",
                         SME='Unknown',
                         assumptions= NA,
-                        caveats =NA
+                        caveats =NA,
+                        adjacent_data <- NA,
+                        adjacent_score <- NA,
+                        data_year_of_publication <- format(Sys.Date(), "%Y"),
+                        last_year_of_data_collection <- NA
                  )
              }),
 
@@ -1832,6 +1906,7 @@ indicator_targets <- list(
                         readiness="Ready",
                         scale = "region-site",
                         SME="Unknown",
+                        data_year_of_publication = format(Sys.Date(), "%Y"),
                         plot_type = "map")
 
       save_plots(dplyr::select(x,-data, -adjacent_data))
