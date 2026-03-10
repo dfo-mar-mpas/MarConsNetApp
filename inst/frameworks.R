@@ -1,562 +1,576 @@
 source("inst/set_up.R")
 
 
-
 framework_targets <- list(
-
   # OBJECTIVES ----
 
-  tar_target(objectives_csv,
-             command = "data_raw/objectives.csv",
-             format = "file",
-             deployment = "worker"
+  tar_target(
+    objectives_csv,
+    command = "data_raw/objectives.csv",
+    format = "file",
+    deployment = "worker"
   ),
 
-  tar_target(objectives_df,
-             command = {
-               read.csv(objectives_csv, stringsAsFactors = FALSE)
-             }
-  ),
+  tar_target(objectives_df, command = {
+    read.csv(objectives_csv, stringsAsFactors = FALSE)
+  }),
 
-  tar_target(objective_indicators,
-             command={
-               objectives_df
-               #cat(paste0("The length of pillar_ecol is ", length(pillar_ecol_df$bin)))
-               ped <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)),]
+  tar_target(objective_indicators, command = {
+    objectives_df
+    #cat(paste0("The length of pillar_ecol is ", length(pillar_ecol_df$bin)))
+    ped <- pillar_ecol_df[-which(is.na(pillar_ecol_df$objectives)), ]
 
-               indicator_objectives <- trimws(unique(unlist(strsplit(ped$objectives, ";;;"))), 'both')
-               indicator_objectives <- unique(indicator_objectives[-which(indicator_objectives == "NA")])
+    indicator_objectives <- trimws(
+      unique(unlist(strsplit(ped$objectives, ";;;"))),
+      'both'
+    )
+    indicator_objectives <- unique(indicator_objectives[
+      -which(indicator_objectives == "NA")
+    ])
 
-               ped_objectives <- vector("list", length=length(indicator_objectives))
+    ped_objectives <- vector("list", length = length(indicator_objectives))
 
-               for (i in seq_along(ped_objectives)) {
-                 message(i)
-                 keep <- which(grepl(indicator_objectives[i], ped$objectives, fixed = TRUE))
-                 if (objectives_df$Framework[which(objectives_df$Objective == indicator_objectives[i])] %in% MPAs$NAME_E) {
-                   keep2 <- which(ped$areaID == objectives_df$Framework[which(objectives_df$Objective == indicator_objectives[i])])
-                   keep <- intersect(keep, keep2)
-                 }
+    for (i in seq_along(ped_objectives)) {
+      message(i)
+      keep <- which(grepl(
+        indicator_objectives[i],
+        ped$objectives,
+        fixed = TRUE
+      ))
+      if (
+        objectives_df$Framework[which(
+          objectives_df$Objective == indicator_objectives[i]
+        )] %in%
+          MPAs$NAME_E
+      ) {
+        keep2 <- which(
+          ped$areaID ==
+            objectives_df$Framework[which(
+              objectives_df$Objective == indicator_objectives[i]
+            )]
+        )
+        keep <- intersect(keep, keep2)
+      }
 
-                 ped_objectives[[i]] <- ped[keep, ]
+      ped_objectives[[i]] <- ped[keep, ]
+    }
+    names(ped_objectives) <- indicator_objectives
 
-               }
-               names(ped_objectives) <- indicator_objectives
+    # Adding objectives that aren't yet accounted for
 
-               # Adding objectives that aren't yet accounted for
+    new_objectives <- objectives_df$Objective[which(
+      !(objectives_df$Objective %in% names(ped_objectives))
+    )]
 
-               new_objectives <- objectives_df$Objective[which(!(objectives_df$Objective %in% names(ped_objectives)))]
+    for (obj_name in new_objectives) {
+      # create a blank NA df with the same columns
+      na_df <- as.data.frame(matrix(NA, nrow = 1, ncol = ncol(ped)))
+      names(na_df) <- names(ped)
 
-               for (obj_name in new_objectives) {
-                 # create a blank NA df with the same columns
-                 na_df <- as.data.frame(matrix(NA, nrow = 1, ncol = ncol(ped)))
-                 names(na_df) <- names(ped)
+      # add it to the list with the name
+      ped_objectives[[obj_name]] <- na_df
+    }
 
-                 # add it to the list with the name
-                 ped_objectives[[obj_name]] <- na_df
-               }
-
-
-               ped_objectives
-
-             }),
+    ped_objectives
+  }),
 
   # EBM BINS ----
 
-  tar_target(bin_biodiversity_FunctionalDiversity_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Functional Diversity",
-                                       weights_ratio=1,
-                                       weights_sum = 1,
-                                       ind_placeholder_df,
-                                       ind_species_per_trophic,
-                                       # design targets
-                                       ind_designtarget_FishBenthivoreBenthicLarge_4VW,
-                                       ind_designtarget_FishBenthivoreBenthicLarge_4X,
-                                       ind_designtarget_FishBenthivoreBenthicMedium_4VW,
-                                       ind_designtarget_FishBenthivoreBenthicMedium_4X,
-                                       ind_designtarget_FishBenthivoreBenthicSmall_4VW,
-                                       ind_designtarget_FishBenthivoreBenthicSmall_4X,
-                                       ind_designtarget_FishPiscivoreBenthicLarge_4VW,
-                                       ind_designtarget_FishPiscivoreBenthicLarge_4X,
-                                       ind_designtarget_FishPiscivoreBenthicSmallMedium_4VW,
-                                       ind_designtarget_FishPiscivoreBenthicSmallMedium_4X,
-                                       ind_designtarget_FishPiscivorePelagicSmallMediumLarge_4VW,
-                                       ind_designtarget_FishPlanktivorePelagicSmallMediumLarge_4VW,
-                                       ind_designtarget_FishPlanktivorePelagicSmallMediumLarge_4X,
-                                       ind_designtarget_FishZoopiscivoreBenthicSmallMediumLarge_4VW,
-                                       ind_designtarget_FishZoopiscivoreBenthicSmallMediumLarge_4X,
-                                       ind_designtarget_FishZoopiscivorePelagicSmallMediumLarge_4VW,
-                                       ind_designtarget_FishZoopiscivorePelagicSmallMediumLarge_4X,
-                                       ind_designtarget_InvertBenthivoreBenthicMedium_4VW,
-                                       ind_designtarget_InvertBenthivoreBenthicMedium_4X,
-                                       ind_designtarget_InvertBenthivoreBenthicSmall_4VW,
-                                       ind_designtarget_InvertBenthivoreBenthicSmall_4X,
-                                       ind_designtarget_InvertDetritivore_4VW,
-                                       ind_designtarget_InvertDetritivore_4X,
-                                       ind_designtarget_InvertFilterFeederBenthicColonial_4VW,
-                                       ind_designtarget_InvertFilterFeederBenthicNonColonial_4VW,
-                                       ind_designtarget_InvertFilterFeederBenthicNonColonial_4X,
-                                       ind_designtarget_InvertZoopiscivoreSmallMediumLarge_4VW,
-                                       ind_designtarget_InvertZoopiscivoreSmallMediumLarge_4X,
-                                       ind_designtarget_Seabird_plunge_diving_piscivore,
-                                       ind_designtarget_Seabird_pursuit_diving_piscivore,
-                                       ind_designtarget_Seabird_pursuit_diving_planktivore,
-                                       ind_designtarget_Seabird_shallow_pursuit_generalist,
-                                       ind_designtarget_Seabird_ship_following_generalist,
-                                       ind_designtarget_Seabird_surface_seizing_planktivore,
-                                       ind_designtarget_Seabird_surface_shallow_diving_coastal_piscivore,
-                                       ind_designtarget_Seabird_surface_shallow_diving_piscivore)
-             }
-  ),
-  tar_target(bin_biodiversity_GeneticDiversity_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Genetic Diversity",
-                                       weights_ratio=1,
-                                       weights_sum = 1,
-                                       ind_placeholder_df,
-                                       ind_genetic_diversity_nbw)
-             }
-  ),
-  tar_target(bin_biodiversity_SpeciesDiversity_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Species Diversity",
-                                       weights_ratio = 1,
-                                       weights_sum = 1,
-                                       ind_species_representation,
-                                       ind_species_richness_eDNA,
-                                       ind_musquash_infaunal_diversity,
-                                       ind_musquash_nekton_diversity,
-                                       ind_musquash_birds_sample_coverage,
-                                       ind_epibenthic_infaunal,
-                                       ind_coral_diversity,
-                                       # design targets (Biodiversity hotspot)
-                                       ind_designtarget_GenusRichness_Ichthyoplankton,
-                                       ind_designtarget_SpeciesRichness_Fish4VW,
-                                       ind_designtarget_SpeciesRichness_Fish4X,
-                                       ind_designtarget_SpeciesRichness_Invert4VW,
-                                       ind_designtarget_SpeciesRichness_Invert4X,
-                                       ind_designtarget_SpeciesRichness_SmallFish4VW,
-                                       ind_designtarget_SpeciesRichness_SmallFish4X,
-                                       ind_designtarget_SpeciesRichness_SmallInvert4VW,
-                                       ind_designtarget_SpeciesRichness_SmallInvert4X,
-                                       # design target (depleted species)
-                                       ind_designtarget_AmericanPlaice4VW,
-                                       ind_designtarget_AmericanPlaice4X,
-                                       ind_designtarget_AtlanticCod4Vn,
-                                       ind_designtarget_AtlanticCod4VsW,
-                                       ind_designtarget_AtlanticCod4X,
-                                       ind_designtarget_AtlanticWolffish,
-                                       ind_designtarget_Cusk,
-                                       ind_designtarget_NorthAtlanticRightWhale_CH,
-                                       ind_designtarget_NorthernBottlenoseWhale_CH,
-                                       ind_designtarget_OceanPout,
-                                       ind_designtarget_RedfishUnit2shp,
-                                       ind_designtarget_RoughheadGrenadier,
-                                       ind_designtarget_RoundnoseGrenadier,
-                                       ind_designtarget_SmoothSkate4VsW,
-                                       ind_designtarget_SmoothSkate4X,
-                                       ind_designtarget_SpinyDogfish,
-                                       ind_designtarget_ThornySkate4VsW,
-                                       ind_designtarget_ThornySkate4X,
-                                       ind_designtarget_WhiteHake4VW,
-                                       ind_designtarget_WhiteHake4X,
-                                       ind_designtarget_WinterSkate4VsW)
-             }
-  ),
-  tar_target(bin_habitat_Connectivity_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Connectivity",
-                                       weights_ratio=1,
-                                       weights_sum = 1,
-                                       ind_placeholder_df,
-                                       ind_otn_proportion_tags_detected_in_multiple_mpas,
-                                       ind_seasonal_presence_cetaceans,
-                                       ind_seasonal_presence_pelagics,
-                                       ind_seasonal_presence_seals,
-                                       ind_seasonal_presence_seabirds,
-                                       ind_mpa_use_nbw,
-                                       ind_fluxes,
-                                       ind_fish_nekton_fluxes)
-             }
-  ),
-  tar_target(bin_habitat_EnvironmentalRepresentativity_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Environmental Representativity",
-                                       weights_sum = 1,
-                                       weights_ratio = 1,
-                                       ind_nitrate,
-                                       ind_silicate,
-                                       ind_phosphate,
-                                       ind_salinity,
-                                       ind_chlorophyll,
-                                       ind_temperature,
-                                       ind_surface_height,
-                                       ind_bloom_amplitude,
-                                       ind_bloom_timing,
-                                       ind_musquash_ph,
-                                       ind_musquash_dissolved_oxygen,
-                                       ind_musquash_phosphate,
-                                       ind_musquash_secchi,
-                                       ind_oxygen,
-                                       ind_musquash_coliform,
-                                       ind_sst,
-                                       ind_temp_at_depth,
-                                       ind_sea_surface_salinity,
-                                       ind_subsurface_salinity,
-                                       ind_oxygen_saturation,
-                                       ind_ave_ph_level,
-                                       ind_nitrate,
-                                       ind_carbonate,
-                                       ind_ave_mixed_layer_depth,
-                                       ind_ave_position_of_shelf_slope_front,
-                                       ind_wind_speed_and_storminess,
-                                       ind_chlorophyll_a,
-                                       ind_spatial_extent_ebsa_webmr,
-                                       ind_sediment_regime,
-                                       ind_nutrients,
-                                       ind_environmental_conditions_near_seabed,
-                                       ind_environmental_conditions_azmp_lines,
-                                       ind_physical_biological_surface_properties,
-                                       ind_weather_station_buoy_sites,
-                                       ind_water_masses,
-                                       ind_physandbio_properties,
-                                       ind_physandbio_seasurface_properties,
-                                       ind_weather_condition,
-                                       ind_ice_cover,
-                                       ind_marxan_input,
-                                       #design targets (geomorphic)
-                                       ind_designtarget_GeomorphicUnits_AbyssalPlain,
-                                       ind_designtarget_GeomorphicUnits_ContinentalRiseContinentalRise,
-                                       ind_designtarget_GeomorphicUnits_ShelfBank,
-                                       ind_designtarget_GeomorphicUnits_ShelfBasin,
-                                       ind_designtarget_GeomorphicUnits_ShelfChannel,
-                                       ind_designtarget_GeomorphicUnits_ShelfFlat,
-                                       ind_designtarget_GeomorphicUnits_ShelfTopoComplex,
-                                       ind_designtarget_GeomorphicUnits_ShelfTopoComplexBank,
-                                       ind_designtarget_GeomorphicUnits_ShelfTopoComplexBasin,
-                                       ind_designtarget_GeomorphicUnits_Slope,
-                                       ind_designtarget_GeomorphicUnits_SlopeChannel,
-                                       # design targets (Natural disturbance classification)
-                                       ind_designtarget_NaturalDisturbance_VeryLow,
-                                       ind_designtarget_NaturalDisturbance_Low,
-                                       ind_designtarget_NaturalDisturbance_Medium,
-                                       ind_designtarget_NaturalDisturbance_VeryHigh,
-                                       # design targets (Scope for growth classification)
-                                       ind_designtarget_NaturalDisturbance_VeryLow,
-                                       ind_designtarget_NaturalDisturbance_Low,
-                                       ind_designtarget_NaturalDisturbance_Medium,
-                                       ind_designtarget_NaturalDisturbance_VeryHigh)
-             }
-  ),
-  tar_target(bin_habitat_KeyFishHabitat_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Key Fish Habitat",
-                                       weights_ratio = 1,
-                                       weights_sum = 1,
-                                       ind_SAR_CH_representation,
-                                       ind_distribution_juv_haddock_habitat,
-                                       ind_distribution_key_fish_habitat,
-                                       # design targets
-                                       ind_designtarget_Boltenia_KDE,
-                                       ind_designtarget_LargeGorgonian_KDE,
-                                       ind_designtarget_LargeGorgonian_SDM,
-                                       ind_designtarget_OtherSponges_noVazella_KDE,
-                                       ind_designtarget_SandDollar_KDE,
-                                       ind_designtarget_SeaPens_KDE,
-                                       ind_designtarget_SeaPens_SDM,
-                                       ind_designtarget_SmallGorgonian_SDM,
-                                       ind_designtarget_SoftCoral_KDE,
-                                       ind_designtarget_Vazella_KDE)
-             }
-  ),
-  tar_target(bin_habitat_ThreatstoHabitat_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Threats to Habitat",
-                                       weights_ratio=1,
-                                       weights_sum = 1,
-                                       ind_MAR_biofouling_AIS,
-                                       ind_MAR_cum_impact,
-                                       ind_placeholder_df,
-                                       ind_nitrate_inside_outside,
-                                       ind_temperature_inside_outside,
-                                       ind_musquash_phosphate_inside_outside,
-                                       ind_musquash_coliform_inside_outside,
-                                       ind_seabed_disruption_in_around_webmr_fishing,
-                                       ind_seabed_disruption_in_around_webmr_research,
-                                       ind_vessel_traffic,
-                                       ind_ocean_sound,
-                                       ind_cables,
-                                       ind_well_proximity,
-                                       ind_offshore_wind_developments,
-                                       ind_contaminant_concentration,
-                                       ind_anthropogenic_debris,
-                                       ind_disturbed_area,
-                                       ind_human_perturbation,
-                                       ind_fresh_scars,
-                                       ind_ship_strikes,
-                                       ind_entanglement_gully,
-                                       ind_human_interaction,
-                                       ind_vessel_transits,
-                                       ind_vessel_operation,
-                                       ind_seabed_swept,
-                                       ind_seabed_occupied,
-                                       ind_petroleum_activity,
-                                       ind_ballast,
-                                       ind_other_discharge,
-                                       ind_floating_debris_gully,
-                                       ind_seabed_debris_gully,
-                                       ind_anthropogenic_sound,
-                                       ind_bottomset_length,
-                                       ind_vertical_lines,
-                                       ind_development_sab,
-                                       ind_anchoring,
-                                       ind_other_discharge_offshore,
-                                       ind_other_discharge_coastal,
-                                       ind_ocean_noise_sab)
-             }
-  ),
-  tar_target(bin_habitat_Uniqueness_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Uniqueness",
-                                       weights_ratio=1,
-                                       weights_sum = 1,
-                                       ind_QC_gulf_biogenic_habitat_representation,
-                                       ind_ebsa_representation,
-                                       ind_seabed_feature_extent,
-                                       # design targets
-                                       ind_designtarget_BiophysicalUnits_BaccaroLaHaveBanks,
-                                       ind_designtarget_BiophysicalUnits_EasternScotianShelf,
-                                       ind_designtarget_BiophysicalUnits_GulfofMaine,
-                                       ind_designtarget_BiophysicalUnits_LaHaveandEmeraldBasins,
-                                       ind_designtarget_BiophysicalUnits_LaurentianSlope,
-                                       ind_designtarget_BiophysicalUnits_SlopeRiseandAbyss,
-                                       ind_designtarget_BiophysicalUnits_WesternandSableIslandBanks)
-             }
-  ),
-  tar_target(bin_productivity_BiomassMetrics_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Biomass Metrics",
-                                       weights_ratio=1,
-                                       weights_sum = 1,
-                                       ind_fish_length,
-                                       ind_fish_weight,
-                                       ind_haddock_biomass,
-                                       ind_haddock_counts,
-                                       ind_zooplankton,
-                                       ind_zooplankton_community_composition,
-                                       ind_phytoplankton,
-                                       ind_phytoplankton_biomass_and_diversity,
-                                       ind_calanus_finmarchicus,
-                                       ind_fish_eggs_and_larve,
-                                       ind_abundance_invasive_species_webmr,
-                                       ind_biomass_groundfish_prey_webmr,
-                                       ind_abundance_sea_pens_webmr,
-                                       ind_community_comp_epibenthic_infaunal,
-                                       ind_biomass_bioturbators,
-                                       ind_rel_abundance_groundfish,
-                                       ind_size_distribution_groundfish,
-                                       ind_condition_groundfish,
-                                       ind_fecundity_groundfish,
-                                       ind_community_comp_demersal,
-                                       ind_biomass_abund_distribution_musquash,
-                                       ind_species_at_risk,
-                                       ind_cpue,
-                                       ind_bycatch,
-                                       ind_nonindigenous_rel_indigenous,
-                                       ind_abundance_nbw,
-                                       ind_rel_abundance_cetaceans,
-                                       ind_coral_distribution,
-                                       ind_coral_proportions,
-                                       ind_trawl_vunerable,
-                                       ind_longline_vunerable,
-                                       ind_trap_vunerable,
-                                       ind_mesopelagic_nektonic,
-                                       ind_acoustic_scattering,
-                                       ind_seabird_abundance,
-                                       ind_fishing_effort,
-                                       ind_fishing_effort_nearby,
-                                       ind_corals_removed,
-                                       ind_plankton_production,
-                                       ind_mesozooplankton_community,
-                                       ind_benthic_characteristics,
-                                       ind_compared_benthic_characteristics,
-                                       ind_distinctive_benthic_characteristics,
-                                       ind_resource_species_abundance,
-                                       ind_groundfish_abundance_sab,
-                                       ind_nekton_abundance,
-                                       ind_compared_groundfish_abundance,
-                                       ind_compared_longline_vunerable,
-                                       ind_large_wolffish,
-                                       ind_mammal_bird_reptile,
-                                       ind_seal_breeding,
-                                       ind_seabird_nesting,
-                                       # design targets
-                                       ind_designtarget_BluefinTuna,
-                                       ind_designtarget_CodHaddock_FixedGear_4X5Y,
-                                       ind_designtarget_CodHaddock_FixedGear_5ZE,
-                                       ind_designtarget_CodHaddock_Mobile_4X5Y,
-                                       ind_designtarget_CodHaddock_Mobile_5ZE,
-                                       ind_designtarget_Crabs_CFA_20_21_22,
-                                       ind_designtarget_Crabs_CFA_23_24e,
-                                       ind_designtarget_Crabs_CFA_24w,
-                                       ind_designtarget_Flounders_4VW,
-                                       ind_designtarget_Flounders_4X5Y,
-                                       ind_designtarget_Flounders_5ZE,
-                                       ind_designtarget_Hagfish_4V,
-                                       ind_designtarget_Hagfish_4W,
-                                       ind_designtarget_Hagfish_4X,
-                                       ind_designtarget_Hagfish_5ZE,
-                                       ind_designtarget_Halibut_45to65ft,
-                                       ind_designtarget_Halibut_GT65ft,
-                                       ind_designtarget_Halibut_LT45ft_4Vn,
-                                       ind_designtarget_Halibut_LT45ft_4VsW,
-                                       ind_designtarget_Halibut_LT45ft_4X,
-                                       ind_designtarget_Halibut_LT45ft_5Ze,
-                                       ind_designtarget_Herring_FixedGear,
-                                       ind_designtarget_Herring_MobileGear,
-                                       ind_designtarget_OtherTunas,
-                                       ind_designtarget_Pollock_FixedGear,
-                                       ind_designtarget_Pollock_MobileGear,
-                                       ind_designtarget_Redfish_Unit2,
-                                       ind_designtarget_Redfish_Unit3,
-                                       ind_designtarget_Scallop_SFA25,
-                                       ind_designtarget_Scallop_SFA26,
-                                       ind_designtarget_Scallop_SFA27,
-                                       ind_designtarget_Scallop_SFA28,
-                                       ind_designtarget_Scallop_SFA29e,
-                                       ind_designtarget_Scallop_SFA29w,
-                                       ind_designtarget_Shrimp_MobileGear,
-                                       ind_designtarget_SilverHake_MobileGear,
-                                       ind_designtarget_Swordfish)
-             }
-  ),
-  tar_target(bin_productivity_StructureandFunction_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Structure and Function",
-                                       weights_ratio=1,
-                                       weights_sum = 1,
-                                       ind_stratification,
-                                       ind_spring_bloom,
-                                       ind_proportion_demersal_fish,
-                                       ind_population_characteristics,
-                                       ind_cetacean_presence,
-                                       ind_exchanges,
-                                       ind_trophic_relationships,
-                                       ind_ecosystem_function)
-             }
-  ),
-  tar_target(bin_productivity_ThreatstoProductivity_df,
-             {
-               bin <- aggregate_groups("bin",
-                                       "Threats to Productivity",
-                                       weights_ratio=1,
-                                       weights_sum = 1,
-                                       ind_placeholder_df,
-                                       ind_unauthorized_fishing,
-                                       ind_total_annual_landings,
-                                       ind_blubber_contaminants,
-                                       ind_strandings,
-                                       ind_zoanthid_overgrowth,
-                                       ind_target_org_removed_gully,
-                                       ind_organisms_removed,
-                                       ind_invasive_gully,
-                                       ind_harmful_algae,
-                                       ind_bait)
-             }
-  ),
+  tar_target(bin_biodiversity_FunctionalDiversity_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Functional Diversity",
+      weights_ratio = 1,
+      weights_sum = 1,
+      ind_placeholder_df,
+      ind_species_per_trophic,
+      # design targets
+      ind_designtarget_FishBenthivoreBenthicLarge_4VW,
+      ind_designtarget_FishBenthivoreBenthicLarge_4X,
+      ind_designtarget_FishBenthivoreBenthicMedium_4VW,
+      ind_designtarget_FishBenthivoreBenthicMedium_4X,
+      ind_designtarget_FishBenthivoreBenthicSmall_4VW,
+      ind_designtarget_FishBenthivoreBenthicSmall_4X,
+      ind_designtarget_FishPiscivoreBenthicLarge_4VW,
+      ind_designtarget_FishPiscivoreBenthicLarge_4X,
+      ind_designtarget_FishPiscivoreBenthicSmallMedium_4VW,
+      ind_designtarget_FishPiscivoreBenthicSmallMedium_4X,
+      ind_designtarget_FishPiscivorePelagicSmallMediumLarge_4VW,
+      ind_designtarget_FishPlanktivorePelagicSmallMediumLarge_4VW,
+      ind_designtarget_FishPlanktivorePelagicSmallMediumLarge_4X,
+      ind_designtarget_FishZoopiscivoreBenthicSmallMediumLarge_4VW,
+      ind_designtarget_FishZoopiscivoreBenthicSmallMediumLarge_4X,
+      ind_designtarget_FishZoopiscivorePelagicSmallMediumLarge_4VW,
+      ind_designtarget_FishZoopiscivorePelagicSmallMediumLarge_4X,
+      ind_designtarget_InvertBenthivoreBenthicMedium_4VW,
+      ind_designtarget_InvertBenthivoreBenthicMedium_4X,
+      ind_designtarget_InvertBenthivoreBenthicSmall_4VW,
+      ind_designtarget_InvertBenthivoreBenthicSmall_4X,
+      ind_designtarget_InvertDetritivore_4VW,
+      ind_designtarget_InvertDetritivore_4X,
+      ind_designtarget_InvertFilterFeederBenthicColonial_4VW,
+      ind_designtarget_InvertFilterFeederBenthicNonColonial_4VW,
+      ind_designtarget_InvertFilterFeederBenthicNonColonial_4X,
+      ind_designtarget_InvertZoopiscivoreSmallMediumLarge_4VW,
+      ind_designtarget_InvertZoopiscivoreSmallMediumLarge_4X,
+      ind_designtarget_Seabird_plunge_diving_piscivore,
+      ind_designtarget_Seabird_pursuit_diving_piscivore,
+      ind_designtarget_Seabird_pursuit_diving_planktivore,
+      ind_designtarget_Seabird_shallow_pursuit_generalist,
+      ind_designtarget_Seabird_ship_following_generalist,
+      ind_designtarget_Seabird_surface_seizing_planktivore,
+      ind_designtarget_Seabird_surface_shallow_diving_coastal_piscivore,
+      ind_designtarget_Seabird_surface_shallow_diving_piscivore
+    )
+  }),
+  tar_target(bin_biodiversity_GeneticDiversity_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Genetic Diversity",
+      weights_ratio = 1,
+      weights_sum = 1,
+      ind_placeholder_df,
+      ind_genetic_diversity_nbw
+    )
+  }),
+  tar_target(bin_biodiversity_SpeciesDiversity_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Species Diversity",
+      weights_ratio = 1,
+      weights_sum = 1,
+      ind_species_representation,
+      # ind_species_richness_eDNA, #TODO turn back on when data_edna() works
+      ind_musquash_infaunal_diversity,
+      ind_musquash_nekton_diversity,
+      ind_musquash_birds_sample_coverage,
+      ind_epibenthic_infaunal,
+      ind_coral_diversity,
+      # design targets (Biodiversity hotspot)
+      ind_designtarget_GenusRichness_Ichthyoplankton,
+      ind_designtarget_SpeciesRichness_Fish4VW,
+      ind_designtarget_SpeciesRichness_Fish4X,
+      ind_designtarget_SpeciesRichness_Invert4VW,
+      ind_designtarget_SpeciesRichness_Invert4X,
+      ind_designtarget_SpeciesRichness_SmallFish4VW,
+      ind_designtarget_SpeciesRichness_SmallFish4X,
+      ind_designtarget_SpeciesRichness_SmallInvert4VW,
+      ind_designtarget_SpeciesRichness_SmallInvert4X,
+      # design target (depleted species)
+      ind_designtarget_AmericanPlaice4VW,
+      ind_designtarget_AmericanPlaice4X,
+      ind_designtarget_AtlanticCod4Vn,
+      ind_designtarget_AtlanticCod4VsW,
+      ind_designtarget_AtlanticCod4X,
+      ind_designtarget_AtlanticWolffish,
+      ind_designtarget_Cusk,
+      ind_designtarget_NorthAtlanticRightWhale_CH,
+      ind_designtarget_NorthernBottlenoseWhale_CH,
+      ind_designtarget_OceanPout,
+      ind_designtarget_RedfishUnit2shp,
+      ind_designtarget_RoughheadGrenadier,
+      ind_designtarget_RoundnoseGrenadier,
+      ind_designtarget_SmoothSkate4VsW,
+      ind_designtarget_SmoothSkate4X,
+      ind_designtarget_SpinyDogfish,
+      ind_designtarget_ThornySkate4VsW,
+      ind_designtarget_ThornySkate4X,
+      ind_designtarget_WhiteHake4VW,
+      ind_designtarget_WhiteHake4X,
+      ind_designtarget_WinterSkate4VsW
+    )
+  }),
+  tar_target(bin_habitat_Connectivity_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Connectivity",
+      weights_ratio = 1,
+      weights_sum = 1,
+      ind_placeholder_df,
+      ind_otn_proportion_tags_detected_in_multiple_mpas,
+      ind_seasonal_presence_cetaceans,
+      ind_seasonal_presence_pelagics,
+      ind_seasonal_presence_seals,
+      ind_seasonal_presence_seabirds,
+      ind_mpa_use_nbw,
+      ind_fluxes,
+      ind_fish_nekton_fluxes
+    )
+  }),
+  tar_target(bin_habitat_EnvironmentalRepresentativity_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Environmental Representativity",
+      weights_sum = 1,
+      weights_ratio = 1,
+      ind_nitrate,
+      ind_silicate,
+      ind_phosphate,
+      ind_salinity,
+      ind_chlorophyll,
+      ind_temperature,
+      ind_surface_height,
+      ind_bloom_amplitude,
+      ind_bloom_timing,
+      ind_musquash_ph,
+      ind_musquash_dissolved_oxygen,
+      ind_musquash_phosphate,
+      ind_musquash_secchi,
+      # ind_oxygen, #TODO turn back on when data_gliders works
+      ind_musquash_coliform,
+      ind_sst,
+      ind_temp_at_depth,
+      ind_sea_surface_salinity,
+      ind_subsurface_salinity,
+      ind_oxygen_saturation,
+      ind_ave_ph_level,
+      ind_nitrate,
+      ind_carbonate,
+      ind_ave_mixed_layer_depth,
+      ind_ave_position_of_shelf_slope_front,
+      ind_wind_speed_and_storminess,
+      ind_chlorophyll_a,
+      ind_spatial_extent_ebsa_webmr,
+      ind_sediment_regime,
+      ind_nutrients,
+      ind_environmental_conditions_near_seabed,
+      ind_environmental_conditions_azmp_lines,
+      ind_physical_biological_surface_properties,
+      ind_weather_station_buoy_sites,
+      ind_water_masses,
+      ind_physandbio_properties,
+      ind_physandbio_seasurface_properties,
+      ind_weather_condition,
+      ind_ice_cover,
+      ind_marxan_input,
+      #design targets (geomorphic)
+      ind_designtarget_GeomorphicUnits_AbyssalPlain,
+      ind_designtarget_GeomorphicUnits_ContinentalRiseContinentalRise,
+      ind_designtarget_GeomorphicUnits_ShelfBank,
+      ind_designtarget_GeomorphicUnits_ShelfBasin,
+      ind_designtarget_GeomorphicUnits_ShelfChannel,
+      ind_designtarget_GeomorphicUnits_ShelfFlat,
+      ind_designtarget_GeomorphicUnits_ShelfTopoComplex,
+      ind_designtarget_GeomorphicUnits_ShelfTopoComplexBank,
+      ind_designtarget_GeomorphicUnits_ShelfTopoComplexBasin,
+      ind_designtarget_GeomorphicUnits_Slope,
+      ind_designtarget_GeomorphicUnits_SlopeChannel,
+      # design targets (Natural disturbance classification)
+      ind_designtarget_NaturalDisturbance_VeryLow,
+      ind_designtarget_NaturalDisturbance_Low,
+      ind_designtarget_NaturalDisturbance_Medium,
+      ind_designtarget_NaturalDisturbance_VeryHigh,
+      # design targets (Scope for growth classification)
+      ind_designtarget_NaturalDisturbance_VeryLow,
+      ind_designtarget_NaturalDisturbance_Low,
+      ind_designtarget_NaturalDisturbance_Medium,
+      ind_designtarget_NaturalDisturbance_VeryHigh
+    )
+  }),
+  tar_target(bin_habitat_KeyFishHabitat_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Key Fish Habitat",
+      weights_ratio = 1,
+      weights_sum = 1,
+      ind_SAR_CH_representation,
+      ind_distribution_juv_haddock_habitat,
+      ind_distribution_key_fish_habitat,
+      # design targets
+      ind_designtarget_Boltenia_KDE,
+      ind_designtarget_LargeGorgonian_KDE,
+      ind_designtarget_LargeGorgonian_SDM,
+      ind_designtarget_OtherSponges_noVazella_KDE,
+      ind_designtarget_SandDollar_KDE,
+      ind_designtarget_SeaPens_KDE,
+      ind_designtarget_SeaPens_SDM,
+      ind_designtarget_SmallGorgonian_SDM,
+      ind_designtarget_SoftCoral_KDE,
+      ind_designtarget_Vazella_KDE
+    )
+  }),
+  tar_target(bin_habitat_ThreatstoHabitat_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Threats to Habitat",
+      weights_ratio = 1,
+      weights_sum = 1,
+      ind_MAR_biofouling_AIS,
+      ind_MAR_cum_impact,
+      ind_placeholder_df,
+      ind_nitrate_inside_outside,
+      ind_temperature_inside_outside,
+      ind_musquash_phosphate_inside_outside,
+      ind_musquash_coliform_inside_outside,
+      ind_seabed_disruption_in_around_webmr_fishing,
+      ind_seabed_disruption_in_around_webmr_research,
+      ind_vessel_traffic,
+      ind_ocean_sound,
+      ind_cables,
+      ind_well_proximity,
+      ind_offshore_wind_developments,
+      ind_contaminant_concentration,
+      ind_anthropogenic_debris,
+      ind_disturbed_area,
+      ind_human_perturbation,
+      ind_fresh_scars,
+      ind_ship_strikes,
+      ind_entanglement_gully,
+      ind_human_interaction,
+      ind_vessel_transits,
+      ind_vessel_operation,
+      ind_seabed_swept,
+      ind_seabed_occupied,
+      ind_petroleum_activity,
+      ind_ballast,
+      ind_other_discharge,
+      ind_floating_debris_gully,
+      ind_seabed_debris_gully,
+      ind_anthropogenic_sound,
+      ind_bottomset_length,
+      ind_vertical_lines,
+      ind_development_sab,
+      ind_anchoring,
+      ind_other_discharge_offshore,
+      ind_other_discharge_coastal,
+      ind_ocean_noise_sab
+    )
+  }),
+  tar_target(bin_habitat_Uniqueness_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Uniqueness",
+      weights_ratio = 1,
+      weights_sum = 1,
+      ind_QC_gulf_biogenic_habitat_representation,
+      ind_ebsa_representation,
+      ind_seabed_feature_extent,
+      # design targets
+      ind_designtarget_BiophysicalUnits_BaccaroLaHaveBanks,
+      ind_designtarget_BiophysicalUnits_EasternScotianShelf,
+      ind_designtarget_BiophysicalUnits_GulfofMaine,
+      ind_designtarget_BiophysicalUnits_LaHaveandEmeraldBasins,
+      ind_designtarget_BiophysicalUnits_LaurentianSlope,
+      ind_designtarget_BiophysicalUnits_SlopeRiseandAbyss,
+      ind_designtarget_BiophysicalUnits_WesternandSableIslandBanks
+    )
+  }),
+  tar_target(bin_productivity_BiomassMetrics_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Biomass Metrics",
+      weights_ratio = 1,
+      weights_sum = 1,
+      ind_fish_length,
+      ind_fish_weight,
+      ind_haddock_biomass,
+      ind_haddock_counts,
+      ind_zooplankton,
+      ind_zooplankton_community_composition,
+      ind_phytoplankton,
+      ind_phytoplankton_biomass_and_diversity,
+      ind_calanus_finmarchicus,
+      ind_fish_eggs_and_larve,
+      ind_abundance_invasive_species_webmr,
+      ind_biomass_groundfish_prey_webmr,
+      ind_abundance_sea_pens_webmr,
+      ind_community_comp_epibenthic_infaunal,
+      ind_biomass_bioturbators,
+      ind_rel_abundance_groundfish,
+      ind_size_distribution_groundfish,
+      ind_condition_groundfish,
+      ind_fecundity_groundfish,
+      ind_community_comp_demersal,
+      ind_biomass_abund_distribution_musquash,
+      ind_species_at_risk,
+      ind_cpue,
+      ind_bycatch,
+      ind_nonindigenous_rel_indigenous,
+      ind_abundance_nbw,
+      ind_rel_abundance_cetaceans,
+      ind_coral_distribution,
+      ind_coral_proportions,
+      ind_trawl_vunerable,
+      ind_longline_vunerable,
+      ind_trap_vunerable,
+      ind_mesopelagic_nektonic,
+      ind_acoustic_scattering,
+      ind_seabird_abundance,
+      ind_fishing_effort,
+      ind_fishing_effort_nearby,
+      ind_corals_removed,
+      ind_plankton_production,
+      ind_mesozooplankton_community,
+      ind_benthic_characteristics,
+      ind_compared_benthic_characteristics,
+      ind_distinctive_benthic_characteristics,
+      ind_resource_species_abundance,
+      ind_groundfish_abundance_sab,
+      ind_nekton_abundance,
+      ind_compared_groundfish_abundance,
+      ind_compared_longline_vunerable,
+      ind_large_wolffish,
+      ind_mammal_bird_reptile,
+      ind_seal_breeding,
+      ind_seabird_nesting,
+      # design targets
+      ind_designtarget_BluefinTuna,
+      ind_designtarget_CodHaddock_FixedGear_4X5Y,
+      ind_designtarget_CodHaddock_FixedGear_5ZE,
+      ind_designtarget_CodHaddock_Mobile_4X5Y,
+      ind_designtarget_CodHaddock_Mobile_5ZE,
+      ind_designtarget_Crabs_CFA_20_21_22,
+      ind_designtarget_Crabs_CFA_23_24e,
+      ind_designtarget_Crabs_CFA_24w,
+      ind_designtarget_Flounders_4VW,
+      ind_designtarget_Flounders_4X5Y,
+      ind_designtarget_Flounders_5ZE,
+      ind_designtarget_Hagfish_4V,
+      ind_designtarget_Hagfish_4W,
+      ind_designtarget_Hagfish_4X,
+      ind_designtarget_Hagfish_5ZE,
+      ind_designtarget_Halibut_45to65ft,
+      ind_designtarget_Halibut_GT65ft,
+      ind_designtarget_Halibut_LT45ft_4Vn,
+      ind_designtarget_Halibut_LT45ft_4VsW,
+      ind_designtarget_Halibut_LT45ft_4X,
+      ind_designtarget_Halibut_LT45ft_5Ze,
+      ind_designtarget_Herring_FixedGear,
+      ind_designtarget_Herring_MobileGear,
+      ind_designtarget_OtherTunas,
+      ind_designtarget_Pollock_FixedGear,
+      ind_designtarget_Pollock_MobileGear,
+      ind_designtarget_Redfish_Unit2,
+      ind_designtarget_Redfish_Unit3,
+      ind_designtarget_Scallop_SFA25,
+      ind_designtarget_Scallop_SFA26,
+      ind_designtarget_Scallop_SFA27,
+      ind_designtarget_Scallop_SFA28,
+      ind_designtarget_Scallop_SFA29e,
+      ind_designtarget_Scallop_SFA29w,
+      ind_designtarget_Shrimp_MobileGear,
+      ind_designtarget_SilverHake_MobileGear,
+      ind_designtarget_Swordfish
+    )
+  }),
+  tar_target(bin_productivity_StructureandFunction_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Structure and Function",
+      weights_ratio = 1,
+      weights_sum = 1,
+      # ind_stratification, #TODO turn back on when data_gliders works
+      ind_spring_bloom,
+      ind_proportion_demersal_fish,
+      ind_population_characteristics,
+      ind_cetacean_presence,
+      ind_exchanges,
+      ind_trophic_relationships,
+      ind_ecosystem_function
+    )
+  }),
+  tar_target(bin_productivity_ThreatstoProductivity_df, {
+    bin <- aggregate_groups(
+      "bin",
+      "Threats to Productivity",
+      weights_ratio = 1,
+      weights_sum = 1,
+      ind_placeholder_df,
+      ind_unauthorized_fishing,
+      ind_total_annual_landings,
+      ind_blubber_contaminants,
+      ind_strandings,
+      ind_zoanthid_overgrowth,
+      ind_target_org_removed_gully,
+      ind_organisms_removed,
+      ind_invasive_gully,
+      ind_harmful_algae,
+      ind_bait
+    )
+  }),
 
-  tar_target(ecol_obj_biodiversity_df,
-             {
-               aggregate_groups("objective",
-                                "Biodiversity",
-                                weights_ratio=NA,
-                                weights_sum = NA,
-                                bin_biodiversity_FunctionalDiversity_df,
-                                bin_biodiversity_GeneticDiversity_df,
-                                bin_biodiversity_SpeciesDiversity_df)
-             }),
-  tar_target(ecol_obj_habitat_df,
-             {
-               aggregate_groups("objective",
-                                "Habitat",
-                                weights_ratio=NA,
-                                weights_sum = NA,
-                                bin_habitat_Connectivity_df,
-                                bin_habitat_EnvironmentalRepresentativity_df,
-                                bin_habitat_KeyFishHabitat_df,
-                                bin_habitat_ThreatstoHabitat_df,
-                                bin_habitat_Uniqueness_df)
-             }),
-  tar_target(ecol_obj_productivity_df,
-             {
-               aggregate_groups("objective",
-                                "Productivity",
-                                weights_ratio=NA,
-                                weights_sum = NA,
-                                bin_productivity_BiomassMetrics_df,
-                                bin_productivity_StructureandFunction_df,
-                                bin_productivity_ThreatstoProductivity_df)
-             }),
+  tar_target(ecol_obj_biodiversity_df, {
+    aggregate_groups(
+      "objective",
+      "Biodiversity",
+      weights_ratio = NA,
+      weights_sum = NA,
+      bin_biodiversity_FunctionalDiversity_df,
+      bin_biodiversity_GeneticDiversity_df,
+      bin_biodiversity_SpeciesDiversity_df
+    )
+  }),
+  tar_target(ecol_obj_habitat_df, {
+    aggregate_groups(
+      "objective",
+      "Habitat",
+      weights_ratio = NA,
+      weights_sum = NA,
+      bin_habitat_Connectivity_df,
+      bin_habitat_EnvironmentalRepresentativity_df,
+      bin_habitat_KeyFishHabitat_df,
+      bin_habitat_ThreatstoHabitat_df,
+      bin_habitat_Uniqueness_df
+    )
+  }),
+  tar_target(ecol_obj_productivity_df, {
+    aggregate_groups(
+      "objective",
+      "Productivity",
+      weights_ratio = NA,
+      weights_sum = NA,
+      bin_productivity_BiomassMetrics_df,
+      bin_productivity_StructureandFunction_df,
+      bin_productivity_ThreatstoProductivity_df
+    )
+  }),
 
+  tar_target(pillar_ecol_df, {
+    APPTABS
+    regions
+    target_bin_weight <- 1
 
+    start_id <- max(as.integer(gsub("tab_", "", APPTABS$tab))) + 1
 
-  tar_target(pillar_ecol_df,
-             {
-               APPTABS
-               regions
-               target_bin_weight <- 1
+    pedf <- aggregate_groups(
+      "pillar",
+      "Ecological",
+      weights_ratio = NA,
+      weights_sum = NA,
+      dplyr::select(ecol_obj_biodiversity_df, -data),
+      dplyr::select(ecol_obj_habitat_df, -data),
+      dplyr::select(ecol_obj_productivity_df, -data)
+    ) |>
+      dplyr::select(-region) |>
+      #dplyr::select(-region,-plainname,-min_target,-max_target) |> #TODO we can probably remove this if we fix the coverage scoring output
+      mutate(PPTID = as.character(PPTID)) |>
+      left_join(
+        dplyr::select(as.data.frame(MPAs), NAME_E, region),
+        by = c("areaID" = "NAME_E")
+      ) |>
+      mutate(region = if_else(areaID %in% MPAs$region, areaID, region))
 
-               start_id <- max(as.integer(gsub("tab_", "", APPTABS$tab))) + 1
+    rm(ecol_obj_biodiversity_df, ecol_obj_habitat_df, ecol_obj_productivity_df)
+    gc()
 
-               pedf <- aggregate_groups("pillar",
-                                        "Ecological",
-                                        weights_ratio=NA,
-                                        weights_sum = NA,
-                                        dplyr::select(ecol_obj_biodiversity_df,-data),
-                                        dplyr::select(ecol_obj_habitat_df,-data),
-                                        dplyr::select(ecol_obj_productivity_df,-data)) |>
-                 dplyr::select(-region) |>
-                 #dplyr::select(-region,-plainname,-min_target,-max_target) |> #TODO we can probably remove this if we fix the coverage scoring output
-                 mutate(PPTID = as.character(PPTID)) |>
-                 left_join(dplyr::select(as.data.frame(MPAs), NAME_E, region), by = c("areaID"="NAME_E")) |>
-                 mutate(region = if_else(areaID %in% MPAs$region,
-                                         areaID,
-                                         region))
+    calc_regional_bin_scores(df = pedf) |>
+      mutate(
+        tab = paste0("tab_", start_id:(start_id + length(objective) - 1)),
+        # Identify regions vs MPAs
+        is_region = areaID %in% regions$NAME_E,
+        # Create grouping: regions group by their indicator, MPAs by their areaID
+        sort_group = if_else(is_region, indicator, areaID),
+        # Priority for sorting: regions first (1), then MPAs (2)
+        sort_priority = if_else(is_region, 1L, 2L)
+      ) |>
 
-               rm(ecol_obj_biodiversity_df, ecol_obj_habitat_df, ecol_obj_productivity_df)
-               gc()
+      # Sort: by group, then regions before MPAs, then by score
+      arrange(sort_group, sort_priority, score) |>
 
-               calc_regional_bin_scores(df = pedf) |>
-                 mutate(
-                   tab = paste0("tab_", start_id:(start_id+ length(objective) - 1)),
-                   # Identify regions vs MPAs
-                   is_region = areaID %in% regions$NAME_E,
-                   # Create grouping: regions group by their indicator, MPAs by their areaID
-                   sort_group = if_else(is_region, indicator, areaID),
-                   # Priority for sorting: regions first (1), then MPAs (2)
-                   sort_priority = if_else(is_region, 1L, 2L)
-                 ) |>
-
-                 # Sort: by group, then regions before MPAs, then by score
-                 arrange(sort_group, sort_priority, score) |>
-
-                 # Clean up helper columns
-                 select(-is_region, -sort_group, -sort_priority) |>
-                 filter(!is.na(areaID)) #TODO we can probably remove this after investigating the NAs in areaID if bin_habitat_ThreatstoHabitat_df
-
-
-             }),
-
+      # Clean up helper columns
+      select(-is_region, -sort_group, -sort_priority) |>
+      filter(!is.na(areaID)) #TODO we can probably remove this after investigating the NAs in areaID if bin_habitat_ThreatstoHabitat_df
+  }),
 
   # THEMES ----
 
@@ -878,33 +892,38 @@ framework_targets <- list(
   #            }),
   #
 
-
   # CLIMATE CHANGE ----
-  tar_target(climate_change,
-             command= {
-               doc <- read_docx(file.path(system.file(package = "MarConsNetAnalysis"), "data", "climate.docx"))
-               doc_text <- docx_summary(doc)
-               keep <- which(grepl("CC:", doc_text$text))
-               keep <- c(keep, which(grepl("References", doc_text$text, ignore.case=TRUE)))
-               indicators <- gsub("CC: ","", doc_text$text[keep])
-               indicators <- indicators[-length(indicators)]
+  tar_target(climate_change, command = {
+    doc <- read_docx(file.path(
+      system.file(package = "MarConsNetAnalysis"),
+      "data",
+      "climate.docx"
+    ))
+    doc_text <- docx_summary(doc)
+    keep <- which(grepl("CC:", doc_text$text))
+    keep <- c(
+      keep,
+      which(grepl("References", doc_text$text, ignore.case = TRUE))
+    )
+    indicators <- gsub("CC: ", "", doc_text$text[keep])
+    indicators <- indicators[-length(indicators)]
 
-               split_text <- list()
-               for (i in seq_along(keep)) {
-                 start_index <- keep[i]
-                 end_index <- ifelse(i == length(keep), length(lines), keep[i + 1] - 1)
-                 split_text[[i]] <- doc_text$text[start_index:end_index]
-               }
-               split_text <- split_text[-length(split_text)]
-               summary <- unlist(lapply(split_text, function(x) x[2]))
-               cc <- data.frame(indicators=indicators, summary=summary)
-             }),
+    split_text <- list()
+    for (i in seq_along(keep)) {
+      start_index <- keep[i]
+      end_index <- ifelse(i == length(keep), length(lines), keep[i + 1] - 1)
+      split_text[[i]] <- doc_text$text[start_index:end_index]
+    }
+    split_text <- split_text[-length(split_text)]
+    summary <- unlist(lapply(split_text, function(x) x[2]))
+    cc <- data.frame(indicators = indicators, summary = summary)
+  }),
 
   # DESIGN TARGETS ----
 
   tar_target(
     name = target_values_file,
-    command = file.path(dirname(path_to_store()),"data","target_values.csv"),
+    command = file.path(dirname(path_to_store()), "data", "target_values.csv"),
     format = "file",
     deployment = "worker"
   ),
@@ -914,7 +933,4 @@ framework_targets <- list(
     read.csv(target_values_file) |>
       rename(filter_type = filter)
   )
-
-
-
 )
