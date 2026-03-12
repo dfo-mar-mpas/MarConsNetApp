@@ -945,18 +945,18 @@ indicator_targets <- list(
     polygon_sf <- st_sfc(st_polygon(list(coords)))
     st_crs(polygon_sf) <- 4326
 
-    rawdata <- azmpdata::RemoteSensing_Annual_Broadscale |>
+    data <- azmpdata::RemoteSensing_Annual_Broadscale |>
       filter(area == "CSS_remote_sensing") |>
       mutate(geometry = polygon_sf) |>
       st_as_sf() |>
       dplyr::select(year, bloom_amplitude, geometry) |>
       st_make_valid()
 
-    names(rawdata)[which(names(rawdata) == 'year')] <- 'year_of_data_collection'
-    rawdata$year_of_publication <- 2021
+    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    data$year_of_publication <- 2021
 
     x <- process_indicator(
-      data = rawdata,
+      data = data,
       indicator_var_name = "bloom_amplitude",
       indicator = "Bloom Amplitude",
       type = "remote sensing",
@@ -1151,6 +1151,9 @@ indicator_targets <- list(
   }),
 
   tar_target(name = ind_ebsa_representation, command = {
+    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    data$year_of_publication <- 2024
+
     x <- process_indicator(
       data = ebsa,
       indicator_var_name = "Name",
