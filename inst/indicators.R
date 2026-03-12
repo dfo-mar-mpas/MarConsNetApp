@@ -1151,14 +1151,11 @@ indicator_targets <- list(
   }),
 
   tar_target(name = ind_ebsa_representation, command = {
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2024
-
     x <- process_indicator(
       data = ebsa,
       indicator_var_name = "Name",
       indicator = "EBSA Representation",
-      type = "expert opinon",
+      type = "expert opinion",
       units = NA,
       scoring = "representation: cumulative distribution with regional thresholds",
       PPTID = NA,

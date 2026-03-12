@@ -197,12 +197,12 @@ raw_data_targets <- list(
   }),
 
   tar_target(name = ebsa, command = {
-    ebsa <- get_spatial_layer(
+    get_spatial_layer(
       "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/ecologically_and_biologically_significant_areas/MapServer/1"
     ) |>
       st_make_valid() |>
-      st_filter(regions)
-    ebsa$year_of_publication <- NA
+      st_filter(regions) |>
+      mutate(year_of_publication = 2007)
   }),
 
   tar_target(name = sar_ch, command = {
