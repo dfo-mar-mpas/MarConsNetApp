@@ -54,25 +54,24 @@
 #' }
 #'
 #' @export
-save_plots <- function(df, STORE = dirname(path_to_store())){
-  if(!all(c("plot","areaID","indicator") %in% names(df))){
+save_plots <- function(df, STORE = dirname(path_to_store())) {
+  if (!all(c("plot", "areaID", "indicator") %in% names(df))) {
     stop("Data frame must contain columns: plot, areaID, indicator")
   }
   allplotnames <- NULL
 
-  for(i in 1:nrow(df)){
+  for (i in 1:nrow(df)) {
     message(i)
-    if(!is.null(df$plot[[i]])&df$areaID[[i]]!="Non_Conservation_Area"){
-      filename <-  file.path(STORE,
-                             "data", "plot",
-                             make.names(paste0("plot_",
-                                               df$areaID[i],
-                                               "_",
-                                               df$indicator[i],
-                                               ".png")))
+    if (!is.null(df$plot[[i]]) & df$areaID[[i]] != "Non_Conservation_Area") {
+      filename <- file.path(
+        STORE,
+        "data",
+        "plot",
+        make.names(paste0("plot_", df$areaID[i], "_", df$indicator[i], ".png"))
+      )
 
-      allplotnames <- c(allplotnames,filename)
-      ggsave(filename,df$plot[[i]])
+      allplotnames <- c(allplotnames, filename)
+      ggsave(filename, df$plot[[i]])
     }
   }
   allplotnames

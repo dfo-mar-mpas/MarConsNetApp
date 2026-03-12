@@ -945,18 +945,18 @@ indicator_targets <- list(
     polygon_sf <- st_sfc(st_polygon(list(coords)))
     st_crs(polygon_sf) <- 4326
 
-    data <- azmpdata::RemoteSensing_Annual_Broadscale |>
+    rawdata <- azmpdata::RemoteSensing_Annual_Broadscale |>
       filter(area == "CSS_remote_sensing") |>
       mutate(geometry = polygon_sf) |>
       st_as_sf() |>
       dplyr::select(year, bloom_amplitude, geometry) |>
       st_make_valid()
 
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2021
+    names(rawdata)[which(names(rawdata) == 'year')] <- 'year_of_data_collection'
+    rawdata$year_of_publication <- 2021
 
     x <- process_indicator(
-      data = data,
+      data = rawdata,
       indicator_var_name = "bloom_amplitude",
       indicator = "Bloom Amplitude",
       type = "remote sensing",
@@ -979,7 +979,7 @@ indicator_targets <- list(
         "Maintain Functional Biodiversity",
         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
       ),
-      caveats = "This indicator is based off of a remote sensing area. Any protected area that overlaps with this remote sensing area will have the same values."
+      indicator_caveats = "This indicator is based off of a remote sensing area. Any protected area that overlaps with this remote sensing area will have the same values."
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
@@ -1971,7 +1971,7 @@ indicator_targets <- list(
         theme = "Fish and Fishery Resources",
         SME = 'Unknown',
         assumptions = NA,
-        caveats = NA,
+        indicator_caveats = NA,
         adjacent_data <- NA,
         adjacent_score <- NA,
         data_year_of_publication <- format(Sys.Date(), "%Y"),

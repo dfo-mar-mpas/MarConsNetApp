@@ -52,9 +52,11 @@
 #'}
 #' @export
 process_geom_data <- function(x) {
-  if(!inherits(x, "sf")) x <- st_as_sf(x)
+  if (!inherits(x, "sf")) {
+    x <- st_as_sf(x)
+  }
 
-  if("geoms" %in% names(x)) {
+  if ("geoms" %in% names(x)) {
     x <- x |>
       mutate(geometry = geoms) |>
       as.data.frame() |>
@@ -62,7 +64,7 @@ process_geom_data <- function(x) {
       st_as_sf()
   }
 
-  if("Shape" %in% names(x)) {
+  if ("Shape" %in% names(x)) {
     x <- x |>
       mutate(geometry = Shape) |>
       as.data.frame() |>
@@ -70,7 +72,7 @@ process_geom_data <- function(x) {
       st_as_sf()
   }
 
-  if(!("year" %in% names(x))) {
+  if (!("year" %in% names(x))) {
     x <- x |> mutate(year = NA)
   }
 

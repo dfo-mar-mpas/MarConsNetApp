@@ -22,7 +22,7 @@
 #'
 #' @export
 
-grade_description <- function(type='indicator') {
+grade_description <- function(type = 'indicator') {
   if (type == 'indicator') {
     grade_explanations <- list(
       A = "The indicator demonstrates optimal conditions; measured values are within expected reference ranges and ecological function is maintained.",
@@ -47,9 +47,7 @@ grade_description <- function(type='indicator') {
       D = "Limited ecosystem health; emerging concerns across multiple components",
       F = "Poor ecosystem health; insufficient data or widespread impacts"
     )
-
   } else if (type == 'threats') {
-
     grade_explanations <- list(
       A = "Strong evidence the threat indicator is performing well",
       B = "Evidence indicates the threat indicator is generally positive",
@@ -57,9 +55,7 @@ grade_description <- function(type='indicator') {
       D = "Limited evidence / emerging concerns for the threat indicator",
       F = "Insufficient data / poor performance of the threat indicator"
     )
-
   }
 
   return(grade_explanations)
-
 }
