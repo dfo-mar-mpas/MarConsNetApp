@@ -342,7 +342,7 @@ framework_targets <- list(
       "Uniqueness",
       weights_ratio = 1,
       weights_sum = 1,
-      ind_QC_gulf_biogenic_habitat_representation,
+      # ind_QC_gulf_biogenic_habitat_representation, #TODO turn back on after fixing
       ind_ebsa_representation,
       ind_seabed_feature_extent,
       # design targets
