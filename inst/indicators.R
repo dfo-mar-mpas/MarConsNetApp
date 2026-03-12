@@ -867,7 +867,7 @@ indicator_targets <- list(
                                    "Maintain Functional Biodiversity",
                                    "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
                                  ),
-                                 caveats="This indicator is based off of a remote sensing area. Any protected area that overlaps with this remote sensing area will have the same values.")
+                                 indicator_caveats="This indicator is based off of a remote sensing area. Any protected area that overlaps with this remote sensing area will have the same values.")
 
                save_plots(dplyr::select(x,-data, -adjacent_data))
                dplyr::select(x,-plot)
@@ -1025,6 +1025,10 @@ indicator_targets <- list(
 
   tar_target(name = ind_ebsa_representation,
              command = {
+
+               names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+               data$year_of_publication <- 2024
+
                x <- process_indicator(data = ebsa,
                                  indicator_var_name = "Name",
                                  indicator = "EBSA Representation",
