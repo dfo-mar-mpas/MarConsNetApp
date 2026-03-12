@@ -162,7 +162,7 @@ raw_data_targets <- list(
                  st_transform(st_crs(regions)) |>
                  st_filter(regions)
 
-               sar_ch$year_of_publication <- NA
+               sar_ch$year_of_publication <- 2025
              }),
 
   # DMAPPS ----
