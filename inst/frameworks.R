@@ -140,7 +140,7 @@ framework_targets <- list(
       weights_ratio = 1,
       weights_sum = 1,
       ind_species_representation,
-      # ind_species_richness_eDNA, #TODO turn back on when data_edna() works
+      ind_species_richness_eDNA,
       ind_musquash_infaunal_diversity,
       ind_musquash_nekton_diversity,
       ind_musquash_birds_sample_coverage,
@@ -216,7 +216,7 @@ framework_targets <- list(
       ind_musquash_dissolved_oxygen,
       ind_musquash_phosphate,
       ind_musquash_secchi,
-      # ind_oxygen, #TODO turn back on when data_gliders works
+      ind_oxygen,
       ind_musquash_coliform,
       ind_sst,
       ind_temp_at_depth,
@@ -342,7 +342,7 @@ framework_targets <- list(
       "Uniqueness",
       weights_ratio = 1,
       weights_sum = 1,
-      # ind_QC_gulf_biogenic_habitat_representation, #TODO turn back on after fixing
+      ind_QC_gulf_biogenic_habitat_representation,
       ind_ebsa_representation,
       ind_seabed_feature_extent,
       # design targets
@@ -459,7 +459,7 @@ framework_targets <- list(
       "Structure and Function",
       weights_ratio = 1,
       weights_sum = 1,
-      # ind_stratification, #TODO turn back on when data_gliders works
+      ind_stratification,
       ind_spring_bloom,
       ind_proportion_demersal_fish,
       ind_population_characteristics,
