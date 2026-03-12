@@ -552,44 +552,122 @@ raw_data_targets <- list(
     rasters
   }),
 
+  # tar_target(
+  #   name = rawdata_obis_parquet_files,
+  #   command = {
+  #     # see https://obis.org/data/access/ for the latest version of their full "periodic" export
+  #     url = "https://obis-open-data.s3.amazonaws.com/snapshots/obis_20250318_parquet.zip"
+  #     dest_dir = file.path(
+  #       store,
+  #       "..",
+  #       "..",
+  #       "MarConsNetTargets",
+  #       "data",
+  #       "obis_data"
+  #     )
+
+  #     # Set zip file path
+  #     zip_path <- file.path(dest_dir, "obis_data.zip")
+
+  #     # Download the file if it doesn't exist
+  #     if (!file.exists(zip_path)) {
+  #       message("Downloading OBIS parquet dataset...")
+  #       utils::download.file(url, zip_path, mode = "wb")
+  #     } else {
+  #       message("Using previously downloaded zip file.")
+  #     }
+
+  #     # Extract if needed
+  #     extract_dir <- file.path(dest_dir, "extracted")
+  #     if (!dir.exists(extract_dir) || length(list.files(extract_dir)) == 0) {
+  #       message("Extracting parquet files...")
+  #       utils::unzip(zip_path, exdir = extract_dir)
+  #     } else {
+  #       message("Using previously extracted files.")
+  #     }
+
+  #     # Return the path to the extracted files
+  #     return(extract_dir)
+  #   },
+  #   format = "file",
+  #   package = "paws",
+
+  #   cue = tar_cue("never") # Prevents re-downloading unless the file is deleted
+  # ),
+
+  # Re-run every 6 months
+  tar_age(
+    name = rawdata_obis_s3_manifest,
+    command = {
+      s3 <- paws::s3(
+        config = list(
+          credentials = list(anonymous = TRUE),
+          region = "us-east-1"
+        )
+      )
+
+      all_objects <- list()
+      continuation_token <- NULL
+
+      repeat {
+        args <- list(Bucket = "obis-open-data", Prefix = "occurrence/")
+        if (!is.null(continuation_token)) {
+          args$ContinuationToken <- continuation_token
+        }
+
+        resp <- do.call(s3$list_objects_v2, args)
+        all_objects <- c(all_objects, resp$Contents)
+
+        if (!resp$IsTruncated) {
+          break
+        }
+        continuation_token <- resp$NextContinuationToken
+      }
+
+      # Return a dataframe with key + ETag (MD5-ish hash) for change detection
+      data.frame(
+        key = sapply(all_objects, `[[`, "Key"),
+        etag = sapply(all_objects, `[[`, "ETag"),
+        size = sapply(all_objects, `[[`, "Size")
+      )
+    },
+    age = as.difftime(365, units = "days")
+  ),
+
   tar_target(
     name = rawdata_obis_parquet_files,
     command = {
-      # see https://obis.org/data/access/ for the latest version of their full "periodic" export
-      url = "https://obis-open-data.s3.amazonaws.com/snapshots/obis_20250318_parquet.zip"
-      dest_dir = file.path(
-        Sys.getenv("OneDriveCommercial"),
-        "MarConsNetTargets",
-        "data",
-        "obis_data"
+      s3 <- paws::s3(
+        config = list(
+          credentials = list(anonymous = TRUE),
+          region = "us-east-1"
+        )
       )
 
-      # Set zip file path
-      zip_path <- file.path(dest_dir, "obis_data.zip")
+      downloaded <- c()
 
-      # Download the file if it doesn't exist
-      if (!file.exists(zip_path)) {
-        message("Downloading OBIS parquet dataset...")
-        utils::download.file(url, zip_path, mode = "wb")
-      } else {
-        message("Using previously downloaded zip file.")
+      for (i in seq_len(nrow(rawdata_obis_s3_manifest))) {
+        key <- rawdata_obis_s3_manifest$key[i]
+        local_path <- file.path(store, "..", "data", "obis_data", key)
+
+        dir.create(dirname(local_path), recursive = TRUE, showWarnings = FALSE)
+
+        # Skip if ETag matches (file unchanged)
+        etag_file <- paste0(local_path, ".etag")
+        if (file.exists(local_path) && file.exists(etag_file)) {
+          stored_etag <- readLines(etag_file, warn = FALSE)
+          if (stored_etag == rawdata_obis_s3_manifest$etag[i]) next
+        }
+
+        s3$download_file("obis-open-data", key, local_path)
+        writeLines(rawdata_obis_s3_manifest$etag[i], etag_file)
+        downloaded <- c(downloaded, local_path)
+        cat("Downloaded:", key, "\n")
       }
 
-      # Extract if needed
-      extract_dir <- file.path(dest_dir, "extracted")
-      if (!dir.exists(extract_dir) || length(list.files(extract_dir)) == 0) {
-        message("Extracting parquet files...")
-        utils::unzip(zip_path, exdir = extract_dir)
-      } else {
-        message("Using previously extracted files.")
-      }
-
-      # Return the path to the extracted files
-      return(extract_dir)
+      downloaded
     },
-    format = "file",
-
-    cue = tar_cue("never") # Prevents re-downloading unless the file is deleted
+    format = "file"
   ),
 
   tar_target(
@@ -742,7 +820,7 @@ raw_data_targets <- list(
 
   tar_target(name = "data_musquash_eutrophication", command = {
     file <- paste0(
-      file.path(Sys.getenv("OneDriveCommercial"), "MarConsNetTargets", "data"),
+      file.path(store, "..", "..", "MarConsNetTargets", "data"),
       "/ECW_MEM_COMPLETE Water Quality Data 2014 to 2024_2025.06.06_v1.xlsx"
     )
     sheets <- excel_sheets(file)
@@ -796,7 +874,7 @@ raw_data_targets <- list(
     )
 
     file <- paste0(
-      file.path(Sys.getenv("OneDriveCommercial"), "MarConsNetTargets", "data"),
+      file.path(store, "..", "..", "MarConsNetTargets", "data"),
       "/ECW_MEM_COMPLETE Water Quality Data 2014 to 2024_2025.06.06_v1.xlsx"
     )
     sheets <- excel_sheets(file)
@@ -1087,7 +1165,9 @@ raw_data_targets <- list(
 
   tar_target(name = data_musquash_ECW_water_quality, command = {
     data_musquash_ECW_water_quality <- read_excel(file.path(
-      Sys.getenv("OneDriveCommercial"),
+      store,
+      "..",
+      "..",
       "MarConsNetTargets",
       "data",
       "ECW_MEM_COMPLETE Water Quality Data 2014 to 2024_2025.06.06_v1.xlsx"
@@ -1143,7 +1223,9 @@ raw_data_targets <- list(
     # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
     read.delim(
       file.path(
-        Sys.getenv("OneDriveCommercial"),
+        store,
+        "..",
+        "..",
         "MarConsNetTargets",
         "data",
         "birds",
