@@ -729,6 +729,81 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
+  tar_target(ind_pH, # JAIM
+             command={
+               data <- azmpdata::Derived_Annual_Carbonate
+               data$year <- as.numeric(data$year)
+               data <- data[which(!is.na(data$mean_pH_total)), ]
+               data <- data[, c("year", "section_name", "mean_pH_total")]
+               data$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
+
+               ## NOTE: THERE IS NO LATITUDE/LONGITUDE ASSOICATED WITH SECTION NAMES SO I MADE MY OWN (AND ALSO MADE AN ISSUE IN THE AZMPDATA PACKAGE)
+
+               data$latitude <- NA_real_
+               data$longitude <- NA_real_
+
+               sections <- unique(data$section_name)
+
+               for (i in seq_along(sections)) {
+
+                 sec <- sections[i]
+
+                 coords <- switch(sec,
+                                  "Browns_Bank"               = c(42.90, -66.90),
+                                  "Cabot_Strait"              = c(47.60, -59.50),
+                                  "Gully"                     = c(43.80, -59.10),
+                                  "Halifax_Line"              = c(44.30, -63.30),
+                                  "Louisbourg"                = c(45.90, -59.90),
+                                  "Peter_Smith_Line"          = c(44.00, -62.50),
+                                  "St_Anns_Bank"              = c(46.10, -60.20),
+                                  "Banquereau_Bank"           = c(44.80, -57.80),
+                                  "Portsmouth_Line"           = c(43.70, -65.30),
+                                  "St_Pierre_Bank"            = c(46.80, -56.30),
+                                  "Yarmouth_Line"             = c(43.60, -66.30),
+                                  "Laurentian_Channel_Centre" = c(45.70, -57.90),
+                                  "Laurentian_Channel_Mouth"  = c(44.90, -59.80),
+                                  "Viking_Buoy"               = c(50.50, -48.50),
+                                  "Northeast_Channel"         = c(42.30, -65.50),
+                                  "Seal_Island"               = c(43.50, -66.00),
+                                  c(NA_real_, NA_real_) # fallback
+                 )
+
+                 data$latitude[data$section_name == sec] <- coords[1]
+                 data$longitude[data$section_name == sec] <- coords[2]
+               }
+               data <- data[-(which(data$mean_pH_total == -999)),]
+               data <- data[,c('year', 'mean_pH_total','year_of_publication', 'latitude', 'longitude')]
+
+
+               x <- process_indicator(
+                 data = data,
+                 indicator_var_name = "mean_pH_total",
+                 indicator = "pH",
+                 type = 'model',
+                 units = " ",
+                 scoring = "desired state: increase",
+                 PPTID = 579,
+                 source = "AZMP",
+                 control_polygon = control_polygons,
+                 project_short_title = "AZMP",
+                 climate = TRUE,
+                 climate_expectation = "FIXME",
+                 indicator_rationale = "Reduction in seawater pH as a consequence of ocean acidification may cause behavioral and physiological effects on fish (e.g., Heuer and Grosell 2014; Li et al. 2023). Ocean acidification can also increase calcium carbonate saturation affecting calcifying invertebrates such as echinoderms, mollusks, corals and crustaceans, that will experience difficultly maintaining their calcium carbonate exoskeleton and shells (e.g., Byrne and Fitzer 2019; Medeiros and Souza 2023; Shi and Li 2024).",
+                 bin_rationale = "FIXME",
+                 SME = "Unknown",
+                 areas = MPAs,
+                 plot_type = c('time-series', 'map'),
+                 plot_lm = FALSE,
+                 theme = "Ocean Structure and Movement",
+                 objectives = NA,
+                 year="year"
+               )
+               save_plots(dplyr::select(x, -data, -adjacent_data))
+               dplyr::select(x, -plot)
+               return(x)
+
+             }),
+
   tar_target(ind_silicate, command = {
     data <- data_azmp_Discrete_Occupations_Sections |>
       dplyr::select(longitude, latitude, year, depth, silicate)
