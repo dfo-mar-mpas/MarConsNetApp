@@ -551,50 +551,7 @@ raw_data_targets <- list(
     rasters
   }),
 
-  # tar_target(
-  #   name = rawdata_obis_parquet_files,
-  #   command = {
-  #     # see https://obis.org/data/access/ for the latest version of their full "periodic" export
-  #     url = "https://obis-open-data.s3.amazonaws.com/snapshots/obis_20250318_parquet.zip"
-  #     dest_dir = file.path(
-  #       store,
-  #       "..",
-  #       "..",
-  #       "MarConsNetTargets",
-  #       "data",
-  #       "obis_data"
-  #     )
-
-  #     # Set zip file path
-  #     zip_path <- file.path(dest_dir, "obis_data.zip")
-
-  #     # Download the file if it doesn't exist
-  #     if (!file.exists(zip_path)) {
-  #       message("Downloading OBIS parquet dataset...")
-  #       utils::download.file(url, zip_path, mode = "wb")
-  #     } else {
-  #       message("Using previously downloaded zip file.")
-  #     }
-
-  #     # Extract if needed
-  #     extract_dir <- file.path(dest_dir, "extracted")
-  #     if (!dir.exists(extract_dir) || length(list.files(extract_dir)) == 0) {
-  #       message("Extracting parquet files...")
-  #       utils::unzip(zip_path, exdir = extract_dir)
-  #     } else {
-  #       message("Using previously extracted files.")
-  #     }
-
-  #     # Return the path to the extracted files
-  #     return(extract_dir)
-  #   },
-  #   format = "file",
-  #   package = "paws",
-
-  #   cue = tar_cue("never") # Prevents re-downloading unless the file is deleted
-  # ),
-
-  # Re-run every 6 months
+  # Re-run every 365 days
   tar_age(
     name = rawdata_obis_s3_manifest,
     command = {
@@ -670,68 +627,122 @@ raw_data_targets <- list(
   ),
 
   tar_target(
-    name = rawdata_obis_by_region,
+    name = rawdata_obis_grid,
     command = {
-      bbox <- st_bbox(regions) |> as.numeric()
-      mid_x <- (bbox[1] + bbox[3]) / 2
-      mid_y <- (bbox[2] + bbox[4]) / 2
+      n_x = 10
+      n_y = 10
 
-      # Create coordinates for the 4 quadrants
-      coords <- list(
-        nw = c(xmin = bbox[1], ymin = mid_y, xmax = mid_x, ymax = bbox[4]),
-        ne = c(xmin = mid_x, ymin = mid_y, xmax = bbox[3], ymax = bbox[4]),
-        sw = c(xmin = bbox[1], ymin = bbox[2], xmax = mid_x, ymax = mid_y),
-        se = c(xmin = mid_x, ymin = bbox[2], xmax = bbox[3], ymax = mid_y)
+      (st_make_grid(
+        st_union(regions$geoms),
+        n = c(n_x, n_y)
+      ) |>
+        st_as_sf() |>
+        st_filter(regions) |>
+        st_as_sfc(crs = 4326) |>
+        st_as_sf())
+    }
+  ),
+
+  tar_target(
+    duckdb_spatial_installed,
+    {
+      con <- dbConnect(duckdb::duckdb())
+      on.exit(dbDisconnect(con, shutdown = TRUE))
+      dbExecute(con, "INSTALL spatial")
+      TRUE
+    }
+  ),
+
+  # Target 2: one branch per grid cell — query DuckDB
+  tar_target(
+    name = rawdata_obis_by_cell,
+    command = {
+      duckdb_spatial_installed
+
+      cellwkt <- rawdata_obis_grid$x |>
+        st_as_text()
+
+      con <- dbConnect(duckdb::duckdb())
+      dbExecute(con, "SET memory_limit='16GB'")
+
+      occ <- dbGetQuery(
+        con,
+        paste0(
+          "LOAD spatial;
+         SELECT * EXCLUDE (geometry, extensions, tags)
+         FROM read_parquet('",
+          gsub(
+            "\\\\",
+            "/",
+            normalizePath(dirname(rawdata_obis_parquet_files[1]))
+          ),
+          "/*.parquet')
+         WHERE ST_Intersects(geometry, ST_GeomFromText('",
+          cellwkt,
+          "'))"
+        )
+      ) |>
+        select(interpreted, dataset_id, flags, dropped, absence) |>
+        unnest(interpreted) |>
+        st_as_sf(
+          coords = c("decimalLongitude", "decimalLatitude"),
+          crs = 4326,
+          remove = FALSE
+        )
+
+      dbDisconnect(con, shutdown = TRUE)
+      gc()
+
+      result <- occ |>
+        st_filter(regions) |>
+        st_join(MPAs |> dplyr::select(NAME_E), left = TRUE) |>
+        st_join(regions |> dplyr::select(NAME_E), left = TRUE) |>
+        st_drop_geometry()
+
+      out_path <- file.path(
+        store,
+        "..",
+        "data",
+        "obis_data",
+        "processed_grid",
+        paste0("obis_cell_", digest::digest(cellwkt), ".parquet")
+      )
+      dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
+
+      con2 <- dbConnect(duckdb::duckdb())
+      on.exit(dbDisconnect(con2, shutdown = TRUE))
+      duckdb::duckdb_register(con2, "result", result)
+      dbExecute(
+        con2,
+        paste0("COPY result TO '", out_path, "' (FORMAT PARQUET)")
       )
 
-      # Convert all to WKT in one step
-      obis <- lapply(coords, function(subcoords) {
-        # browser()
-        class(subcoords) <- "bbox"
-        regionswkt <- subcoords |>
-          st_as_sfc(crs = st_crs(regions)) |>
-          st_as_text()
-
-        con <- dbConnect(duckdb::duckdb())
-        dbExecute(con, "SET memory_limit='16GB'")
-
-        message("extracting OBIS data for region: ", regions$NAME_E)
-
-        occ <- dbGetQuery(
-          con,
-          paste0(
-            "
-    install spatial;
-    load spatial;
-    select * from read_parquet('",
-            gsub("\\\\", "/", rawdata_obis_parquet_files),
-            "/occurrence/*.parquet')
-    where ST_Intersects(geometry, ST_GeomFromText('",
-            regionswkt,
-            "'))
-"
-          )
-        ) |>
-          st_as_sf(
-            coords = c("decimalLongitude", "decimalLatitude"),
-            crs = 4326,
-            remove = FALSE
-          ) |>
-          st_filter(regions) |>
-          st_join(MPAs |> select(NAME_E), left = TRUE) |>
-          st_join(regions |> select(NAME_E), left = TRUE)
-        dbDisconnect(con, shutdown = TRUE)
-        occ
-      }) |>
-        bind_rows()
+      out_path
     },
-    pattern = map(regions),
+    pattern = map(rawdata_obis_grid),
     iteration = "list"
   ),
 
   tar_target(
-    name = data_obis,
-    command = bind_rows(rawdata_obis_by_region)
+    data_obis,
+    command = {
+      paths <- unlist(rawdata_obis_by_cell)
+      con <- dbConnect(duckdb::duckdb())
+      on.exit(dbDisconnect(con, shutdown = TRUE))
+      dbGetQuery(
+        con,
+        paste0(
+          "SELECT * FROM read_parquet([",
+          paste0("'", paths, "'", collapse = ", "),
+          "])"
+        )
+      ) |>
+        st_as_sf(
+          coords = c("decimalLongitude", "decimalLatitude"),
+          crs = 4326,
+          remove = FALSE
+        )
+    }
   ),
 
   tar_target(name = data_MAR_biofouling_AIS, command = {
