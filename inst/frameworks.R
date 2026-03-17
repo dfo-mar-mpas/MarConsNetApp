@@ -459,7 +459,7 @@ framework_targets <- list(
       "Structure and Function",
       weights_ratio = 1,
       weights_sum = 1,
-      #ind_stratification,
+      # ind_stratification,
       ind_spring_bloom,
       ind_proportion_demersal_fish,
       ind_population_characteristics,
