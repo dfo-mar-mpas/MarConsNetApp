@@ -778,7 +778,7 @@ indicator_targets <- list(
                x <- process_indicator(
                  data = data,
                  indicator_var_name = "mean_pH_total",
-                 indicator = "pH",
+                 indicator = "Average pH levels",
                  type = 'model',
                  units = " ",
                  scoring = "desired state: increase",
