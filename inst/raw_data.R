@@ -235,8 +235,9 @@ raw_data_targets <- list(
       st_cast("MULTIPOLYGON") |>
       st_make_valid() |>
       st_transform(st_crs(regions)) |>
-      st_filter(regions)
-    sar_ch$year_of_publication <- 2025
+      st_filter(regions) |>
+      mutate(year_of_publication = 2025)
+    sar_ch
   }),
 
   # DMAPPS ----
