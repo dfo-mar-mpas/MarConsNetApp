@@ -210,6 +210,7 @@ framework_targets <- list(
       ind_chlorophyll,
       ind_temperature,
       ind_surface_height,
+      ind_pH,
       ind_bloom_amplitude,
       ind_bloom_timing,
       ind_musquash_ph,
