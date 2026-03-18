@@ -1673,7 +1673,7 @@ raw_data_targets <- list(
     # define subdirectory of which processed files to download
     subdir <- 'L0-timeseries-post'
     for (dir in glddir) {
-      message(which(glddir == dir))
+      message(which(glddir == dir), " of ", length(glddir))
       cat(paste('Check directory', dir), sep = '\n')
       # check that subdir exists
       pathcheck <- paste(ftpUrl, dir, '', sep = '/')
@@ -1725,10 +1725,10 @@ raw_data_targets <- list(
     files <- list.files(path = dataDir, pattern = "\\.nc$", full.names = TRUE)
     glider_list <- vector("list", length(files)) # pre-allocate list
 
-    message(paste0("files , ", files))
+    #message(paste0("files , ", files))
 
     for (i in seq_along(files)) {
-      message(i)
+      message(i, "of ", length(files))
       x <- try(oceglider::read.glider.netcdf(file = files[i]), silent = TRUE)
       if (!(inherits(x, "try-error"))) {
         # weird dates in the files due to a hardware issue with the gliders
@@ -1744,6 +1744,7 @@ raw_data_targets <- list(
 
         # Remove profiles with profileIndex == 0 (inflecting/stalled)
         x <- oceglider::subset(x, which(!(profileIndex == 0)))
+        if (!(length(x[['profileIndex']]) == 0)) {
 
         # vertically binning and temporally averaging the data. For our analysis we bin it to 1dbar and hourly average.
 
@@ -1766,7 +1767,7 @@ raw_data_targets <- list(
         dsubdata$mld <- NA
 
         for (j in seq_along(unique(dsubdata$profileIndex))) {
-          message(j)
+          message(j, " is j and i = ", i)
           keep <- which(x[['profileIndex']] == unique(dsubdata$profileIndex)[j])
 
           if (
@@ -1990,6 +1991,10 @@ raw_data_targets <- list(
           time = if (!is.null(x[["time"]])) x[["time"]] else NA,
           mld = if (!is.null(x[["mld"]])) x[["mld"]] else NA
         )
+      } else {
+        # 0 index
+        glider_list[[i]] <- NULL
+      }
       } else {
         glider_list[[i]] <- NULL
       }
