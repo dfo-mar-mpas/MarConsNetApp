@@ -2155,6 +2155,11 @@ raw_data_targets <- list(
 
                final <- rbind(wh,wh2)
                return(final)
+             }),
+  tar_target(name=data_seals,
+             command={
+               library(marea)
+               data(grey_seals)
              })
 
 )
