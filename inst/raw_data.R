@@ -1091,60 +1091,62 @@ raw_data_targets <- list(
       )
   }),
 
-  tar_target(name = data_QC_gulf_biogenic_habitat, command = {
-    # Sea pens significant areas
-    # from https://open.canada.ca/data/en/dataset/87ae08e8-5fc2-476a-b3f5-c8f0ea4be9ef
-    seapens <- get_spatial_layer(
-      "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/sea_pens_plumes_mer_significant_benthic_areas/MapServer/0"
-    )
+  #TODO add back in if/when we expand nationally
+  # tar_target(name = data_QC_gulf_biogenic_habitat, command = {
+  #   # Sea pens significant areas
+  #   # from https://open.canada.ca/data/en/dataset/87ae08e8-5fc2-476a-b3f5-c8f0ea4be9ef
+  #   seapens <- get_spatial_layer(
+  #     "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/sea_pens_plumes_mer_significant_benthic_areas/MapServer/0"
+  #   )
 
-    # Sponge Fields from https://osdp-psdo.canada.ca/dp/en/search/metadata/NRCAN-FGP-1-7b71b73b-0d05-4c61-958d-4beccd1bd3b1
-    spongeREST <- "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/csas_corals_sponges_2010_en/MapServer/"
-    sponge <- bind_rows(
-      get_spatial_layer(paste0(spongeREST, "10")),
-      get_spatial_layer(paste0(spongeREST, "11")) |>
-        mutate(Threshold = as.character(Threshold))
-    )
+  #   # Sponge Fields from https://osdp-psdo.canada.ca/dp/en/search/metadata/NRCAN-FGP-1-7b71b73b-0d05-4c61-958d-4beccd1bd3b1
+  #   spongeREST <- "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/csas_corals_sponges_2010_en/MapServer/"
+  #   sponge <- bind_rows(
+  #     get_spatial_layer(paste0(spongeREST, "10")),
+  #     get_spatial_layer(paste0(spongeREST, "11")) |>
+  #       mutate(Threshold = as.character(Threshold))
+  #   )
 
-    data_QC_gulf_biogenic_habitat <- bind_rows(
-      seapens |>
-        select(geoms) |>
-        mutate(layer = "Seapen Significant Areas"),
-      sponge |>
-        select(geoms) |>
-        mutate(layer = "Sponge Fields")
-    ) |>
-      group_by(layer) |>
-      reframe(geoms = st_make_valid(st_combine(geoms))) |>
-      st_as_sf()
+  #   data_QC_gulf_biogenic_habitat <- bind_rows(
+  #     seapens |>
+  #       select(geoms) |>
+  #       mutate(layer = "Seapen Significant Areas"),
+  #     sponge |>
+  #       select(geoms) |>
+  #       mutate(layer = "Sponge Fields")
+  #   ) |>
+  #     group_by(layer) |>
+  #     reframe(geoms = st_make_valid(st_combine(geoms))) |>
+  #     st_as_sf()
 
-    data_QC_gulf_biogenic_habitat$year_of_publication <- 2016
-    data_QC_gulf_biogenic_habitat$year_data_collection <- NA
-  }),
+  #   data_QC_gulf_biogenic_habitat$year_of_publication <- 2016
+  #   data_QC_gulf_biogenic_habitat$year_data_collection <- NA
+  #   data_QC_gulf_biogenic_habitat
+  # }),
 
-  tar_target(name = data_edna_data, command = {
-    data <- MarConsNetData::data_eDNA()
+  # tar_target(name = data_edna_data, command = {
+  #   data <- MarConsNetData::data_eDNA()
 
-    data <- data[-(which(is.na(data$latitude))), ]
+  #   data <- data[-(which(is.na(data$latitude))), ]
 
-    df_sf <- sf::st_as_sf(
-      data,
-      coords = c("longitude", "latitude"), # your coordinate column names
-      crs = 4326
-    )
+  #   df_sf <- sf::st_as_sf(
+  #     data,
+  #     coords = c("longitude", "latitude"), # your coordinate column names
+  #     crs = 4326
+  #   )
 
-    df_sf <- df_sf[, c("year", "species_richness", "geometry")]
+  #   df_sf <- df_sf[, c("year", "species_richness", "geometry")]
 
-    DATA2 <- add_assumptions(
-      df_sf,
-      assumptions = 'The eDNA dataset represents complete and accurate sample metadata (IDs, dates, locations) such that species richness derived from non-zero detections is a valid proxy for local biodiversity.',
-      caveats = 'The data contain known inconsistencies in naming conventions, date formats, and coordinate signs, meaning some samples may be mismatched, inferred, or excluded, potentially affecting spatial and temporal interpretation.'
-    )
+  #   DATA2 <- add_assumptions(
+  #     df_sf,
+  #     assumptions = 'The eDNA dataset represents complete and accurate sample metadata (IDs, dates, locations) such that species richness derived from non-zero detections is a valid proxy for local biodiversity.',
+  #     caveats = 'The data contain known inconsistencies in naming conventions, date formats, and coordinate signs, meaning some samples may be mismatched, inferred, or excluded, potentially affecting spatial and temporal interpretation.'
+  #   )
 
-    names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
-    DATA2$year_of_publication <- NA
-    DATA2
-  }),
+  #   names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
+  #   DATA2$year_of_publication <- NA
+  #   DATA2
+  # }),
 
   tar_target(name = data_musquash_nekton_occurence, command = {
     # data from https://catalogue.ogsl.ca/en/dataset/ca-cioos_4c93ac96-0a9f-41d5-9505-80a3b24c30ae
