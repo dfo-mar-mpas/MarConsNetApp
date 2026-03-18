@@ -49,7 +49,9 @@ pkgs <- c(
   "rvest",
   "tarchetypes",
   "magick",
-  "paws"
+  "paws",
+  "dankelley/dod",
+  "MarEcosystemApproaches/marea"
 )
 shelf(pkgs)
 
