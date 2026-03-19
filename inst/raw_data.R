@@ -959,18 +959,10 @@ raw_data_targets <- list(
     coliform_data
   }),
 
-  tar_target(
-    ds_all,
-    # because this is loaded with the Mar.datawrangling package and not mentioned in the arguments to many of it's functions
-    # mention ds_all whenever using e.g. self_filter() or summarize_catches()
-    ds_all,
-    cue = tar_cue("never")
-  ),
-
   tar_target(rv_rawdata_env, {
     # Environment
     # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
-    ds_all
+    Mar.datawrangling:::get_ds_all() # used here because otherwise it won't be available for self_filter
     .pkgenv <- new.env(parent = emptyenv())
 
     get_pesd_dw_dir <- function() {
@@ -1011,7 +1003,7 @@ raw_data_targets <- list(
       # before re-running this target
 
       temp <- rv_rawdata_env
-      ds_all # mentioned here because otherwise it won't be available for self_filter
+      Mar.datawrangling:::get_ds_all() # used here because otherwise it won't be available for self_filter
 
       GSINF <- temp$GSINF |>
         filter(!is.na(LONGITUDE), !is.na(LATITUDE)) |>
@@ -1039,7 +1031,7 @@ raw_data_targets <- list(
       # tar_invalidate(c("ds_all","rv_rawdata_env"))
       # before re-running this target
       temp <- rv_rawdata_env
-      ds_all # mentioned here because otherwise it won't be available for self_filter
+      Mar.datawrangling:::get_ds_all() # used here because otherwise it won't be available for self_filter
 
       temp$GSINF <- temp$GSINF |>
         filter(!is.na(LONGITUDE), !is.na(LATITUDE)) |>
