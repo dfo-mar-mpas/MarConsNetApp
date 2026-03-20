@@ -51,7 +51,8 @@ pkgs <- c(
   "magick",
   "paws",
   "dankelley/dod",
-  "MarEcosystemApproaches/marea"
+  "MarEcosystemApproaches/marea",
+  "httr"
 )
 shelf(pkgs)
 
