@@ -1518,98 +1518,61 @@ raw_data_targets <- list(
       slice(1) %>% # keep the first row in each group
       ungroup() # ungroup after slicing
 
-    # 1. Subset obis for just Ocean Tracking Network
-    otn_detection <- data_obis[
-      which(
-        data_obis$rightsHolder ==
-          "Ocean Tracking Network, Dalhousie University, Halifax, Nova Scotia otndc@dal.ca" &
-          !(is.na(data_obis$decimalLatitude)) &
-          !(is.na(data_obis$decimalLongitude))
-      ),
-    ]
-
-    # 2. Remove all NA columns
-    bad <- NULL
-    message(1)
-    for (i in seq_along(names(otn_detection))) {
-      message(i)
-      bad[i] <- all(is.na(otn_detection[[names(otn_detection)[i]]]))
-    }
-
-    oo <- otn_detection[, -which(bad)] # Removing all NA columns
-
-    # 3. Further subset to only look at relevant columns
-    ooo <- oo[, c(
-      "dataset_id",
-      "id",
-      "aphiaid",
-      'catalogNumber',
-      'collectionCode',
-      'datasetID',
-      "datasetName",
-      'decimalLatitude',
-      "decimalLongitude",
-      "eventDate",
-      'eventID',
-      "occurrenceID",
-      'organismID',
-      'organismName',
-      'rightsHolder',
-      'scientificName',
-      "NAME_E.x",
-      "geometry"
-    )]
-
-    # 4.  Remove the ones that say 'release' and 'capture' in occurence ID
-    ooo <- ooo[-which(grepl("release", ooo$occurrenceID)), ]
-    ooo <- ooo[-which(grepl("capture", ooo$occurrenceID)), ]
-
-    # 5. Only keep obis data that has tags$collectioncode in ooo$occurenceID (e.g. IBFS).
-    ## This is to allow us to find the tag ID for all obis
-
-    keeper <- list()
-    message(2)
-    for (i in seq_along(unique(tags$collectioncode))) {
-      message(i)
-      keeper[[i]] <- which(grepl(
-        unique(tags$collectioncode)[i],
-        ooo$occurrenceID
-      ))
-    }
-
-    keep <- unlist(keeper)
-    ooo <- ooo[keep, ]
-
-    #Extracting 'tag' info from occurenceID
-    ## (Trial and error)- tags$catalogNumber gives us the tag ID. It can be grepl in ooo$occurenceID
-
     pattern_dash <- "^.*?(\\d{4}-\\d{2}-\\d{2}T[^_]*_)"
     pattern_underscore <- "^.*?(\\d{4}_\\d{2}_\\d{2}T[^_]*_)"
 
-    cut1 <- sapply(ooo$occurrenceID, function(x) {
-      if (grepl(pattern_dash, x)) {
-        sub(pattern_dash, "", x)
-      } else if (grepl(pattern_underscore, x)) {
-        sub(pattern_underscore, "", x)
-      } else {
-        sub("^.*?_", "", x) # remove everything before the first underscore
-      }
-    })
-
-    cut2 <- sub("_.*$", "", cut1)
-
-    bad_tags <- ooo$occurrenceID[which(!cut2 %in% tags$catalognumber)]
-    bad <- which(!cut2 %in% tags$catalognumber) # FIXME: this could use more work.
-
-    ## 6. Remove ones that could not get an associated tag
-    ooo <- ooo[-bad, ]
-    ooo$tag_id <- cut2[which(cut2 %in% tags$catalognumber)]
-    names(ooo)[which(names(ooo) == "NAME_E.x")] <- "areaID"
-
-    ooo
-    #tracking <- split(ooo, ooo$tag_id)
-
-    #tracking
+    otn <- data_obis |>
+      filter(
+        rightsHolder ==
+          "Ocean Tracking Network, Dalhousie University, Halifax, Nova Scotia otndc@dal.ca",
+        !is.na(decimalLatitude),
+        !is.na(decimalLongitude),
+        !grepl("release|capture", occurrenceID) # exclude release and capture events, which are not detections of tagged animals
+      ) |>
+      select(
+        dataset_id,
+        aphiaid,
+        catalogNumber,
+        collectionCode,
+        datasetID,
+        datasetName,
+        decimalLatitude,
+        decimalLongitude,
+        eventDate,
+        eventID,
+        occurrenceID,
+        organismID,
+        organismName,
+        rightsHolder,
+        scientificName,
+        NAME_E.x,
+        geometry
+      ) |>
+      filter(grepl(
+        paste(unique(tags$collectioncode), collapse = "|"),
+        occurrenceID
+      )) |>
+      mutate(
+        tag_id = sub(
+          "_.*$",
+          "",
+          case_when(
+            grepl(pattern_dash, occurrenceID) ~ sub(
+              pattern_dash,
+              "",
+              occurrenceID
+            ),
+            grepl(pattern_underscore, occurrenceID) ~ sub(
+              pattern_underscore,
+              "",
+              occurrenceID
+            ),
+            .default = sub("^.*?_", "", occurrenceID)
+          )
+        )
+      ) |>
+      filter(tag_id %in% tags$catalognumber) |>
+      rename(areaID = NAME_E.x)
   }),
 
   tar_target(data_otn_number_of_recievers, command = {
@@ -1739,256 +1702,265 @@ raw_data_targets <- list(
         # Remove profiles with profileIndex == 0 (inflecting/stalled)
         x <- oceglider::subset(x, which(!(profileIndex == 0)))
         if (!(length(x[['profileIndex']]) == 0)) {
+          # vertically binning and temporally averaging the data. For our analysis we bin it to 1dbar and hourly average.
 
-        # vertically binning and temporally averaging the data. For our analysis we bin it to 1dbar and hourly average.
+          # startTime and endTime will be numeric, that's OK b/c it will work for next calculation
+          # find which profiles are within the defined averaging time
+          # here it will be 1 hour.
+          dt <- 60 * 60 #sph
+          # define depth bins
+          dz <- 1 # size of depth bins
+          nz <- 600 # max depth of bins
+          z <- seq(1, nz, by = dz)
 
-        # startTime and endTime will be numeric, that's OK b/c it will work for next calculation
-        # find which profiles are within the defined averaging time
-        # here it will be 1 hour.
-        dt <- 60 * 60 #sph
-        # define depth bins
-        dz <- 1 # size of depth bins
-        nz <- 600 # max depth of bins
-        z <- seq(1, nz, by = dz)
+          # initialize indices output
+          vars <- names(x[['data']][['payload1']]) # get all variables in glider file
+          # define breaks for splitting data
+          zbreaks <- c(0, z) + dz / 2
 
-        # initialize indices output
-        vars <- names(x[['data']][['payload1']]) # get all variables in glider file
-        # define breaks for splitting data
-        zbreaks <- c(0, z) + dz / 2
+          dsubdata <- x[['data']][['payload1']]
 
-        dsubdata <- x[['data']][['payload1']]
+          dsubdata$mld <- NA
 
-        dsubdata$mld <- NA
-
-        for (j in seq_along(unique(dsubdata$profileIndex))) {
-          message(j, " is j and i = ", i)
-          keep <- which(x[['profileIndex']] == unique(dsubdata$profileIndex)[j])
-
-          if (
-            !all(is.na(dsubdata$PSAL[keep])) &&
-              !all(is.na(dsubdata$TEMP[keep])) &&
-              !all(is.na(dsubdata$depth[keep]))
-          ) {
-            # Use depth as a proxy for pressure (1 m ≈ 1 dbar)
-            approx_pres <- dsubdata$depth[keep]
-            SA <- gsw_SA_from_SP(
-              dsubdata$PSAL[keep],
-              approx_pres[keep],
-              mean(dsubdata$longitude[keep], na.rm = TRUE),
-              mean(dsubdata$latitude[keep], na.rm = TRUE)
+          for (j in seq_along(unique(dsubdata$profileIndex))) {
+            message(j, " is j and i = ", i)
+            keep <- which(
+              x[['profileIndex']] == unique(dsubdata$profileIndex)[j]
             )
-            CT <- gsw_CT_from_t(SA, dsubdata$TEMP[keep], approx_pres)
-            rho <- gsw_rho(SA, CT, approx_pres)
 
-            # Define MLD function using Δρ threshold
-            calc_mld <- function(depth, density, threshold = 0.03) {
-              ord <- order(depth)
-              depth <- depth[ord]
-              density <- density[ord]
-              surface_density <- density[which.min(depth)]
-              idx <- which(density - surface_density > threshold)
-              if (length(idx) == 0) {
-                return(max(depth, na.rm = TRUE)) # fallback if no stratification
-              } else {
-                return(depth[min(idx)])
+            if (
+              !all(is.na(dsubdata$PSAL[keep])) &&
+                !all(is.na(dsubdata$TEMP[keep])) &&
+                !all(is.na(dsubdata$depth[keep]))
+            ) {
+              # Use depth as a proxy for pressure (1 m ≈ 1 dbar)
+              approx_pres <- dsubdata$depth[keep]
+              SA <- gsw_SA_from_SP(
+                dsubdata$PSAL[keep],
+                approx_pres[keep],
+                mean(dsubdata$longitude[keep], na.rm = TRUE),
+                mean(dsubdata$latitude[keep], na.rm = TRUE)
+              )
+              CT <- gsw_CT_from_t(SA, dsubdata$TEMP[keep], approx_pres)
+              rho <- gsw_rho(SA, CT, approx_pres)
+
+              # Define MLD function using Δρ threshold
+              calc_mld <- function(depth, density, threshold = 0.03) {
+                ord <- order(depth)
+                depth <- depth[ord]
+                density <- density[ord]
+                surface_density <- density[which.min(depth)]
+                idx <- which(density - surface_density > threshold)
+                if (length(idx) == 0) {
+                  return(max(depth, na.rm = TRUE)) # fallback if no stratification
+                } else {
+                  return(depth[min(idx)])
+                }
               }
+
+              dsubdata$mld[keep] <- calc_mld(dsubdata$depth[keep], rho)
+            } else {
+              dsubdata$mld[keep] <- NA
             }
-
-            dsubdata$mld[keep] <- calc_mld(dsubdata$depth[keep], rho)
-          } else {
-            dsubdata$mld[keep] <- NA
           }
-        }
 
-        # Add mld into variable list:
-        vars <- c(vars, "mld")
+          # Add mld into variable list:
+          vars <- c(vars, "mld")
 
-        # Above is to determine the MLD for each profile (upcast and downcast in the glider netcdf)
+          # Above is to determine the MLD for each profile (upcast and downcast in the glider netcdf)
 
-        # split the data based on pressure breaks (zbreaks)
-        dsplit <- split(
-          x = dsubdata,
-          f = cut(dsubdata[['PRES']], breaks = zbreaks)
-        )
-        # now do the mean for each split
-        ## time is an issue for the `apply(..., FUN=mean)` so omit it
-        ## this is OK as we'll do the mean time over the entire profile
-        dmean <- lapply(dsplit, function(k) {
-          apply(
-            X = k[, !names(k) %in% 'time'],
-            MARGIN = 2,
-            FUN = mean,
-            na.rm = TRUE
+          # split the data based on pressure breaks (zbreaks)
+          dsplit <- split(
+            x = dsubdata,
+            f = cut(dsubdata[['PRES']], breaks = zbreaks)
           )
-        })
-        ## combine it together
-        dmeanall <- as.data.frame(do.call('rbind', dmean))
-        ### find which rows have all NA values
-        omitrows <- apply(X = dmeanall, MARGIN = 1, FUN = function(k) {
-          all(is.na(k))
-        })
-        dmeanall <- dmeanall[!omitrows, ]
-        zprofile <- z[!omitrows]
-        ## create ctd object
-        ### get average values from all data in dsub for certain parameters
-        profileTime <- mean(dsubdata[['time']], na.rm = TRUE)
-        profileLongitude <- mean(dsubdata[['longitude']], na.rm = TRUE)
-        profileLatitude <- mean(dsubdata[['latitude']], na.rm = TRUE)
-        ### create ctd object
-        ctdadd <- oce::as.ctd(
-          salinity = dmeanall[['PSAL']],
-          temperature = dmeanall[['TEMP']],
-          pressure = zprofile,
-          conductivity = dmeanall[['CNDC']],
-          longitude = profileLongitude,
-          latitude = profileLatitude,
-          time = profileTime
-        )
-        ### add remaining variables,
-        ###     omit a few extra to avoid misleading user, these include :
-        ###         PRES2, depth
-        addvars <- vars[
-          !vars %in%
-            c(
-              'PSAL',
-              'TEMP',
-              'PRES',
-              'CNDC',
-              'longitude',
-              'latitude',
-              'time',
-              'PRES2',
-              'depth'
+          # now do the mean for each split
+          ## time is an issue for the `apply(..., FUN=mean)` so omit it
+          ## this is OK as we'll do the mean time over the entire profile
+          dmean <- lapply(dsplit, function(k) {
+            apply(
+              X = k[, !names(k) %in% 'time'],
+              MARGIN = 2,
+              FUN = mean,
+              na.rm = TRUE
             )
-        ]
-        for (addvar in addvars) {
-          addvarname <- addvar
-
-          ctdadd <- oce::oceSetData(
-            object = ctdadd,
-            name = addvarname,
-            value = dmeanall[[addvar]]
+          })
+          ## combine it together
+          dmeanall <- as.data.frame(do.call('rbind', dmean))
+          ### find which rows have all NA values
+          omitrows <- apply(X = dmeanall, MARGIN = 1, FUN = function(k) {
+            all(is.na(k))
+          })
+          dmeanall <- dmeanall[!omitrows, ]
+          zprofile <- z[!omitrows]
+          ## create ctd object
+          ### get average values from all data in dsub for certain parameters
+          profileTime <- mean(dsubdata[['time']], na.rm = TRUE)
+          profileLongitude <- mean(dsubdata[['longitude']], na.rm = TRUE)
+          profileLatitude <- mean(dsubdata[['latitude']], na.rm = TRUE)
+          ### create ctd object
+          ctdadd <- oce::as.ctd(
+            salinity = dmeanall[['PSAL']],
+            temperature = dmeanall[['TEMP']],
+            pressure = zprofile,
+            conductivity = dmeanall[['CNDC']],
+            longitude = profileLongitude,
+            latitude = profileLatitude,
+            time = profileTime
           )
-        }
-        ### add metadata from original file
-        ctdadd@metadata <- x@metadata
-        ### have to re-set longitude, latitude, and time
-        ctdadd <- oce::oceSetMetadata(
-          object = ctdadd,
-          name = 'longitude',
-          value = profileLongitude
-        )
-        ctdadd <- oce::oceSetMetadata(
-          object = ctdadd,
-          name = 'latitude',
-          value = profileLatitude
-        )
-        ctdadd <- oce::oceSetMetadata(
-          object = ctdadd,
-          name = 'time',
-          value = profileTime
-        )
-        ### save ctd
-        x <- ctdadd
+          ### add remaining variables,
+          ###     omit a few extra to avoid misleading user, these include :
+          ###         PRES2, depth
+          addvars <- vars[
+            !vars %in%
+              c(
+                'PSAL',
+                'TEMP',
+                'PRES',
+                'CNDC',
+                'longitude',
+                'latitude',
+                'time',
+                'PRES2',
+                'depth'
+              )
+          ]
+          for (addvar in addvars) {
+            addvarname <- addvar
 
-        glider_list[[i]] <- data.frame(
-          BBP700 = if (!is.null(x[["BBP700"]])) x[["BBP700"]] else NA,
-          CDOM = if (!is.null(x[["CDOM"]])) x[["CDOM"]] else NA,
-          CHLA = if (!is.null(x[["CHLA"]])) x[["CHLA"]] else NA,
-          CNDC = if (!is.null(x[["CNDC"]])) x[["CNDC"]] else NA,
-          CNDC2 = if (!is.null(x[["CNDC2"]])) x[["CNDC2"]] else NA,
-          DeadReckoning = if (!is.null(x[["DeadReckoning"]])) {
-            x[["DeadReckoning"]]
-          } else {
-            NA
-          },
-          depth = if (!is.null(x[["depth"]])) x[["depth"]] else NA,
-          DOXY = if (!is.null(x[["DOXY"]])) x[["DOXY"]] else NA,
-          FLUORESCENCE_CHLA = if (!is.null(x[["FLUORESCENCE_CHLA"]])) {
-            x[["FLUORESCENCE_CHLA"]]
-          } else {
-            NA
-          },
-          FREQUENCY_DOXY = if (!is.null(x[["FREQUENCY_DOXY"]])) {
-            x[["FREQUENCY_DOXY"]]
-          } else {
-            NA
-          },
-          GLIDER_HEADING = if (!is.null(x[["GLIDER_HEADING"]])) {
-            x[["GLIDER_HEADING"]]
-          } else {
-            NA
-          },
-          GLIDER_PITCH = if (!is.null(x[["GLIDER_PITCH"]])) {
-            x[["GLIDER_PITCH"]]
-          } else {
-            NA
-          },
-          GLIDER_ROLL = if (!is.null(x[["GLIDER_ROLL"]])) {
-            x[["GLIDER_ROLL"]]
-          } else {
-            NA
-          },
-          latitude = if (!is.null(x[["latitude"]])) x[["latitude"]] else NA,
-          LEGATO_CODA_CORR_PHASE = if (
-            !is.null(x[["LEGATO_CODA_CORR_PHASE"]])
-          ) {
-            x[["LEGATO_CODA_CORR_PHASE"]]
-          } else {
-            NA
-          },
-          longitude = if (!is.null(x[["longitude"]])) x[["longitude"]] else NA,
-          MFLUV1_NAPH_SCALED = if (!is.null(x[["MFLUV1_NAPH_SCALED"]])) {
-            x[["MFLUV1_NAPH_SCALED"]]
-          } else {
-            NA
-          },
-          MFLUV1_PHE_SCALED = if (!is.null(x[["MFLUV1_PHE_SCALED"]])) {
-            x[["MFLUV1_PHE_SCALED"]]
-          } else {
-            NA
-          },
-          MFLUV1_TMP = if (!is.null(x[["MFLUV1_TMP"]])) {
-            x[["MFLUV1_TMP"]]
-          } else {
-            NA
-          },
-          MFLUV1_TRY_SCALED = if (!is.null(x[["MFLUV1_TRY_SCALED"]])) {
-            x[["MFLUV1_TRY_SCALED"]]
-          } else {
-            NA
-          },
-          NavState = if (!is.null(x[["NavState"]])) x[["NavState"]] else NA,
-          oxygenConcentration = if (!is.null(x[["oxygenConcentration"]])) {
-            x[["oxygenConcentration"]]
-          } else {
-            NA
-          },
-          PRES = if (!is.null(x[["PRES"]])) x[["PRES"]] else NA,
-          PRES2 = if (!is.null(x[["PRES2"]])) x[["PRES2"]] else NA,
-          profileDirection = if (!is.null(x[["profileDirection"]])) {
-            x[["profileDirection"]]
-          } else {
-            NA
-          },
-          profileIndex = if (!is.null(x[["profileIndex"]])) {
-            x[["profileIndex"]]
-          } else {
-            NA
-          },
-          PSAL = if (!is.null(x[["PSAL"]])) x[["PSAL"]] else NA,
-          PSAL2 = if (!is.null(x[["PSAL2"]])) x[["PSAL2"]] else NA,
-          salinity = if (!is.null(x[["salinity"]])) x[["salinity"]] else NA,
-          TEMP = if (!is.null(x[["TEMP"]])) x[["TEMP"]] else NA,
-          TEMP_DOXY = if (!is.null(x[["TEMP_DOXY"]])) x[["TEMP_DOXY"]] else NA,
-          TEMP2 = if (!is.null(x[["TEMP2"]])) x[["TEMP2"]] else NA,
-          time = if (!is.null(x[["time"]])) x[["time"]] else NA,
-          mld = if (!is.null(x[["mld"]])) x[["mld"]] else NA
-        )
-      } else {
-        # 0 index
-        glider_list[[i]] <- NULL
-      }
+            ctdadd <- oce::oceSetData(
+              object = ctdadd,
+              name = addvarname,
+              value = dmeanall[[addvar]]
+            )
+          }
+          ### add metadata from original file
+          ctdadd@metadata <- x@metadata
+          ### have to re-set longitude, latitude, and time
+          ctdadd <- oce::oceSetMetadata(
+            object = ctdadd,
+            name = 'longitude',
+            value = profileLongitude
+          )
+          ctdadd <- oce::oceSetMetadata(
+            object = ctdadd,
+            name = 'latitude',
+            value = profileLatitude
+          )
+          ctdadd <- oce::oceSetMetadata(
+            object = ctdadd,
+            name = 'time',
+            value = profileTime
+          )
+          ### save ctd
+          x <- ctdadd
+
+          glider_list[[i]] <- data.frame(
+            BBP700 = if (!is.null(x[["BBP700"]])) x[["BBP700"]] else NA,
+            CDOM = if (!is.null(x[["CDOM"]])) x[["CDOM"]] else NA,
+            CHLA = if (!is.null(x[["CHLA"]])) x[["CHLA"]] else NA,
+            CNDC = if (!is.null(x[["CNDC"]])) x[["CNDC"]] else NA,
+            CNDC2 = if (!is.null(x[["CNDC2"]])) x[["CNDC2"]] else NA,
+            DeadReckoning = if (!is.null(x[["DeadReckoning"]])) {
+              x[["DeadReckoning"]]
+            } else {
+              NA
+            },
+            depth = if (!is.null(x[["depth"]])) x[["depth"]] else NA,
+            DOXY = if (!is.null(x[["DOXY"]])) x[["DOXY"]] else NA,
+            FLUORESCENCE_CHLA = if (!is.null(x[["FLUORESCENCE_CHLA"]])) {
+              x[["FLUORESCENCE_CHLA"]]
+            } else {
+              NA
+            },
+            FREQUENCY_DOXY = if (!is.null(x[["FREQUENCY_DOXY"]])) {
+              x[["FREQUENCY_DOXY"]]
+            } else {
+              NA
+            },
+            GLIDER_HEADING = if (!is.null(x[["GLIDER_HEADING"]])) {
+              x[["GLIDER_HEADING"]]
+            } else {
+              NA
+            },
+            GLIDER_PITCH = if (!is.null(x[["GLIDER_PITCH"]])) {
+              x[["GLIDER_PITCH"]]
+            } else {
+              NA
+            },
+            GLIDER_ROLL = if (!is.null(x[["GLIDER_ROLL"]])) {
+              x[["GLIDER_ROLL"]]
+            } else {
+              NA
+            },
+            latitude = if (!is.null(x[["latitude"]])) x[["latitude"]] else NA,
+            LEGATO_CODA_CORR_PHASE = if (
+              !is.null(x[["LEGATO_CODA_CORR_PHASE"]])
+            ) {
+              x[["LEGATO_CODA_CORR_PHASE"]]
+            } else {
+              NA
+            },
+            longitude = if (!is.null(x[["longitude"]])) {
+              x[["longitude"]]
+            } else {
+              NA
+            },
+            MFLUV1_NAPH_SCALED = if (!is.null(x[["MFLUV1_NAPH_SCALED"]])) {
+              x[["MFLUV1_NAPH_SCALED"]]
+            } else {
+              NA
+            },
+            MFLUV1_PHE_SCALED = if (!is.null(x[["MFLUV1_PHE_SCALED"]])) {
+              x[["MFLUV1_PHE_SCALED"]]
+            } else {
+              NA
+            },
+            MFLUV1_TMP = if (!is.null(x[["MFLUV1_TMP"]])) {
+              x[["MFLUV1_TMP"]]
+            } else {
+              NA
+            },
+            MFLUV1_TRY_SCALED = if (!is.null(x[["MFLUV1_TRY_SCALED"]])) {
+              x[["MFLUV1_TRY_SCALED"]]
+            } else {
+              NA
+            },
+            NavState = if (!is.null(x[["NavState"]])) x[["NavState"]] else NA,
+            oxygenConcentration = if (!is.null(x[["oxygenConcentration"]])) {
+              x[["oxygenConcentration"]]
+            } else {
+              NA
+            },
+            PRES = if (!is.null(x[["PRES"]])) x[["PRES"]] else NA,
+            PRES2 = if (!is.null(x[["PRES2"]])) x[["PRES2"]] else NA,
+            profileDirection = if (!is.null(x[["profileDirection"]])) {
+              x[["profileDirection"]]
+            } else {
+              NA
+            },
+            profileIndex = if (!is.null(x[["profileIndex"]])) {
+              x[["profileIndex"]]
+            } else {
+              NA
+            },
+            PSAL = if (!is.null(x[["PSAL"]])) x[["PSAL"]] else NA,
+            PSAL2 = if (!is.null(x[["PSAL2"]])) x[["PSAL2"]] else NA,
+            salinity = if (!is.null(x[["salinity"]])) x[["salinity"]] else NA,
+            TEMP = if (!is.null(x[["TEMP"]])) x[["TEMP"]] else NA,
+            TEMP_DOXY = if (!is.null(x[["TEMP_DOXY"]])) {
+              x[["TEMP_DOXY"]]
+            } else {
+              NA
+            },
+            TEMP2 = if (!is.null(x[["TEMP2"]])) x[["TEMP2"]] else NA,
+            time = if (!is.null(x[["time"]])) x[["time"]] else NA,
+            mld = if (!is.null(x[["mld"]])) x[["mld"]] else NA
+          )
+        } else {
+          # 0 index
+          glider_list[[i]] <- NULL
+        }
       } else {
         glider_list[[i]] <- NULL
       }
@@ -2067,146 +2039,153 @@ raw_data_targets <- list(
       )
     }
   ),
-  tar_target(name=data_buoy,
-             command={
-               arguments <- c("Banquereau Bank","East Scotian Slope", "Halifax", "Halifax DISCUS TriAx","Halifax Harbour",
-                              "Laurentian Fan", "Port Hope", "Prince Edward Point", "Tail of the Bank")
-               dfs <- NULL
-               for (i in seq_along(arguments)) {
-                 message(i)
-                 destdir <- tempdir(check = TRUE)
-                 file <- dod.buoy("MEDS", arguments[i], destdir = destdir)
-                 col.names <- strsplit(readLines(file, 1), ",")[[1]]
-                 d <- read.csv(file, skip = 2, col.names = col.names)
-                 names(d) <- tolower(names(d))
+  tar_target(name = data_buoy, command = {
+    arguments <- c(
+      "Banquereau Bank",
+      "East Scotian Slope",
+      "Halifax",
+      "Halifax DISCUS TriAx",
+      "Halifax Harbour",
+      "Laurentian Fan",
+      "Port Hope",
+      "Prince Edward Point",
+      "Tail of the Bank"
+    )
+    dfs <- NULL
+    for (i in seq_along(arguments)) {
+      message(i)
+      destdir <- tempdir(check = TRUE)
+      file <- dod.buoy("MEDS", arguments[i], destdir = destdir)
+      col.names <- strsplit(readLines(file, 1), ",")[[1]]
+      d <- read.csv(file, skip = 2, col.names = col.names)
+      names(d) <- tolower(names(d))
 
-                 if ("vwh." %in% names(d)) {
-                   d$waveheight <- d$vwh.
-                 }
-                 if ('date' %in% names(d)) {
-                   d$date_revamped <- as.POSIXct(d$date, tz = "UTC", format = "%m/%d/%Y %H:%M")
-                 } else {
-                   d$date_revamped <- NA
-                 }
+      if ("vwh." %in% names(d)) {
+        d$waveheight <- d$vwh.
+      }
+      if ('date' %in% names(d)) {
+        d$date_revamped <- as.POSIXct(
+          d$date,
+          tz = "UTC",
+          format = "%m/%d/%Y %H:%M"
+        )
+      } else {
+        d$date_revamped <- NA
+      }
 
-                 dfs[[i]] <- d[,c("latitude", 'longitude', 'date_revamped', 'waveheight')]
+      dfs[[i]] <- d[, c("latitude", 'longitude', 'date_revamped', 'waveheight')]
 
-                 unlink(destdir, recursive = TRUE)
-               }
+      unlink(destdir, recursive = TRUE)
+    }
 
-               wave_height <- do.call(rbind, dfs)
+    wave_height <- do.call(rbind, dfs)
 
-               wh <- wave_height[-(which(is.na(wave_height$waveheight))),]
-               wh$longitude <- -1*(wh$longitude)
+    wh <- wave_height[-(which(is.na(wave_height$waveheight))), ]
+    wh$longitude <- -1 * (wh$longitude)
 
-               ## SECOND DATA SOURCE
-               arguments <- c('h1', 'halifax', 'hkb', 'saint_john', 'saint_johns')
-               dfs <- NULL
+    ## SECOND DATA SOURCE
+    arguments <- c('h1', 'halifax', 'hkb', 'saint_john', 'saint_johns')
+    dfs <- NULL
 
-               for (i in seq_along(arguments)) {
-                 message(i, " of ", length(arguments))
-                 destdir <- tempdir(check = TRUE)
-                 file <- dod.buoy("smartatlantic", arguments[i], destdir = destdir)
-                 col.names <- strsplit(readLines(file, 1), ",")[[1]]
-                 d <- read.csv(file, skip = 2, col.names = col.names)
-                 names(d) <- tolower(names(d))
+    for (i in seq_along(arguments)) {
+      message(i, " of ", length(arguments))
+      destdir <- tempdir(check = TRUE)
+      file <- dod.buoy("smartatlantic", arguments[i], destdir = destdir)
+      col.names <- strsplit(readLines(file, 1), ",")[[1]]
+      d <- read.csv(file, skip = 2, col.names = col.names)
+      names(d) <- tolower(names(d))
 
-                 if ('lat' %in% names(d)) {
-                   d$latitude <- d$lat
-                   d$longitude <- d$lon
-                 }
+      if ('lat' %in% names(d)) {
+        d$latitude <- d$lat
+        d$longitude <- d$lon
+      }
 
-                 if ("wave_ht_sig" %in% names(d)) {
-                   d$waveheight <- d$wave_ht_sig
-                 } else {
-                   browser(1)
-                 }
+      if ("wave_ht_sig" %in% names(d)) {
+        d$waveheight <- d$wave_ht_sig
+      } else {
+        browser(1)
+      }
 
-                 if ('timestamp' %in% names(d)) {
-                   d$date_revamped <- as.POSIXct(
-                     d$timestamp,
-                     tz = "UTC",
-                     format = "%Y-%m-%dT%H:%M:%SZ"
-                   )
-                 } else {
-                   browser(2)
-                   d$date_revamped <- NA
-                 }
+      if ('timestamp' %in% names(d)) {
+        d$date_revamped <- as.POSIXct(
+          d$timestamp,
+          tz = "UTC",
+          format = "%Y-%m-%dT%H:%M:%SZ"
+        )
+      } else {
+        browser(2)
+        d$date_revamped <- NA
+      }
 
-                 dfs[[i]] <- d[,c("latitude", 'longitude', 'date_revamped', 'waveheight')]
+      dfs[[i]] <- d[, c("latitude", 'longitude', 'date_revamped', 'waveheight')]
 
-                 unlink(destdir, recursive = TRUE)
-               }
+      unlink(destdir, recursive = TRUE)
+    }
 
-               wave_height2 <- do.call(rbind, dfs)
+    wave_height2 <- do.call(rbind, dfs)
 
-               wh2 <- wave_height2[-(which(is.na(wave_height2$waveheight))),]
-               wh2$latitude <- round(wh2$latitude,2)
-               wh2$longitude <- round(wh2$longitude,2)
+    wh2 <- wave_height2[-(which(is.na(wave_height2$waveheight))), ]
+    wh2$latitude <- round(wh2$latitude, 2)
+    wh2$longitude <- round(wh2$longitude, 2)
 
+    final <- rbind(wh, wh2)
+    return(final)
+  }),
+  tar_target(name = data_seals, command = {
+    library(marea)
+    data(grey_seals)
+  }),
+  tar_target(name = data_offshore_energy_wells, command = {
+    url <- "https://cnsopbdigitaldata.ca/geoviewer/dmc/public/dow-2025.xlsx"
 
-               final <- rbind(wh,wh2)
-               return(final)
-             }),
-  tar_target(name=data_seals,
-             command={
-               library(marea)
-               data(grey_seals)
-             }),
-  tar_target(name=data_offshore_energy_wells,
-             command={
-               url <- "https://cnsopbdigitaldata.ca/geoviewer/dmc/public/dow-2025.xlsx"
+    tmp <- tempfile(fileext = ".xlsx")
 
-               tmp <- tempfile(fileext = ".xlsx")
+    GET(url, write_disk(tmp, overwrite = TRUE))
 
-               GET(url, write_disk(tmp, overwrite = TRUE))
+    wells <- read_excel(tmp)
+    names(wells)[which(names(wells) == 'Longitude (W)')] <- 'longitude'
+    names(wells)[which(names(wells) == "Latitude       (N)")] <- 'latitude'
 
-               wells <- read_excel(tmp)
-               names(wells)[which(names(wells) == 'Longitude (W)')] <- 'longitude'
-               names(wells)[which(names(wells) == "Latitude       (N)")] <- 'latitude'
+    lat <- wells$latitude
+    lng <- wells$longitude
 
-               lat <- wells$latitude
-               lng <- wells$longitude
+    latitude_clean <- substr(lat, 1, nchar(lat) - 1)
+    latitude_clean <- sub("\"", "", latitude_clean)
 
-               latitude_clean <- substr(lat, 1, nchar(lat) - 1)
-               latitude_clean <- sub("\"", "", latitude_clean)
+    longitude_clean <- substr(lng, 1, nchar(lng) - 1)
+    longitude_clean <- sub("\"", "", longitude_clean)
 
-               longitude_clean <- substr(lng, 1, nchar(lng) - 1)
-               longitude_clean <- sub("\"", "", longitude_clean)
+    convert_dms <- function(x) {
+      nums <- regmatches(x, gregexpr("[0-9.]+", x))
+      sapply(nums, function(p) {
+        d <- as.numeric(substr(p[1], 1, 2)) # degrees (first 2 digits)
+        m <- as.numeric(substr(p[1], 3, 4)) # minutes (next 2)
+        s <- as.numeric(p[2]) # seconds
+        d + m / 60 + s / 3600
+      })
+    }
+    wells$latitude <- convert_dms(latitude_clean)
+    wells$longitude <- convert_dms(longitude_clean) * (-1)
+    return(wells)
+  }),
+  tar_target(data_cables, command = {
+    url <- "https://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/SubmarineCables/FeatureServer/2/query?where=1=1&outFields=*&f=geojson"
 
-               convert_dms <- function(x) {
-                 nums <- regmatches(x, gregexpr("[0-9.]+", x))
-                 sapply(nums, function(p) {
-                   d <- as.numeric(substr(p[1], 1, 2))   # degrees (first 2 digits)
-                   m <- as.numeric(substr(p[1], 3, 4))   # minutes (next 2)
-                   s <- as.numeric(p[2])                 # seconds
-                   d + m/60 + s/3600
-                 })
-               }
-               wells$latitude <- convert_dms(latitude_clean)
-               wells$longitude <- convert_dms(longitude_clean)*(-1)
-               return(wells)
-             }),
-  tar_target(data_cables,
-             command={
-               url <- "https://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/SubmarineCables/FeatureServer/2/query?where=1=1&outFields=*&f=geojson"
+    cables <- st_read(url)
 
-               cables <- st_read(url)
+    # make sure geometry column is active
+    mpas <- st_as_sf(MPAs)
 
-               # make sure geometry column is active
-               mpas <- st_as_sf(MPAs)
+    # ensure same CRS
+    cables <- st_transform(cables, st_crs(mpas))
 
-               # ensure same CRS
-               cables <- st_transform(cables, st_crs(mpas))
+    mps_counts <- mpas %>%
+      mutate(
+        cable_count = lengths(st_intersects(., cables))
+      ) %>%
+      st_drop_geometry()
 
-               mps_counts <- mpas %>%
-                 mutate(
-                   cable_count = lengths(st_intersects(., cables))
-                 ) %>%
-                 st_drop_geometry()
-
-               data <- mps_counts[,c("NAME_E", "cable_count")]
-               return(data)
-             })
-
+    data <- mps_counts[, c("NAME_E", "cable_count")]
+    return(data)
+  })
 )
