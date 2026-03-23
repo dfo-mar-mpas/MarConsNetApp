@@ -217,7 +217,7 @@ framework_targets <- list(
       ind_musquash_dissolved_oxygen,
       ind_musquash_phosphate,
       ind_musquash_secchi,
-      # ind_oxygen,
+      ind_oxygen,
       ind_musquash_coliform,
       ind_sst,
       ind_temp_at_depth,
