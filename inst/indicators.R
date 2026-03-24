@@ -693,9 +693,15 @@ indicator_targets <- list(
     MPAs
     data <- data_gliders
     year <- as.numeric(format(data$time, "%Y"))
-    data$year <- year
+    data$year_of_data_collection <- year
     data <- data[which(!is.na(data$mld)), ]
-    data <- data[, c("longitude", "latitude", "year", "mld", "depth")]
+    data <- data[, c(
+      "longitude",
+      "latitude",
+      "year_of_data_collection",
+      "mld",
+      "depth"
+    )]
 
     data$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
 
