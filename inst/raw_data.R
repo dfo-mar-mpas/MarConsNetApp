@@ -108,26 +108,14 @@ raw_data_targets <- list(
     areas <- areas |>
       filter(!is.na(region))
 
-    bbox_coords <- matrix(
-      c(
-        -171,
-        24, # xmin, ymin (Hawaii/Alaska/Florida range)
-        -50,
-        24, # xmax, ymin
-        -50,
-        84, # xmax, ymax
-        -171,
-        84, # xmin, ymax
-        -171,
-        24 # close the polygon
-      ),
-      ncol = 2,
-      byrow = TRUE
-    )
-
-    bbox <- st_polygon(list(bbox_coords)) |>
-      st_sfc(crs = st_crs(areas)) |>
-      st_make_valid()
+    bbox <- data_eez |>
+      st_bbox() |>
+      st_as_sfc(crs = st_crs(data_eez)) |>
+      st_buffer(500000) |> # extra buffer for connectivity
+      st_bbox() |>
+      st_as_sfc(crs = st_crs(data_eez)) |>
+      st_make_valid() |>
+      st_transform(st_crs(areas))
 
     # Step 4: Get union of all MPAs
     all_mpa_union <- st_union(areas$geoms)
@@ -194,6 +182,10 @@ raw_data_targets <- list(
       2000
     )
     areas_full
+  }),
+
+  tar_target(name = data_eez, command = {
+    data_eez <- mregions2::gaz_geometry(8493)
   }),
 
   tar_target(name = ebsa, command = {
@@ -1116,29 +1108,29 @@ raw_data_targets <- list(
   #   data_QC_gulf_biogenic_habitat
   # }),
 
-  # tar_target(name = data_edna_data, command = {
-  #   data <- MarConsNetData::data_eDNA()
+  tar_target(name = data_edna_data, command = {
+    data <- MarConsNetData::data_eDNA()
 
-  #   data <- data[-(which(is.na(data$latitude))), ]
+    data <- data[-(which(is.na(data$latitude))), ]
 
-  #   df_sf <- sf::st_as_sf(
-  #     data,
-  #     coords = c("longitude", "latitude"), # your coordinate column names
-  #     crs = 4326
-  #   )
+    df_sf <- sf::st_as_sf(
+      data,
+      coords = c("longitude", "latitude"), # your coordinate column names
+      crs = 4326
+    )
 
-  #   df_sf <- df_sf[, c("year", "species_richness", "geometry")]
+    df_sf <- df_sf[, c("year", "species_richness", "geometry")]
 
-  #   DATA2 <- add_assumptions(
-  #     df_sf,
-  #     assumptions = 'The eDNA dataset represents complete and accurate sample metadata (IDs, dates, locations) such that species richness derived from non-zero detections is a valid proxy for local biodiversity.',
-  #     caveats = 'The data contain known inconsistencies in naming conventions, date formats, and coordinate signs, meaning some samples may be mismatched, inferred, or excluded, potentially affecting spatial and temporal interpretation.'
-  #   )
+    DATA2 <- add_assumptions(
+      df_sf,
+      assumptions = 'The eDNA dataset represents complete and accurate sample metadata (IDs, dates, locations) such that species richness derived from non-zero detections is a valid proxy for local biodiversity.',
+      caveats = 'The data contain known inconsistencies in naming conventions, date formats, and coordinate signs, meaning some samples may be mismatched, inferred, or excluded, potentially affecting spatial and temporal interpretation.'
+    )
 
-  #   names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
-  #   DATA2$year_of_publication <- NA
-  #   DATA2
-  # }),
+    names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
+    DATA2$year_of_publication <- NA
+    DATA2
+  }),
 
   tar_target(name = data_musquash_nekton_occurence, command = {
     # data from https://catalogue.ogsl.ca/en/dataset/ca-cioos_4c93ac96-0a9f-41d5-9505-80a3b24c30ae
