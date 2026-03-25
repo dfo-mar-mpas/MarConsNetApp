@@ -733,7 +733,7 @@ indicator_targets <- list(
   }),
 
   tar_target(
-    ind_pH, # JAIM
+    ind_pH,
     command = {
       data <- azmpdata::Derived_Annual_Carbonate
       data$year <- as.numeric(data$year)
@@ -2216,6 +2216,83 @@ indicator_targets <- list(
       values = conservation_targets
     ),
 
+  tar_target(name = ind_wind_speed_and_storminess, command = {
+
+
+    data_buoy$year_of_data_collection <- as.numeric(format(as.POSIXct(data_buoy$date_revamped), "%Y"))
+    data <- data_buoy[,c("latitude", 'longitude', 'waveheight', 'year_of_data_collection')]
+
+    # JAIM
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "waveheight",
+      indicator = "Wave Height",
+      type = "in situ",
+      units = "m",
+      scoring = "desired state: decrease",
+      project_short_title = "MEDS and Smart Atlantic Buoy Data",
+      climate = TRUE,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Water turbulence, inferred from wind speed, has been linked to the feeding success of various species of fish larvae (e.g., McLaren et al. 1997; Reiss et al. 2002). Natural disturbance of the seafloor may also be an important factor that needs to be considered when changes in benthic community composition are observed (Harris et al. 2025).",
+      control_polygon = control_polygons,
+      SME = "Unknown",
+      bin_rationale = "FIXME",
+      areas = MPAs,
+      plot_type = c('time-series', 'map'),
+      plot_lm = FALSE,
+      year='year_of_data_collection',
+      theme = "Ocean Structure and Movement",
+      objectives = c(
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      ),
+      data_year_of_publication=as.numeric(format(Sys.Date(), "%Y"))
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+
+    return(x)
+
+  }), # Environmental Representativity, Ocean Conditions
+
+  tar_target(name = ind_seasonal_presence_seals, command = {
+
+    data <- data_seals
+    data$latitude <- 43.93
+    data$longitude <- -60.01
+    data$year_of_data_collection <- as.numeric(data_seals$year)
+    data$number_of_seals <- as.numeric(data_seals$median)
+    data <- data[,c("year_of_data_collection", 'latitude', 'longitude', 'number_of_seals')]
+
+    data$year_of_publication <- 2021
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "number_of_seals",
+      indicator = "Number of Seals",
+      type = "in situ",
+      units = " ",
+      scoring = "desired state: increase",
+      PPTID = 717,
+      source = "Sable Grey Seal Program",
+      project_short_title = "Sable Grey Seal Program",
+      areas = MPAs,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Seals feed on a variety of species, including groundfish",
+      bin_rationale = "FIXME",
+      plot_type = c("time-series", "map"),
+      objectives = c("Protect unique, rare, or sensitive ecological features"),
+      theme = "Marine Mammals and Other Top Predators",
+      SME = "Unknown",
+      control_polygon = control_polygons,
+      plot_lm = FALSE
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }), # Connectivity, Marine Mammals and other Top Predators
+
   # PLACEHOLDER INDICATORS ----
 
   tar_target(
@@ -2362,21 +2439,6 @@ indicator_targets <- list(
     )
   }), # Environmental Representativity, Ocean Conditions?
 
-  tar_target(name = ind_wind_speed_and_storminess, command = {
-    ind_placeholder(
-      ind_name = "Wind Speed and Storminess",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "Gliders",
-      objectives = c(
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
-
   tar_target(name = ind_chlorophyll_a, command = {
     ind_placeholder(
       ind_name = "Chlorophyll a",
@@ -2471,18 +2533,6 @@ indicator_targets <- list(
     )
   }), # Connectivity, Marine Mammals other top Predators
 
-  tar_target(name = ind_seasonal_presence_seals, command = {
-    ind_placeholder(
-      ind_name = "Seasonal Presence/Absence of Seals",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "Tagging",
-      objectives = c("Protect unique, rare, or sensitive ecological features"),
-      theme = "Marine Mammals and Other Top Predators"
-    )
-  }), # Connectivity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_seasonal_presence_pelagics, command = {
     ind_placeholder(

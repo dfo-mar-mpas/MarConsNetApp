@@ -2126,6 +2126,7 @@ raw_data_targets <- list(
   tar_target(name = data_seals, command = {
     library(marea)
     data(grey_seals)
+    return(grey_seals)
   }),
   tar_target(name = data_offshore_energy_wells, command = {
     url <- "https://cnsopbdigitaldata.ca/geoviewer/dmc/public/dow-2025.xlsx"
