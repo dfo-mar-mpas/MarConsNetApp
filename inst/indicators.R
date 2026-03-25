@@ -733,7 +733,7 @@ indicator_targets <- list(
   }),
 
   tar_target(
-    ind_pH,
+    ind_ave_ph_level,
     command = {
       data <- azmpdata::Derived_Annual_Carbonate
       data$year <- as.numeric(data$year)
@@ -1445,6 +1445,7 @@ indicator_targets <- list(
   }),
 
   tar_target(name = ind_MAR_biofouling_AIS, command = {
+    #JAIM
     data <- data_MAR_biofouling_AIS$AIS_AllSpecies_2021_PA |>
       filter(cover_index == 1) |>
       group_by(species_name) |>
@@ -2222,8 +2223,6 @@ indicator_targets <- list(
     data_buoy$year_of_data_collection <- as.numeric(format(as.POSIXct(data_buoy$date_revamped), "%Y"))
     data <- data_buoy[,c("latitude", 'longitude', 'waveheight', 'year_of_data_collection')]
 
-    # JAIM
-
     x <- process_indicator(
       data = data,
       indicator_var_name = "waveheight",
@@ -2292,6 +2291,67 @@ indicator_targets <- list(
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }), # Connectivity, Marine Mammals and other Top Predators
+
+  tar_target(name = ind_well_proximity, command = {
+# JAIM
+    data <- data_offshore_energy_wells
+    data$year_of_publication <- 2025
+
+    data <- data[,c("latitude", 'longitude', 'year_of_publication','Well Name')]
+    names(data)[which(names(data) == 'Well Name')] <- 'well_name'
+
+    data <- data |>
+      dplyr::filter(!is.na(longitude), !is.na(latitude)) |>
+      st_as_sf(coords = c("longitude", "latitude"), crs=4326)
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "well_name",
+      indicator = "Number of Offshore Energy Wells",
+      type = "in situ",
+      units = NA,
+      scoring = "representation",
+      direction = "inverse",
+      PPTID = NA,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Exposure to petroleum can cause biological effects, changes in behavior and modify benthic communities.",
+      SME = "Unknown",
+      bin_rationale = "FIXME",
+      source = "Open Data (DFO)",
+      project_short_title = "Offshore Wells",
+      areas = MPAs[MPAs$region == "Maritimes", ],
+      plot_type = 'map',
+      plot_lm = FALSE,
+      theme = "Anthropogenic Pressure and Impacts",
+      objectives = c(
+            "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
+            "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+            "conserve and protect benthic (seabed) habitats"
+          )
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+
+
+    # ind_placeholder(
+    #   ind_name = "Number of wells in proximity to WEBMR",
+    #   areas = MPAs[
+    #     which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
+    #   ],
+    #   readiness = "Unknown",
+    #   source = "Offshore Energy Regulator",
+    #   objectives = c(
+    #     "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
+    #     "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+    #     "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+    #     "conserve and protect benthic (seabed) habitats"
+    #   ),
+    #   theme = "Anthropogenic Pressure and Impacts"
+    # )
+  }), # Threats to Habitat, Anthropogenic Pressure and Impacts
+
 
   # PLACEHOLDER INDICATORS ----
 
@@ -2363,22 +2423,6 @@ indicator_targets <- list(
   tar_target(name = ind_oxygen_saturation, command = {
     ind_placeholder(
       ind_name = "Oxygen Saturation",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Readily Available",
-      source = "AZMP",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities",
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
-
-  tar_target(name = ind_ave_ph_level, command = {
-    ind_placeholder(
-      ind_name = "Average pH Level",
       areas = MPAs[
         which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
       ],
@@ -2906,24 +2950,6 @@ indicator_targets <- list(
       ],
       readiness = "Unknown",
       source = "NRCan",
-      objectives = c(
-        "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
-        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-        "conserve and protect benthic (seabed) habitats"
-      ),
-      theme = "Anthropogenic Pressure and Impacts"
-    )
-  }), # Threats to Habitat, Anthropogenic Pressure and Impacts
-
-  tar_target(name = ind_well_proximity, command = {
-    ind_placeholder(
-      ind_name = "Number of wells in proximity to WEBMR",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "Offshore Energy Regulator",
       objectives = c(
         "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
         "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
