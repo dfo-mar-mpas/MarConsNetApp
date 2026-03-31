@@ -1326,9 +1326,8 @@ indicator_targets <- list(
         geoms = st_make_valid(st_union(geometry))
       ) |>
       ungroup() |>
-      st_as_sf()
-
-    data$year_of_publication <- as.numeric(format(Sys.Date(), "%Y")) # Special cumulative year
+      st_as_sf() |>
+      mutate(year_of_publication = as.numeric(format(Sys.Date(), "%Y")))
 
     x <- process_indicator(
       data = data,
