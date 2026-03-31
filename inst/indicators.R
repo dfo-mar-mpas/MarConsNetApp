@@ -733,7 +733,7 @@ indicator_targets <- list(
   }),
 
   tar_target(
-    ind_pH, # JAIM
+    ind_ave_ph_level,
     command = {
       data <- azmpdata::Derived_Annual_Carbonate
       data$year <- as.numeric(data$year)
@@ -1444,6 +1444,7 @@ indicator_targets <- list(
   }),
 
   tar_target(name = ind_MAR_biofouling_AIS, command = {
+    #JAIM
     data <- data_MAR_biofouling_AIS$AIS_AllSpecies_2021_PA |>
       filter(cover_index == 1) |>
       group_by(species_name) |>
@@ -2215,6 +2216,142 @@ indicator_targets <- list(
       values = conservation_targets
     ),
 
+  tar_target(name = ind_wind_speed_and_storminess, command = {
+
+
+    data_buoy$year_of_data_collection <- as.numeric(format(as.POSIXct(data_buoy$date_revamped), "%Y"))
+    data <- data_buoy[,c("latitude", 'longitude', 'waveheight', 'year_of_data_collection')]
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "waveheight",
+      indicator = "Wave Height",
+      type = "in situ",
+      units = "m",
+      scoring = "desired state: decrease",
+      project_short_title = "MEDS and Smart Atlantic Buoy Data",
+      climate = TRUE,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Water turbulence, inferred from wind speed, has been linked to the feeding success of various species of fish larvae (e.g., McLaren et al. 1997; Reiss et al. 2002). Natural disturbance of the seafloor may also be an important factor that needs to be considered when changes in benthic community composition are observed (Harris et al. 2025).",
+      control_polygon = control_polygons,
+      SME = "Unknown",
+      bin_rationale = "FIXME",
+      areas = MPAs,
+      plot_type = c('time-series', 'map'),
+      plot_lm = FALSE,
+      year='year_of_data_collection',
+      theme = "Ocean Structure and Movement",
+      objectives = c(
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      ),
+      data_year_of_publication=as.numeric(format(Sys.Date(), "%Y"))
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+
+    return(x)
+
+  }), # Environmental Representativity, Ocean Conditions
+
+  tar_target(name = ind_seasonal_presence_seals, command = {
+
+    data <- data_seals
+    data$latitude <- 43.93
+    data$longitude <- -60.01
+    data$year_of_data_collection <- as.numeric(data_seals$year)
+    data$number_of_seals <- as.numeric(data_seals$median)
+    data <- data[,c("year_of_data_collection", 'latitude', 'longitude', 'number_of_seals')]
+
+    data$year_of_publication <- 2021
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "number_of_seals",
+      indicator = "Number of Seals",
+      type = "in situ",
+      units = " ",
+      scoring = "desired state: increase",
+      PPTID = 717,
+      source = "Sable Grey Seal Program",
+      project_short_title = "Sable Grey Seal Program",
+      areas = MPAs,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Seals feed on a variety of species, including groundfish",
+      bin_rationale = "FIXME",
+      plot_type = c("time-series", "map"),
+      objectives = c("Protect unique, rare, or sensitive ecological features"),
+      theme = "Marine Mammals and Other Top Predators",
+      SME = "Unknown",
+      control_polygon = control_polygons,
+      plot_lm = FALSE
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }), # Connectivity, Marine Mammals and other Top Predators
+
+  tar_target(name = ind_well_proximity, command = {
+# JAIM
+    data <- data_offshore_energy_wells
+    data$year_of_publication <- 2025
+
+    data <- data[,c("latitude", 'longitude', 'year_of_publication','Well Name')]
+    names(data)[which(names(data) == 'Well Name')] <- 'well_name'
+
+    data <- data |>
+      dplyr::filter(!is.na(longitude), !is.na(latitude)) |>
+      st_as_sf(coords = c("longitude", "latitude"), crs=4326)
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "well_name",
+      indicator = "Number of Offshore Energy Wells",
+      type = "in situ",
+      units = NA,
+      scoring = "representation",
+      direction = "inverse",
+      PPTID = NA,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Exposure to petroleum can cause biological effects, changes in behavior and modify benthic communities.",
+      SME = "Unknown",
+      bin_rationale = "FIXME",
+      source = "Open Data (DFO)",
+      project_short_title = "Offshore Wells",
+      areas = MPAs[MPAs$region == "Maritimes", ],
+      plot_type = 'map',
+      plot_lm = FALSE,
+      theme = "Anthropogenic Pressure and Impacts",
+      objectives = c(
+            "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
+            "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+            "conserve and protect benthic (seabed) habitats"
+          )
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+
+
+    # ind_placeholder(
+    #   ind_name = "Number of wells in proximity to WEBMR",
+    #   areas = MPAs[
+    #     which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
+    #   ],
+    #   readiness = "Unknown",
+    #   source = "Offshore Energy Regulator",
+    #   objectives = c(
+    #     "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
+    #     "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+    #     "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+    #     "conserve and protect benthic (seabed) habitats"
+    #   ),
+    #   theme = "Anthropogenic Pressure and Impacts"
+    # )
+  }), # Threats to Habitat, Anthropogenic Pressure and Impacts
+
+
   # PLACEHOLDER INDICATORS ----
 
   tar_target(
@@ -2298,22 +2435,6 @@ indicator_targets <- list(
     )
   }), # Environmental Representativity, Ocean Conditions
 
-  tar_target(name = ind_ave_ph_level, command = {
-    ind_placeholder(
-      ind_name = "Average pH Level",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Readily Available",
-      source = "AZMP",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities",
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
-
   tar_target(name = ind_carbonate, command = {
     ind_placeholder(
       ind_name = "Carbonate",
@@ -2360,21 +2481,6 @@ indicator_targets <- list(
       theme = "Ocean Conditions"
     )
   }), # Environmental Representativity, Ocean Conditions?
-
-  tar_target(name = ind_wind_speed_and_storminess, command = {
-    ind_placeholder(
-      ind_name = "Wind Speed and Storminess",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "Gliders",
-      objectives = c(
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_chlorophyll_a, command = {
     ind_placeholder(
@@ -2470,18 +2576,6 @@ indicator_targets <- list(
     )
   }), # Connectivity, Marine Mammals other top Predators
 
-  tar_target(name = ind_seasonal_presence_seals, command = {
-    ind_placeholder(
-      ind_name = "Seasonal Presence/Absence of Seals",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "Tagging",
-      objectives = c("Protect unique, rare, or sensitive ecological features"),
-      theme = "Marine Mammals and Other Top Predators"
-    )
-  }), # Connectivity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_seasonal_presence_pelagics, command = {
     ind_placeholder(
@@ -2855,24 +2949,6 @@ indicator_targets <- list(
       ],
       readiness = "Unknown",
       source = "NRCan",
-      objectives = c(
-        "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
-        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-        "conserve and protect benthic (seabed) habitats"
-      ),
-      theme = "Anthropogenic Pressure and Impacts"
-    )
-  }), # Threats to Habitat, Anthropogenic Pressure and Impacts
-
-  tar_target(name = ind_well_proximity, command = {
-    ind_placeholder(
-      ind_name = "Number of wells in proximity to WEBMR",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "Offshore Energy Regulator",
       objectives = c(
         "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
         "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",

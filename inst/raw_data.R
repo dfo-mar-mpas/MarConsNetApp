@@ -2129,6 +2129,7 @@ raw_data_targets <- list(
   tar_target(name = data_seals, command = {
     library(marea)
     data(grey_seals)
+    return(grey_seals)
   }),
   tar_target(name = data_offshore_energy_wells, command = {
     url <- "https://cnsopbdigitaldata.ca/geoviewer/dmc/public/dow-2025.xlsx"
@@ -2188,6 +2189,7 @@ raw_data_targets <- list(
     mpa_vect <- vect(mpas)
     url <- "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/5b86e2d2-cec1-4956-a9d5-12d487aca11b/attachments/NorthwestAtlantic_VesselDensity_2023_AIS.zip"
     temp_zip <- tempfile(fileext = ".zip")
+    options(timeout = 1000)
     download.file(url, temp_zip, mode = "wb")
     temp_dir <- tempdir()
     unzip(temp_zip, exdir = temp_dir)
@@ -2202,8 +2204,8 @@ raw_data_targets <- list(
     vals_sample <- values(r_ll, mat = FALSE) # extract raster values
     vals_sample <- vals_sample[is.finite(vals_sample)] # remove NA and Inf
 
-    plot(r_ll)
-    plot(mpa_vect, add = TRUE, border = "lightgray", lwd = 2)
+    #plot(r_ll)
+    #plot(mpa_vect, add = TRUE, border = "lightgray", lwd = 2)
 
     ## ANALYSIS
     r_mpas <- mask(r_ll, mpa_vect)
@@ -2214,33 +2216,27 @@ raw_data_targets <- list(
 
     # ANALYSIS
     ## Step 1 — Extract raster values inside each MPA
-    mpa_values <- terra::extract(r_ll, mpa_vect, ID = TRUE)
-
-    ## Step 2 — Summarize per MPA
-    mpa_rasters <- vector("list", length(mpa_vect))
-
-    # Loop over each MPA to mask the raster
-    for (i in seq_along(mpa_vect)) {
-      # mask raster to the single polygon
-      mpa_rasters[[i]] <- mask(r_ll, mpa_vect[i])
-    }
-
-    # Extract statistics (mean, max, sum) from the raster inside each MPA
-    mpa_summary <- data.frame(
-      NAME_E = mpas$NAME_E,
-      mean_vessels = sapply(mpa_rasters, function(x) {
-        mean(values(x), na.rm = TRUE)
-      }),
-      max_vessels = sapply(mpa_rasters, function(x) {
-        max(values(x), na.rm = TRUE)
-      }),
-      sum_vessels = sapply(mpa_rasters, function(x) {
-        sum(values(x), na.rm = TRUE)
-      }),
-      raster = I(mpa_rasters) # store the SpatRaster in a list-column
-    )
-
-    final <- mpa_summary[, c("NAME_E", 'mean_vessels', 'raster')]
-    return(final)
+    # mpa_values <- terra::extract(r_ll, mpa_vect, ID=TRUE)
+    #
+    # ## Step 2 — Summarize per MPA
+    # mpa_rasters <- vector("list", length(mpa_vect))
+    #
+    # # Loop over each MPA to mask the raster
+    # for(i in seq_along(mpa_vect)){
+    #   # mask raster to the single polygon
+    #   mpa_rasters[[i]] <- mask(r_ll, mpa_vect[i])
+    # }
+    #
+    # # Extract statistics (mean, max, sum) from the raster inside each MPA
+    # mpa_summary <- data.frame(
+    #   NAME_E = mpas$NAME_E,
+    #   mean_vessels = sapply(mpa_rasters, function(x) mean(values(x), na.rm=TRUE)),
+    #   max_vessels  = sapply(mpa_rasters, function(x) max(values(x), na.rm=TRUE)),
+    #   sum_vessels  = sapply(mpa_rasters, function(x) sum(values(x), na.rm=TRUE)),
+    #   raster = I(mpa_rasters)  # store the SpatRaster in a list-column
+    # )
+    #
+    # final <- mpa_summary[,c("NAME_E", 'mean_vessels', 'raster')]
+    return(r_ll)
   })
 )
