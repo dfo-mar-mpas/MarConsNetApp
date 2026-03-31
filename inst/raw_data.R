@@ -108,20 +108,23 @@ raw_data_targets <- list(
     areas <- areas |>
       filter(!is.na(region))
 
-    bbox <- data_eez |>
-      st_bbox() |>
-      st_as_sfc(crs = st_crs(data_eez)) |>
-      st_buffer(500000) |> # extra buffer for connectivity
-      st_bbox() |>
-      st_as_sfc(crs = st_crs(data_eez)) |>
+    sf::sf_use_s2(FALSE)
+
+    eez_buffer <- data_eez |>
+      st_transform(3979) |>
+      st_union() |>
+      st_simplify(dTolerance = 50000) |>
+      st_buffer(550000) |>
       st_make_valid() |>
       st_transform(st_crs(areas))
 
-    # Step 4: Get union of all MPAs
+    # Get union of all MPAs
     all_mpa_union <- st_union(areas$geoms)
 
-    # Step 5: Compute difference (the "outside" area)
-    outside_geom <- st_difference(bbox, all_mpa_union) |> st_make_valid()
+    # Compute difference (the "outside" area)
+    outside_geom <- st_difference(eez_buffer, all_mpa_union) |> st_make_valid()
+
+    sf::sf_use_s2(TRUE)
 
     # Step 6: Create the Outside row
     outside_row <- tibble(
@@ -2180,8 +2183,8 @@ raw_data_targets <- list(
     data <- mps_counts[, c("NAME_E", "cable_count")]
     return(data)
   }),
-  tar_target(data_vessel_traffic, command={
-    mpas <- MPAs[-45,]
+  tar_target(data_vessel_traffic, command = {
+    mpas <- MPAs[-45, ]
     mpa_vect <- vect(mpas)
     url <- "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/5b86e2d2-cec1-4956-a9d5-12d487aca11b/attachments/NorthwestAtlantic_VesselDensity_2023_AIS.zip"
     temp_zip <- tempfile(fileext = ".zip")
@@ -2193,11 +2196,11 @@ raw_data_targets <- list(
     # list files
     tif_file <- file.path(temp_dir, "All_VesselsPerDay_2023_AIS.tif")
     r <- rast(tif_file)
-    r_ll <- project(r, "EPSG:4326")  # reproject to lon/lat
+    r_ll <- project(r, "EPSG:4326") # reproject to lon/lat
 
     ## CREATING PALETTE
-    vals_sample <- values(r_ll, mat = FALSE)        # extract raster values
-    vals_sample <- vals_sample[is.finite(vals_sample)]  # remove NA and Inf
+    vals_sample <- values(r_ll, mat = FALSE) # extract raster values
+    vals_sample <- vals_sample[is.finite(vals_sample)] # remove NA and Inf
 
     plot(r_ll)
     plot(mpa_vect, add = TRUE, border = "lightgray", lwd = 2)
@@ -2211,13 +2214,13 @@ raw_data_targets <- list(
 
     # ANALYSIS
     ## Step 1 — Extract raster values inside each MPA
-    mpa_values <- terra::extract(r_ll, mpa_vect, ID=TRUE)
+    mpa_values <- terra::extract(r_ll, mpa_vect, ID = TRUE)
 
     ## Step 2 — Summarize per MPA
     mpa_rasters <- vector("list", length(mpa_vect))
 
     # Loop over each MPA to mask the raster
-    for(i in seq_along(mpa_vect)){
+    for (i in seq_along(mpa_vect)) {
       # mask raster to the single polygon
       mpa_rasters[[i]] <- mask(r_ll, mpa_vect[i])
     }
@@ -2225,13 +2228,19 @@ raw_data_targets <- list(
     # Extract statistics (mean, max, sum) from the raster inside each MPA
     mpa_summary <- data.frame(
       NAME_E = mpas$NAME_E,
-      mean_vessels = sapply(mpa_rasters, function(x) mean(values(x), na.rm=TRUE)),
-      max_vessels  = sapply(mpa_rasters, function(x) max(values(x), na.rm=TRUE)),
-      sum_vessels  = sapply(mpa_rasters, function(x) sum(values(x), na.rm=TRUE)),
-      raster = I(mpa_rasters)  # store the SpatRaster in a list-column
+      mean_vessels = sapply(mpa_rasters, function(x) {
+        mean(values(x), na.rm = TRUE)
+      }),
+      max_vessels = sapply(mpa_rasters, function(x) {
+        max(values(x), na.rm = TRUE)
+      }),
+      sum_vessels = sapply(mpa_rasters, function(x) {
+        sum(values(x), na.rm = TRUE)
+      }),
+      raster = I(mpa_rasters) # store the SpatRaster in a list-column
     )
 
-    final <- mpa_summary[,c("NAME_E", 'mean_vessels', 'raster')]
+    final <- mpa_summary[, c("NAME_E", 'mean_vessels', 'raster')]
     return(final)
   })
 )
