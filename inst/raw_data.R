@@ -976,12 +976,10 @@ raw_data_targets <- list(
       'rv',
       extract_user = "DAIGLER",
       extract_computer = "WLNSBIO90210",
-      cxn = DBI::dbConnect(
-        odbc::odbc(),
-        dsn = "PTRAN",
-        uid = "DAIGLER",
-        pwd = pwd
-      ),
+      cxn = ROracle::dbConnect(DBI::dbDriver("Oracle"),
+                               username = "DAIGLER",
+                               password = pwd,
+                               "PTRAN"),
       reextract.override = T,
       env = .pkgenv
     )

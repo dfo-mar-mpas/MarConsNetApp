@@ -95,7 +95,7 @@ tar_make(
   script = "inst/_targets.R"
 )
 
-tar_make("data_musquash_MMMP_birds", script = "inst/_targets.R")
+tar_make("windowsdependenttargets", script = "inst/_targets.R")
 
 tar_visnetwork(script = "inst/_targets.R")
 # tar_make("upload_all_data_to_shiny",script="inst/_targets.R")

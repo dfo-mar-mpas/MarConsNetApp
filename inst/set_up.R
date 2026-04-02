@@ -43,7 +43,6 @@ pkgs <- c(
   "gsw",
   "leaflet",
   "rgbif",
-  "qs",
   "qs2",
   "odbc",
   "rvest",
