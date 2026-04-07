@@ -1363,9 +1363,12 @@ indicator_targets <- list(
 
   tar_target(name = ind_species_richness_eDNA, command = {
     data_edna_data
+    MPAs
+    control_polygons
     message(class(data_edna_data))
 
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    #names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    data <- data_edna_data
     data$year_of_publication <- 2026
 
     x <- process_indicator(
@@ -1395,6 +1398,9 @@ indicator_targets <- list(
         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
       )
     )
+
+    message('finished process indicator')
+
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
@@ -1588,6 +1594,10 @@ indicator_targets <- list(
   tar_target(name = ind_musquash_ph, command = {
     data <- data_musquash_eutrophication |>
       dplyr::select(Lon, Lat, pH, year)
+
+    names(data)[which(names(data) == "Lat")] <- 'latitude'
+    names(data)[which(names(data) == "Lon")] <- 'longitude'
+
     names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
     data$year_of_publication <- 2025
 
@@ -1610,8 +1620,8 @@ indicator_targets <- list(
       areas = MPAs[MPAs$NAME_E == "Musquash Estuary Marine Protected Area", ],
       plot_type = c('time-series', 'map'),
       plot_lm = FALSE,
-      latitude = 'Lat',
-      longitude = 'Lon',
+      latitude = 'latitude',
+      longitude = 'longitude',
       theme = "Ocean Conditions",
       objectives = c(
         "Maintain/promote ecosystem structure and functioning",
@@ -2303,13 +2313,16 @@ indicator_targets <- list(
       dplyr::filter(!is.na(longitude), !is.na(latitude)) |>
       st_as_sf(coords = c("longitude", "latitude"), crs=4326)
 
+    names(data)[which(names(data) == 'geometry')] <- 'geoms'
+    st_geometry(data) <- "geoms"
+
     x <- process_indicator(
       data = data,
       indicator_var_name = "well_name",
       indicator = "Number of Offshore Energy Wells",
       type = "in situ",
       units = NA,
-      scoring = "representation",
+      scoring = "representation: count",
       direction = "inverse",
       PPTID = NA,
       climate_expectation = "FIXME",
@@ -2332,23 +2345,6 @@ indicator_targets <- list(
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
-
-
-    # ind_placeholder(
-    #   ind_name = "Number of wells in proximity to WEBMR",
-    #   areas = MPAs[
-    #     which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-    #   ],
-    #   readiness = "Unknown",
-    #   source = "Offshore Energy Regulator",
-    #   objectives = c(
-    #     "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
-    #     "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-    #     "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-    #     "conserve and protect benthic (seabed) habitats"
-    #   ),
-    #   theme = "Anthropogenic Pressure and Impacts"
-    # )
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
 
