@@ -1110,9 +1110,13 @@ raw_data_targets <- list(
   # }),
 
   tar_target(name = data_edna_data, command = {
-    data <- MarConsNetData::data_eDNA()
+    token <- read.table(file.path(
+      dirname(path_to_store()),
+      'data',
+      "token.txt"
+    ))$V1
 
-    data <- data[-(which(is.na(data$latitude))), ]
+    data <- MarConsNetData::data_eDNA(token=token)
 
     df_sf <- sf::st_as_sf(
       data,
