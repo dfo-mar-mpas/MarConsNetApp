@@ -2227,10 +2227,13 @@ indicator_targets <- list(
     ),
 
   tar_target(name = ind_wind_speed_and_storminess, command = {
+    data_buoy
 
 
     data_buoy$year_of_data_collection <- as.numeric(format(as.POSIXct(data_buoy$date_revamped), "%Y"))
     data <- data_buoy[,c("latitude", 'longitude', 'waveheight', 'year_of_data_collection')]
+    data <- data[-(which(is.na(data$latitude))),]
+    data <- st_as_sf(data, coords = c("longitude", "latitude"), crs = 4326)
 
     x <- process_indicator(
       data = data,
