@@ -2035,7 +2035,7 @@ indicator_targets <- list(
     ind$SME <- NA
     ind$adjacent_data <- I(list(data_musquash_MMMP_birds))
     ind$adjacent_score <- NA
-    ind$data_year_of_publication <- format(Sys.Date(), "%Y")
+    ind$data_year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
     ind$last_year_of_data_collection <- NA
 
     ind <- as_tibble(ind)
