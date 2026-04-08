@@ -52,7 +52,8 @@ pkgs <- c(
   "dankelley/dod",
   "MarEcosystemApproaches/marea",
   "httr",
-  "terra"
+  "terra",
+  "stars"
 )
 shelf(pkgs)
 

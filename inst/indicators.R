@@ -1405,7 +1405,7 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
-  tar_target(name = ind_MAR_cum_impact, command = {
+  tar_target(name = ind_MAR_cum_impact, command = { # JAIM
     x <- process_indicator(
       data = data_MAR_cumulative_impacts$Cumul_Impact_Maritimes_ALL.tif,
       indicator_var_name = "Cumul_Impact_Maritimes_ALL.tif",
@@ -2302,7 +2302,6 @@ indicator_targets <- list(
   }), # Connectivity, Marine Mammals and other Top Predators
 
   tar_target(name = ind_well_proximity, command = {
-# JAIM
     data <- data_offshore_energy_wells
     data$year_of_publication <- 2025
 
@@ -2346,6 +2345,82 @@ indicator_targets <- list(
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
+
+
+
+  tar_target(name = ind_cables, command = {
+
+    data <- data_cables
+    data$year_of_publication <- 2016
+
+    names(data)[which(names(data) == 'geometry')] <- 'geoms'
+    st_geometry(data) <- "geoms"
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "Name",
+      indicator = "Number of Cables",
+      type = "in situ",
+      units = NA,
+      scoring = "representation: count",
+      direction = "inverse",
+      PPTID = NA,
+      climate_expectation = "FIXME",
+      indicator_rationale = "The use of submarine power cables is expected to increase due to the growth of the marine renewable energy sector. Their impacts include physical disturbance, noise, chemical pollution, heat and electromagnetic field emissions between others.",
+      SME = "Unknown",
+      bin_rationale = "FIXME",
+      source = "Open Data (DFO)",
+      project_short_title = "Cables",
+      areas = MPAs[MPAs$region == "Maritimes", ],
+      plot_type = 'map',
+      plot_lm = FALSE,
+      theme = "Anthropogenic Pressure and Impacts",
+      objectives =  c(
+        "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
+        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+        "conserve and protect benthic (seabed) habitats"
+      )
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }), # Threats to Habitat, Anthropogenic Pressure and Impacts
+
+  tar_target(name = ind_vessel_traffic, command = { # JAIM
+
+
+    x <- process_indicator(
+      data = data_vessel_traffic,
+      indicator_var_name = "All_VesselsPerDay_2023_AIS",
+      indicator = "Vessel Traffic Per Day",
+      type = "model",
+      units = NA,
+      scoring = "median",
+      direction = "inverse",
+      PPTID = NA,
+      source = "Open Data (DFO)",
+      climate_expectation = "FIXME",
+      indicator_rationale = "Frequency and speed of transits within or nearby WEBMR by vessels other than pleasure craft, broken down into naval vessels, fishing vessels not fishing in the marine refuge, and other vessels, as well as indicators of impact (e.g. noise, light)",
+      bin_rationale = "FIXME",
+      SME = "Unknown",
+      project_short_title = "Vessel Traffic",
+      areas = MPAs[MPAs$region == "Maritimes", ],
+      plot_type = 'map',
+      plot_lm = FALSE,
+      theme = "Anthropogenic Pressure and Impacts",
+      objectives = c(
+            "Minimize harmful impacts from human activities on cetacean populations and their habitats",
+            "Control unintended incidental mortality for all species",
+            "Limit disturbing activity in important reproductive areas/seasons"
+          ),
+      data_year_of_publication = 2023
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
 
 
   # PLACEHOLDER INDICATORS ----
@@ -2904,22 +2979,7 @@ indicator_targets <- list(
     )
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
-  tar_target(name = ind_vessel_traffic, command = {
-    ind_placeholder(
-      ind_name = "Vessel Traffic Intensity",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "VMS",
-      objectives = c(
-        "Minimize harmful impacts from human activities on cetacean populations and their habitats",
-        "Control unintended incidental mortality for all species",
-        "Limit disturbing activity in important reproductive areas/seasons"
-      ),
-      theme = "Anthropogenic Pressure and Impacts"
-    )
-  }), # Threats to Habitat, Anthropogenic Pressure and Impacts
+ # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_ocean_sound, command = {
     ind_placeholder(
@@ -2937,23 +2997,6 @@ indicator_targets <- list(
     )
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
-  tar_target(name = ind_cables, command = {
-    ind_placeholder(
-      ind_name = "Number of cables by type",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "NRCan",
-      objectives = c(
-        "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
-        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-        "conserve and protect benthic (seabed) habitats"
-      ),
-      theme = "Anthropogenic Pressure and Impacts"
-    )
-  }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_offshore_wind_developments, command = {
     ind_placeholder(
