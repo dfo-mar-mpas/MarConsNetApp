@@ -2664,8 +2664,6 @@ app <- function() {
           }
         )
 
-        #browser()
-
         if (!(state$mpas %in% regions$NAME_E)) {
           if (!(all(is.na(info$adjacent_score)))) {
             sowhatoutside <- paste0(
@@ -2778,11 +2776,23 @@ app <- function() {
             style = "font-size: 20px;"
           )
         } else {
+          # if (input$tabs %in% pillar_ecol_df$tab) {
+          #   browser()
+          # }
+
+
+
           tags$p(
             tags$strong("INTERPRETATION OF RESULTS"),
             p(sowhat),
-            tags$strong("INSIDE/ OUTSIDE COMPARISON"),
-            p(sowhatoutside),
+
+            if (exists("sowhatoutside")) {
+              tagList(
+                tags$strong("INSIDE/ OUTSIDE COMPARISON"),
+                p(sowhatoutside)
+              )
+            },
+
             tags$strong("BEFORE VS AFTER PROTECTED AREA ESTABLISHMENT"),
             p(sowhatestablishment),
             style = "font-size: 20px;"
@@ -3685,7 +3695,6 @@ app <- function() {
           }
         }
 
-        #JAIMIE
 
         dt_data <- data.frame(
           Objective = links,
@@ -3925,7 +3934,6 @@ app <- function() {
               }
 
               if (length(keep_projects) == 0) {
-                #message("JAIMIE HERE 0 - shown notification is ", shown_notification())
 
                 if (!shown_notification()) {
                   showNotification(
@@ -4120,7 +4128,6 @@ app <- function() {
       )
     })
   }
-
   # Run the application
   shiny::shinyApp(ui = ui, server = server)
 }
