@@ -1152,7 +1152,7 @@ app <- function() {
                 },
 
                 # Effectiveness Contributions Tab
-                tabPanel(
+                tabPanel( # JAIMIE
                   "Effectiveness Contributions",
 
                   tags$details(
@@ -1188,27 +1188,28 @@ app <- function() {
                   hr(),
                   div(
                     class = "tab-section-header",
-                    h3(class = "tab-section-title", "Conservation Framework")
+                    shiny::uiOutput('contribution_frameworks')
                   ),
-                  div(
-                    class = "objectives-grid",
-                    div(
-                      class = "objective-card",
-                      shiny::uiOutput('networkObjectiveText')
-                    ),
-                    div(
-                      class = "objective-card",
-                      shiny::uiOutput('gbf_objectives')
-                    ),
-                    div(
-                      class = "objective-card",
-                      shiny::uiOutput("ebm_objectives")
-                    ),
-                    div(
-                      class = "objective-card",
-                      shiny::uiOutput('network_design')
-                    )
-                  )
+                  # div(
+                  #   class = "objectives-grid",
+                  #   div(
+                  #     class = "objective-card",
+                  #     shiny::uiOutput('networkObjectiveText')
+                  #   ),
+                  #   div(
+                  #     class = "objective-card",
+                  #     shiny::uiOutput('gbf_objectives')
+                  #   ),
+                  #   div(
+                  #     class = "objective-card",
+                  #     shiny::uiOutput("ebm_objectives")
+                  #   ),
+                  #   div(
+                  #     class = "objective-card",
+                  #     shiny::uiOutput('network_design')
+                  #   )
+                  # )
+                  uiOutput("objectives_grid")
                 ),
 
                 # Ecosystem Overview Tab
@@ -1332,6 +1333,53 @@ app <- function() {
       )
 
       do.call(tabsetPanel, c(myTabs, id = "tabs"))
+    })
+
+    output$contribution_frameworks <- renderUI({
+    checkboxGroupInput( # JAIM
+      inputId = "contribution_frameworks",
+      label = "Select frameworks to see areas contribution",
+      choices = c(
+        "Network Objectives",
+        "GBF Objectives",
+        "EBM Objectives",
+        "Network Design"
+      ),
+      selected = c("Network Objectives", "GBF Objectives"),
+      inline = TRUE
+    )
+    })
+
+    output$objectives_grid <- renderUI({
+      req(input$contribution_frameworks)
+
+      cards <- list()
+
+      if ("Network Objectives" %in% input$contribution_frameworks) {
+        cards <- append(cards, list(
+          div(class = "objective-card", uiOutput("networkObjectiveText"))
+        ))
+      }
+
+      if ("GBF Objectives" %in% input$contribution_frameworks) {
+        cards <- append(cards, list(
+          div(class = "objective-card", uiOutput("gbf_objectives"))
+        ))
+      }
+
+      if ("EBM Objectives" %in% input$contribution_frameworks) {
+        cards <- append(cards, list(
+          div(class = "objective-card", uiOutput("ebm_objectives"))
+        ))
+      }
+
+      if ("Network Design" %in% input$contribution_frameworks) {
+        cards <- append(cards, list(
+          div(class = "objective-card", uiOutput("network_design"))
+        ))
+      }
+
+      div(class = "objectives-grid", cards)
     })
 
     output$indicator_mode <- renderUI({
@@ -2779,9 +2827,6 @@ app <- function() {
           # if (input$tabs %in% pillar_ecol_df$tab) {
           #   browser()
           # }
-
-
-
           tags$p(
             tags$strong("INTERPRETATION OF RESULTS"),
             p(sowhat),
@@ -3428,7 +3473,8 @@ app <- function() {
       if (
         input$tabs == "tab_0" &&
           !(is.null(state$mpas)) &&
-          input$tab0_subtabs == "Effectiveness Contributions"
+          input$tab0_subtabs == "Effectiveness Contributions" &&
+        'GBF Objectives' %in% input$contribution_frameworks
       ) {
         gbf_targets <- c(
           "Plan and Manage all Areas To Reduce Biodiversity Loss",
@@ -3476,7 +3522,8 @@ app <- function() {
       if (
         input$tabs == "tab_0" &&
           !(is.null(input$mpas)) &&
-          input$tab0_subtabs == "Effectiveness Contributions"
+          input$tab0_subtabs == "Effectiveness Contributions" &&
+        'EBM Objectives' %in% input$contribution_frameworks
       ) {
         emb_targets <- c(
           "Control unintended incidental mortality for all species",
@@ -3521,7 +3568,8 @@ app <- function() {
         input$tabs == "tab_0" &&
           !(is.null(state$mpas)) &&
           input$tab0_subtabs == "Effectiveness Contributions" &&
-          input$region == "Maritimes"
+          input$region == "Maritimes" &&
+        'Network Design' %in% input$contribution_frameworks
       ) {
         tagList(
           h3("Network Design Targets"), # This adds the title above the table
@@ -3621,7 +3669,8 @@ app <- function() {
         input$tabs == "tab_0" &&
           !(is.null(state$mpas)) &&
           "Maritimes" %in% state$region &&
-          input$tab0_subtabs == "Effectiveness Contributions"
+          input$tab0_subtabs == "Effectiveness Contributions" &&
+        'Network Objectives' %in% input$contribution_frameworks
       ) {
         n_objectives <- trimws(
           substr(
@@ -3920,7 +3969,6 @@ app <- function() {
                 !(rv$button_label == "Filter Project Data") &&
                   !(state$mpas %in% "Maritimes")
               ) {
-                # JAIM
                 k1 <- which(all_project_geoms$areaID == state$mpas)
                 k2 <- which(
                   all_project_geoms$project_short_title %in% proj_short
