@@ -275,7 +275,7 @@ app <- function() {
 
 .main-content {
   margin-left: 19%;   /* exactly matches sidebar width */
-  width: 80%;         /* fill the rest of the page */
+  width: 81%;         /* fill the rest of the page */
   padding: 20px;
 }
 
@@ -927,7 +927,7 @@ app <- function() {
       }
     })
 
-    output$ddff_display_tbl <- DT::renderDT({
+    output$ddff_display_tbl <- DT::renderDT({ # JAIM
       if (
         any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))
       ) {
@@ -2853,13 +2853,14 @@ app <- function() {
       if (length(info$indicator_names) == 0) {
         ddff <- as.data.frame(
           setNames(
-            replicate(9, character(0), simplify = FALSE),
+            replicate(10, character(0), simplify = FALSE),
             c(
               "Indicator",
               "Rationale",
               "areaID",
               "Status",
               "Trend",
+              "Quality",
               "Projects",
               "Source",
               "Score",
@@ -2922,13 +2923,14 @@ app <- function() {
           areaID = info$areaID[good],
           Status = info$indicatorStatus[good],
           Trend = info$indicatorTrend[good],
+          Quality = info$quality[good],
           Projects = Projects[good],
           Source = info$Source[good],
           Code = "View",
           Score = info$indicatorGrade[good],
           Method = info$indicatorScore[good],
           stringsAsFactors = FALSE
-        )
+        ) # JAIM
 
         if (any(dfdt$Status == "No features are represented.", na.rm = TRUE)) {
           dfdt$Status[dfdt$Status == "No features are represented."] <- paste0(
@@ -2974,19 +2976,24 @@ app <- function() {
           "areaID",
           "Status",
           "Trend",
+          'Quality',
           "Projects",
           "Source",
           "Code",
           "Score",
           "Method"
         )]
+
+        if (!(state$mpas %in% regions$NAME_E)) {
+          dfdt <- dfdt[, -which(names(dfdt) == 'areaID')]
+        }
         return(dfdt)
       } else {
         NULL
       }
     })
 
-    output$DT <- DT::renderDT({
+    output$DT <- DT::renderDT({ # JAIM
       if (length(dfdt_r()$Indicator) == 0) {
         DT::datatable(dfdt_r())
       } else {
@@ -3581,7 +3588,6 @@ app <- function() {
       req(state$mpas)
       req(input$tabs)
       if (input$tabs == "tab_0") {
-        #browser()
         NAME <- state$mpas
         ind_ped <- calc_regional_bin_scores(
           df = pillar_ecol_df |>
