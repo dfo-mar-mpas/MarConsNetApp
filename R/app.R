@@ -928,7 +928,6 @@ app <- function() {
     })
 
     output$ddff_display_tbl <- DT::renderDT({
-      #browser()
       if (
         any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))
       ) {
@@ -1477,6 +1476,7 @@ app <- function() {
             !(is.null(input$filter_ind_type)) |
               !(is.null(input$filter_ind_scale))
           ) {
+
             # Ecosystem Overview
 
             if (state$mpas %in% regions$NAME_E) {
@@ -1530,6 +1530,10 @@ app <- function() {
                   score,
                   status_statement
                 )
+
+              return(datatable(table_ped))
+
+
             } else {
               table_ped <- filtered_pillar_ecol_df()[
                 which(filtered_pillar_ecol_df()$areaID == state$mpas),
@@ -3577,6 +3581,7 @@ app <- function() {
       req(state$mpas)
       req(input$tabs)
       if (input$tabs == "tab_0") {
+        #browser()
         NAME <- state$mpas
         ind_ped <- calc_regional_bin_scores(
           df = pillar_ecol_df |>
@@ -3589,7 +3594,9 @@ app <- function() {
         }
         ind_ped$score[which(!(ind_ped$type %in% input$filter_ind_type))] <- NA
         ind_ped$score[which(!(ind_ped$scale %in% input$filter_ind_scale))] <- NA
-
+        if (all(is.na(unique(ind_ped$score)))) {
+          return(NULL)
+        } else {
         MarConsNetAnalysis::plot_flowerplot(
           ind_ped,
           grouping = "objective",
@@ -3603,6 +3610,7 @@ app <- function() {
           ),
           showNumbers = TRUE
         )
+      }
       }
     })
 
