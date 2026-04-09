@@ -265,18 +265,19 @@ app <- function() {
 
         /* Sidebar styling with fixed positioning */
         .sidebar-panel {
-          background: #ffffff;
-          border-right: 1px solid #e5e7eb;
-          padding: 0;
-          height: calc(100vh - 70px);
-          overflow-y: auto;
-          box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-          position: fixed;
-          top: 70px;
-          left: 0;
-          width: 25%;
-          z-index: 900;
-        }
+  position: fixed;
+  width: 20%;  /* your chosen width */
+  left: 0;
+  top: 70px;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+.main-content {
+  margin-left: 19%;   /* exactly matches sidebar width */
+  width: 80%;         /* fill the rest of the page */
+  padding: 20px;
+}
 
         .sidebar-section {
           padding: 20px;
@@ -290,13 +291,6 @@ app <- function() {
           color: #6b7280;
           margin: 0 0 15px 0;
           font-weight: 600;
-        }
-
-        /* Main content area with left margin to accommodate fixed sidebar */
-        .main-content {
-          padding: 25px;
-          background: #f0f2f5;
-          margin-left: 25%;
         }
 
         /* Card components */
@@ -646,10 +640,6 @@ app <- function() {
             height: auto;
           }
 
-          .main-content {
-            margin-left: 0;
-          }
-
           .top-navbar {
             flex-direction: column;
             align-items: flex-start;
@@ -705,15 +695,6 @@ app <- function() {
           overflow: visible !important;   /* 🔴 ensure content is not clipped */
           height: auto !important;
         }
-
-        /* Main content should have proper overflow handling */
-        .main-content {
-          padding: 25px;
-          background: #f0f2f5;
-          margin-left: 25%;
-          margin-top: 2%;
-          overflow-y: visible !important; /* 🔴 was auto, now visible to let text expand */
-          height: auto !important;          }
       "
       ))
     ),
@@ -797,102 +778,102 @@ app <- function() {
     tags$style(HTML("#mytabs > .tabbable > .nav.nav-tabs { display: none; }")),
 
     # Main layout
-    shiny::sidebarLayout(
-      # Sidebar Panel (now fixed)
-      shiny::sidebarPanel(
-        width = 3,
-        class = "sidebar-panel",
-        style = "padding: 0;",
+      shiny::sidebarLayout(
+        # Sidebar Panel (now fixed)
+        shiny::sidebarPanel(
+          #width = 3,
+          class = "sidebar-panel",
+          style = "padding: 0;",
 
-        # Flower plot section
-        div(
-          class = "sidebar-section",
-          shiny::uiOutput("conditional_ind_Flower")
-        ),
-
-        # Legend section
-        div(
-          class = "sidebar-section",
+          # Flower plot section
           div(
-            class = "legend-box",
-            div(class = "legend-title", "LEGEND"),
-            div(class = "legend-items", shiny::uiOutput("legendUI"))
-          )
-        ),
+            class = "sidebar-section",
+            shiny::uiOutput("conditional_ind_Flower")
+          ),
 
-        # Filters section
-        div(
-          class = "sidebar-section",
-          h4("FILTERS"),
-          shiny::uiOutput("region"),
-          shiny::uiOutput("mpas"),
-          shiny::uiOutput("projects")
-        ),
-
-        # buttons section
-        div(
-          class = "sidebar-section",
+          # Legend section
           div(
-            class = "button-row",
-            shiny::uiOutput("contextButton"),
-            shiny::uiOutput("filter_button_ui"),
-            shiny::uiOutput("report_button_ui")
-          )
-        ),
-
-        # indicator selection section
-        div(
-          class = "sidebar-section",
-          h4("INDICATOR FILTERS"),
-          fluidRow(
-            column(
-              width = 6,
-              shiny::uiOutput("filter_ind_type_ui")
-            ),
-            column(
-              width = 6,
-              shiny::uiOutput("filter_ind_scale_ui")
-            )
-          )
-        ),
-      ),
-
-      # Main Panel
-      shiny::mainPanel(
-        width = 9,
-        class = "main-content",
-
-        # Map card
-        conditionalPanel(
-          condition = "input.tabs == 'tab_0'",
-          div(
-            class = "dashboard-card",
+            class = "sidebar-section",
             div(
-              class = "card-header",
-              h3(class = "card-title", "Geographic Overview"),
-              shiny::uiOutput("score_disclaimer")
-            ),
-            div(
-              class = "map-container",
-              id = "mapContainer",
-              leafletOutput("map", height = "100%")
+              class = "legend-box",
+              div(class = "legend-title", "LEGEND"),
+              div(class = "legend-items", shiny::uiOutput("legendUI"))
             )
-          )
+          ),
+
+          # Filters section
+          div(
+            class = "sidebar-section",
+            h4("FILTERS"),
+            shiny::uiOutput("region"),
+            shiny::uiOutput("mpas"),
+            shiny::uiOutput("projects")
+          ),
+
+          # buttons section
+          div(
+            class = "sidebar-section",
+            div(
+              class = "button-row",
+              shiny::uiOutput("contextButton"),
+              shiny::uiOutput("filter_button_ui"),
+              shiny::uiOutput("report_button_ui")
+            )
+          ),
+
+          # indicator selection section
+          div(
+            class = "sidebar-section",
+            h4("INDICATOR FILTERS"),
+            fluidRow(
+              column(
+                width = 6,
+                shiny::uiOutput("filter_ind_type_ui")
+              ),
+              column(
+                width = 6,
+                shiny::uiOutput("filter_ind_scale_ui")
+              )
+            )
+          ),
         ),
 
-        # Integrated tabs card with all content inside
-        div(
-          class = "integrated-tabs-card",
-          shiny::uiOutput('mytabs'),
-          # Shared content
-          shiny::uiOutput("indicatorText", style = "margin-top: 30px;"),
-          shiny::uiOutput("DT_ui"),
-          shiny::uiOutput("conditionalPlot"),
-          shiny::uiOutput("conditionalIndicatorMap"),
-          shiny::uiOutput("whaleDisclaimer"),
+        # Main Panel
+        shiny::mainPanel(
+          #width = 9,
+          class = "main-content",
+
+          # Map card
+          conditionalPanel(
+            condition = "input.tabs == 'tab_0'",
+            div(
+              class = "dashboard-card",
+              div(
+                class = "card-header",
+                h3(class = "card-title", "Geographic Overview"),
+                shiny::uiOutput("score_disclaimer")
+              ),
+              div(
+                class = "map-container",
+                id = "mapContainer",
+                leafletOutput("map", height = "100%")
+              )
+            )
+          ),
+
+          # Integrated tabs card with all content inside
+          div(
+            class = "integrated-tabs-card",
+            shiny::uiOutput('mytabs'),
+            # Shared content
+            shiny::uiOutput("indicatorText", style = "margin-top: 30px;"),
+            shiny::uiOutput("DT_ui"),
+            shiny::uiOutput("conditionalPlot"),
+            shiny::uiOutput("conditionalIndicatorMap"),
+            shiny::uiOutput("whaleDisclaimer"),
+          )
         )
       )
-    )
   )
 
   # Define server logic
@@ -920,13 +901,13 @@ app <- function() {
       if (input$indicator_mode == "ebm") {
         # ebm: flower + table
         fluidRow(
-          column(5, shiny::uiOutput("conditionalFlower")),
+          column(3, shiny::uiOutput("conditionalFlower")),
           column(
-            7,
+            9,
             style = "padding-left: 5px;",
             div(
               style = "position: relative;",
-              div(class = "dt-scroll-indicator", "Scroll →"),
+              #div(class = "dt-scroll-indicator", "Scroll →"),
               div(class = "plot-container", DT::DTOutput("ddff_display_tbl"))
             )
           )
@@ -938,7 +919,7 @@ app <- function() {
             12,
             div(
               style = "position: relative;",
-              div(class = "dt-scroll-indicator", "Scroll →"),
+              #div(class = "dt-scroll-indicator", "Scroll →"),
               div(class = "plot-container", DT::DTOutput("ddff_display_tbl"))
             )
           )
@@ -947,6 +928,7 @@ app <- function() {
     })
 
     output$ddff_display_tbl <- DT::renderDT({
+      #browser()
       if (
         any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))
       ) {
@@ -969,6 +951,9 @@ app <- function() {
         }
         return(NULL)
       } else {
+        ddff <- ddff[, -which(names(ddff) == 'BIN')]
+        names(ddff)[which(names(ddff) =='QUALITY_STATEMENT')] <- 'QUALITY'
+
         if (input$indicator_mode == 'ebm') {
           ddff$SCORE_LETTER <- calc_letter_grade(ddff$SCORE)
 
@@ -1047,6 +1032,9 @@ app <- function() {
             fontWeight = "bold"
           )
         }
+# TEST JAIM
+
+
         return(dt)
       }
     })
@@ -1152,7 +1140,7 @@ app <- function() {
                 },
 
                 # Effectiveness Contributions Tab
-                tabPanel( # JAIMIE
+                tabPanel(
                   "Effectiveness Contributions",
 
                   tags$details(
@@ -1336,7 +1324,7 @@ app <- function() {
     })
 
     output$contribution_frameworks <- renderUI({
-    checkboxGroupInput( # JAIM
+    checkboxGroupInput(
       inputId = "contribution_frameworks",
       label = "Select frameworks to see areas contribution",
       choices = c(
@@ -1489,7 +1477,7 @@ app <- function() {
             !(is.null(input$filter_ind_type)) |
               !(is.null(input$filter_ind_scale))
           ) {
-            # Ecological Overview
+            # Ecosystem Overview
 
             if (state$mpas %in% regions$NAME_E) {
               k1 <- which(
@@ -2824,9 +2812,6 @@ app <- function() {
             style = "font-size: 20px;"
           )
         } else {
-          # if (input$tabs %in% pillar_ecol_df$tab) {
-          #   browser()
-          # }
           tags$p(
             tags$strong("INTERPRETATION OF RESULTS"),
             p(sowhat),
