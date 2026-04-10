@@ -936,6 +936,10 @@ app <- function() {
       } else {
         ddff <- ddff_display_r()
       }
+
+      #browser()
+
+
       if (length(ddff$INDICATOR) == 0) {
         if (
           input$tabs == "tab_0" &&
@@ -1457,7 +1461,7 @@ app <- function() {
       }
     })
 
-    ddff_display_r <- reactive({
+    ddff_display_r <- reactive({ #JAIM
       req(input$tab0_subtabs)
       req(input$tabs)
       if (
@@ -1516,6 +1520,8 @@ app <- function() {
                   )
                 )
 
+              #browser()
+
               table_ped <- filtered_pillar_ecol_df()[k1, ] |>
                 bind_rows(ind_avg) |>
                 select(
@@ -1531,7 +1537,9 @@ app <- function() {
                   status_statement
                 )
 
+              if (length(table_ped$bin) == 0) {
               return(datatable(table_ped))
+              }
 
 
             } else {
@@ -2196,21 +2204,24 @@ app <- function() {
 
     output$filter_ind_type_ui <- shiny::renderUI({
       choices <- unique(pillar_ecol_df$type)
+      choices_display <- ifelse(is.na(choices), "placeholder indicators", choices)
 
       shiny::checkboxGroupInput(
         inputId = "filter_ind_type",
         label = "Type:",
-        choices = choices,
+        choices = setNames(choices, choices_display),  # key = real value, label = display
         selected = choices
       )
     })
 
     output$filter_ind_scale_ui <- shiny::renderUI({
       choices <- unique(pillar_ecol_df$scale)
+      choices_display <- ifelse(is.na(choices), "Network aggregated indicators", choices)
+
       shiny::checkboxGroupInput(
         inputId = "filter_ind_scale",
         label = "Scale:",
-        choices = choices,
+        choices = setNames(choices, choices_display),
         selected = choices
       )
     })
