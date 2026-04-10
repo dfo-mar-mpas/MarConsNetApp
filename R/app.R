@@ -3037,7 +3037,6 @@ app <- function() {
           color = "black",
           fontWeight = "bold"
         )
-        # it's ok here
         return(dt)
       }
     })
@@ -3045,6 +3044,7 @@ app <- function() {
     observeEvent(input$DT_cell_clicked, {
       info <- input$DT_cell_clicked
       req(info$row, info$col)
+      #browser()
       # Only trigger when SOURCE column is clicked
       if (colnames(dfdt_r())[info$col] == "Code") {
         source_clicked <- dfdt_r()$Source[info$row]
@@ -3092,6 +3092,41 @@ app <- function() {
             )
           )
         )
+      } else if (colnames(dfdt_r())[info$col] == "Method") {
+
+          method_clicked <- dfdt_r()$Method[info$row]
+
+          if (method_clicked %in% scoring_explanations$scheme) {
+
+          showModal(
+            modalDialog(
+              title = "Method Explanation",
+              tagList(
+                scoring_explanations$description[scoring_explanations$scheme == method_clicked]
+              ),
+              size = "xl",
+              easyClose = TRUE,
+              footer = tagList(
+                modalButton("Close")
+              )
+            )
+          )
+      } else {
+        showModal(
+          modalDialog(
+            title = "Method Explanation",
+            tagList(
+              "No scoring explanation available for this scoring scheme."
+            ),
+            size = "xl",
+            easyClose = TRUE,
+            footer = tagList(
+              modalButton("Close")
+            )
+          )
+        )
+      }
+        # JAIM
       }
     })
 

@@ -37,6 +37,42 @@ list(
       )
   }),
 
+  tar_target(name=scoring_explanations,
+             command={
+scoring_schemes <- data.frame(
+  scheme = c(
+    "representation: cumulative distribution with regional thresholds",
+    "placeholder score",
+    "connectivity-proportion",
+    "desired state: increase",
+    "desired state: decrease",
+    "desired state: stable",
+    "control site linear trend: less inside",
+    "coverage: landings",
+    "coverage",
+    "median",
+    "representation: count",
+    "representation",
+    "custom"
+  ),
+  description = c(
+    "Scores based on cumulative distribution of values within regions, scaled using regional thresholds.",
+    "Temporary or missing scoring method used as a placeholder; does not represent a true ecological score.",
+    "Measures proportional connectivity contribution of features; higher connectivity contribution increases score.",
+    "Scores whether an indicator is increasing over time; significant positive trends score highest.",
+    "Scores whether an indicator is decreasing over time; significant negative trends score highest.",
+    "Scores whether an indicator remains stable; significant change results in lower scores.",
+    "Compares inside vs outside conditions; scores whether values are significantly lower inside protected areas.",
+    "Coverage of fishing landings within protected areas relative to total landings and targets.",
+    "General spatial or quantitative coverage of a feature within areas relative to targets.",
+    "Uses median values within areas and scales them relative to the maximum observed value.",
+    "Counts occurrences or presence of features and converts to proportional representation scores.",
+    "Measures representation of features within areas based on presence/absence or proportional occurrence.",
+    "User-defined scoring method allowing custom logic outside standard frameworks."
+  )
+)
+             }),
+
   tar_target(name = APPTABS, command = {
     apptabs <- expand.grid(
       flower = unique(c(Ecological$grouping, Ecological$labels)),
