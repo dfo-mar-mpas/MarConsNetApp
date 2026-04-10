@@ -3013,9 +3013,23 @@ app <- function() {
         ddff$SCORE_LETTER <- calc_letter_grade(dfdt_r()$Score)
         ddff$Score <- round(ddff$Score, 2)
 
+        # 🔴 make Code clickable
+        ddff$Code <- paste0(
+          '<span style="color:blue; text-decoration:underline; cursor:pointer;">',
+          ddff$Code,
+          '</span>'
+        )
+
+        # 🔴 make Method clickable
+        ddff$Method <- paste0(
+          '<span style="color:blue; text-decoration:underline; cursor:pointer;">',
+          ddff$Method,
+          '</span>'
+        )
+
         dt <- DT::datatable(
           ddff,
-          escape = FALSE,
+          escape = FALSE, # already correct ✅
           options = list(
             pageLength = 100,
             columnDefs = list(
@@ -3026,6 +3040,7 @@ app <- function() {
             )
           )
         )
+
         dt <- DT::formatStyle(
           dt,
           "Score",
@@ -3033,14 +3048,14 @@ app <- function() {
             c("A", "B", "C", "D", "F"),
             c("#2C7BB6", "#ABD9E9", "#FFFFBF", "#FDAE61", "#D7191C")
           ),
-          valueColumns = "SCORE_LETTER", # 🔴 USE letter grade to drive color
+          valueColumns = "SCORE_LETTER",
           color = "black",
           fontWeight = "bold"
         )
+
         return(dt)
       }
     })
-
     observeEvent(input$DT_cell_clicked, {
       info <- input$DT_cell_clicked
       req(info$row, info$col)
