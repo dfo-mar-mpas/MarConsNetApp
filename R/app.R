@@ -927,7 +927,7 @@ app <- function() {
       }
     })
 
-    output$ddff_display_tbl <- DT::renderDT({ # JAIM
+    output$ddff_display_tbl <- DT::renderDT({
       if (
         any(c(is.null(input$filter_ind_type), is.null(input$filter_ind_scale)))
       ) {
@@ -1035,9 +1035,6 @@ app <- function() {
             fontWeight = "bold"
           )
         }
-# TEST JAIM
-
-
         return(dt)
       }
     })
@@ -1461,7 +1458,7 @@ app <- function() {
       }
     })
 
-    ddff_display_r <- reactive({ #JAIM
+    ddff_display_r <- reactive({
       req(input$tab0_subtabs)
       req(input$tabs)
       if (
@@ -1482,6 +1479,8 @@ app <- function() {
           ) {
 
             # Ecosystem Overview
+
+            #browser()
 
             if (state$mpas %in% regions$NAME_E) {
               k1 <- which(
@@ -1546,6 +1545,10 @@ app <- function() {
               table_ped <- filtered_pillar_ecol_df()[
                 which(filtered_pillar_ecol_df()$areaID == state$mpas),
               ]
+
+              if (length(table_ped$bin) == 0) {
+                return(datatable(table_ped))
+              }
             }
             if (
               any(table_ped$indicator == "placeholder") |
@@ -1831,32 +1834,30 @@ app <- function() {
     })
 
     output$legendUI <- renderUI({
-      req(state$mpas)
-      req(input$tabs)
-      # Generate legend items
+      req(state$mpas, input$tabs)
+
       if (input$tabs == "tab_0") {
         PALETTE <- append(flowerPalette, list("NA" = "#EDEDED"))
       } else {
         PALETTE <- indicatorFlower
       }
+
       legendItems <- lapply(names(PALETTE), function(name) {
         div(
-          style = paste0(
-            "display: flex; align-items: center; margin-right: 20px;"
-          ),
+          style = "display:flex; align-items:center; margin-right:8px; margin-bottom:4px;",
           div(
             style = paste0(
-              "width: 20px; height: 20px; background-color: ",
+              "width:12px; height:12px; background-color:",
               PALETTE[name],
-              "; margin-right: 5px; border: 1px solid black;"
+              "; margin-right:3px; border:1px solid black;"
             )
           ),
-          span(name) # Label
+          span(style = "font-size:11px;", name)
         )
       })
-      # Wrap the items in a horizontal flex container
+
       div(
-        style = "display: flex; flex-wrap: wrap; align-items: center;",
+        style = "display:flex; flex-wrap:wrap; align-items:center; gap:4px;",
         legendItems
       )
     })
@@ -2941,7 +2942,7 @@ app <- function() {
           Score = info$indicatorGrade[good],
           Method = info$indicatorScore[good],
           stringsAsFactors = FALSE
-        ) # JAIM
+        )
 
         if (any(dfdt$Status == "No features are represented.", na.rm = TRUE)) {
           dfdt$Status[dfdt$Status == "No features are represented."] <- paste0(
@@ -3004,7 +3005,7 @@ app <- function() {
       }
     })
 
-    output$DT <- DT::renderDT({ # JAIM
+    output$DT <- DT::renderDT({
       if (length(dfdt_r()$Indicator) == 0) {
         DT::datatable(dfdt_r())
       } else {
@@ -3383,22 +3384,41 @@ app <- function() {
     })
 
     output$conditionalFlower <- shiny::renderUI({
-      req(state$mpas)
-      req(input$tabs)
+      req(state$mpas, input$tabs)
 
       if (
         input$tabs == "tab_0" &
-          input$tab0_subtabs == "Ecosystem Overview" &
-          input$indicator_mode == 'ebm'
+        input$tab0_subtabs == "Ecosystem Overview" &
+        input$indicator_mode == 'ebm'
       ) {
+
+        # compute once
+        ind_ped <- calc_regional_bin_scores(
+          df = pillar_ecol_df |>
+            filter(!(indicator %in% MPAs$NAME_E))
+        )
+
+        if (state$mpas %in% MPAs$NAME_E) {
+          ind_ped <- ind_ped[which(pillar_ecol_df$areaID == state$mpas), ]
+        } else {
+          ind_ped <- ind_ped[-(which(is.na(ind_ped$scale))), ]
+        }
+
+        ind_ped$score[!(ind_ped$type %in% input$filter_ind_type)] <- NA
+        ind_ped$score[!(ind_ped$scale %in% input$filter_ind_scale)] <- NA
+
+        no_data <- all(is.na(unique(ind_ped$score)))
+
         tagList(
           plotOutput("flowerPlot", click = "flower_click"),
-          actionButton(
-            "enlarge_flower",
-            "Click to enlarge flower plot",
-            icon = icon("search-plus"),
-            style = "margin-top: 10px;"
-          )
+          if (!no_data) {
+            actionButton(
+              "enlarge_flower",
+              "Click to enlarge flower plot",
+              icon = icon("search-plus"),
+              style = "margin-top: 10px;"
+            )
+          }
         )
       } else {
         NULL
