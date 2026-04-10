@@ -3412,11 +3412,17 @@ app <- function() {
         tagList(
           plotOutput("flowerPlot", click = "flower_click"),
           if (!no_data) {
-            actionButton(
-              "enlarge_flower",
-              "Click to enlarge flower plot",
-              icon = icon("search-plus"),
-              style = "margin-top: 10px;"
+            tagList(
+              div(
+                "Click on the flower plot to see indicators associated with each bin",
+                style = "background-color: yellow; padding: 5px; margin-top: 8px; display: inline-block;"
+              ),
+              actionButton(
+                "enlarge_flower",
+                "Click to enlarge flower plot",
+                icon = icon("search-plus"),
+                style = "margin-top: 10px;"
+              )
             )
           }
         )
