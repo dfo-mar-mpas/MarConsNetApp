@@ -2422,7 +2422,7 @@ app <- function() {
                     pillar_ecol_df$indicator[keepind][i]
                   )
                 ),
-                style = "color: black; font-weight: bold; TEXT-DECORATION: underline",
+                style = "color: blue; font-weight: bold; TEXT-DECORATION: underline",
                 onclick = sprintf(
                   "Shiny.setInputValue('%s', '%s', {priority: 'event'}); $('#yourTabsetId a[data-value=\"%s\"]').tab('show');",
                   tab_id,
