@@ -867,7 +867,7 @@ app <- function() {
             shiny::uiOutput('mytabs'),
             # Shared content
             shiny::uiOutput("indicatorText", style = "margin-top: 30px;"),
-            shiny::uiOutput("DT_ui"),
+            shiny::uiOutput("DT_ui"), #JAIM
             shiny::uiOutput("conditionalPlot"),
             shiny::uiOutput("conditionalIndicatorMap"),
             shiny::uiOutput("whaleDisclaimer"),
@@ -3318,7 +3318,7 @@ app <- function() {
       return(NULL)
     })
 
-    output$conditionalPlot <- shiny::renderUI({
+    output$conditionalPlot <- shiny::renderUI({ # JAIM
       req(input$tabs)
       req(state$mpas)
       if (input$tabs == "tab_0") {
@@ -3331,19 +3331,46 @@ app <- function() {
 
         if (!(is.null(files)) && length(files) > 0) {
           # Create outputs for each image
+
+
           lapply(seq_along(files), function(i) {
             output[[paste0("image_display_", i)]] <<- renderImage(
               {
+
+                # 🔴 READ IMAGE
+                img <- magick::image_read(files[i])
+
+                # 🔴 GET IMAGE INFO
+                info <- magick::image_info(img)
+
+                # 🔴 CROP TOP/BOTTOM (adjust % as needed)
+                crop_height <- info$height * 0.8
+                img_cropped <- magick::image_crop(
+                  img,
+                  geometry = magick::geometry_area(
+                    width = info$width,
+                    height = crop_height,
+                    x = 0,
+                    y = info$height * 0.1   # 🔴 trims top whitespace
+                  )
+                )
+
+                # 🔴 WRITE TEMP FILE
+                tmp_file <- tempfile(fileext = ".png")
+                magick::image_write(img_cropped, path = tmp_file)
+
                 list(
-                  src = normalizePath(files[i], winslash = "/"),
-                  contentType = "image/jpeg",
+                  src = normalizePath(tmp_file, winslash = "/"),  # 🔴 use cropped image
+                  contentType = "image/png",                      # 🔴 updated type
                   width = "100%",
                   height = "auto"
                 )
               },
-              deleteFile = FALSE
+              deleteFile = TRUE  # 🔴 allow temp cleanup
             )
           })
+
+
 
           # Return the UI wrapper
           shiny::div(
