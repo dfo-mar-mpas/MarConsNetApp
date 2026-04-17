@@ -537,9 +537,9 @@ framework_targets <- list(
       "Ecological",
       weights_ratio = NA,
       weights_sum = NA,
-      dplyr::select(ecol_obj_biodiversity_df, -data),
-      dplyr::select(ecol_obj_habitat_df, -data),
-      dplyr::select(ecol_obj_productivity_df, -data)
+      dplyr::select(ecol_obj_biodiversity_df, -data, -adjacent_data),
+      dplyr::select(ecol_obj_habitat_df, -data, -adjacent_data),
+      dplyr::select(ecol_obj_productivity_df, -data, -adjacent_data)
     ) |>
       dplyr::select(-region) |>
       #dplyr::select(-region,-plainname,-min_target,-max_target) |> #TODO we can probably remove this if we fix the coverage scoring output

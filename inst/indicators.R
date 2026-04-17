@@ -809,7 +809,6 @@ indicator_targets <- list(
       )
       save_plots(dplyr::select(x, -data, -adjacent_data))
       dplyr::select(x, -plot)
-      return(x)
     }
   ),
 
@@ -1405,7 +1404,8 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
-  tar_target(name = ind_MAR_cum_impact, command = { # JAIM
+  tar_target(name = ind_MAR_cum_impact, command = {
+    # JAIM
     x <- process_indicator(
       data = data_MAR_cumulative_impacts$Cumul_Impact_Maritimes_ALL.tif,
       indicator_var_name = "Cumul_Impact_Maritimes_ALL.tif",
@@ -2229,10 +2229,17 @@ indicator_targets <- list(
   tar_target(name = ind_wind_speed_and_storminess, command = {
     data <- data_buoy
 
-
-    data$year_of_data_collection <- as.numeric(format(as.POSIXct(data$date_revamped), "%Y"))
-    data <- data[,c("latitude", 'longitude', 'waveheight', 'year_of_data_collection')]
-    data <- data[-(which(is.na(data$latitude))),]
+    data$year_of_data_collection <- as.numeric(format(
+      as.POSIXct(data$date_revamped),
+      "%Y"
+    ))
+    data <- data[, c(
+      "latitude",
+      'longitude',
+      'waveheight',
+      'year_of_data_collection'
+    )]
+    data <- data[-(which(is.na(data$latitude))), ]
     data <- st_as_sf(data, coords = c("longitude", "latitude"), crs = 4326)
 
     x <- process_indicator(
@@ -2252,29 +2259,30 @@ indicator_targets <- list(
       areas = MPAs,
       plot_type = c('time-series', 'map'),
       plot_lm = FALSE,
-      year='year_of_data_collection',
+      year = 'year_of_data_collection',
       theme = "Ocean Structure and Movement",
       objectives = c(
         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
       ),
-      data_year_of_publication=as.numeric(format(Sys.Date(), "%Y"))
+      data_year_of_publication = as.numeric(format(Sys.Date(), "%Y"))
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
-
-    return(x)
-
   }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_seasonal_presence_seals, command = {
-
     data <- data_seals
     data$latitude <- 43.93
     data$longitude <- -60.01
     data$year_of_data_collection <- as.numeric(data_seals$year)
     data$number_of_seals <- as.numeric(data_seals$median)
-    data <- data[,c("year_of_data_collection", 'latitude', 'longitude', 'number_of_seals')]
+    data <- data[, c(
+      "year_of_data_collection",
+      'latitude',
+      'longitude',
+      'number_of_seals'
+    )]
 
     data$year_of_publication <- 2021
 
@@ -2308,12 +2316,17 @@ indicator_targets <- list(
     data <- data_offshore_energy_wells
     data$year_of_publication <- 2025
 
-    data <- data[,c("latitude", 'longitude', 'year_of_publication','Well Name')]
+    data <- data[, c(
+      "latitude",
+      'longitude',
+      'year_of_publication',
+      'Well Name'
+    )]
     names(data)[which(names(data) == 'Well Name')] <- 'well_name'
 
     data <- data |>
       dplyr::filter(!is.na(longitude), !is.na(latitude)) |>
-      st_as_sf(coords = c("longitude", "latitude"), crs=4326)
+      st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
 
     names(data)[which(names(data) == 'geometry')] <- 'geoms'
     st_geometry(data) <- "geoms"
@@ -2338,21 +2351,18 @@ indicator_targets <- list(
       plot_lm = FALSE,
       theme = "Anthropogenic Pressure and Impacts",
       objectives = c(
-            "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
-            "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-            "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-            "conserve and protect benthic (seabed) habitats"
-          )
+        "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
+        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+        "conserve and protect benthic (seabed) habitats"
+      )
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
-
-
   tar_target(name = ind_cables, command = {
-
     data <- data_cables
     data$year_of_publication <- 2016
 
@@ -2378,7 +2388,7 @@ indicator_targets <- list(
       plot_type = 'map',
       plot_lm = FALSE,
       theme = "Anthropogenic Pressure and Impacts",
-      objectives =  c(
+      objectives = c(
         "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
         "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
         "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
@@ -2390,8 +2400,8 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
-  tar_target(name = ind_vessel_traffic, command = { # JAIM
-
+  tar_target(name = ind_vessel_traffic, command = {
+    # JAIM
 
     x <- process_indicator(
       data = data_vessel_traffic,
@@ -2413,18 +2423,16 @@ indicator_targets <- list(
       plot_lm = FALSE,
       theme = "Anthropogenic Pressure and Impacts",
       objectives = c(
-            "Minimize harmful impacts from human activities on cetacean populations and their habitats",
-            "Control unintended incidental mortality for all species",
-            "Limit disturbing activity in important reproductive areas/seasons"
-          ),
+        "Minimize harmful impacts from human activities on cetacean populations and their habitats",
+        "Control unintended incidental mortality for all species",
+        "Limit disturbing activity in important reproductive areas/seasons"
+      ),
       data_year_of_publication = 2023
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
-
-
 
   # PLACEHOLDER INDICATORS ----
 
@@ -2649,7 +2657,6 @@ indicator_targets <- list(
       theme = "Marine Mammals and Other Top Predators"
     )
   }), # Connectivity, Marine Mammals other top Predators
-
 
   tar_target(name = ind_seasonal_presence_pelagics, command = {
     ind_placeholder(
@@ -2982,7 +2989,7 @@ indicator_targets <- list(
     )
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
- # Threats to Habitat, Anthropogenic Pressure and Impacts
+  # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_ocean_sound, command = {
     ind_placeholder(
@@ -2999,7 +3006,6 @@ indicator_targets <- list(
       theme = "Anthropogenic Pressure and Impacts"
     )
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
-
 
   tar_target(name = ind_offshore_wind_developments, command = {
     ind_placeholder(
