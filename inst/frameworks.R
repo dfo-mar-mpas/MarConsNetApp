@@ -894,25 +894,28 @@ framework_targets <- list(
 
   # CLIMATE CHANGE ----
   tar_target(climate_change, command = {
-    doc <- read_docx(file.path(
-      system.file(package = "MarConsNetAnalysis"),
-      "data",
-      "climate.docx"
-    ))
-    doc_text <- docx_summary(doc)
-    keep <- which(grepl("CC:", doc_text$text))
+    doc_text <- readLines(
+      file.path(
+        store,
+        "..",
+        "data",
+        "climate.txt"
+      ),
+      encoding = "UTF-8"
+    )
+    keep <- which(grepl("CC:", doc_text))
     keep <- c(
       keep,
-      which(grepl("References", doc_text$text, ignore.case = TRUE))
+      which(grepl("References", doc_text, ignore.case = TRUE))
     )
-    indicators <- gsub("CC: ", "", doc_text$text[keep])
+    indicators <- gsub("CC: ", "", doc_text[keep])
     indicators <- indicators[-length(indicators)]
 
     split_text <- list()
     for (i in seq_along(keep)) {
       start_index <- keep[i]
       end_index <- ifelse(i == length(keep), length(lines), keep[i + 1] - 1)
-      split_text[[i]] <- doc_text$text[start_index:end_index]
+      split_text[[i]] <- doc_text[start_index:end_index]
     }
     split_text <- split_text[-length(split_text)]
     summary <- unlist(lapply(split_text, function(x) x[2]))
