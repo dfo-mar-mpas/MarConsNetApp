@@ -99,16 +99,15 @@ app <- function() {
         "collaborations",
         "deliverables",
         "csas",
-        "climate_change",
         "cost_of_mpas",
         "salary",
-        "theme_table",
         "objective_tabs",
         "objective_indicators",
         "map_palette",
         "labels",
         "all_indicator_project_geoms",
-        "conservation_targets_target"
+        "conservation_targets_target",
+        "scoring_explanations"
       ),
       store = STORE
     )
@@ -778,102 +777,102 @@ app <- function() {
     tags$style(HTML("#mytabs > .tabbable > .nav.nav-tabs { display: none; }")),
 
     # Main layout
-      shiny::sidebarLayout(
-        # Sidebar Panel (now fixed)
-        shiny::sidebarPanel(
-          #width = 3,
-          class = "sidebar-panel",
-          style = "padding: 0;",
+    shiny::sidebarLayout(
+      # Sidebar Panel (now fixed)
+      shiny::sidebarPanel(
+        #width = 3,
+        class = "sidebar-panel",
+        style = "padding: 0;",
 
-          # Flower plot section
-          div(
-            class = "sidebar-section",
-            shiny::uiOutput("conditional_ind_Flower")
-          ),
-
-          # Legend section
-          div(
-            class = "sidebar-section",
-            div(
-              class = "legend-box",
-              div(class = "legend-title", "LEGEND"),
-              div(class = "legend-items", shiny::uiOutput("legendUI"))
-            )
-          ),
-
-          # Filters section
-          div(
-            class = "sidebar-section",
-            h4("FILTERS"),
-            shiny::uiOutput("region"),
-            shiny::uiOutput("mpas"),
-            shiny::uiOutput("projects")
-          ),
-
-          # buttons section
-          div(
-            class = "sidebar-section",
-            div(
-              class = "button-row",
-              shiny::uiOutput("contextButton"),
-              shiny::uiOutput("filter_button_ui"),
-              shiny::uiOutput("report_button_ui")
-            )
-          ),
-
-          # indicator selection section
-          div(
-            class = "sidebar-section",
-            h4("INDICATOR FILTERS"),
-            fluidRow(
-              column(
-                width = 6,
-                shiny::uiOutput("filter_ind_type_ui")
-              ),
-              column(
-                width = 6,
-                shiny::uiOutput("filter_ind_scale_ui")
-              )
-            )
-          ),
+        # Flower plot section
+        div(
+          class = "sidebar-section",
+          shiny::uiOutput("conditional_ind_Flower")
         ),
 
-        # Main Panel
-        shiny::mainPanel(
-          #width = 9,
-          class = "main-content",
-
-          # Map card
-          conditionalPanel(
-            condition = "input.tabs == 'tab_0'",
-            div(
-              class = "dashboard-card",
-              div(
-                class = "card-header",
-                h3(class = "card-title", "Geographic Overview"),
-                shiny::uiOutput("score_disclaimer")
-              ),
-              div(
-                class = "map-container",
-                id = "mapContainer",
-                leafletOutput("map", height = "100%")
-              )
-            )
-          ),
-
-          # Integrated tabs card with all content inside
+        # Legend section
+        div(
+          class = "sidebar-section",
           div(
-            class = "integrated-tabs-card",
-            shiny::uiOutput('mytabs'),
-            # Shared content
-            shiny::uiOutput("indicatorText", style = "margin-top: 30px;"),
-            shiny::uiOutput("DT_ui"), #JAIM
-            shiny::uiOutput("conditionalPlot"),
-            shiny::uiOutput("conditionalIndicatorMap"),
-            shiny::uiOutput("whaleDisclaimer"),
+            class = "legend-box",
+            div(class = "legend-title", "LEGEND"),
+            div(class = "legend-items", shiny::uiOutput("legendUI"))
           )
+        ),
+
+        # Filters section
+        div(
+          class = "sidebar-section",
+          h4("FILTERS"),
+          shiny::uiOutput("region"),
+          shiny::uiOutput("mpas"),
+          shiny::uiOutput("projects")
+        ),
+
+        # buttons section
+        div(
+          class = "sidebar-section",
+          div(
+            class = "button-row",
+            shiny::uiOutput("contextButton"),
+            shiny::uiOutput("filter_button_ui"),
+            shiny::uiOutput("report_button_ui")
+          )
+        ),
+
+        # indicator selection section
+        div(
+          class = "sidebar-section",
+          h4("INDICATOR FILTERS"),
+          fluidRow(
+            column(
+              width = 6,
+              shiny::uiOutput("filter_ind_type_ui")
+            ),
+            column(
+              width = 6,
+              shiny::uiOutput("filter_ind_scale_ui")
+            )
+          )
+        ),
+      ),
+
+      # Main Panel
+      shiny::mainPanel(
+        #width = 9,
+        class = "main-content",
+
+        # Map card
+        conditionalPanel(
+          condition = "input.tabs == 'tab_0'",
+          div(
+            class = "dashboard-card",
+            div(
+              class = "card-header",
+              h3(class = "card-title", "Geographic Overview"),
+              shiny::uiOutput("score_disclaimer")
+            ),
+            div(
+              class = "map-container",
+              id = "mapContainer",
+              leafletOutput("map", height = "100%")
+            )
+          )
+        ),
+
+        # Integrated tabs card with all content inside
+        div(
+          class = "integrated-tabs-card",
+          shiny::uiOutput('mytabs'),
+          # Shared content
+          shiny::uiOutput("indicatorText", style = "margin-top: 30px;"),
+          shiny::uiOutput("DT_ui"), #JAIM
+          shiny::uiOutput("conditionalPlot"),
+          shiny::uiOutput("conditionalIndicatorMap"),
+          shiny::uiOutput("whaleDisclaimer"),
         )
       )
+    )
   )
 
   # Define server logic
@@ -939,7 +938,6 @@ app <- function() {
 
       #browser()
 
-
       if (length(ddff$INDICATOR) == 0) {
         if (
           input$tabs == "tab_0" &&
@@ -955,7 +953,7 @@ app <- function() {
         return(NULL)
       } else {
         ddff <- ddff[, -which(names(ddff) == 'BIN')]
-        names(ddff)[which(names(ddff) =='QUALITY_STATEMENT')] <- 'QUALITY'
+        names(ddff)[which(names(ddff) == 'QUALITY_STATEMENT')] <- 'QUALITY'
 
         if (input$indicator_mode == 'ebm') {
           ddff$SCORE_LETTER <- calc_letter_grade(ddff$SCORE)
@@ -1324,18 +1322,18 @@ app <- function() {
     })
 
     output$contribution_frameworks <- renderUI({
-    checkboxGroupInput(
-      inputId = "contribution_frameworks",
-      label = "Select frameworks to see areas contribution",
-      choices = c(
-        "Network Objectives",
-        "GBF Objectives",
-        "EBM Objectives",
-        "Network Design"
-      ),
-      selected = c("Network Objectives", "GBF Objectives"),
-      inline = TRUE
-    )
+      checkboxGroupInput(
+        inputId = "contribution_frameworks",
+        label = "Select frameworks to see areas contribution",
+        choices = c(
+          "Network Objectives",
+          "GBF Objectives",
+          "EBM Objectives",
+          "Network Design"
+        ),
+        selected = c("Network Objectives", "GBF Objectives"),
+        inline = TRUE
+      )
     })
 
     output$objectives_grid <- renderUI({
@@ -1344,27 +1342,39 @@ app <- function() {
       cards <- list()
 
       if ("Network Objectives" %in% input$contribution_frameworks) {
-        cards <- append(cards, list(
-          div(class = "objective-card", uiOutput("networkObjectiveText"))
-        ))
+        cards <- append(
+          cards,
+          list(
+            div(class = "objective-card", uiOutput("networkObjectiveText"))
+          )
+        )
       }
 
       if ("GBF Objectives" %in% input$contribution_frameworks) {
-        cards <- append(cards, list(
-          div(class = "objective-card", uiOutput("gbf_objectives"))
-        ))
+        cards <- append(
+          cards,
+          list(
+            div(class = "objective-card", uiOutput("gbf_objectives"))
+          )
+        )
       }
 
       if ("EBM Objectives" %in% input$contribution_frameworks) {
-        cards <- append(cards, list(
-          div(class = "objective-card", uiOutput("ebm_objectives"))
-        ))
+        cards <- append(
+          cards,
+          list(
+            div(class = "objective-card", uiOutput("ebm_objectives"))
+          )
+        )
       }
 
       if ("Network Design" %in% input$contribution_frameworks) {
-        cards <- append(cards, list(
-          div(class = "objective-card", uiOutput("network_design"))
-        ))
+        cards <- append(
+          cards,
+          list(
+            div(class = "objective-card", uiOutput("network_design"))
+          )
+        )
       }
 
       div(class = "objectives-grid", cards)
@@ -1477,7 +1487,6 @@ app <- function() {
             !(is.null(input$filter_ind_type)) |
               !(is.null(input$filter_ind_scale))
           ) {
-
             # Ecosystem Overview
 
             #browser()
@@ -1537,10 +1546,8 @@ app <- function() {
                 )
 
               if (length(table_ped$bin) == 0) {
-              return(datatable(table_ped))
+                return(datatable(table_ped))
               }
-
-
             } else {
               table_ped <- filtered_pillar_ecol_df()[
                 which(filtered_pillar_ecol_df()$areaID == state$mpas),
@@ -2205,19 +2212,27 @@ app <- function() {
 
     output$filter_ind_type_ui <- shiny::renderUI({
       choices <- unique(pillar_ecol_df$type)
-      choices_display <- ifelse(is.na(choices), "placeholder indicators", choices)
+      choices_display <- ifelse(
+        is.na(choices),
+        "placeholder indicators",
+        choices
+      )
 
       shiny::checkboxGroupInput(
         inputId = "filter_ind_type",
         label = "Type:",
-        choices = setNames(choices, choices_display),  # key = real value, label = display
+        choices = setNames(choices, choices_display), # key = real value, label = display
         selected = choices
       )
     })
 
     output$filter_ind_scale_ui <- shiny::renderUI({
       choices <- unique(pillar_ecol_df$scale)
-      choices_display <- ifelse(is.na(choices), "Network aggregated indicators", choices)
+      choices_display <- ifelse(
+        is.na(choices),
+        "Network aggregated indicators",
+        choices
+      )
 
       shiny::checkboxGroupInput(
         inputId = "filter_ind_scale",
@@ -3108,16 +3123,16 @@ app <- function() {
           )
         )
       } else if (colnames(dfdt_r())[info$col] == "Method") {
+        method_clicked <- dfdt_r()$Method[info$row]
 
-          method_clicked <- dfdt_r()$Method[info$row]
-
-          if (method_clicked %in% scoring_explanations$scheme) {
-
+        if (method_clicked %in% scoring_explanations$scheme) {
           showModal(
             modalDialog(
               title = "Method Explanation",
               tagList(
-                scoring_explanations$description[scoring_explanations$scheme == method_clicked]
+                scoring_explanations$description[
+                  scoring_explanations$scheme == method_clicked
+                ]
               ),
               size = "xl",
               easyClose = TRUE,
@@ -3126,21 +3141,21 @@ app <- function() {
               )
             )
           )
-      } else {
-        showModal(
-          modalDialog(
-            title = "Method Explanation",
-            tagList(
-              "No scoring explanation available for this scoring scheme."
-            ),
-            size = "xl",
-            easyClose = TRUE,
-            footer = tagList(
-              modalButton("Close")
+        } else {
+          showModal(
+            modalDialog(
+              title = "Method Explanation",
+              tagList(
+                "No scoring explanation available for this scoring scheme."
+              ),
+              size = "xl",
+              easyClose = TRUE,
+              footer = tagList(
+                modalButton("Close")
+              )
             )
           )
-        )
-      }
+        }
         # JAIM
       }
     })
@@ -3318,7 +3333,8 @@ app <- function() {
       return(NULL)
     })
 
-    output$conditionalPlot <- shiny::renderUI({ # JAIM
+    output$conditionalPlot <- shiny::renderUI({
+      # JAIM
       req(input$tabs)
       req(state$mpas)
       if (input$tabs == "tab_0") {
@@ -3332,11 +3348,9 @@ app <- function() {
         if (!(is.null(files)) && length(files) > 0) {
           # Create outputs for each image
 
-
           lapply(seq_along(files), function(i) {
             output[[paste0("image_display_", i)]] <<- renderImage(
               {
-
                 # 🔴 READ IMAGE
                 img <- magick::image_read(files[i])
 
@@ -3351,7 +3365,7 @@ app <- function() {
                     width = info$width,
                     height = crop_height,
                     x = 0,
-                    y = info$height * 0.1   # 🔴 trims top whitespace
+                    y = info$height * 0.1 # 🔴 trims top whitespace
                   )
                 )
 
@@ -3360,17 +3374,15 @@ app <- function() {
                 magick::image_write(img_cropped, path = tmp_file)
 
                 list(
-                  src = normalizePath(tmp_file, winslash = "/"),  # 🔴 use cropped image
-                  contentType = "image/png",                      # 🔴 updated type
+                  src = normalizePath(tmp_file, winslash = "/"), # 🔴 use cropped image
+                  contentType = "image/png", # 🔴 updated type
                   width = "100%",
                   height = "auto"
                 )
               },
-              deleteFile = TRUE  # 🔴 allow temp cleanup
+              deleteFile = TRUE # 🔴 allow temp cleanup
             )
           })
-
-
 
           # Return the UI wrapper
           shiny::div(
@@ -3465,10 +3477,9 @@ app <- function() {
 
       if (
         input$tabs == "tab_0" &
-        input$tab0_subtabs == "Ecosystem Overview" &
-        input$indicator_mode == 'ebm'
+          input$tab0_subtabs == "Ecosystem Overview" &
+          input$indicator_mode == 'ebm'
       ) {
-
         # compute once
         ind_ped <- calc_regional_bin_scores(
           df = pillar_ecol_df |>
@@ -3584,7 +3595,7 @@ app <- function() {
         input$tabs == "tab_0" &&
           !(is.null(state$mpas)) &&
           input$tab0_subtabs == "Effectiveness Contributions" &&
-        'GBF Objectives' %in% input$contribution_frameworks
+          'GBF Objectives' %in% input$contribution_frameworks
       ) {
         gbf_targets <- c(
           "Plan and Manage all Areas To Reduce Biodiversity Loss",
@@ -3633,7 +3644,7 @@ app <- function() {
         input$tabs == "tab_0" &&
           !(is.null(input$mpas)) &&
           input$tab0_subtabs == "Effectiveness Contributions" &&
-        'EBM Objectives' %in% input$contribution_frameworks
+          'EBM Objectives' %in% input$contribution_frameworks
       ) {
         emb_targets <- c(
           "Control unintended incidental mortality for all species",
@@ -3679,7 +3690,7 @@ app <- function() {
           !(is.null(state$mpas)) &&
           input$tab0_subtabs == "Effectiveness Contributions" &&
           input$region == "Maritimes" &&
-        'Network Design' %in% input$contribution_frameworks
+          'Network Design' %in% input$contribution_frameworks
       ) {
         tagList(
           h3("Network Design Targets"), # This adds the title above the table
@@ -3717,20 +3728,20 @@ app <- function() {
         if (all(is.na(unique(ind_ped$score)))) {
           return(NULL)
         } else {
-        MarConsNetAnalysis::plot_flowerplot(
-          ind_ped,
-          grouping = "objective",
-          labels = "bin",
-          score = "score",
-          max_score = 100,
-          min_score = 0,
-          title = paste0(
-            NAME,
-            " flower plot with number of indicators indicated on each petal"
-          ),
-          showNumbers = TRUE
-        )
-      }
+          MarConsNetAnalysis::plot_flowerplot(
+            ind_ped,
+            grouping = "objective",
+            labels = "bin",
+            score = "score",
+            max_score = 100,
+            min_score = 0,
+            title = paste0(
+              NAME,
+              " flower plot with number of indicators indicated on each petal"
+            ),
+            showNumbers = TRUE
+          )
+        }
       }
     })
 
@@ -3783,7 +3794,7 @@ app <- function() {
           !(is.null(state$mpas)) &&
           "Maritimes" %in% state$region &&
           input$tab0_subtabs == "Effectiveness Contributions" &&
-        'Network Objectives' %in% input$contribution_frameworks
+          'Network Objectives' %in% input$contribution_frameworks
       ) {
         n_objectives <- trimws(
           substr(
@@ -3856,7 +3867,6 @@ app <- function() {
             grade_colors[i] <- "#EDEDED"
           }
         }
-
 
         dt_data <- data.frame(
           Objective = links,
@@ -4095,7 +4105,6 @@ app <- function() {
               }
 
               if (length(keep_projects) == 0) {
-
                 if (!shown_notification()) {
                   showNotification(
                     "No projects in this filtered area. Click \"See all Project Data\" to see the sample locations of this project.",
