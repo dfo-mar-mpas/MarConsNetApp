@@ -24,7 +24,7 @@
 #' @importFrom shinyjs useShinyjs
 #' @importFrom DT renderDT dataTableOutput datatable formatStyle styleEqual formatRound
 #' @importFrom leaflet leafletOutput renderLeaflet leaflet addTiles addPolygons
-#'  addCircleMarkers  addLegend
+#'  addCircleMarkers  addLegend leafletProxy
 #' @importFrom MarConsNetAnalysis plot_flowerplot calc_group_score calc_letter_grade
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom viridis viridis
@@ -82,33 +82,7 @@ app <- function() {
 
   # load targets if necessary
   if (!exists("APPTABS")) {
-    tar_load(
-      c(
-        "APPTABS",
-        "pillar_ecol_df",
-        "all_project_geoms",
-        "MPA_report_card",
-        "MPAs",
-        "regions",
-        "flowerPalette",
-        "indicatorFlower",
-        "N_Objectives",
-        "om",
-        "Ecological",
-        "Context",
-        "collaborations",
-        "deliverables",
-        "csas",
-        "cost_of_mpas",
-        "salary",
-        "objective_tabs",
-        "objective_indicators",
-        "map_palette",
-        "labels",
-        "all_indicator_project_geoms",
-        "conservation_targets_target",
-        "scoring_explanations"
-      ),
+    tar_load(,
       store = STORE
     )
   }

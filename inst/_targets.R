@@ -37,41 +37,40 @@ list(
       )
   }),
 
-  tar_target(name=scoring_explanations,
-             command={
-scoring_schemes <- data.frame(
-  scheme = c(
-    "representation: cumulative distribution with regional thresholds",
-    "placeholder score",
-    "connectivity-proportion",
-    "desired state: increase",
-    "desired state: decrease",
-    "desired state: stable",
-    "control site linear trend: less inside",
-    "coverage: landings",
-    "coverage",
-    "median",
-    "representation: count",
-    "representation",
-    "custom"
-  ),
-  description = c(
-    "Scores based on cumulative distribution of values within regions, scaled using regional thresholds.",
-    "Temporary or missing scoring method used as a placeholder; does not represent a true ecological score.",
-    "Measures proportional connectivity contribution of features; higher connectivity contribution increases score.",
-    "Scores whether an indicator is increasing over time; significant positive trends score highest.",
-    "Scores whether an indicator is decreasing over time; significant negative trends score highest.",
-    "Scores whether an indicator remains stable; significant change results in lower scores.",
-    "Compares inside vs outside conditions; scores whether values are significantly lower inside protected areas.",
-    "Coverage of fishing landings within protected areas relative to total landings and targets.",
-    "General spatial or quantitative coverage of a feature within areas relative to targets.",
-    "Uses median values within areas and scales them relative to the maximum observed value.",
-    "Counts occurrences or presence of features and converts to proportional representation scores.",
-    "Measures representation of features within areas based on presence/absence or proportional occurrence.",
-    "User-defined scoring method allowing custom logic outside standard frameworks."
-  )
-)
-             }),
+  tar_target(name = scoring_explanations, command = {
+    scoring_schemes <- data.frame(
+      scheme = c(
+        "representation: cumulative distribution with regional thresholds",
+        "placeholder score",
+        "connectivity-proportion",
+        "desired state: increase",
+        "desired state: decrease",
+        "desired state: stable",
+        "control site linear trend: less inside",
+        "coverage: landings",
+        "coverage",
+        "median",
+        "representation: count",
+        "representation",
+        "custom"
+      ),
+      description = c(
+        "Scores based on cumulative distribution of values within regions, scaled using regional thresholds.",
+        "Temporary or missing scoring method used as a placeholder; does not represent a true ecological score.",
+        "Measures proportional connectivity contribution of features; higher connectivity contribution increases score.",
+        "Scores whether an indicator is increasing over time; significant positive trends score highest.",
+        "Scores whether an indicator is decreasing over time; significant negative trends score highest.",
+        "Scores whether an indicator remains stable; significant change results in lower scores.",
+        "Compares inside vs outside conditions; scores whether values are significantly lower inside protected areas.",
+        "Coverage of fishing landings within protected areas relative to total landings and targets.",
+        "General spatial or quantitative coverage of a feature within areas relative to targets.",
+        "Uses median values within areas and scales them relative to the maximum observed value.",
+        "Counts occurrences or presence of features and converts to proportional representation scores.",
+        "Measures representation of features within areas based on presence/absence or proportional occurrence.",
+        "User-defined scoring method allowing custom logic outside standard frameworks."
+      )
+    )
+  }),
 
   tar_target(name = APPTABS, command = {
     apptabs <- expand.grid(
@@ -316,6 +315,120 @@ scoring_schemes <- data.frame(
     }
   ),
 
+  tar_target(name = app_required_targets, command = {
+    c(
+      "APPTABS",
+      "pillar_ecol_df",
+      "all_project_geoms",
+      "MPA_report_card",
+      "MPAs",
+      "regions",
+      "flowerPalette",
+      "indicatorFlower",
+      "N_Objectives",
+      "om",
+      "Ecological",
+      "Context",
+      "collaborations",
+      "deliverables",
+      "csas",
+      "cost_of_mpas",
+      "salary",
+      "objective_tabs",
+      "objective_indicators",
+      "map_palette",
+      "labels",
+      "all_indicator_project_geoms",
+      "conservation_targets_target",
+      "scoring_explanations"
+    )
+  }),
+
+  tar_target(name = update_app_on_beast, command = {
+    # do while 'on beast' in sudo mode
+    # Define local shiny server paths
+    shiny_app_targets_dir <- "/srv/shiny-server/MarConsNet/MarConsNetTargets/app_targets"
+    shiny_data_dir <- "/srv/shiny-server/MarConsNet/MarConsNetTargets/data"
+
+    # Copy all targets folder subdirectories (except objects)
+    subdirs <- list.dirs(
+      path_to_store(),
+      full.names = TRUE,
+      recursive = FALSE
+    )
+
+    non_objects_subdirs <- subdirs[!grepl("objects", subdirs)]
+
+    for (subdir in non_objects_subdirs) {
+      dir_name <- basename(subdir)
+      dest_path <- file.path(shiny_app_targets_dir, dir_name)
+      unlink(dest_path, recursive = TRUE) # Remove old version
+      dir.create(dirname(dest_path), showWarnings = TRUE, recursive = TRUE)
+      file.copy(
+        subdir,
+        shiny_app_targets_dir,
+        recursive = TRUE,
+        overwrite = TRUE
+      )
+    }
+
+    # Copy specific objects files
+    dir.create(
+      file.path(shiny_app_targets_dir, "objects"),
+      showWarnings = FALSE,
+      recursive = TRUE
+    )
+
+    object_files <- file.path(path_to_store(), "objects", app_required_targets)
+    object_files <- object_files[file.exists(object_files)] # Only copy existing files
+
+    for (obj_file in object_files) {
+      file.copy(
+        obj_file,
+        file.path(shiny_app_targets_dir, "objects"),
+        overwrite = TRUE
+      )
+    }
+
+    # Copy data folder files
+    dir.create(shiny_data_dir, showWarnings = FALSE, recursive = TRUE)
+
+    data_source_dir <- file.path(dirname(path_to_store()), 'data')
+
+    if (dir.exists(data_source_dir)) {
+      datafiles <- list.files(data_source_dir, include.dirs = FALSE)
+      datadirs <- list.dirs(
+        data_source_dir,
+        recursive = FALSE,
+        full.names = FALSE
+      )
+
+      # Copy individual data files
+      for (f in datafiles[!(datafiles %in% datadirs)]) {
+        file.copy(
+          file.path(data_source_dir, f),
+          file.path(shiny_data_dir, f),
+          overwrite = TRUE
+        )
+      }
+
+      # Copy specific data directories
+      for (f in datadirs[datadirs %in% c("reports", "plot")]) {
+        source_path <- file.path(data_source_dir, f)
+        dest_path <- file.path(shiny_data_dir, f)
+        unlink(dest_path, recursive = TRUE) # Remove old version
+        file.copy(
+          source_path,
+          shiny_data_dir,
+          recursive = TRUE,
+          overwrite = TRUE
+        )
+      }
+    }
+
+    TRUE
+  }),
+
   tar_target(
     name = upload_all_data_to_shiny,
     command = {
@@ -344,14 +457,15 @@ scoring_schemes <- data.frame(
         "collaborations",
         "deliverables",
         "csas",
-        "climate_change",
         "cost_of_mpas",
         "salary",
-        "theme_table",
         "objective_tabs",
         "objective_indicators",
         "map_palette",
-        "labels"
+        "labels",
+        "all_indicator_project_geoms",
+        "conservation_targets_target",
+        "scoring_explanations"
       )
 
       # Add all targets folder subdirectories
