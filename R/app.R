@@ -82,9 +82,9 @@ app <- function() {
 
   # load targets if necessary
   if (!exists("APPTABS")) {
-    tar_load(,
-      store = STORE
-    )
+    tar_load(app_required_targets, store = STORE)
+
+    tar_load(unlist(app_required_targets), store = STORE)
   }
   load(paste0(dirname(path_to_store()), '/data/unique_table_cost.rda'))
 

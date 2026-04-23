@@ -340,7 +340,8 @@ list(
       "labels",
       "all_indicator_project_geoms",
       "conservation_targets_target",
-      "scoring_explanations"
+      "scoring_explanations",
+      "app_required_targets"
     )
   }),
 
