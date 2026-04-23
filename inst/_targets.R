@@ -346,31 +346,53 @@ list(
   }),
 
   tar_target(name = update_app_on_beast, command = {
-    # do while 'on beast' in sudo mode
-    # Define local shiny server paths
+    # NOTE: This target requires the following setup on the Shiny server:
+    #
+    # 1. Create a deployment group (one-time setup):
+    #    sudo groupadd shiny-deploy
+    #
+    # 2. Add users to the group:
+    #    sudo usermod -a -G shiny-deploy shiny
+    #    sudo usermod -a -G shiny-deploy <your_username>
+    #
+    # 3. Set ownership and permissions:
+    #    sudo chown -R shiny:shiny-deploy /srv/shiny-server/MarConsNet/
+    #    sudo chmod -R u+rwX,g+rwX,o+rX /srv/shiny-server/MarConsNet/
+    #    sudo find /srv/shiny-server/MarConsNet/ -type d -exec chmod g+s {} \;
+    #
+    # 4. Users must log out and back in (or run: newgrp shiny-deploy)
+    #    for group membership to take effect.
+    #
+    # This allows both the shiny server and deployment user to access files
+    # without manual permission resets after each deployment.
+
     shiny_app_targets_dir <- "/srv/shiny-server/MarConsNet/MarConsNetTargets/app_targets"
     shiny_data_dir <- "/srv/shiny-server/MarConsNet/MarConsNetTargets/data"
 
-    # Copy all targets folder subdirectories (except objects)
-    subdirs <- list.dirs(
-      path_to_store(),
-      full.names = TRUE,
-      recursive = FALSE
-    )
+    # Helper function to fix permissions recursively
+    fix_permissions <- function(path) {
+      if (dir.exists(path)) {
+        system(paste("chmod -R u+rwX,g+rwX,o+rX", path))
+        system(paste("find", path, "-type d -exec chmod g+s {} \\;"))
+      }
+    }
 
+    # Copy all targets folder subdirectories (except objects)
+    subdirs <- list.dirs(path_to_store(), full.names = TRUE, recursive = FALSE)
     non_objects_subdirs <- subdirs[!grepl("objects", subdirs)]
 
     for (subdir in non_objects_subdirs) {
       dir_name <- basename(subdir)
       dest_path <- file.path(shiny_app_targets_dir, dir_name)
-      unlink(dest_path, recursive = TRUE) # Remove old version
-      dir.create(dirname(dest_path), showWarnings = TRUE, recursive = TRUE)
+      unlink(dest_path, recursive = TRUE)
+      dir.create(dirname(dest_path), showWarnings = FALSE, recursive = TRUE)
       file.copy(
         subdir,
         shiny_app_targets_dir,
         recursive = TRUE,
         overwrite = TRUE
       )
+      fix_permissions(dest_path)
     }
 
     # Copy specific objects files
@@ -381,7 +403,7 @@ list(
     )
 
     object_files <- file.path(path_to_store(), "objects", app_required_targets)
-    object_files <- object_files[file.exists(object_files)] # Only copy existing files
+    object_files <- object_files[file.exists(object_files)]
 
     for (obj_file in object_files) {
       file.copy(
@@ -390,6 +412,7 @@ list(
         overwrite = TRUE
       )
     }
+    fix_permissions(file.path(shiny_app_targets_dir, "objects"))
 
     # Copy data folder files
     dir.create(shiny_data_dir, showWarnings = FALSE, recursive = TRUE)
@@ -404,7 +427,6 @@ list(
         full.names = FALSE
       )
 
-      # Copy individual data files
       for (f in datafiles[!(datafiles %in% datadirs)]) {
         file.copy(
           file.path(data_source_dir, f),
@@ -413,18 +435,24 @@ list(
         )
       }
 
-      # Copy specific data directories
       for (f in datadirs[datadirs %in% c("reports", "plot")]) {
-        source_path <- file.path(data_source_dir, f)
-        dest_path <- file.path(shiny_data_dir, f)
-        unlink(dest_path, recursive = TRUE) # Remove old version
+        dst <- file.path(shiny_data_dir, f)
+        unlink(dst, recursive = TRUE)
         file.copy(
-          source_path,
+          file.path(data_source_dir, f),
           shiny_data_dir,
           recursive = TRUE,
           overwrite = TRUE
         )
       }
+      fix_permissions(shiny_data_dir)
+
+      system(
+        "chmod -R u+rwX,g+rwX,o+rX /srv/shiny-server/MarConsNet/MarConsNetTargets/"
+      )
+      system(
+        "find /srv/shiny-server/MarConsNet/MarConsNetTargets/ -type d -exec chmod g+s {} \\;"
+      )
     }
 
     TRUE
