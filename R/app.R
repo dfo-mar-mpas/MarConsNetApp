@@ -784,7 +784,7 @@ app <- function() {
           class = "sidebar-section",
           div(
             class = "button-row",
-            shiny::uiOutput("contextButton"),
+            shiny::uiOutput("contextButton_ui"),
             shiny::uiOutput("filter_button_ui"),
             shiny::uiOutput("report_button_ui")
           )
@@ -1211,7 +1211,7 @@ app <- function() {
                         style = "font-size: 13px; color: #6b7280; font-weight: 500;",
                         "View:"
                       ),
-                      uiOutput('indicator_mode')
+                      uiOutput('indicator_mode_ui')
                     )
                   ),
                   # Fluid row for Ecosystem Overview
@@ -1352,7 +1352,7 @@ app <- function() {
       div(class = "objectives-grid", cards)
     })
 
-    output$indicator_mode <- renderUI({
+    output$indicator_mode_ui <- renderUI({
       req(state$mpas)
       req(input$tabs)
 
@@ -2157,7 +2157,7 @@ app <- function() {
       })
     })
 
-    output$contextButton <- shiny::renderUI({
+    output$contextButton_ui <- shiny::renderUI({
       req(input$tabs)
       if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
         string <- state$mpas
