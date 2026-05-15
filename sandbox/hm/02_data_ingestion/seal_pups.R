@@ -18,16 +18,19 @@ tar_target(name = seal_sf, command = {
 
 # data cleaning?
 data <- seal_sf
+data$latitude <- as.numeric(seal_sf$Latitude)
+data$longitude <- as.numeric(seal_sf$Longitude)
 data$year_of_data_collection <- as.numeric(seal_sf$Year_Année)
 data$number_of_seals <- as.numeric(seal_sf$Pups_Count__Chiots__nombre_)
-data$latitude <- as.numeric(seal_sf$Latitude)
-data$longiude <- as.numeric(seal_sf$Longitude)
+
 data <- data[, c(
   "year_of_data_collection",
   'latitude',
   'longitude',
   'number_of_seals'
 )]
+
+data$year_of_publication <- 2026
 
 # Just the process_indicator function
 x <- process_indicator(
@@ -45,6 +48,7 @@ x <- process_indicator(
   indicator_rationale = "Seals feed on a variety of species, including groundfish",
   bin_rationale = "FIXME",
   plot_type = c("time-series", "map"),
+  year = 'year_of_data_collection',
   objectives = c("Protect unique, rare, or sensitive ecological features"),
   theme = "Marine Mammals and Other Top Predators",
   SME = "Unknown",
@@ -54,7 +58,7 @@ x <- process_indicator(
 
 save_plots(dplyr::select(x, -data, -adjacent_data))
 dplyr::select(x, -plot)
-})
+
 
 
 
