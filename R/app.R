@@ -49,10 +49,6 @@
 # Define UI
 
 app <- function() {
-  rv <- reactiveValues(
-    plotted_projects = character() # keeps track of already plotted projects
-  )
-
   gradeLegendUI <- function(type = "indicator") {
     grades <- grade_description(type)
 
@@ -778,9 +774,9 @@ app <- function() {
         div(
           class = "sidebar-section",
           h4("FILTERS"),
-          shiny::uiOutput("region"),
-          shiny::uiOutput("mpas"),
-          shiny::uiOutput("projects")
+          shiny::uiOutput("region_ui"),
+          shiny::uiOutput("mpas_ui"),
+          shiny::uiOutput("projects_ui")
         ),
 
         # buttons section
@@ -788,7 +784,7 @@ app <- function() {
           class = "sidebar-section",
           div(
             class = "button-row",
-            shiny::uiOutput("contextButton"),
+            shiny::uiOutput("contextButton_ui"),
             shiny::uiOutput("filter_button_ui"),
             shiny::uiOutput("report_button_ui")
           )
@@ -1011,7 +1007,9 @@ app <- function() {
       }
     })
 
-    rv <- shiny::reactiveValues(button_label = "See All Project Data")
+    rv_button_state <- shiny::reactiveValues(
+      button_label = "See All Project Data"
+    )
 
     is_button_visible <- shiny::reactive({
       req(state$mpas)
@@ -1148,7 +1146,7 @@ app <- function() {
                   hr(),
                   div(
                     class = "tab-section-header",
-                    shiny::uiOutput('contribution_frameworks')
+                    shiny::uiOutput('contribution_frameworks_ui')
                   ),
                   # div(
                   #   class = "objectives-grid",
@@ -1213,7 +1211,7 @@ app <- function() {
                         style = "font-size: 13px; color: #6b7280; font-weight: 500;",
                         "View:"
                       ),
-                      uiOutput('indicator_mode')
+                      uiOutput('indicator_mode_ui')
                     )
                   ),
                   # Fluid row for Ecosystem Overview
@@ -1295,7 +1293,7 @@ app <- function() {
       do.call(tabsetPanel, c(myTabs, id = "tabs"))
     })
 
-    output$contribution_frameworks <- renderUI({
+    output$contribution_frameworks_ui <- renderUI({
       checkboxGroupInput(
         inputId = "contribution_frameworks",
         label = "Select frameworks to see areas contribution",
@@ -1354,7 +1352,7 @@ app <- function() {
       div(class = "objectives-grid", cards)
     })
 
-    output$indicator_mode <- renderUI({
+    output$indicator_mode_ui <- renderUI({
       req(state$mpas)
       req(input$tabs)
 
@@ -1379,8 +1377,9 @@ app <- function() {
     output$score_disclaimer <- renderUI({
       req(input$tabs)
       if (input$tabs == "tab_0") {
-        renderText(
-          "* Polygons on map are color-coded according to overall ecological score"
+        tags$span(
+          "* Polygons on map are color-coded according to overall ecological score",
+          style = "font-size: 12px; color: #6b7280;"
         )
       }
     })
@@ -1883,7 +1882,7 @@ app <- function() {
       )
     })
 
-    output$mpas <- shiny::renderUI({
+    output$mpas_ui <- shiny::renderUI({
       req(input$tabs)
       if (input$tabs == "tab_0") {
         shiny::selectInput(
@@ -1895,7 +1894,7 @@ app <- function() {
       }
     })
 
-    output$region <- shiny::renderUI({
+    output$region_ui <- shiny::renderUI({
       req(input$tabs)
       if (input$tabs == "tab_0") {
         regionlist <- unique(pillar_ecol_df$region)
@@ -1909,7 +1908,7 @@ app <- function() {
       }
     })
 
-    output$projects <- shiny::renderUI({
+    output$projects_ui <- shiny::renderUI({
       req(input$tabs)
       if (input$tabs == "tab_0") {
         shiny::selectInput(
@@ -2137,12 +2136,12 @@ app <- function() {
 
     # Update the button label when clicked
     shiny::observeEvent(input$filter_button, {
-      rv$button_label <- ifelse(
-        rv$button_label == "See All Project Data",
+      rv_button_state$button_label <- ifelse(
+        rv_button_state$button_label == "See All Project Data",
         "Filter Project Data",
         "See All Project Data"
       )
-      message(rv$button_label)
+      message(rv_button_state$button_label)
     })
 
     # Ensure the button is correctly displayed when navigating tabs
@@ -2151,14 +2150,14 @@ app <- function() {
         if (is_button_visible()) {
           shiny::actionButton(
             "filter_button",
-            label = HTML(rv$button_label),
+            label = HTML(rv_button_state$button_label),
             class = "btn btn-filter-custom"
           )
         }
       })
     })
 
-    output$contextButton <- shiny::renderUI({
+    output$contextButton_ui <- shiny::renderUI({
       req(input$tabs)
       if (input$tabs == "tab_0" && !(is.null(state$mpas))) {
         string <- state$mpas
@@ -3461,7 +3460,7 @@ app <- function() {
         )
 
         if (state$mpas %in% MPAs$NAME_E) {
-          ind_ped <- ind_ped[which(pillar_ecol_df$areaID == state$mpas), ]
+          ind_ped <- ind_ped[which(ind_ped$areaID == state$mpas), ]
         } else {
           ind_ped <- ind_ped[-(which(is.na(ind_ped$scale))), ]
         }
@@ -3518,48 +3517,6 @@ app <- function() {
       },
       ignoreInit = TRUE
     )
-
-    output$ebm_objectives <- renderUI({
-      req(state$mpas)
-      req(input$tabs)
-      if (
-        input$tabs == "tab_0" &&
-          !(is.null(input$mpas)) &&
-          input$tab0_subtabs == "Effectiveness Contributions"
-      ) {
-        emb_targets <- c(
-          "Control unintended incidental mortality for all species",
-          "Distribute population component mortality in relation to component biomass",
-          "Minimize unintended introduction and transmission of invasive species",
-          "Control introduction and proliferation of disease/pathogens",
-          "Minimize aquaculture escapes",
-          "Maintain Species Biodiversity",
-          "Maintain Functional Biodiversity",
-          "Maintain Ecosystem Resistance",
-          "Maintain Habitat Diversity",
-          "Keep fishing and other forms of mortality moderate",
-          "Allow sufficient escapement from exploitation for spawning",
-          "Limit disturbing activity in important reproductive areas/seasons",
-          "Control alteration of nutrient concentrations affecting primary production",
-          "Maintain/promote ecosystem structure and functioning",
-          "Habitat required for all species, particularly priority species, is maintained and protected",
-          "Fish habitat that has been degraded is restored",
-          "Pollution is prevented and reduced"
-        )
-
-        tagList(
-          h3("EBM Objectives"),
-          DT::datatable(
-            data.frame(Objective = emb_targets),
-            rownames = FALSE,
-            options = list(
-              pageLength = 10,
-              autoWidth = TRUE
-            )
-          )
-        )
-      }
-    })
 
     output$gbf_objectives <- renderUI({
       req(state$mpas)
@@ -3693,7 +3650,7 @@ app <- function() {
             filter(!(indicator %in% MPAs$NAME_E))
         )
         if (state$mpas %in% MPAs$NAME_E) {
-          ind_ped <- ind_ped[which(pillar_ecol_df$areaID == state$mpas), ]
+          ind_ped <- ind_ped[which(ind_ped$areaID == state$mpas), ]
         } else {
           ind_ped <- ind_ped[-(which(is.na(ind_ped$scale))), ]
         }
@@ -4063,7 +4020,7 @@ app <- function() {
               proj_short <- sub(" \\(.*", "", proj)
 
               if (
-                !(rv$button_label == "Filter Project Data") &&
+                !(rv_button_state$button_label == "Filter Project Data") &&
                   !(state$mpas %in% "Maritimes")
               ) {
                 k1 <- which(all_project_geoms$areaID == state$mpas)
@@ -4100,15 +4057,13 @@ app <- function() {
                 0
 
               keep_scale <- rowSums(sapply(
-                input$filter_ind_type,
+                input$filter_ind_scale,
                 grepl,
                 x = APJ_filtered$scale
               )) >
                 0
 
               APJ_filtered <- APJ_filtered[keep_type & keep_scale, ]
-
-              APJ_filtered <- APJ_filtered[keep_type, ]
 
               if (!(proj_id == "NA")) {
                 if (suppressWarnings(is.na(as.numeric(proj_id)))) {
