@@ -1,6 +1,3 @@
-source("inst/set_up.R")
-
-
 raw_data_targets <- list(
   # Areas ----
 
@@ -516,7 +513,8 @@ raw_data_targets <- list(
     geoserver_receivers
   }),
 
-  tar_target(name = data_MAR_cumulative_impacts, { #JAIM
+  tar_target(name = data_MAR_cumulative_impacts, {
+    #JAIM
     temp_zip <- tempfile(fileext = ".zip")
     download.file(
       "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/37b59b8b-1c1c-4869-802f-c09571cc984b/attachments/Cumul_Impact_Maritimes.zip",
@@ -976,10 +974,12 @@ raw_data_targets <- list(
       'rv',
       extract_user = "DAIGLER",
       extract_computer = "WLNSBIO90210",
-      cxn = ROracle::dbConnect(DBI::dbDriver("Oracle"),
-                               username = "DAIGLER",
-                               password = pwd,
-                               "PTRAN"),
+      cxn = ROracle::dbConnect(
+        DBI::dbDriver("Oracle"),
+        username = "DAIGLER",
+        password = pwd,
+        "PTRAN"
+      ),
       reextract.override = T,
       env = .pkgenv
     )
@@ -1116,7 +1116,7 @@ raw_data_targets <- list(
       "token.txt"
     ))$V1
 
-    data <- MarConsNetData::data_eDNA(token=token)
+    data <- MarConsNetData::data_eDNA(token = token)
 
     df_sf <- sf::st_as_sf(
       data,
@@ -2183,10 +2183,11 @@ raw_data_targets <- list(
     #   ) %>%
     #   st_drop_geometry()
     #
-     data <- cables[, c("Name", "geometry")]
-     return(data)
+    data <- cables[, c("Name", "geometry")]
+    return(data)
   }),
-  tar_target(data_vessel_traffic, command = { # JAIM
+  tar_target(data_vessel_traffic, command = {
+    # JAIM
     mpa_vect <- vect(MPAs)
     url <- "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/5b86e2d2-cec1-4956-a9d5-12d487aca11b/attachments/NorthwestAtlantic_VesselDensity_2023_AIS.zip"
     temp_zip <- tempfile(fileext = ".zip")

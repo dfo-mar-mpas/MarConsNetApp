@@ -1,6 +1,3 @@
-source("inst/set_up.R")
-
-
 framework_targets <- list(
   # OBJECTIVES ----
 

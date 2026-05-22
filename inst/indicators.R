@@ -1,5 +1,3 @@
-source("inst/set_up.R")
-
 indicator_targets <- list(
   # INDICATORS WITH DATA ----
 
