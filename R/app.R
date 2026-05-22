@@ -92,11 +92,9 @@ app <- function() {
   )] <- "Pressure and Impacts"
 
   old_pillar_ecol_df <- pillar_ecol_df
-  old_all_project_geoms <- all_project_geoms
   pillar_ecol_df <- pillar_ecol_df[
     -which(pillar_ecol_df$areaID == "Non_Conservation_Area"),
   ]
-  #all_project_geoms <- all_project_geoms[-which(all_project_geoms$areaID == "Non_Conservation_Area"),]
 
   obj <- paste0(dirname(STORE), "/data/objectives.xlsx")
   obj_excel <- read_excel(obj)
