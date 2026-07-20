@@ -21,7 +21,7 @@ edge [
 ]
 
 Note1 [
-  label = 'Power Automate Flow 1 sends an email\\nwith an initial interest form once an SME record for\\na given topic is marked as entered',
+  label = 'Power Automate Flow 1 sends an email\\nwith a data collection form once an SME record for\\na given topic is marked as entered',
   shape = note,
   style = filled,
 
@@ -35,24 +35,10 @@ Note2 [
 ]
 
 
-Note3 [
-  label = 'Power Automate Flow 3 sends an\\nemail with the data collection form once sprint\\nstart date is entered in List 2',
-  shape = note,
-  style = filled,
-
-]
-
-Note4 [
-  label = 'Power Automate Flow 4 pulls responses from\\ndata collection form to populate associated dataset record\\nin Microsoft List 2',
-  shape = note,
-  style = filled,
-
-]
-
 {
   rank = same
   Note1
-  InitialEmail
+  CollectionEmail
 }
 {
   rank = same
@@ -60,17 +46,6 @@ Note4 [
   DatasetRecord
 }
 
-{
-  rank = same
-  Note3
-  SprintStart
-}
-
-{
-  rank = same
-  Note4
-  CompleteRecord
-}
 
 {
   rank = same
@@ -81,18 +56,14 @@ Note4 [
   CoffeeChat      [label = 'Coffee Chat', shape = oval, style = 'rounded, filled', fillcolor = palegreen ]
   SMERecord       [label = 'Create SME record in Microsoft List 1', shape = oval, style = 'rounded, filled', fillcolor = lightblue ]
   SMEsEntered     [label = 'Are all SMEs for that topic entered?', shape = diamond, style = 'rounded, filled', fillcolor = gold]
-  InitialEmail    [label = 'Initial Interest Email Sent', shape = box, style = 'rounded, filled', fillcolor = thistle]
+  CollectionEmail [label = 'Data Colllection Email Sent', shape = box, style = 'rounded, filled', fillcolor = thistle]
   FollowUp1       [label = 'Follow Up', shape = box, style = 'rounded, filled', fillcolor = thistle]
-  InterestForm    [label = 'Initial Interest Form Filled?', shape = diamond, style = 'rounded, filled', fillcolor = gold]
-  DatasetRecord   [label = 'Dataset Record Created',  shape = box, style = 'rounded, filled', fillcolor = thistle]
+  CollectionForm  [label = 'Data Collection Form Filled?', shape = diamond, style = 'rounded, filled', fillcolor = gold]
+  DatasetRecord   [label = 'Dataset Record Created in Microsoft List 2',  shape = oval, style = 'rounded, filled', fillcolor = lightblue]
   FollowUp2       [label = 'Follow Up', shape = box, style = 'rounded, filled', fillcolor = thistle]
   SMEAvailable    [label = 'SME Available?', shape = diamond, style = 'rounded, filled', fillcolor = gold]
   ScheduleLater   [label = 'Schedule at Later Date', shape = box, style = 'rounded, filled', fillcolor = thistle]
   SprintStart     [label = 'Set Sprint Start Date', shape = box, style = 'rounded, filled', fillcolor = thistle]
-  CollectionEmail [label = 'Send Data Collection Email ', shape = oval, style = 'rounded, filled', fillcolor = lightblue ]
-  DataForm        [label = 'Data Collection Form Filled?', shape = diamond, style = 'rounded, filled', fillcolor = gold]
-  FollowUp3       [label = 'Follow Up', shape = box, style = 'rounded, filled', fillcolor = thistle]
-  CompleteRecord  [label = 'Completes Dataset Record\\nin Microsoft List', shape = box, style = 'rounded, filled', fillcolor = thistle]
   DataInspection  [label = 'Data Inspection', shape = oval, style = 'rounded, filled', fillcolor = lightblue]
   DataAccess      [label = 'Can we Access the Data ?', shape = diamond, style = 'rounded, filled', fillcolor = gold]
   MeetSME         [label = 'Meet with SME', shape = box, style = 'rounded, filled', fillcolor = thistle]
@@ -107,17 +78,17 @@ Note4 [
 
   SMERecord -> SMEsEntered
 
-  SMEsEntered -> InitialEmail [label = 'Yes']
+  SMEsEntered -> CollectionEmail [label = 'Yes']
   SMEsEntered -> FollowUp1 [label = 'No']
   FollowUp1 -> SMEsEntered
 
-  InitialEmail -> Note1 [style = dashed, arrowhead = none, constraint = false]
-  InitialEmail -> InterestForm
+  CollectionEmail -> Note1 [style = dashed, arrowhead = none, constraint = false]
+  CollectionEmail -> CollectionForm
 
-  InterestForm -> FollowUp2 [label = 'No']
-  FollowUp2 -> InterestForm
+  CollectionForm -> FollowUp2 [label = 'No']
+  FollowUp2 -> CollectionForm
 
-  InterestForm -> DatasetRecord [label = 'Yes']
+  CollectionForm -> DatasetRecord [label = 'Yes']
 
   DatasetRecord -> Note2  [style = dashed, arrowhead = none, constraint = false]
   DatasetRecord -> SMEAvailable
@@ -125,15 +96,7 @@ Note4 [
   SMEAvailable -> ScheduleLater [label = 'No']
   SMEAvailable -> SprintStart [label = 'Yes']
 
-  SprintStart -> Note3 [style = dashed, arrowhead = none, constraint = false]
-  SprintStart -> CollectionEmail
-  CollectionEmail -> DataForm
-
-  DataForm -> FollowUp3 [label = 'No']
-  DataForm -> CompleteRecord [label = 'Yes']
-
-  CompleteRecord -> Note4 [style = dashed, arrowhead = none, constraint = false]
-  CompleteRecord -> DataInspection
+  SprintStart -> DataInspection
   DataInspection -> DataAccess
 
   DataAccess -> ContactSME  [label = 'Yes']
