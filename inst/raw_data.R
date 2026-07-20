@@ -49,6 +49,8 @@ raw_data_targets <- list(
 
     canada <- ne_states(country = "Canada", returnclass = "sf")
 
+    canada <- st_transform(canada, st_crs(PA))
+
     A <- PA[grepl(PA$NAME_E, pattern = "Gulf"), ]
     B <- canada[canada$name_en %in% c("Quebec", "Newfoundland and Labrador"), ]
     C <- canada[
@@ -1118,23 +1120,34 @@ raw_data_targets <- list(
 
     data <- MarConsNetData::data_eDNA(token = token)
 
+    data <- data %>%
+      filter(!is.na(latitude), !is.na(longitude))
+
     df_sf <- sf::st_as_sf(
       data,
       coords = c("longitude", "latitude"), # your coordinate column names
       crs = 4326
     )
 
-    df_sf <- df_sf[, c("year", "species_richness", "geometry")]
+    #df_sf <- df_sf[, c("year", "species_richness", "geometry")]
 
     DATA2 <- add_assumptions(
       df_sf,
-      assumptions = 'The eDNA dataset represents complete and accurate sample metadata (IDs, dates, locations) such that species richness derived from non-zero detections is a valid proxy for local biodiversity.',
-      caveats = 'The data contain known inconsistencies in naming conventions, date formats, and coordinate signs, meaning some samples may be mismatched, inferred, or excluded, potentially affecting spatial and temporal interpretation.'
+      assumptions='This is eDNA data so it is an indirect measure of diversity. Often times benthic samples will have species that may also be associted with the pelagic environment. This may need to be considered if the indicator is benthic focused or if it is compared to/combined with another benthic dataset (e.g., RV Trawl).',
+      caveats='Species identification should be curated, but at the same time additional checks should be put in place to ensure there are no erroneous species (e.g., Pacific sister species can sometimes be associated with a DNA read in the bioinformatic pipeline instead of the Atlantic equivalent, which invariably is what was actually in the environment and was the source of the DNA).'
     )
 
     names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
     DATA2$year_of_publication <- NA
+
+    DATA2$subclass <- NA
+
+    for (i in seq_along(unique(DATA2$species))) {
+      DATA2$subclass[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i])
+    }
+
     DATA2
+
   }),
 
   tar_target(name = data_musquash_nekton_occurence, command = {

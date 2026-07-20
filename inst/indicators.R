@@ -1403,7 +1403,6 @@ indicator_targets <- list(
   }),
 
   tar_target(name = ind_MAR_cum_impact, command = {
-    # JAIM
     x <- process_indicator(
       data = data_MAR_cumulative_impacts$Cumul_Impact_Maritimes_ALL.tif,
       indicator_var_name = "Cumul_Impact_Maritimes_ALL.tif",
@@ -1448,7 +1447,6 @@ indicator_targets <- list(
   }),
 
   tar_target(name = ind_MAR_biofouling_AIS, command = {
-    #JAIM
     data <- data_MAR_biofouling_AIS$AIS_AllSpecies_2021_PA |>
       filter(cover_index == 1) |>
       group_by(species_name) |>
@@ -1491,32 +1489,7 @@ indicator_targets <- list(
       reframe(geoms = st_make_valid(st_union(geoms))) |>
       st_as_sf()
 
-    subclass <- NULL
-    for (i in seq_along(data$scientificName_Nom_scientifique)) {
-      message(i)
-      result <- try(
-        worrms::wm_records_name(data$scientificName_Nom_scientifique[i]),
-        silent = TRUE
-      )
-      if (inherits(result, "try-error")) {
-        subclass[i] <- NA
-      } else {
-        aphia_id <- result$AphiaID[1] # Use the first match, or refine if needed
-        classification <- worrms::wm_classification(id = aphia_id)
-        subclass[i] <- ifelse(
-          length(classification$scientificname[which(
-            classification$rank == "Subclass"
-          )]) ==
-            0,
-          NA,
-          classification$scientificname[which(
-            classification$rank == "Subclass"
-          )]
-        )
-      }
-    }
-
-    data$subclass <- subclass
+    data$subclass <- taxize_species(data$scientificName_Nom_scientifique)
     data$year_of_publication <- 2014
 
     x <- process_indicator(
@@ -2399,8 +2372,6 @@ indicator_targets <- list(
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_vessel_traffic, command = {
-    # JAIM
-
     x <- process_indicator(
       data = data_vessel_traffic,
       indicator_var_name = "All_VesselsPerDay_2023_AIS",
@@ -2431,6 +2402,55 @@ indicator_targets <- list(
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
+
+
+  tar_target(name = ind_benthic_characteristics, command = { # JAIM
+    data_edna_data
+    MPAs
+    message(class(data_edna_data))
+
+    data <- data_edna_data
+    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+
+    data$year_of_publication <- 2026
+
+    x <- process_indicator(
+      data = data[which(data$subclass == 'Heteroscleromorpha'),], # Note still need to learn tar_map
+      readiness='Ready',
+      indicator_var_name = "detections",
+      indicator = "Community Composition",
+      type = "in situ",
+      units = 'read number',
+      scoring = "proportion of species", # FIXME
+      PPTID = 480,
+      source = "eDNA",
+      project_short_title = "Animal Acoustic Tagging",
+      bin_rationale = "FIXME", # FIXME - We did not do this, but could with AI.
+      climate=FALSE,
+      SME = "Ryan Stanley and Nick Jeffery",
+      indicator_rationale = "Direct biodiversity measure",
+      areas = MPAs,
+      plot_type = c('map', 'community_composition'),
+      plot_lm = FALSE,
+      theme = "Benthic Environment",
+      objectives = c("Protect Vazella pourtalesi glass sponges",
+                     "Protect continental shelf habitats and associated benthic and demersal communities",
+                     "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"),
+      dataIngestion=TRUE,
+      other_nest_variables = c('species', "year_of_data_collection"))
+
+
+
+
+
+
+
+
+  }), # Biomass Metrics, Benthic Environment
+
+
+
+
 
   # PLACEHOLDER INDICATORS ----
 
@@ -4009,24 +4029,6 @@ indicator_targets <- list(
       theme = "Trophic Structure and Function"
     )
   }), # Threats to Productivity, Trophic structure and Function?
-
-  tar_target(name = ind_benthic_characteristics, command = {
-    ind_placeholder(
-      ind_name = "Diversity and community composition of the benthos, abundance or biomass and size composition of selected benthic taxa, and characteristics of surficial geology at selected sampling stations, distributed across the seabed environment types represented in the MPA",
-      areas = MPAs[
-        which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-        "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
-        "Habitat required for all species, particularly priority species, is maintained and protected",
-        "Maintain biodiversity of individual species, communities and populations within the different ecotypes"
-      ),
-      theme = "Benthic Environment"
-    )
-  }), # Biomass Metrics, Benthic Environment
 
   tar_target(name = ind_compared_benthic_characteristics, command = {
     ind_placeholder(
