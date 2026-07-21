@@ -1141,9 +1141,16 @@ raw_data_targets <- list(
     DATA2$year_of_publication <- NA
 
     DATA2$subclass <- NA
+    DATA2$superclass <- NA
+    DATA2$class <- NA
 
     for (i in seq_along(unique(DATA2$species))) {
       DATA2$subclass[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i])
+      DATA2$class[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level='Class')
+      DATA2$superclass[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level='Superclass')
+
+
+
     }
 
     DATA2

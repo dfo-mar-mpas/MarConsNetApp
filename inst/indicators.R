@@ -2403,50 +2403,52 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
+  tar_map(
+    values = tibble::tibble(subclass = sort(unique(data_edna_data$subclass))),
+    names = subclass,
 
-  tar_target(name = ind_benthic_characteristics, command = { # JAIM
-    data_edna_data
-    MPAs
-    message(class(data_edna_data))
+    tar_target(
+      ind_benthic_characteristics,
+      {
+        data_edna_data
+        MPAs
+        message(class(data_edna_data))
 
-    data <- data_edna_data
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+        data <- data_edna_data
 
-    data$year_of_publication <- 2026
-
-    x <- process_indicator(
-      data = data[which(data$subclass == 'Heteroscleromorpha'),], # Note still need to learn tar_map
-      readiness='Ready',
-      indicator_var_name = "detections",
-      indicator = "Community Composition",
-      type = "in situ",
-      units = 'read number',
-      scoring = "proportion of species", # FIXME
-      PPTID = 480,
-      source = "eDNA",
-      project_short_title = "Animal Acoustic Tagging",
-      bin_rationale = "FIXME", # FIXME - We did not do this, but could with AI.
-      climate=FALSE,
-      SME = "Ryan Stanley and Nick Jeffery",
-      indicator_rationale = "Direct biodiversity measure",
-      areas = MPAs,
-      plot_type = c('map', 'community_composition'),
-      plot_lm = FALSE,
-      theme = "Benthic Environment",
-      objectives = c("Protect Vazella pourtalesi glass sponges",
-                     "Protect continental shelf habitats and associated benthic and demersal communities",
-                     "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"),
-      dataIngestion=TRUE,
-      other_nest_variables = c('species', "year_of_data_collection"))
-
-
-
-
-
+        process_indicator(
+          data = data[data$subclass == subclass, ],
+          readiness = "Ready",
+          indicator_var_name = "detections",
+          indicator = "Community Composition",
+          type = "in situ",
+          units = "read number",
+          scoring = "proportion of species",
+          PPTID = 480,
+          source = "eDNA",
+          project_short_title = "Animal Acoustic Tagging",
+          bin_rationale = "FIXME",
+          climate = FALSE,
+          SME = "Ryan Stanley and Nick Jeffery",
+          indicator_rationale = "Direct biodiversity measure",
+          areas = MPAs,
+          plot_type = c("map", "community_composition"),
+          plot_lm = FALSE,
+          theme = "Benthic Environment",
+          objectives = c(
+            "Protect Vazella pourtalesi glass sponges",
+            "Protect continental shelf habitats and associated benthic and demersal communities",
+            "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
+          ),
+          SME_validated = TRUE,
+          other_nest_variables = c("species", "year_of_data_collection")
+        )
+      }
+    )
+  ),
 
 
 
-  }), # Biomass Metrics, Benthic Environment
 
 
 
