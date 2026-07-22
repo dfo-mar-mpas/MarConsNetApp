@@ -2404,8 +2404,8 @@ indicator_targets <- list(
   }),
 
   tar_map(
-    values = tibble::tibble(subclass = sort(unique(data_edna_data$subclass))),
-    names = subclass,
+    values = tibble::tibble(subclass = sort(unique(data_edna_data$class))),
+    names = class,
 
     tar_target(
       ind_benthic_characteristics,
@@ -2416,8 +2416,8 @@ indicator_targets <- list(
 
         data <- data_edna_data
 
-        process_indicator(
-          data = data[data$subclass == subclass, ],
+        x <- process_indicator(
+          data = data[which(data$class == "Teleostei"), ],
           readiness = "Ready",
           indicator_var_name = "detections",
           indicator = "Community Composition",
@@ -2443,9 +2443,62 @@ indicator_targets <- list(
           SME_validated = TRUE,
           other_nest_variables = c("species", "year_of_data_collection")
         )
+
+        x
       }
     )
+
   ),
+
+  tar_target(name = ind_large_wolffish, command = { #JAIM
+
+    data_edna_data
+        MPAs
+        message(class(data_edna_data))
+
+        data <- data_edna_data
+
+        x <- process_indicator(
+          data = DATA2[which(grepl("anarhichas", DATA2$species, ignore.case=TRUE)),], # Only looking at wolf fish
+          readiness = "Ready",
+          indicator_var_name = "detections",
+          indicator = "Detections of wolffish in MPA",
+          type = "in situ",
+          units = "read number",
+          scoring = "proportion of species",
+          PPTID = 480,
+          source = "eDNA",
+          project_short_title = "Animal Acoustic Tagging",
+          bin_rationale = "FIXME",
+          climate = FALSE,
+          SME = "Ryan Stanley and Nick Jeffery",
+          indicator_rationale = "Direct biodiversity measure",
+          areas = MPAs,
+          plot_type = c('detections', 'time-series'),
+          plot_lm = FALSE,
+          theme = "Benthic Environment",
+          objectives = c(
+            "Promote the survival and recovery of Northern Wolffish by minimizing risk of harm from human activities (e.g., bycatch in the commercial fishery) in the Laurentian Channel"
+          ),
+          SME_validated = TRUE,
+          other_nest_variables = c("species", "year_of_data_collection")
+        )
+
+        x
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }), #Biomass Metrics, Trophic Structure and Function
 
 
 
@@ -4170,21 +4223,6 @@ indicator_targets <- list(
     )
   }), #Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
-  tar_target(name = ind_large_wolffish, command = {
-    ind_placeholder(
-      ind_name = "Abundance of large wolffish in sub-tidal rocky areas along the coastline adjacent to the MPA",
-      areas = MPAs[
-        which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "promote the recovery of at-risk whales and wolffish",
-        "Maintain biodiversity of individual species, communities and populations within the different ecotypes"
-      ),
-      theme = "Trophic Structure and Function"
-    )
-  }), #Biomass Metrics, Trophic Structure and Function
 
   tar_target(name = ind_fish_nekton_fluxes, command = {
     ind_placeholder(
