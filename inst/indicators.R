@@ -2404,7 +2404,7 @@ indicator_targets <- list(
   }),
 
   tar_map(
-    values = tibble::tibble(subclass = sort(unique(data_edna_data$class))),
+    values = tibble::tibble(class = sort(unique(data_edna_data$class))),
     names = class,
 
     tar_target(
@@ -2417,7 +2417,7 @@ indicator_targets <- list(
         data <- data_edna_data
 
         x <- process_indicator(
-          data = data[which(data$class == "Teleostei"), ],
+          data = data[which(data$class == class), ],
           readiness = "Ready",
           indicator_var_name = "detections",
           indicator = "Community Composition",
@@ -2459,7 +2459,7 @@ indicator_targets <- list(
         data <- data_edna_data
 
         x <- process_indicator(
-          data = DATA2[which(grepl("anarhichas", DATA2$species, ignore.case=TRUE)),], # Only looking at wolf fish
+          data = data[which(grepl("anarhichas", data$species, ignore.case=TRUE)),], # Only looking at wolf fish
           readiness = "Ready",
           indicator_var_name = "detections",
           indicator = "Detections of wolffish in MPA",
@@ -2476,7 +2476,7 @@ indicator_targets <- list(
           areas = MPAs,
           plot_type = c('detections', 'time-series'),
           plot_lm = FALSE,
-          theme = "Benthic Environment",
+          theme ="Trophic Structure and Function",
           objectives = c(
             "Promote the survival and recovery of Northern Wolffish by minimizing risk of harm from human activities (e.g., bycatch in the commercial fishery) in the Laurentian Channel"
           ),
@@ -2485,20 +2485,49 @@ indicator_targets <- list(
         )
 
         x
-
-
-
-
-
-
-
-
-
-
-
-
-
   }), #Biomass Metrics, Trophic Structure and Function
+
+
+  tar_map(
+    values = tibble::tibble(trophic = sort(unique(data_edna_data$ai_trophic_level))),
+    names = trophic,
+
+  tar_target(name = ind_species_per_trophic, command = {
+    data <- data_edna_data
+
+    trophic_levels <- read_excel(paste0(dirname(path_to_store()), "/data/AI_trophic_groups.xlsx"))
+    data$ai_trophic_level <- NA
+    for (i in seq_along(unique(data$class))) {
+      data$ai_trophic_level[which(data$class == unique(data$class)[i])] <- trophic_levels$trophic_group[which(trophic_levels$class == unique(data$class)[i])]
+    }
+
+    x <- process_indicator(
+      data = data[which(data$ai_trophic_level == trophic),],
+      readiness = "Ready",
+      indicator_var_name = "detections",
+      indicator = "Species per trophic level within each habitat type",
+      type = "in situ",
+      units = "read number",
+      scoring = "proportion of species",
+      PPTID = 480,
+      source = "eDNA",
+      project_short_title = "Animal Acoustic Tagging",
+      bin_rationale = "FIXME",
+      climate = FALSE,
+      SME = "Ryan Stanley and Nick Jeffery",
+      indicator_rationale = "Direct biodiversity measure",
+      areas = MPAs,
+      plot_type = c('detections', 'community_composition'),
+      plot_lm = FALSE,
+      theme = "Trophic Structure and Function",
+      objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"),
+      SME_validated = TRUE,
+      other_nest_variables = c("species", "year_of_data_collection"),
+      indicator_caveats ='eDNA is a poor metric of trophic because everything is relative. We do not know the age or size of species we detect.',
+      indicator_assumptions = 'The trophic level of each species was assigned by AI and verified by humans. We are assuming this is correct.'
+    )
+
+  })), # Functional Diversity, Trophic Structure and Function
 
 
 
@@ -3145,22 +3174,6 @@ indicator_targets <- list(
       theme = "Trophic Structure and Function"
     )
   }), # Biomass Metrics, Trophic Structure and Function
-
-  tar_target(name = ind_species_per_trophic, command = {
-    ind_placeholder(
-      ind_name = "Species per trophic level within each habitat type",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Maintain productivity of harvested species",
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"
-      ),
-      theme = "Trophic Structure and Function"
-    )
-  }), # Functional Diversity, Trophic Structure and Function
 
   tar_target(name = ind_species_at_risk, command = {
     ind_placeholder(
