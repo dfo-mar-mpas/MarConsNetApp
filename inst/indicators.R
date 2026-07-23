@@ -2529,11 +2529,59 @@ indicator_targets <- list(
 
   })), # Functional Diversity, Trophic Structure and Function
 
+  tar_target(name = ind_rel_abundance_groundfish, command = {
+
+    data <- data_edna_data
+
+    top_5_species <- data %>%
+      group_by(species) %>%
+      summarise(
+        total_detections = sum(detections, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      arrange(desc(total_detections)) %>%
+      slice_head(n = 10)
 
 
 
+    x <- process_indicator(
+      data = data[
+        which(
+          tolower(trimws(data$species)) %in%
+            tolower(c(
+              "Tautogolabrus adspersus",
+              "Gadus morhua",
+              "Melanogrammus aeglefinus",
+              "Pholis gunnellus",
+              "Sebastes sp"
+            ))
+        ),
+      ],
+      readiness = "Ready",
+      indicator_var_name = "detections",
+      indicator = "Relative abundance and biomass of select groundfish species",
+      type = "in situ",
+      units = "read number",
+      scoring = "proportion of species",
+      PPTID = 480,
+      source = "eDNA",
+      project_short_title = "Animal Acoustic Tagging",
+      bin_rationale = "FIXME",
+      climate = FALSE,
+      SME = "Ryan Stanley and Nick Jeffery",
+      indicator_rationale = "Direct biodiversity measure",
+      areas = MPAs,
+      plot_type = c('detections','community_composition'),
+      plot_lm = FALSE,
+      theme = "Fish and Fishery Resources",
+      objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock
+", "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"),
+      SME_validated = TRUE,
+      other_nest_variables = c("species", "year_of_data_collection"),
+      indicator_caveats ='eDNA is a poor metric of relative abundance or biomass'
+    )
 
-
+  }), # Biomass Metrics, Fish and Fishery Resources
 
 
   # PLACEHOLDER INDICATORS ----
@@ -2911,21 +2959,6 @@ indicator_targets <- list(
     )
   }), # Environmental Representativity, Ocean Structure and Movement?
 
-  tar_target(name = ind_rel_abundance_groundfish, command = {
-    ind_placeholder(
-      ind_name = "Relative abundance and biomass of select groundfish species",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Readily Available",
-      source = "RV Survey",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities",
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
-      ),
-      theme = "Fish and Fishery Resources"
-    )
-  }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_size_distribution_groundfish, command = {
     ind_placeholder(
