@@ -2420,7 +2420,7 @@ indicator_targets <- list(
           data = data[which(data$class == class), ],
           readiness = "Ready",
           indicator_var_name = "detections",
-          indicator = "Community Composition",
+          indicator = "Diversity of the benthos",
           type = "in situ",
           units = "read number",
           scoring = "proportion of species",
@@ -2449,6 +2449,54 @@ indicator_targets <- list(
     )
 
   ),
+
+  tar_map(
+    values = tibble::tibble(class = sort(unique(data_edna_data$class))),
+    names = class,
+
+    tar_target(
+      ind_benthic_characteristics,
+      {
+        data_edna_data
+        MPAs
+        message(class(data_edna_data))
+
+        data <- data_edna_data
+
+        x <- process_indicator(
+          data = data[which(data$class == "Teleostei"), ],
+          readiness = "Ready",
+          indicator_var_name = "detections",
+          indicator = "Community Composition of the benthos",
+          type = "in situ",
+          units = "read number",
+          scoring = "community composition",
+          PPTID = 480,
+          source = "eDNA",
+          project_short_title = "Animal Acoustic Tagging",
+          bin_rationale = "FIXME",
+          climate = FALSE,
+          SME = "Ryan Stanley and Nick Jeffery",
+          indicator_rationale = "Direct biodiversity measure",
+          areas = MPAs,
+          plot_type = c("map", "community_composition"),
+          plot_lm = FALSE,
+          theme = "Benthic Environment",
+          objectives = c(
+            "Protect Vazella pourtalesi glass sponges",
+            "Protect continental shelf habitats and associated benthic and demersal communities",
+            "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
+          ),
+          SME_validated = TRUE,
+          other_nest_variables = c("species", "year_of_data_collection", 'method')
+        )
+
+        x
+      }
+    )
+
+  ),
+
 
   tar_target(name = ind_large_wolffish, command = { #JAIM
 
