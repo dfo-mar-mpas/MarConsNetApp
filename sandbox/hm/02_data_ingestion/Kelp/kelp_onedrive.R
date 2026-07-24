@@ -1,0 +1,217 @@
+library(terra)
+
+##get the data
+onedrive <- Sys.getenv("OneDriveCommercial")
+
+
+raster_path <- file.path(
+  onedrive,
+  "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
+  "Projections",
+  "Laminaria_digitata_Bathy_FutureProjection_20240228_Binary.tif"
+)
+
+l_digitata_future <- rast(raster_path)
+
+
+raster_path2 <- file.path(
+  onedrive,
+  "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
+  "Laminaria digitata",
+  "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
+)
+
+l_digitata_current<- rast(raster_path2)
+
+
+raster_path3 <- file.path(
+  onedrive,
+  "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
+  "Projections",
+  "Saccharina_latissima_Bathy_FutureProjection_20240228_Binary.tif"
+)
+
+s_latissima_future <- rast(raster_path3)
+
+raster_path4 <- file.path(
+  onedrive,
+  "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
+  "Saccharina latissima",
+  "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
+)
+
+s_latissima_current<- rast(raster_path4)
+
+
+
+library(sf)
+library(dplyr)
+
+url <- "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/draft_conservation_network_sites/MapServer/0/query?where=1=1&outFields=*&f=geojson"
+conservation_network <- st_read(url)
+#change this into a terra spatvector to be more compatible with the raster data
+sites <- vect(conservation_network)
+
+
+
+# CURRENT PREDICTED OCCURRENCE L. DIGITATA
+
+##Ensure the same coordinate system
+cur_sites_ld <- project(sites, crs(l_digitata_current))
+
+#get all raster values in each CS
+cur_site_values_ld <- extract(
+  l_digitata_current,
+  cur_sites_ld
+)
+
+# Add the corresponding site names to the extracted values
+cur_site_values_ld$SiteName_E <- cur_sites_ld$SiteName_E[cur_site_values_ld$ID]
+
+##calculates the summary stats for each site
+cur_site_summary_ld <- cur_site_values_ld %>%
+  group_by(SiteName_E) %>%
+  summarise(
+    cur_occurrence_cells_ld = sum(
+      Laminaria_digitata_Bathy_rm4_20240223_avg_Binary == 1,
+      na.rm = TRUE
+    ),
+    cur_valid_cells_ld = sum(
+      !is.na(Laminaria_digitata_Bathy_rm4_20240223_avg_Binary)
+    ),
+    cur_occurrence_percent_ld = mean(
+      Laminaria_digitata_Bathy_rm4_20240223_avg_Binary,
+      na.rm = TRUE
+    ) * 100
+  )
+
+## FUTURE PREDICTED OCCURRENCE L. DIGITATA
+
+fut_sites_ld <- project(sites, crs(l_digitata_future))
+
+fut_site_values_ld <- extract(
+  l_digitata_future,
+  sites
+)
+
+fut_site_values_ld$SiteName_E <- fut_sites_ld$SiteName_E[fut_site_values_ld$ID]
+
+fut_site_summary_ld <- fut_site_values_ld %>%
+  group_by(SiteName_E) %>%
+  summarise(
+    fut_occurrence_cells_ld = sum(
+      Laminaria_digitata_Bathy_FutureProjection_20240228_Binary == 1,
+      na.rm = TRUE
+    ),
+    fut_valid_cells_ld = sum(
+      !is.na(Laminaria_digitata_Bathy_FutureProjection_20240228_Binary)
+    ),
+    fut_occurrence_percent_ld = mean(
+      Laminaria_digitata_Bathy_FutureProjection_20240228_Binary,
+      na.rm = TRUE
+    ) * 100
+  )
+
+###PERCENT CHANGE OVER TIME L. DIGITATA
+percent_change_ld <- cur_site_summary_ld %>%
+  select(
+    SiteName_E,
+    cur_occurrence_percent_ld
+  ) %>%
+  left_join(
+    fut_site_summary_ld %>%
+      select(
+        SiteName_E,
+        fut_occurrence_percent_ld
+      ),
+    by = "SiteName_E"
+  ) %>%
+  mutate(
+    percent_change_ld = if_else(
+      cur_occurrence_percent_ld == 0,
+      NA_real_,
+      (
+        (fut_occurrence_percent_ld - cur_occurrence_percent_ld) /
+          cur_occurrence_percent_ld
+      ) * 100
+    )
+  )
+
+# CURRENT PREDICTED OCCURRENCE S. LATISSIMA
+cur_sites_sl <- project(sites, crs(s_latissima_current))
+
+cur_site_values_sl <- extract(
+  s_latissima_current,
+  cur_sites_sl
+)
+
+cur_site_values_sl$SiteName_E <- cur_sites_sl$SiteName_E[cur_site_values_sl$ID]
+
+
+cur_site_summary_sl <- cur_site_values_sl %>%
+  group_by(SiteName_E) %>%
+  summarise(
+    cur_occurrence_cells_sl = sum(
+      Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary == 1,
+      na.rm = TRUE
+    ),
+    cur_valid_cells_sl = sum(
+      !is.na(Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary)
+    ),
+    cur_occurrence_percent_sl = mean(
+      Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary,
+      na.rm = TRUE
+    ) * 100
+  )
+
+
+## FUTURE PREDICTED OCCURRENCE S. LATISSIMA
+fut_sites_sl <- project(sites, crs(s_latissima_future))
+
+fut_site_values_sl <- extract(
+  s_latissima_future,
+  sites
+)
+
+fut_site_values_sl$SiteName_E <- fut_sites_sl$SiteName_E[fut_site_values_sl$ID]
+
+fut_site_summary_sl <- fut_site_values_sl %>%
+  group_by(SiteName_E) %>%
+  summarise(
+    fut_occurrence_cells_sl = sum(
+      Saccharina_latissima_Bathy_FutureProjection_20240228_Binary == 1,
+      na.rm = TRUE
+    ),
+    fut_valid_cells_sl = sum(
+      !is.na(Saccharina_latissima_Bathy_FutureProjection_20240228_Binary)
+    ),
+    fut_occurrence_percent_sl = mean(
+      Saccharina_latissima_Bathy_FutureProjection_20240228_Binary,
+      na.rm = TRUE
+    ) * 100
+  )
+
+###PERCENT CHANGE OVER TIME S. LATISSIMA
+percent_change_sl <- cur_site_summary_sl %>%
+  select(
+    SiteName_E,
+    cur_occurrence_percent_sl
+  ) %>%
+  left_join(
+    fut_site_summary_sl %>%
+      select(
+        SiteName_E,
+        fut_occurrence_percent_sl
+      ),
+    by = "SiteName_E"
+  ) %>%
+  mutate(
+    percent_change_sl = if_else(
+      cur_occurrence_percent_sl == 0,
+      NA_real_,
+      (
+        (fut_occurrence_percent_sl - cur_occurrence_percent_sl) /
+          cur_occurrence_percent_sl
+      ) * 100
+    )
+  )
