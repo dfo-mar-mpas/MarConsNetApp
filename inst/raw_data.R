@@ -1140,13 +1140,14 @@ raw_data_targets <- list(
     names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
 
     DATA2$subclass <- NA
-    DATA2$superclass <- NA
     DATA2$class <- NA
+    DATA2$common_name <- NA
 
     for (i in seq_along(unique(DATA2$species))) {
+      message(paste0("For loop ", i, " of ", length(unique(DATA2$species))))
       DATA2$subclass[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level="Subclass")
       DATA2$class[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level='Class')
-      DATA2$superclass[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level='Superclass')
+      DATA2$common_name[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level='common_name')
 
 
 

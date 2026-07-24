@@ -2408,7 +2408,7 @@ indicator_targets <- list(
     names = class,
 
     tar_target(
-      ind_benthic_characteristics,
+      ind_benthic_characteristics_diversity,
       {
         data_edna_data
         MPAs
@@ -2417,7 +2417,7 @@ indicator_targets <- list(
         data <- data_edna_data
 
         x <- process_indicator(
-          data = data[which(data$class == class), ],
+          data = data[which(data$class == "Teleostei"), ],
           readiness = "Ready",
           indicator_var_name = "detections",
           indicator = "Diversity of the benthos",
@@ -2455,13 +2455,14 @@ indicator_targets <- list(
     names = class,
 
     tar_target(
-      ind_benthic_characteristics,
+      ind_benthic_characteristics_composition,
       {
         data_edna_data
         MPAs
         message(class(data_edna_data))
 
         data <- data_edna_data
+
 
         x <- process_indicator(
           data = data[which(data$class == "Teleostei"), ],
@@ -2507,13 +2508,13 @@ indicator_targets <- list(
         data <- data_edna_data
 
         x <- process_indicator(
-          data = data[which(grepl("anarhichas", data$species, ignore.case=TRUE)),], # Only looking at wolf fish
+          data = data, # Only looking at wolf fish
           readiness = "Ready",
           indicator_var_name = "detections",
           indicator = "Detections of wolffish in MPA",
           type = "in situ",
           units = "read number",
-          scoring = "proportion of species",
+          scoring = 'probability of detection: anarhichas',
           PPTID = 480,
           source = "eDNA",
           project_short_title = "Animal Acoustic Tagging",
@@ -2550,7 +2551,7 @@ indicator_targets <- list(
     }
 
     x <- process_indicator(
-      data = data[which(data$ai_trophic_level == trophic),],
+      data = data[which(data$ai_trophic_level == 'Predator'),],
       readiness = "Ready",
       indicator_var_name = "detections",
       indicator = "Species per trophic level within each habitat type",
