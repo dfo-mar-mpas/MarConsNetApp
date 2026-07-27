@@ -91,6 +91,7 @@ raw_data_targets <- list(
 
   tar_target(name = MPAs, command = {
     regions
+
     areas <- get_spatial_layer(
       "https://maps-cartes.ec.gc.ca/arcgis/rest/services/CWS_SCF/CPCAD/MapServer/0",
       where = "BIOME='M' AND MGMT_E='Fisheries And Oceans Canada'"
@@ -109,21 +110,43 @@ raw_data_targets <- list(
 
     sf::sf_use_s2(FALSE)
 
-    eez_buffer <- data_eez |>
-      st_transform(3979) |>
-      st_union() |>
-      st_simplify(dTolerance = 50000) |>
-      st_buffer(550000) |>
-      st_make_valid() |>
-      st_transform(st_crs(areas))
+    ## DATA-EEZ way is causing problems, commenting out for now.
+#
+#     eez_buffer <- data_eez |>
+#       st_transform(3979) |>
+#       st_union() |>
+#       st_simplify(dTolerance = 50000) |>
+#       st_buffer(550000) |>
+#       st_make_valid() |>
+#       st_transform(st_crs(areas))
+#
+#     # Get union of all MPAs
+#     all_mpa_union <- st_union(areas$geoms)
+#
+#     # Compute difference (the "outside" area)
+#     outside_geom <- st_difference(eez_buffer, all_mpa_union) |> st_make_valid()
+#
+#     sf::sf_use_s2(TRUE)
 
-    # Get union of all MPAs
+    # Step 6: Create the Outside row
+    ## Adding non conservation areas
+    bbox_coords <- matrix(c(
+      -171, 24,  # xmin, ymin (Hawaii/Alaska/Florida range)
+      -50,  24,  # xmax, ymin
+      -50,  84,  # xmax, ymax
+      -171, 84,  # xmin, ymax
+      -171, 24   # close the polygon
+    ), ncol = 2, byrow = TRUE)
+
+    bbox <- st_polygon(list(bbox_coords)) |>
+      st_sfc(crs = st_crs(areas)) |>
+      st_make_valid()
+
+    # Step 4: Get union of all MPAs
     all_mpa_union <- st_union(areas$geoms)
 
-    # Compute difference (the "outside" area)
-    outside_geom <- st_difference(eez_buffer, all_mpa_union) |> st_make_valid()
-
-    sf::sf_use_s2(TRUE)
+    # Step 5: Compute difference (the "outside" area)
+    outside_geom <- st_difference(bbox, all_mpa_union) |> st_make_valid()
 
     # Step 6: Create the Outside row
     outside_row <- tibble(
@@ -136,53 +159,29 @@ raw_data_targets <- list(
     # Step 7: Bind with existing areas
     areas_full <- bind_rows(areas, outside_row)
 
+    # Step 7: Bind with existing areas
+    areas_full <- bind_rows(areas, outside_row)
+
     areas_full$date_of_establishment <- c(
-      2019,
-      2005,
-      1981,
-      2017,
-      2017,
-      2016,
-      2007,
-      2017,
-      2022,
-      2017,
-      2017,
-      2005,
-      2005,
-      2016,
-      2017,
-      2004,
-      2017,
-      2017,
-      2017,
-      2016,
-      2019,
-      2016,
-      1998,
-      2004,
-      1996,
-      2004,
-      2004,
-      1998,
-      2002,
-      2014,
-      1986,
-      2006,
-      2017,
-      2016,
-      2017,
-      2017,
-      1985,
-      2017,
-      2017,
-      2017,
-      2017,
-      2017,
-      2017,
-      2017,
-      2000
+      2019,2005,1981,2017,2017,2016,2007,2017,2022,2017,2017, 2005,2005,2016,
+2017,2004,2017,2017,2017,2016,2019,2016,1998,2004,1996,2004,2004,1998,2002,2014,
+      1986,2006,2017,2016,2017,2017,1985,2017,2017,2017,2017,2017,2017,2017,2000
     )
+
+    ## Now adding Fundian Channel
+    da <- data_draft_areas()
+    fc <- da[which(da$SiteName_E == "Fundian Channel-Browns Bank"),]
+    fc <- sf::st_transform(fc, sf::st_crs(areas_full))
+    fundian <- sf::st_sf(
+      NAME_E = fc$SiteName_E,
+      NAME_F = fc$Name_en_Fr,
+      region = "Maritimes",
+      date_of_establishment = 2030,
+      geoms = sf::st_geometry(fc)
+    )
+    areas_full <- rbind(areas_full, fundian)
+
+
     areas_full
   }),
 
