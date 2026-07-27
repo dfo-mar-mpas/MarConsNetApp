@@ -48,10 +48,10 @@ path_to_store <- function() {
     # in the project folder (e.g. on the shiny server)
     store = "MarConsNetTargets/app_targets"
   } else if (
-    dir.exists("/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets")
+    dir.exists("/mnt/sambashare/MarConsNet/MarConsNetTargets/app_targets")
   ) {
     # on a linux machine on the sambashare
-    store = "/srv/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+    store = "/mnt/sambashare/MarConsNet/MarConsNetTargets/app_targets"
   } else if (
     dir.exists(
       "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
