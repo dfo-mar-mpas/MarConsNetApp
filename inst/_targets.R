@@ -4,7 +4,6 @@ source("inst/raw_data.R")
 source("inst/indicators.R")
 source("inst/frameworks.R")
 
-
 list(
   raw_data_targets,
   indicator_targets,

@@ -480,7 +480,7 @@ framework_targets <- list(
       ind_zoanthid_overgrowth,
       ind_target_org_removed_gully,
       ind_organisms_removed,
-      ind_invasive_gully,
+      ind_invasive,
       ind_harmful_algae,
       ind_bait
     )

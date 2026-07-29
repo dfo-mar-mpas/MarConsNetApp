@@ -2499,7 +2499,7 @@ indicator_targets <- list(
   ),
 
 
-  tar_target(name = ind_large_wolffish, command = { #JAIM
+  tar_target(name = ind_large_wolffish, command = {
 
     data_edna_data
         MPAs
@@ -2631,6 +2631,83 @@ indicator_targets <- list(
     )
 
   }), # Biomass Metrics, Fish and Fishery Resources
+
+  tar_target(name = ind_nonindigenous_rel_indigenous, command = { # JAIM
+
+    data <- data_kelp_distribution_and_abundance
+
+    eD <- rep(20, length(MPAs$NAME_E))
+
+    x <- process_indicator(
+      data = data[which(data$scientificName %in% c("Codium fragile", "Membranipora membranacea", "Fucus serratus")),],
+      readiness = "Ready",
+      indicator_var_name = "measurementValue",
+      indicator = "Number of non-indigenous species relative to indigenous species in MPA",
+      type = "in situ",
+      units = "percent cover",
+      scoring = "proportion", # FIXME
+      PPTID = NA, # FIXME
+      source = "kelp",
+      project_short_title = "Placeholder", # FIXME
+      bin_rationale = "FIXME",
+      climate = FALSE,
+      SME = "Kira Krumhansl",
+      indicator_rationale = "Direct invasive species measure",
+      areas = MPAs,
+      plot_type = c('map-species', 'region-mpa-comparison'), # FIXME
+      plot_lm = FALSE,
+      theme = "Trophic Structure and Function",
+      objectives = c('Minimize unintended introduction and transmission of invasive species',
+                     'Prevent and Mitigate Invasive Alien Species'),
+      SME_validated = TRUE,
+      other_nest_variables = c("scientificName", "year_of_data_collection", 'taxonRank', 'measurementType'), # FIXME,
+      externalData=eD,
+      indicator_caveats ="Since there is no overlap with data samples in the MPAs we are also looking at the spread of non-indigenous species within a 20 km buffer."
+    )
+
+  }), # Biomass Metrics, Trophic Structure and Function?
+
+
+  tar_target(name = ind_invasive, command = {
+
+    data <- data_kelp_distribution_and_abundance
+
+    eD <- rep(20, length(MPAs$NAME_E))
+
+    x <- process_indicator(
+      data = data,
+      readiness = "Ready",
+      indicator_var_name = "measurementValue",
+      indicator = "reports of known invasive species in the MPA and spread of established invasive species towards the MPA",
+      type = "in situ",
+      units = "percent cover",
+      scoring = "proportion", # FIXME
+      PPTID = NA, # FIXME
+      source = "kelp",
+      project_short_title = "Placeholder", # FIXME
+      bin_rationale = "FIXME",
+      climate = FALSE,
+      SME = "Kira Krumhansl",
+      indicator_rationale = "Direct invasive species measure",
+      areas = MPAs,
+      plot_type = c('map', 'community_composition'), # FIXME
+      plot_lm = FALSE,
+      theme = "Trophic Structure and Function",
+      objectives = c('Minimize unintended introduction and transmission of invasive species',
+                     'Control introduction and proliferation of disease/pathogens'),
+      SME_validated = TRUE,
+      externalData=eD,
+      other_nest_variables = c("scientificName", "year_of_data_collection", 'taxonRank', 'measurementType'), # FIXME
+      indicator_caveats =NA # FIXME
+    )
+
+
+
+
+  }), # Threats to Productivity, Trophic Structure and Function
+
+
+
 
 
   # PLACEHOLDER INDICATORS ----
@@ -3356,22 +3433,6 @@ indicator_targets <- list(
     )
   }), # Biomass Metrics, Anthropogenic Pressure and Impacts
 
-  tar_target(name = ind_nonindigenous_rel_indigenous, command = {
-    ind_placeholder(
-      ind_name = "Number of non-indigenous species relative to indigenous species in MPA",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Maintain biodiversity of individual species, communities and populations within the different ecotypes",
-        "Minimize unintended introduction and transmission of invasive species"
-      ),
-      theme = "Trophic Structure and Function"
-    )
-  }), # Biomass Metrics, Trophic Structure and Function?
-
   tar_target(name = ind_human_perturbation, command = {
     ind_placeholder(
       ind_name = "Degree of human induced perturbation or loss",
@@ -4001,20 +4062,6 @@ indicator_targets <- list(
       theme = "Anthropogenic Pressure and Impacts"
     )
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
-
-  tar_target(name = ind_invasive_gully, command = {
-    ind_placeholder(
-      ind_name = "Reports of known invasive species in the Gully MPA",
-      areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"), ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Minimize unintended introduction and transmission of invasive species",
-        "Control introduction and proliferation of disease/pathogens"
-      ),
-      theme = "Trophic Structure and Function"
-    )
-  }), # Threats to Productivity, Trophic Structure and Function
 
   tar_target(name = ind_anthropogenic_sound, command = {
     ind_placeholder(

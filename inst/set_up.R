@@ -53,7 +53,8 @@ pkgs <- c(
   "MarEcosystemApproaches/marea",
   "httr",
   "terra",
-  "stars"
+  "stars",
+  'readr'
 )
 shelf(pkgs)
 

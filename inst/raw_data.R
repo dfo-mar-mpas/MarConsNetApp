@@ -515,7 +515,6 @@ raw_data_targets <- list(
   }),
 
   tar_target(name = data_MAR_cumulative_impacts, {
-    #JAIM
     temp_zip <- tempfile(fileext = ".zip")
     download.file(
       "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/37b59b8b-1c1c-4869-802f-c09571cc984b/attachments/Cumul_Impact_Maritimes.zip",
@@ -1155,6 +1154,71 @@ raw_data_targets <- list(
     DATA2
 
   }),
+
+
+tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
+
+  occurrence <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Occurrence.csv")
+  event <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Event.csv")
+  measurements <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/extendedMeasurementOrFact.csv")
+
+  ## Joining all tables but keeping only relevant tables.
+  data <- occurrence %>%
+    select(
+      eventID,
+      occurrenceID,
+      scientificName,
+      taxonRank,
+      eventDate,
+      basisOfRecord,
+      samplingProtocol
+    ) %>%
+    left_join(
+      event %>%
+        select(
+          eventID,
+          decimalLatitude,
+          decimalLongitude,
+          country,
+          datasetName
+        ),
+      by = "eventID"
+    ) %>%
+    left_join(
+      measurements %>%
+        select(
+          eventID,
+          occurrenceID,
+          measurementType,
+          measurementValue,
+          measurementUnit
+        ),
+      by = c("eventID", "occurrenceID")
+    ) %>%
+    rename(latitude=decimalLatitude,
+           longitude=decimalLongitude) %>%
+    mutate(year = format(as.Date(eventDate), "%Y"))
+
+  data <- add_assumptions(
+    data,
+    assumptions='Not all macroalgae are identified to the species level.',
+    caveats='Percent cover are not the most sensitive measure to changes in abundance but are useful as an indicator. '
+  )
+
+  ##PROCESS INDICATOR
+
+  data$year_of_publication <- {
+    url <- "https://open.canada.ca/data/en/dataset/f1a022a4-b9bf-47d0-b641-2067ea568962/resource/a47f5b93-9424-48a5-a65c-5fd5c6bc2b70"
+    page <- read_html(url)
+    page_text <- html_text2(page)
+
+    page_text |>
+      str_extract("(?<=Data last updated )\\w+ \\d{1,2}, \\d{4}") |>
+      str_extract("\\d{4}")
+  }
+}),
+
+
 
   tar_target(name = data_musquash_nekton_occurence, command = {
     # data from https://catalogue.ogsl.ca/en/dataset/ca-cioos_4c93ac96-0a9f-41d5-9505-80a3b24c30ae
@@ -2206,7 +2270,6 @@ raw_data_targets <- list(
     return(data)
   }),
   tar_target(data_vessel_traffic, command = {
-    # JAIM
     mpa_vect <- vect(MPAs)
     url <- "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/5b86e2d2-cec1-4956-a9d5-12d487aca11b/attachments/NorthwestAtlantic_VesselDensity_2023_AIS.zip"
     temp_zip <- tempfile(fileext = ".zip")
