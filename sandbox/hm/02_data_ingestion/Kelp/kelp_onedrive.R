@@ -1,10 +1,9 @@
 
+#-----------------------------------
+# KELP DATA TARGET
 
-#----------------------------------
-#  INDICATOR 1
-#----------------------------------
+tar_target(name = kelp_data, command = {
 
-tar_target(name = ind_distinctive_benthic_characteristics, command = {
   onedrive <- Sys.getenv("OneDriveCommercial")
 
   raster_folder <- file.path(
@@ -52,10 +51,24 @@ tar_target(name = ind_distinctive_benthic_characteristics, command = {
 
   kelp <- bind_rows(s_latissima_poly,l_digitata_poly)
 
-  data <- kelp %>%
-    filter(suitable_habitat == TRUE)
+})
 
-  data$year_of_publication <- {
+#----------------------------------
+#  INDICATOR 1
+#----------------------------------
+
+tar_target(name = ind_distinctive_benthic_characteristics, command = {
+
+  # data <- kelp %>%
+  #   filter(suitable_habitat)
+
+data <- kelp %>%
+    filter(suitable_habitat) %>%
+    select(suitable_habitat, habitat_type, geometry) %>%
+    group_by(suitable_habitat, habitat_type) %>%
+    summarise(geometry = st_union(geometry), .groups = "drop")
+
+data$year_of_publication <- {
 
     ld_path <- file.path(
       onedrive,
@@ -74,7 +87,15 @@ tar_target(name = ind_distinctive_benthic_characteristics, command = {
     # Get modified dates
     file_dates <- file.info(c(ld_path, sl_path))$mtime
     format(max(file_dates), "%Y")
-  }
+}
+
+data$min_target <- 30
+ data$max_target <- 100
+ data$plainname <- 'the total modelled kelp region'
+
+mpas <- MPAs %>%
+  st_filter(data) %>%
+  filter(NAME_E != "Non_Conservation_Area")
 
   x <- process_indicator(
     data = data,
@@ -83,10 +104,10 @@ tar_target(name = ind_distinctive_benthic_characteristics, command = {
     type = "model",
     units = "percent area",
     scoring = "coverage",
-    PPTID = c(1633,2576),
+    PPTID = 1633,
     source = "OneDrive",
     project_short_title = "Species distribution models of kelp and non-indigenous macroalgae in the DFO Maritimes region",
-    areas = MPAs,
+    areas = mpas,
     climate_expectation = "FIXME",
     indicator_rationale = "Kelp forests support high biodiversity and productivity, and provide ecosystem services",
     bin_rationale = "FIXME",
@@ -98,9 +119,10 @@ tar_target(name = ind_distinctive_benthic_characteristics, command = {
       "Habitat required for all species, particularly priority species, is maintained and protected"
     ),
     theme = "Benthic Environment",
+    externalData = NULL,
     scale = "region-site",
     SME = "Kira Krumhansl",
-    control_polygon = control_polygons,
+    control_polygon = NA,
     plot_lm = FALSE
   )
 
@@ -108,16 +130,12 @@ tar_target(name = ind_distinctive_benthic_characteristics, command = {
   dplyr::select(x, -plot)
 
 
+#----------------------------------
+# PLOTS
+#----------------------------------
 
-  ## PLOTS
 
-
-  levels(s_latissima_current) <- data.frame(
-    value = c(0, 1),
-    occurrence = c("Non-occurrence", "Predicted occurrence")
-  )
-
-  terra::plot(
+ terra::plot(
     s_latissima_current,
     main = "Predicted Occurence of Saccharina latissima",
     xlab = "Longitude",
