@@ -123,6 +123,7 @@ mpas <- MPAs %>%
     scale = "region-site",
     SME = "Kira Krumhansl",
     control_polygon = NA,
+    SME_validated = TRUE,
     plot_lm = FALSE
   )
 
