@@ -43,29 +43,84 @@ raw_data_targets <- list(
   }),
 
   tar_target(name = regions, command = {
-    PA <- get_spatial_layer(
-      "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/eastern_canada_marine_spatial_planning_areas/MapServer/0"
+
+    # Fixed ArcGIS geometry query issue by manually downloading features and rebuilding sf object;
+    # transformed to WGS84 and preserved original attributes for downstream region processing.
+
+    arc_url <- "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/eastern_canada_marine_spatial_planning_areas/MapServer/0"
+
+    # Download one polygon at a time
+    get_arc_feature <- function(id) {
+      res <- GET(
+        paste0(arc_url, "/query"),
+        query = list(
+          objectIds = id,
+          outFields = "*",
+          returnGeometry = "true",
+          f = "json"
+        )
+      )
+
+      json <- jsonlite::fromJSON(
+        content(res, "text"),
+        simplifyVector = FALSE
+      )
+
+      json$features[[1]]
+    }
+
+    # Get the three planning areas
+    features <- lapply(1:3, get_arc_feature)
+
+    # Convert ArcGIS rings to sf polygons
+    make_polygon <- function(feature) {
+      rings <- lapply(feature$geometry$rings, function(ring) {
+        coords <- do.call(rbind, ring)
+        storage.mode(coords) <- "numeric"
+        coords
+      })
+
+      st_polygon(rings)
+    }
+
+    # Create sf object
+    PA <- st_as_sf(
+      data.frame(
+        NAME_E = sapply(features, function(x) x$attributes$NAME_E),
+        NOM_F = sapply(features, function(x) x$attributes$NOM_F)
+      ),
+      geometry = st_sfc(
+        lapply(features, make_polygon),
+        crs = 3857
+      )
     )
+
+    # Keep same structure as before
+    PA <- PA[, "NAME_E"]
+
+    # Make sure PA is in longitude/latitude like the original output
+    PA <- st_transform(PA, 4326)
 
     canada <- ne_states(country = "Canada", returnclass = "sf")
 
     canada <- st_transform(canada, st_crs(PA))
 
-    A <- PA[grepl(PA$NAME_E, pattern = "Gulf"), ]
+    A <- PA[grepl("Gulf", PA$NAME_E), ]
+
     B <- canada[canada$name_en %in% c("Quebec", "Newfoundland and Labrador"), ]
+
     C <- canada[
       canada$name_en %in%
         c("New Brunswick", "Nova Scotia", "Prince Edward Island"),
     ]
 
-    # Create a fine resolution grid within A
+    # Create grid within Gulf region
     grid_points <- st_make_grid(A, cellsize = 0.025, what = "polygons") %>%
       st_as_sf() %>%
-      st_filter(A) # Keep only points inside A
+      st_filter(A)
 
-    # Determine which part is closer to which reference polygon
+    # Split Gulf into Quebec and Gulf sections
     regions <- grid_points |>
-      st_as_sf() |>
       mutate(
         centroids = st_centroid(x),
         dist_to_B = as.numeric(st_distance(centroids, st_union(B))),
@@ -73,8 +128,19 @@ raw_data_targets <- list(
         NAME_E = ifelse(dist_to_B < dist_to_C, "Quebec", "Gulf")
       ) |>
       group_by(NAME_E) |>
-      summarise(geoms = st_union(x)) |>
-      bind_rows(PA[!grepl(PA$NAME_E, pattern = "Gulf"), ]) |>
+      summarise(
+        geoms = st_union(x),
+        .groups = "drop"
+      ) |>
+      mutate(
+        OBJECTID = NA,
+        NOM_F = NA,
+        Shape_Length = NA,
+        Shape_Area = NA
+      ) |>
+      bind_rows(
+        PA[!grepl("Gulf", PA$NAME_E), ]
+      ) |>
       mutate(
         NAME_E = if_else(
           NAME_E == "Scotian Shelf and Bay of Fundy",
@@ -86,7 +152,63 @@ raw_data_targets <- list(
           "Newfoundland & Labrador",
           NAME_E
         )
+      ) |>
+      select(
+        NAME_E,
+        geoms,
+        OBJECTID,
+        NOM_F,
+        Shape_Length,
+        Shape_Area
       )
+
+    regions <- st_set_geometry(regions, "geoms")
+
+    #### OLD
+    # PA <- get_spatial_layer(
+    #   "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/eastern_canada_marine_spatial_planning_areas/MapServer/0"
+    # )
+    #
+    # canada <- ne_states(country = "Canada", returnclass = "sf")
+    #
+    # canada <- st_transform(canada, st_crs(PA))
+    #
+    # A <- PA[grepl(PA$NAME_E, pattern = "Gulf"), ]
+    # B <- canada[canada$name_en %in% c("Quebec", "Newfoundland and Labrador"), ]
+    # C <- canada[
+    #   canada$name_en %in%
+    #     c("New Brunswick", "Nova Scotia", "Prince Edward Island"),
+    # ]
+    #
+    # # Create a fine resolution grid within A
+    # grid_points <- st_make_grid(A, cellsize = 0.025, what = "polygons") %>%
+    #   st_as_sf() %>%
+    #   st_filter(A) # Keep only points inside A
+    #
+    # # Determine which part is closer to which reference polygon
+    # regions <- grid_points |>
+    #   st_as_sf() |>
+    #   mutate(
+    #     centroids = st_centroid(x),
+    #     dist_to_B = as.numeric(st_distance(centroids, st_union(B))),
+    #     dist_to_C = as.numeric(st_distance(centroids, st_union(C))),
+    #     NAME_E = ifelse(dist_to_B < dist_to_C, "Quebec", "Gulf")
+    #   ) |>
+    #   group_by(NAME_E) |>
+    #   summarise(geoms = st_union(x)) |>
+    #   bind_rows(PA[!grepl(PA$NAME_E, pattern = "Gulf"), ]) |>
+    #   mutate(
+    #     NAME_E = if_else(
+    #       NAME_E == "Scotian Shelf and Bay of Fundy",
+    #       "Maritimes",
+    #       NAME_E
+    #     ),
+    #     NAME_E = if_else(
+    #       NAME_E == "Newfoundland-Labrador Shelves",
+    #       "Newfoundland & Labrador",
+    #       NAME_E
+    #     )
+    #   )
   }),
 
   tar_target(name = MPAs, command = {
@@ -176,7 +298,7 @@ raw_data_targets <- list(
       NAME_E = fc$SiteName_E,
       NAME_F = fc$Name_en_Fr,
       region = "Maritimes",
-      date_of_establishment = 2030,
+      date_of_establishment = 2027, # This is a fake date
       geoms = sf::st_geometry(fc)
     )
     areas_full <- rbind(areas_full, fundian)
