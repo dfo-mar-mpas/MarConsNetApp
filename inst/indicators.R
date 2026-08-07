@@ -2645,7 +2645,7 @@ indicator_targets <- list(
       indicator = "Number of non-indigenous species relative to indigenous species in MPA",
       type = "in situ",
       units = "percent cover",
-      scoring = "proportion", # FIXME
+      scoring = "proportion",
       PPTID = NA, # FIXME
       source = "kelp",
       project_short_title = "Placeholder", # FIXME
@@ -2654,13 +2654,13 @@ indicator_targets <- list(
       SME = "Kira Krumhansl",
       indicator_rationale = "Direct invasive species measure",
       areas = MPAs,
-      plot_type = c('map-species', 'region-mpa-comparison'), # FIXME
+      plot_type = c('map-species', 'region-mpa-comparison'),
       plot_lm = FALSE,
       theme = "Trophic Structure and Function",
       objectives = c('Minimize unintended introduction and transmission of invasive species',
                      'Prevent and Mitigate Invasive Alien Species'),
       SME_validated = TRUE,
-      other_nest_variables = c("scientificName", "year_of_data_collection", 'taxonRank', 'measurementType'), # FIXME,
+      other_nest_variables = c("scientificName", "year_of_data_collection", 'taxonRank', 'measurementType'),
       externalData=eD,
       indicator_caveats ="Since there is no overlap with data samples in the MPAs we are also looking at the spread of non-indigenous species within a 20 km buffer."
     )
@@ -2675,13 +2675,13 @@ indicator_targets <- list(
     eD <- rep(20, length(MPAs$NAME_E))
 
     x <- process_indicator(
-      data = data,
+      data = data[which(data$scientificName %in% c("Membranipora membranacea")),],
       readiness = "Ready",
       indicator_var_name = "measurementValue",
-      indicator = "reports of known invasive species in the MPA and spread of established invasive species towards the MPA",
+      indicator = "Reports of known invasive species in the MPA and spread of established invasive species towards the MPA",
       type = "in situ",
       units = "percent cover",
-      scoring = "proportion", # FIXME
+      scoring = "proportion",
       PPTID = NA, # FIXME
       source = "kelp",
       project_short_title = "Placeholder", # FIXME
@@ -2690,15 +2690,14 @@ indicator_targets <- list(
       SME = "Kira Krumhansl",
       indicator_rationale = "Direct invasive species measure",
       areas = MPAs,
-      plot_type = c('map', 'community_composition'), # FIXME
+      plot_type = c('map-species', 'region-mpa-comparison'),
       plot_lm = FALSE,
       theme = "Trophic Structure and Function",
-      objectives = c('Minimize unintended introduction and transmission of invasive species',
-                     'Control introduction and proliferation of disease/pathogens'),
+      objectives = c('Control introduction and proliferation of disease/pathogens'),
       SME_validated = TRUE,
       externalData=eD,
-      other_nest_variables = c("scientificName", "year_of_data_collection", 'taxonRank', 'measurementType'), # FIXME
-      indicator_caveats =NA # FIXME
+      other_nest_variables = c("scientificName", "year_of_data_collection", 'taxonRank', 'measurementType'),
+      indicator_caveats ="Since there is no overlap with data samples in the MPAs we are also looking at the spread of non-indigenous species within a 20 km buffer."
     )
 
 
