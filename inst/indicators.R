@@ -1395,9 +1395,6 @@ indicator_targets <- list(
         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
       )
     )
-
-    message('finished process indicator')
-
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
@@ -2447,6 +2444,10 @@ indicator_targets <- list(
   #       x
   #     }
   #   )
+
+  # save_plots(dplyr::select(x, -data, -adjacent_data))
+  # dplyr::select(x, -plot)
+
   #
   # ),
 
@@ -2491,6 +2492,9 @@ indicator_targets <- list(
   #         SME_validated = TRUE,
   #         other_nest_variables = c("species", "year_of_data_collection", 'method')
   #       )
+
+  # save_plots(dplyr::select(x, -data, -adjacent_data))
+  # dplyr::select(x, -plot)
   #
   #       x
   #     }
@@ -2532,6 +2536,10 @@ indicator_targets <- list(
           SME_validated = TRUE,
           other_nest_variables = c("species", "year_of_data_collection")
         )
+
+        save_plots(dplyr::select(x, -data, -adjacent_data))
+        dplyr::select(x, -plot)
+
 
         x
   }), #Biomass Metrics, Trophic Structure and Function
@@ -2575,6 +2583,9 @@ indicator_targets <- list(
   #     indicator_caveats ='eDNA is a poor metric of trophic because everything is relative. We do not know the age or size of species we detect.',
   #     indicator_assumptions = 'The trophic level of each species was assigned by AI and verified by humans. We are assuming this is correct.'
   #   )
+
+  # save_plots(dplyr::select(x, -data, -adjacent_data))
+  # dplyr::select(x, -plot)
   #
   # })), # Functional Diversity, Trophic Structure and Function
 
@@ -2630,7 +2641,84 @@ indicator_targets <- list(
       indicator_caveats ='eDNA is a poor metric of relative abundance or biomass'
     )
 
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+
+
   }), # Biomass Metrics, Fish and Fishery Resources
+
+
+  tar_target(name = ind_distinctive_benthic_characteristics, command = { # Halle
+    data <- data_kelp_modelled  %>%
+      filter(suitable_habitat) %>%
+      select(suitable_habitat, habitat_type, geometry) %>%
+      group_by(suitable_habitat, habitat_type) %>%
+      summarise(geometry = st_union(geometry), .groups = "drop")
+
+    data$year_of_publication <- {
+
+      ld_path <- file.path(
+        onedrive,
+        "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
+        "Laminaria digitata",
+        "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
+      )
+
+      sl_path <- file.path(
+        onedrive,
+        "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
+        "Saccharina latissima",
+        "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
+      )
+
+      # Get modified dates
+      file_dates <- file.info(c(ld_path, sl_path))$mtime
+      format(max(file_dates), "%Y")
+    }
+
+    data$min_target <- 30
+    data$max_target <- 100
+    data$plainname <- 'the total modelled kelp region'
+
+    mpas <- MPAs %>%
+      st_filter(data) %>%
+      filter(NAME_E != "Non_Conservation_Area")
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "suitable_habitat",
+      indicator = "Diversity and community composition of the benthos and characteristics of surficial geology at selected sampling stations located in the identified distinctive seabed features of the AOI, plus abundance or biomass and size composition of the defining benthic taxa of those features",
+      type = "model",
+      units = "percent area",
+      scoring = "coverage",
+      PPTID = c(1633, 2576),
+      source = "OneDrive",
+      project_short_title = c('Development and application of high throughput community monitoring','Predicting and assessing interannual change in kelp forest habitat'),
+      areas = mpas,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Kelp forests support high biodiversity and productivity, and provide ecosystem services",
+      bin_rationale = "FIXME",
+      plot_type = "map",
+      year = 'year_of_data_collection',
+      objectives = c(
+        "Protect unique, rare, or sensitive ecological features",
+        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+        "Habitat required for all species, particularly priority species, is maintained and protected"
+      ),
+      theme = "Benthic Environment",
+      externalData = NULL,
+      scale = "region-site",
+      SME = "Kira Krumhansl",
+      control_polygon = NA,
+      SME_validated = TRUE,
+      plot_lm = FALSE
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
+
 
   tar_target(name = ind_nonindigenous_rel_indigenous, command = { # JAIM
 
@@ -2639,14 +2727,15 @@ indicator_targets <- list(
     eD <- rep(20, length(MPAs$NAME_E))
 
     x <- process_indicator(
-      data = data[which(data$scientificName %in% c("Codium fragile", "Membranipora membranacea", "Fucus serratus")),],
+      data = data[which(data$scientificName %in% c("Membranipora membranacea", "Fucus serratus")),],
       readiness = "Ready",
       indicator_var_name = "measurementValue",
       indicator = "Number of non-indigenous species relative to indigenous species in MPA",
       type = "in situ",
       units = "percent cover",
       scoring = "proportion",
-      PPTID = NA, # FIXME
+      PPTID = c(1633, 2576),
+      project_short_title = c('Development and application of high throughput community monitoring','predicting and assessing interannual change in kelp forest habitat'),
       source = "kelp",
       project_short_title = "Placeholder", # FIXME
       bin_rationale = "FIXME",
@@ -2664,6 +2753,10 @@ indicator_targets <- list(
       externalData=eD,
       indicator_caveats ="Since there is no overlap with data samples in the MPAs we are also looking at the spread of non-indigenous species within a 20 km buffer."
     )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+
 
   }), # Biomass Metrics, Trophic Structure and Function?
 
@@ -2699,6 +2792,9 @@ indicator_targets <- list(
       other_nest_variables = c("scientificName", "year_of_data_collection", 'taxonRank', 'measurementType'),
       indicator_caveats ="Since there is no overlap with data samples in the MPAs we are also looking at the spread of non-indigenous species within a 20 km buffer."
     )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
 
 
 
@@ -4229,24 +4325,6 @@ indicator_targets <- list(
   tar_target(name = ind_compared_benthic_characteristics, command = {
     ind_placeholder(
       ind_name = "Diversity and community composition of the benthos, abundance or biomass and size composition of selected benthic taxa and characteristics of surficial geology at comparable sampling stations outside the MPA",
-      areas = MPAs[
-        which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-        "Minimize the disturbance of seafloor habitat and associated benthic communities caused by human activities",
-        "Habitat required for all species, particularly priority species, is maintained and protected",
-        "Maintain biodiversity of individual species, communities and populations within the different ecotypes"
-      ),
-      theme = "Benthic Environment"
-    )
-  }), # Biomass Metrics, Benthic Environment
-
-  tar_target(name = ind_distinctive_benthic_characteristics, command = {
-    ind_placeholder(
-      ind_name = "Diversity and community composition of the benthos and characteristics of surficial geology at selected sampling stations located in the identified distinctive seabed features of the AOI, plus abundance or biomass and size composition of the defining benthic taxa of those features",
       areas = MPAs[
         which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
       ],

@@ -1277,6 +1277,63 @@ raw_data_targets <- list(
 
   }),
 
+tar_target(name = data_kelp_modelled, command = {
+
+  onedrive <- Sys.getenv("OneDriveCommercial")
+
+  raster_folder <- file.path(
+    onedrive,
+    "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
+  )
+
+  l_digitata_current <- rast(
+    file.path(
+      raster_folder,
+      "Laminaria digitata",
+      "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
+    )
+  )
+
+  s_latissima_current <- rast(
+    file.path(
+      raster_folder,
+      "Saccharina latissima",
+      "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
+    )
+  )
+
+  l_digitata_poly <- as.polygons(
+    l_digitata_current == 1,
+    aggregate = TRUE
+  ) |>
+    st_as_sf() %>%
+    mutate(species = "Laminaria digitata",
+           suitable_habitat = Laminaria_digitata_Bathy_rm4_20240223_avg_Binary == 1,
+           habitat_type = "kelp") |>
+    # filter(Laminaria_digitata_Bathy_rm4_20240223_avg_Binary == 1) |>
+    select(species,suitable_habitat,habitat_type)
+
+
+  s_latissima_poly <- as.polygons(
+    s_latissima_current == 1,
+    aggregate = TRUE
+  ) |>
+    st_as_sf() %>%
+    mutate(species = "Saccharina latissima",
+           suitable_habitat = Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary == 1,
+           habitat_type = "kelp") |>
+    select(species,suitable_habitat,habitat_type)
+
+  kelp <- bind_rows(s_latissima_poly,l_digitata_poly)
+
+  kelp <- add_assumptions(
+    kelp,
+    assumptions='Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
+    caveats='Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
+  )
+
+}),
+
 
 tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
 
