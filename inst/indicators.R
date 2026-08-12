@@ -2678,7 +2678,23 @@ indicator_targets <- list(
 
     data$min_target <- 30
     data$max_target <- 100
-    data$plainname <- 'the total modelled kelp region'
+    data$plainname <- 'the total modelled kelp region that is less than 30 m'
+
+
+    # Only include data that is in 30 m or less
+    shallow_poly <- as.polygons(
+      shallow_bathymetry,
+      values = TRUE,
+      na.rm = TRUE
+    ) |>
+      st_as_sf() |>
+      filter(elevation == 1)
+
+   data <- st_intersection(
+      data |> st_make_valid(),
+      shallow_poly
+    ) |>
+      filter(suitable_habitat == TRUE)
 
     mpas <- MPAs %>%
       st_filter(data) %>%

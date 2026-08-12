@@ -1277,6 +1277,24 @@ raw_data_targets <- list(
 
   }),
 
+tar_target(name=bathymetry, command={
+## For this, I am using the readGEBO.bathy function in marmap.
+## I went to https://www.bodc.ac.uk/data/hosted_data_systems/gebco_gridded_bathymetry_data/
+## and manually had to download north america bathymetry and place it in the data folder
+## of the sambadrive.
+path <- file.path(dirname(store), "data", 'gebco_2026_n79.0_s0.0_w-144.0_e15.0.nc')
+bathy <- rast(path)
+}),
+
+tar_target(name=shallow_bathymetry, command={
+  ## For this, I am using the readGEBO.bathy function in marmap.
+  ## I went to https://www.bodc.ac.uk/data/hosted_data_systems/gebco_gridded_bathymetry_data/
+  ## and manually had to download north america bathymetry and place it in the data folder
+  ## of the sambadrive.
+  bathymetry >= -30 & bathymetry < 0
+}),
+
+
 tar_target(name = data_kelp_modelled, command = {
 
   onedrive <- Sys.getenv("OneDriveCommercial")
