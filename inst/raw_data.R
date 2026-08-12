@@ -1352,6 +1352,74 @@ tar_target(name = data_kelp_modelled, command = {
 
 }),
 
+tar_target(name = data_macroalgae_modelled, command = {
+
+  onedrive <- Sys.getenv("OneDriveCommercial")
+
+  raster_folder <- file.path(
+    onedrive,
+    "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
+  )
+
+  species_files <- data.frame(
+    species = c(
+      "Antithamnion sparsum",
+      "Bonnemaisonia hamifera",
+      "Codium fragile",
+      "Dasysiphonia japonica",
+      "Fucus serratus"
+    ),
+    tif = c(
+      "Antithamnion_sparsum_Bathy_rm2_20240304_avg_Binary.tif",
+      "Bonnemaisonia_hamifera_Bathy_rm2MinusYRMin_20240304_avg_Binary.tif",
+      "Codium_fragile_Bathy_rm3_20240304_avg_Binary.tif",
+      "Dasysiphonia_japonica_Bathy_rm3MinusYRMax_20240304_avg_Binary.tif",
+      "Fucus_serratus_Bathy_rm3_20240227_avg_Binary.tif"
+    )
+  )
+
+  all_polys <- vector("list", nrow(species_files))
+
+  for (i in seq_len(nrow(species_files))) {
+    message(i)
+
+    current <- rast(
+      file.path(
+        raster_folder,
+        species_files$species[i],
+        species_files$tif[i]
+      )
+    )
+
+    all_polys[[i]] <- as.polygons(
+      current == 1,
+      aggregate = TRUE
+    ) |>
+      st_as_sf() |>
+      mutate(
+        species = species_files$species[i],
+        suitable_habitat = TRUE,
+        habitat_type = "macroalgae"
+      ) |>
+      select(
+        species,
+        suitable_habitat,
+        habitat_type,
+        geometry
+      )
+  }
+
+  macroalgae <- bind_rows(all_polys)
+
+  macroalgae <- add_assumptions(
+    macroalgae,
+    assumptions='Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
+    caveats='Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
+  )
+
+}),
+
+
 
 tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
 
