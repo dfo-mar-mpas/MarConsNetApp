@@ -2549,7 +2549,7 @@ indicator_targets <- list(
   #   values = tibble::tibble(trophic = sort(unique(data_edna_data$ai_trophic_level))),
   #   names = trophic,
   #
-  # tar_target(name = ind_species_per_trophic, command = {
+  # tar_target(name = ind_species_per_trophic_edna, command = {
   #   data <- data_edna_data
   #
   #   trophic_levels <- read_excel(paste0(dirname(path_to_store()), "/data/AI_trophic_groups.xlsx"))
@@ -2648,7 +2648,7 @@ indicator_targets <- list(
   }), # Biomass Metrics, Fish and Fishery Resources
 
 
-  tar_target(name = ind_distinctive_benthic_characteristics_kelp, command = {
+  tar_target(name = ind_distinctive_benthic_characteristics_kelp, command = {  # Halle
     data <- data_kelp_modelled  %>%
       filter(suitable_habitat) %>%
       select(suitable_habitat, habitat_type, geometry) %>%
@@ -2734,7 +2734,7 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
-  tar_target(name = ind_distinctive_benthic_characteristics_macroalgae, command = { # Halle
+  tar_target(name = ind_distinctive_benthic_characteristics_macroalgae, command = {
     data <- data_macroalgae_modelled  %>%
       filter(suitable_habitat) %>%
       select(suitable_habitat, habitat_type, geometry) %>%
@@ -2835,7 +2835,7 @@ indicator_targets <- list(
       indicator = "Number of non-indigenous species relative to indigenous species in MPA",
       type = "in situ",
       units = "percent cover",
-      scoring = "proportion",
+      scoring = "proportion: bad species",
       PPTID = c(1633, 2576),
       project_short_title = c('Development and application of high throughput community monitoring','predicting and assessing interannual change in kelp forest habitat'),
       source = "kelp",
@@ -2876,7 +2876,7 @@ indicator_targets <- list(
       indicator = "Reports of known invasive species in the MPA and spread of established invasive species towards the MPA",
       type = "in situ",
       units = "percent cover",
-      scoring = "proportion",
+      scoring = "proportion: bad species",
       PPTID = NA, # FIXME
       source = "kelp",
       project_short_title = "Placeholder", # FIXME

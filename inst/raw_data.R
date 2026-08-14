@@ -1259,6 +1259,8 @@ raw_data_targets <- list(
 
     names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
 
+    DATA2$species <- clean_species_names(DATA2$species)
+
     DATA2$subclass <- NA
     DATA2$class <- NA
     DATA2$common_name <- NA
@@ -1418,7 +1420,6 @@ tar_target(name = data_macroalgae_modelled, command = {
   )
 
 }),
-
 
 
 tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
