@@ -1270,9 +1270,6 @@ raw_data_targets <- list(
       DATA2$subclass[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level="Subclass")
       DATA2$class[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level='Class')
       DATA2$common_name[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level='common_name')
-
-
-
     }
 
     DATA2
@@ -1286,6 +1283,7 @@ tar_target(name=bathymetry, command={
 ## of the sambadrive.
 path <- file.path(dirname(store), "data", 'gebco_2026_n79.0_s0.0_w-144.0_e15.0.nc')
 bathy <- rast(path)
+bathy
 }),
 
 tar_target(name=shallow_bathymetry, command={
@@ -1482,6 +1480,8 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
       str_extract("(?<=Data last updated )\\w+ \\d{1,2}, \\d{4}") |>
       str_extract("\\d{4}")
   }
+
+  data
 }),
 
 

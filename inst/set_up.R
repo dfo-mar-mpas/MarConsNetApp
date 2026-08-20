@@ -55,7 +55,10 @@ pkgs <- c(
   "terra",
   "stars",
   'readr',
-  'worrms'
+  'worrms',
+  'rfishbase',
+  'taxize',
+  'rgbif'
 )
 shelf(pkgs)
 

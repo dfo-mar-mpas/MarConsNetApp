@@ -1780,7 +1780,7 @@ indicator_targets <- list(
       indicator = "Nutrient Conditions (Nitrate) Inside Outside Comparison",
       type = "in situ",
       units = "mmol/m3",
-      scoring = "control site linear trend: less inside",
+      scoring = "mpa effect: trend difference",
       PPTID = 579,
       source = "AZMP",
       project_short_title = "AZMP",
@@ -2369,14 +2369,32 @@ indicator_targets <- list(
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_vessel_traffic, command = {
+
+    raster_bbox <- sf::st_bbox(
+      c(
+        xmin = -82.5,
+        xmax = -24.3,
+        ymin = 27.9,
+        ymax = 69.1
+      ),
+      crs = sf::st_crs(MPAs)
+    )
+
+    mpas <- MPAs[
+      sf::st_intersects(
+        MPAs,
+        sf::st_as_sfc(raster_bbox),
+        sparse = FALSE
+      )[, 1],
+    ]
+
     x <- process_indicator(
       data = data_vessel_traffic,
       indicator_var_name = "All_VesselsPerDay_2023_AIS",
       indicator = "Vessel Traffic Per Day",
       type = "model",
       units = NA,
-      scoring = "median",
-      direction = "inverse",
+      scoring = "mpa effect: median difference",
       PPTID = NA,
       source = "Open Data (DFO)",
       climate_expectation = "FIXME",
@@ -2384,7 +2402,7 @@ indicator_targets <- list(
       bin_rationale = "FIXME",
       SME = "Unknown",
       project_short_title = "Vessel Traffic",
-      areas = MPAs[MPAs$region == "Maritimes", ],
+      areas = mpas,
       plot_type = 'map',
       plot_lm = FALSE,
       theme = "Anthropogenic Pressure and Impacts",
@@ -2472,7 +2490,7 @@ indicator_targets <- list(
   #         indicator = "Community Composition of the benthos",
   #         type = "in situ",
   #         units = "read number",
-  #         scoring = "community composition",
+  #         scoring = "community retention",
   #         PPTID = 480,
   #         source = "eDNA",
   #         project_short_title = "Animal Acoustic Tagging",
@@ -2510,6 +2528,7 @@ indicator_targets <- list(
         message(class(data_edna_data))
 
         data <- data_edna_data
+        data <- data[which(data$species == "Anarhichas denticulatus"),]
 
         x <- process_indicator(
           data = data, # Only looking at wolf fish
@@ -2518,7 +2537,7 @@ indicator_targets <- list(
           indicator = "Detections of wolffish in MPA",
           type = "in situ",
           units = "read number",
-          scoring = 'probability of detection: anarhichas',
+          scoring = 'desired trend: no decrease: probability of detection',
           PPTID = 480,
           source = "eDNA",
           project_short_title = "Animal Acoustic Tagging",
@@ -2534,7 +2553,7 @@ indicator_targets <- list(
             "Promote the survival and recovery of Northern Wolffish by minimizing risk of harm from human activities (e.g., bycatch in the commercial fishery) in the Laurentian Channel"
           ),
           SME_validated = TRUE,
-          other_nest_variables = c("species", "year_of_data_collection")
+          other_nest_variables = c("species", "year_of_data_collection", 'ID', 'date', 'species_richness', 'method', 'location', 'subclass', 'class', 'common_name')
         )
 
         save_plots(dplyr::select(x, -data, -adjacent_data))
@@ -2655,6 +2674,8 @@ indicator_targets <- list(
       group_by(suitable_habitat, habitat_type) %>%
       summarise(geometry = st_union(geometry), .groups = "drop")
 
+    onedrive <- Sys.getenv("OneDriveCommercial")
+
     data$year_of_publication <- {
 
       ld_path <- file.path(
@@ -2681,9 +2702,29 @@ indicator_targets <- list(
     data$plainname <- 'the total modelled kelp region that is less than 30 m'
 
 
+    mpas <- MPAs %>%
+      st_filter(data) %>%
+      filter(NAME_E != "Non_Conservation_Area")
+
+    musquash <- st_transform(
+      mpas,
+      crs(shallow_bathymetry)
+    )
+
+    cols <- cellFromXY(
+      bathy,
+      cbind(
+        c(st_bbox(musquash)$xmin, st_bbox(musquash)$xmax),
+        c(st_bbox(musquash)$ymin, st_bbox(musquash)$ymax)
+      )
+    )
+    musquash_ext <- ext(st_bbox(musquash))
+
+    bathy_musquash <- crop(bathy, musquash_ext)
+
     # Only include data that is in 30 m or less
     shallow_poly <- as.polygons(
-      shallow_bathymetry,
+      bathy_musquash,
       values = TRUE,
       na.rm = TRUE
     ) |>
@@ -2696,9 +2737,6 @@ indicator_targets <- list(
     ) |>
       filter(suitable_habitat == TRUE)
 
-    mpas <- MPAs %>%
-      st_filter(data) %>%
-      filter(NAME_E != "Non_Conservation_Area")
 
     x <- process_indicator(
       data = data,
@@ -2740,6 +2778,7 @@ indicator_targets <- list(
       select(suitable_habitat, habitat_type, geometry) %>%
       group_by(suitable_habitat, habitat_type) %>%
       summarise(geometry = st_union(geometry), .groups = "drop")
+    onedrive <- Sys.getenv("OneDriveCommercial")
 
     data$year_of_publication <- {
 
@@ -2767,9 +2806,29 @@ indicator_targets <- list(
     data$plainname <- 'the total modelled macroalgae region that is less than 30 m'
 
 
+    mpas <- MPAs %>%
+      st_filter(data) %>%
+      filter(NAME_E != "Non_Conservation_Area")
+
+    musquash <- st_transform(
+      mpas,
+      crs(shallow_bathymetry)
+    )
+
+    cols <- cellFromXY(
+      bathy,
+      cbind(
+        c(st_bbox(musquash)$xmin, st_bbox(musquash)$xmax),
+        c(st_bbox(musquash)$ymin, st_bbox(musquash)$ymax)
+      )
+    )
+    musquash_ext <- ext(st_bbox(musquash))
+
+    bathy_musquash <- crop(bathy, musquash_ext)
+
     # Only include data that is in 30 m or less
     shallow_poly <- as.polygons(
-      shallow_bathymetry,
+      bathy_musquash,
       values = TRUE,
       na.rm = TRUE
     ) |>
@@ -2781,10 +2840,6 @@ indicator_targets <- list(
       shallow_poly
     ) |>
       filter(suitable_habitat == TRUE)
-
-    mpas <- MPAs %>%
-      st_filter(data) %>%
-      filter(NAME_E != "Non_Conservation_Area")
 
     x <- process_indicator(
       data = data,
@@ -2875,8 +2930,9 @@ indicator_targets <- list(
       indicator_var_name = "measurementValue",
       indicator = "Reports of known invasive species in the MPA and spread of established invasive species towards the MPA",
       type = "in situ",
+      direction='inverse',
       units = "percent cover",
-      scoring = "proportion: bad species",
+      scoring = "mpa effect: regional proportion",
       PPTID = NA, # FIXME
       source = "kelp",
       project_short_title = "Placeholder", # FIXME
