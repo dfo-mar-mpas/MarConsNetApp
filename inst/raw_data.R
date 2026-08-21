@@ -1515,15 +1515,78 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
   }),
 
   tar_target(name = data_musquash_ECW_water_quality, command = {
-    data_musquash_ECW_water_quality <- read_excel(file.path(
+
+
+    file <- file.path(
       store,
       "..",
       "..",
       "MarConsNetTargets",
       "data",
       "ECW_MEM_COMPLETE Water Quality Data 2014 to 2024_2025.06.06_v1.xlsx"
-    )) |>
-      st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+    )
+
+    sheet_names <- excel_sheets(file)
+
+    water_quality_list <- list()
+
+    for (i in seq_along(sheet_names)) {
+
+      sheet <- sheet_names[i]
+
+      # Read sheet without assuming column names
+      raw <- read_excel(
+        file,
+        sheet = sheet,
+        col_names = FALSE, skip=20
+      )
+
+      # Find the row containing "Station"
+      header_row <- which(
+        apply(
+          raw,
+          1,
+          function(x) any(
+            trimws(as.character(x)) == "Station",
+            na.rm = TRUE
+          )
+        )
+      )
+
+      # Skip sheet if the table is not present
+      if (length(header_row) == 0) {
+        next
+      }
+
+      header_row <- header_row[1]
+
+      # Extract data below the header
+      dat <- raw[
+        (header_row + 1):nrow(raw),
+        ,
+        drop = FALSE
+      ]
+
+      # Assign column names
+      names(dat) <- as.character(
+        unlist(raw[header_row, ])
+      )
+
+      dat$date <- sheet
+
+      # Store result
+      water_quality_list[[i]] <- dat
+    }
+
+    # Combine all sheets
+    water_quality <- dplyr::bind_rows(
+      water_quality_list
+    )
+
+
+    water_quality
+
+
   }),
 
   tar_target(name = data_azmp_fixed_stations, command = {
