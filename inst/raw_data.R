@@ -307,7 +307,7 @@ raw_data_targets <- list(
     areas_full
   }),
 
-  tar_target(name = data_eez, command = {
+  tar_target(name = data_eez, command = { # TECHNICALLY SHOULD HAVE A STAGNANT_SOURCE AND YEAR_OF_PUBLICATION BUT IGNORING FOR NOW
     data_eez <- mregions2::gaz_geometry(8493)
   }),
 
@@ -633,6 +633,9 @@ raw_data_targets <- list(
       'https://members.oceantrack.org/geoserver/otn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=otn:stations_receivers&outputFormat=csv',
       guess_max = 13579
     )
+
+    geoserver_receivers$stagnant_source <- FALSE
+    geoserver_receivers$year_of_publication <- as.numeric(format(Sys.Date(), "%Y")) #live-updating OTN GeoServer layer
     geoserver_receivers
   }),
 
@@ -664,6 +667,19 @@ raw_data_targets <- list(
 
     # You can then work with the rasters
     names(rasters) <- basename(raster_files)
+
+
+
+    lines <- readLines('https://open.canada.ca/data/en/dataset/37b59b8b-1c1c-4869-802f-c09571cc984b')
+    year <- as.numeric(sub(".*(\\d{4}).*", "\\1",
+                           lines[which(grepl("Date published", lines, ignore.case = TRUE)) + 2]))
+
+    rasters <- lapply(rasters, function(x) {
+      x$year_of_publication <- year
+      x$stagnant_source <- TRUE
+      x
+    })
+
     rasters
   }),
 
@@ -845,7 +861,7 @@ raw_data_targets <- list(
       paths <- unlist(rawdata_obis_by_cell)
       con <- dbConnect(duckdb::duckdb())
       on.exit(dbDisconnect(con, shutdown = TRUE))
-      dbGetQuery(
+      x <- dbGetQuery(
         con,
         paste0(
           "SELECT * FROM read_parquet([",
@@ -858,6 +874,9 @@ raw_data_targets <- list(
           crs = 4326,
           remove = FALSE
         )
+
+      x$stagnant_source <- FALSE
+      x$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
     }
   ),
 
@@ -888,6 +907,18 @@ raw_data_targets <- list(
       st_read(file.path(unzip_dir, "Downloads2023.gdb"), layer = x)
     })
     names(ais) <- layers$name
+
+
+    ## Date of publication and stagnant state
+    lines <- readLines('https://open.canada.ca/data/en/dataset/8d87f574-0661-40a0-822f-e9eabc35780d')
+    year <- as.numeric(sub(".*(\\d{4}).*", "\\1",
+                           lines[which(grepl("Date published", lines, ignore.case = TRUE)) + 2]))
+
+    ais <- lapply(ais, function(x) {
+      x$year_of_publication <- year
+      x$stagnant_source <- TRUE
+      x
+    })
     ais
   }),
 
@@ -908,6 +939,9 @@ raw_data_targets <- list(
       )
     }) |>
       bind_rows()
+    distributions$stagnant_source <- FALSE
+    distributions$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
+
   }),
 
   tar_target(name = data_WORMS_species_distributions_polygons, {
@@ -942,30 +976,26 @@ raw_data_targets <- list(
     infauna <- arcpullr::get_spatial_layer(
       "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/musquash_benthic_infauna/MapServer/1"
     )
-  }),
 
-  tar_target(name = "data_musquash_eutrophication", command = {
-    file <- paste0(
-      file.path(store, "..", "..", "MarConsNetTargets", "data"),
-      "/ECW_MEM_COMPLETE Water Quality Data 2014 to 2024_2025.06.06_v1.xlsx"
-    )
-    sheets <- excel_sheets(file)
-    final <- list()
-    for (i in seq_along(sheets)) {
-      d <- read_excel(file, sheet = sheets[i], skip = 19) # The Eutrophication starts at line 21
-      if (!(length(d) == 0)) {
-        d$year <- sheets[i]
-      } else {
-        d <- 1
-      }
-      final[[i]] <- d
-    }
+    infauna$stagnant_source <- FALSE
 
-    names(final) <- sheets
+    # Year of publication
+    item_id <- "34d06e4bb5114d7fa5cf5faef019f4dd"
+    info <- request(paste0(
+      "https://egisp.dfo-mpo.gc.ca/portal/sharing/rest/content/items/",
+      item_id,
+      "?f=json"
+    )) |>
+      req_perform() |>
+      resp_body_json()
 
-    combined <- bind_rows(final[!sapply(final, function(x) identical(x, 1))])
-    combined$year <- as.numeric(sub("-.*", "", combined$year))
-    combined
+    infauna$year_of_publication <- as.numeric(format(as.POSIXct(
+      info$created / 1000,
+      origin = "1970-01-01",
+      tz = "UTC"
+    ), "%Y"))
+
+    infauna
   }),
 
   tar_target(data_musquash_coliform, command = {
@@ -1070,7 +1100,14 @@ raw_data_targets <- list(
       ),
       "%H:%M"
     )
-    coliform_data$year <- format(coliform_data$Time, "%Y")
+    coliform_data$year_of_data_collection <- format(coliform_data$Time, "%Y")
+    coliform_data$stagnant_source <- TRUE
+
+    coliform_data$year_of_publication <- max(as.numeric(unlist(regmatches(
+      unlist(sheet_names),
+      gregexpr("\\d{4}", sheet_names)
+    ))))
+
     coliform_data
   }),
 
@@ -1283,6 +1320,8 @@ tar_target(name=bathymetry, command={
 ## of the sambadrive.
 path <- file.path(dirname(store), "data", 'gebco_2026_n79.0_s0.0_w-144.0_e15.0.nc')
 bathy <- rast(path)
+bathy$stagnant_source <- TRUE
+bathy$year_of_publication <- as.numeric(format(file.info(path)$ctime, "%Y"))
 bathy
 }),
 
@@ -1349,6 +1388,23 @@ tar_target(name = data_kelp_modelled, command = {
     assumptions='Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
     caveats='Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
   )
+
+
+  species_folders <- file.path(
+    raster_folder,
+    c("Laminaria digitata", "Saccharina latissima")
+  )
+
+  folder_info <- file.info(species_folders)
+
+  year_of_publication <- as.numeric(
+    format(max(folder_info$mtime, na.rm = TRUE), "%Y")
+  )
+
+  kelp$year_of_publication <- year_of_publication
+  kelp$stagnant_source <- FALSE
+  kelp
+
 
 }),
 
@@ -1417,10 +1473,25 @@ tar_target(name = data_macroalgae_modelled, command = {
     caveats='Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
   )
 
+
+  species_folders <- file.path(
+    raster_folder,
+    species_files$species
+  )
+
+  folder_info <- file.info(species_folders)
+
+  year_of_publication <- as.numeric(
+    format(max(folder_info$mtime, na.rm = TRUE), "%Y")
+  )
+
+  macroalgae$year_of_publication <- year_of_publication
+  macroalgae$stagnant_source <- FALSE
+  macroalgae
 }),
 
 
-tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
+tar_target(name = data_kelp_distribution_and_abundance, command = {
 
   occurrence <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Occurrence.csv")
   event <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Event.csv")
@@ -1481,6 +1552,8 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
       str_extract("\\d{4}")
   }
 
+  data$stagnant_source <- TRUE
+
   data
 }),
 
@@ -1505,18 +1578,33 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
     nekton <- read.csv(tmp)
     events <- read.csv(tmp2)
 
-    nekton |>
+    x <- nekton |>
       left_join(events, by = "eventID") |>
       st_as_sf(
         coords = c("decimalLongitude", "decimalLatitude"),
         crs = 4326,
         remove = FALSE
       )
+    dataset_id <- "ca-cioos_4c93ac96-0a9f-41d5-9505-80a3b24c30ae"
+
+    metadata <- httr2::request(
+      paste0(
+        "https://catalogue.ogsl.ca/api/3/action/package_show?id=",
+        dataset_id
+      )
+    ) |>
+      httr2::req_perform() |>
+      httr2::resp_body_json()
+
+    x$year_of_publication <- as.numeric(
+      format(as.Date(metadata$result$metadata_modified), "%Y")
+    )
+    x$stagnant_source <- TRUE
+
+    x
   }),
 
   tar_target(name = data_musquash_ECW_water_quality, command = {
-
-
     file <- file.path(
       store,
       "..",
@@ -1529,6 +1617,7 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
     sheet_names <- excel_sheets(file)
 
     water_quality_list <- list()
+    good_sheet_names <- list()
 
     for (i in seq_along(sheet_names)) {
 
@@ -1556,6 +1645,8 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
       # Skip sheet if the table is not present
       if (length(header_row) == 0) {
         next
+      } else {
+        good_sheet_names[[i]] <- i
       }
 
       header_row <- header_row[1]
@@ -1583,6 +1674,11 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
       water_quality_list
     )
 
+    water_quality$year_of_publication <- max(as.numeric(unlist(regmatches(
+      unlist(sheet_names[unlist(good_sheet_names)]),
+      gregexpr("\\d{4}", sheet_names[unlist(good_sheet_names)])
+    ))))
+    water_quality$stagnant_source <- TRUE
 
     water_quality
 
@@ -1593,7 +1689,7 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
     DOS <- azmpdata::Derived_Occupations_Stations
 
     # Add rows one by one
-    azmpdata::Zooplankton_Annual_Stations |>
+    x <- azmpdata::Zooplankton_Annual_Stations |>
       select(station) |>
       unique() |>
       rowwise() |>
@@ -1616,38 +1712,87 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
         latitude = 46.2051,
         longitude = -60.2563
       )
+
+    x$stagnant_source <- FALSE
+
+    # YEAR OF PUBLICATION
+    url <- paste0(
+      "https://api.github.com/repos/casaultb/azmpdata/commits",
+      "?path=data/Derived_Occupations_Stations.rda&per_page=1"
+    )
+
+    commit <- request(url) |>
+      req_perform() |>
+      resp_body_json()
+
+    last_updated <- commit[[1]]$commit$committer$date
+
+    x$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
+    x
   }),
 
   tar_target(name = data_azmp_zooplankton_annual_stations, command = {
-    azmpdata::Zooplankton_Annual_Stations |>
+    df <- azmpdata::Zooplankton_Annual_Stations |>
       left_join(data_azmp_fixed_stations, by = "station")
+    df$stagnant_source <- FALSE
+
+    # YEAR OF PUBLICATION
+    url <- paste0(
+      "https://api.github.com/repos/casaultb/azmpdata/commits",
+      "?path=data/Zooplankton_Annual_Stations.rda&per_page=1"
+    )
+
+    commit <- request(url) |>
+      req_perform() |>
+      resp_body_json()
+
+    last_updated <- commit[[1]]$commit$committer$date
+
+    df$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
+
+    df
   }),
 
   tar_target(name = data_azmp_Discrete_Occupations_Sections, command = {
     df <- azmpdata::Discrete_Occupations_Sections |>
       mutate(year = as.numeric(format(date, "%Y")))
-  }),
+    df$stagnant_source <- FALSE
 
-  tar_target(name = whale_biodiversity, command = {
-    ws <- project_whale_biodiversity()
-    ws
+    # YEAR OF PUBLICATION
+    url <- paste0(
+      "https://api.github.com/repos/casaultb/azmpdata/commits",
+      "?path=data/Discrete_Occupations_Sections.rda&per_page=1"
+    )
+
+    commit <- request(url) |>
+      req_perform() |>
+      resp_body_json()
+
+    last_updated <- commit[[1]]$commit$committer$date
+
+    df$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
+    df
   }),
 
   tar_target(name = data_MMMP_birds_raw, command = {
     # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
-    read.delim(
-      file.path(
-        store,
-        "..",
-        "..",
-        "MarConsNetTargets",
-        "data",
-        "birds",
-        "naturecounts_request_257783_1752519752346",
-        "mmmp_naturecounts_data.txt"
-      ),
+    file_path <- file.path(
+      store,
+      "..",
+      "..",
+      "MarConsNetTargets",
+      "data",
+      "birds",
+      "naturecounts_request_257783_1752519752346",
+      "mmmp_naturecounts_data.txt"
+    )
+    x <- read.delim(
+      file_path,
       header = TRUE
     )
+    x$stagnant_source <- TRUE
+    x$year_of_publication <- as.numeric(format(max(file.info(file_path)$mtime, na.rm = TRUE), "%Y"))
+    x
   }),
 
   tar_target(name = data_musquash_MMMP_birds, command = {
@@ -1982,6 +2127,19 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
       ) |>
       filter(tag_id %in% tags$catalognumber) |>
       rename(areaID = NAME_E.x)
+
+    otn$stagnant_source <- FALSE
+
+    ## year of publication
+
+    otn$year_of_publication <- as.numeric(format(Sys.Date, "%Y"))
+
+    otn
+
+
+
+
+
   }),
 
   tar_target(data_otn_number_of_recievers, command = {
@@ -2376,7 +2534,36 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
     }
 
     glider_data <- do.call(rbind, glider_list)
-    glider_data
+    glider_data$stagnant_source <- FALSE
+
+    ## YEAR OF PUBLICATION
+
+    # Split into individual file listings
+    lines <- strsplit(dirs, "\r*\n")[[1]]
+
+    # Extract dates from the FTP listing
+    dates <- regmatches(
+      lines,
+      gregexpr(
+        "[A-Z][a-z]{2} [ 0-9]{1,2} [0-9]{2}:[0-9]{2}",
+        lines
+      )
+    )
+
+    dates <- as.character(unlist(dates))
+
+    # Convert dates to R dates
+    dates <- as.POSIXct(
+      dates,
+      format = "%b %d %H:%M",
+      tz = "UTC"
+    )
+
+    # FTP listings without a year are assumed to be from the current year
+    dates$year <- as.numeric(format(Sys.Date(), "%Y"))
+
+    # Most recent modification year
+    glider_data$year_of_publication <- max(as.numeric(unique(dates$year)))
   }),
 
   tar_target(
@@ -2538,11 +2725,44 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
     wh2$longitude <- round(wh2$longitude, 2)
 
     final <- rbind(wh, wh2)
+
+
+    ## YEAR OF PUBLICATION (I go right to the source that the function uses)
+    dirs <- getURL(
+      "https://www.meds-sdmm.dfo-mpo.gc.ca/alphapro/wave/waveshare/csvData/",
+      ftp.use.epsv = FALSE,
+      dirlistonly = FALSE
+    )
+
+    dates <- regmatches(
+      dirs,
+      gregexpr("\\d{1,2}/\\d{1,2}/\\d{4} \\d{1,2}:\\d{2} [AP]M", dirs)
+    )[[1]]
+
+    dates <- as.POSIXct(
+      dates,
+      format = "%m/%d/%Y %I:%M %p"
+    )
+
+    final$year_of_publication <- as.numeric(format(max(dates, na.rm = TRUE), "%Y"))
+
     return(final)
   }),
   tar_target(name = data_seals, command = {
     library(marea)
     data(grey_seals)
+
+    ## YEAR
+    url <- "https://api.github.com/repos/MarEcosystemApproaches/marea/commits?path=data/grey_seals.rda&per_page=1"
+    commits <- jsonlite::fromJSON(paste(readLines(url), collapse = ""))
+    yop <- as.numeric(format(
+      as.Date(commits$commit$committer$date),
+      "%Y"
+    ))
+    ## END YEAR
+
+    grey_seals[['data']]$stagnant_source <- FALSE
+    grey_seals[['data']]$year_of_publication <- yop
     return(grey_seals)
   }),
   tar_target(name = data_offshore_energy_wells, command = {
@@ -2576,6 +2796,9 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
     }
     wells$latitude <- convert_dms(latitude_clean)
     wells$longitude <- convert_dms(longitude_clean) * (-1)
+    wells$stagnant_source <- TRUE
+    wells$year_of_publication <- as.numeric(regmatches(url, regexpr("\\d{4}", url)))
+
     return(wells)
   }),
   tar_target(data_cables, command = {
@@ -2588,17 +2811,24 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
 
     # ensure same CRS
     cables <- st_transform(cables, st_crs(mpas))
-
-    # mps_counts <- mpas %>%
-    #   mutate(
-    #     cable_count = lengths(st_intersects(., cables))
-    #   ) %>%
-    #   st_drop_geometry()
-    #
     data <- cables[, c("Name", "geometry")]
+    data$stagnant_source <- TRUE
+
+    # year of publication
+    rest_url <- "https://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/SubmarineCables/FeatureServer/2"
+
+    info <- request(paste0(rest_url, "?f=json")) |>
+      req_perform() |>
+      resp_body_json()
+
+    data$year_of_publication <- as.numeric(format(as.POSIXct(info$editingInfo$dataLastEditDate / 1000,
+                                           origin = "1970-01-01",tz = "UTC"), "%Y"))
+
+
+
     return(data)
   }),
-  tar_target(data_vessel_traffic, command = {
+  tar_target(data_vessel_traffic, command = { # JAIM
     mpa_vect <- vect(MPAs)
     url <- "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/5b86e2d2-cec1-4956-a9d5-12d487aca11b/attachments/NorthwestAtlantic_VesselDensity_2023_AIS.zip"
     temp_zip <- tempfile(fileext = ".zip")
@@ -2617,8 +2847,9 @@ tar_target(name = data_kelp_distribution_and_abundance, command = { # JAIM
     vals <- r_stars[[1]]
     vals[!is.finite(vals)] <- NA
     r_stars[[1]] <- vals
+    r_stars$year_of_publication <- unlist(unique(as.numeric(regmatches(names(r_stars), regexpr("\\d{4}", names(r_stars))))))
 
-    #plot(r_stars)
+    r_stars$stagnant_source <- TRUE
 
     return(r_stars)
   })

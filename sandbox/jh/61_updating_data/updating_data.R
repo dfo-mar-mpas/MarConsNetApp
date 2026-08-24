@@ -6,6 +6,11 @@ publication_years <- data.frame(
   publication_year = character()
 )
 
+
+### IF LIST, look for info in there
+### if marea object look for it in there
+### Should also maybe look at rawdata (rawdata_inaturalist_download/ data_inaturalist)
+### data_vessel_traffic might cause problems
 for (i in seq_along(data_targets)) {
   message(i)
 
@@ -19,11 +24,18 @@ for (i in seq_along(data_targets)) {
     NA
   }
 
+  stagnant_source <- if ("stagnant_source" %in% names(obj)) {
+    unique(obj$stagnant_source)
+  } else {
+    NA
+  }
+
   publication_years <- rbind(
     publication_years,
     data.frame(
       name = target_name,
-      publication_year = publication_year
+      publication_year = publication_year,
+      stagnant_source = stagnant_source
     )
   )
 }
