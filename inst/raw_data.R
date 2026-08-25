@@ -47,99 +47,160 @@ raw_data_targets <- list(
     # Fixed ArcGIS geometry query issue by manually downloading features and rebuilding sf object;
     # transformed to WGS84 and preserved original attributes for downstream region processing.
 
-    arc_url <- "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/eastern_canada_marine_spatial_planning_areas/MapServer/0"
 
-    # Download one polygon at a time
-    get_arc_feature <- function(id) {
-      res <- GET(
-        paste0(arc_url, "/query"),
-        query = list(
-          objectIds = id,
-          outFields = "*",
-          returnGeometry = "true",
-          f = "json"
-        )
-      )
+    # ---------------------------------------------------------
+    # 1. Download DFO Marine Spatial Planning Areas
+    # ---------------------------------------------------------
 
-      json <- jsonlite::fromJSON(
-        content(res, "text"),
-        simplifyVector = FALSE
-      )
-
-      json$features[[1]]
-    }
-
-    # Get the three planning areas
-    features <- lapply(1:3, get_arc_feature)
-
-    # Convert ArcGIS rings to sf polygons
-    make_polygon <- function(feature) {
-      rings <- lapply(feature$geometry$rings, function(ring) {
-        coords <- do.call(rbind, ring)
-        storage.mode(coords) <- "numeric"
-        coords
-      })
-
-      st_polygon(rings)
-    }
-
-    # Create sf object
-    PA <- st_as_sf(
-      data.frame(
-        NAME_E = sapply(features, function(x) x$attributes$NAME_E),
-        NOM_F = sapply(features, function(x) x$attributes$NOM_F)
-      ),
-      geometry = st_sfc(
-        lapply(features, make_polygon),
-        crs = 3857
-      )
+    url <- paste0(
+      "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/",
+      "f089a3f3-45e9-47de-b1c4-170e9950d8e7/attachments/",
+      "EasternCanadaMarineSpatialPlanningAreas_gdb.zip"
     )
 
-    # Keep same structure as before
-    PA <- PA[, "NAME_E"]
+    # Temporary ZIP file
+    tmp_zip <- tempfile(fileext = ".zip")
 
-    # Make sure PA is in longitude/latitude like the original output
+    # Download
+    GET(
+      url,
+      write_disk(tmp_zip, overwrite = TRUE)
+    )
+
+    # Temporary extraction directory
+    tmp_dir <- tempfile()
+    dir.create(tmp_dir)
+
+    # Extract GDB
+    unzip(
+      tmp_zip,
+      exdir = tmp_dir
+    )
+
+    # Path to GDB
+    gdb <- file.path(
+      tmp_dir,
+      "EasternMSPAreas.gdb"
+    )
+
+    # ---------------------------------------------------------
+    # 2. Read the DFO spatial layer
+    # ---------------------------------------------------------
+
+    PA <- st_read(
+      gdb,
+      layer = "EasternCanadaMarineSpatialPlanningAreas",
+      quiet = TRUE
+    )
+
+    # Make Shape the active geometry column
+    PA <- st_set_geometry(PA, "Shape")
+
+    # Transform to WGS84
     PA <- st_transform(PA, 4326)
 
-    canada <- ne_states(country = "Canada", returnclass = "sf")
+    # ---------------------------------------------------------
+    # 3. Get Canadian provinces
+    # ---------------------------------------------------------
 
-    canada <- st_transform(canada, st_crs(PA))
+    canada <- ne_states(
+      country = "Canada",
+      returnclass = "sf"
+    )
 
-    A <- PA[grepl("Gulf", PA$NAME_E), ]
+    canada <- st_transform(
+      canada,
+      st_crs(PA)
+    )
 
-    B <- canada[canada$name_en %in% c("Quebec", "Newfoundland and Labrador"), ]
+    # ---------------------------------------------------------
+    # 4. Select the Gulf and reference provinces
+    # ---------------------------------------------------------
 
-    C <- canada[
-      canada$name_en %in%
-        c("New Brunswick", "Nova Scotia", "Prince Edward Island"),
+    A <- PA[
+      grepl("Gulf", PA$NAME_E),
     ]
 
-    # Create grid within Gulf region
-    grid_points <- st_make_grid(A, cellsize = 0.025, what = "polygons") %>%
-      st_as_sf() %>%
+    B <- canada[
+      canada$name_en %in% c(
+        "Quebec",
+        "Newfoundland and Labrador"
+      ),
+    ]
+
+    C <- canada[
+      canada$name_en %in% c(
+        "New Brunswick",
+        "Nova Scotia",
+        "Prince Edward Island"
+      ),
+    ]
+
+    # ---------------------------------------------------------
+    # 5. Create a fine-resolution grid within the Gulf
+    # ---------------------------------------------------------
+
+    grid_points <- st_make_grid(
+      A,
+      cellsize = 0.025,
+      what = "polygons"
+    ) |>
+      st_as_sf() |>
       st_filter(A)
 
-    # Split Gulf into Quebec and Gulf sections
+    # ---------------------------------------------------------
+    # 6. Determine whether each grid cell is closer to
+    #    Quebec/NL or the Maritimes
+    # ---------------------------------------------------------
+
+
     regions <- grid_points |>
       mutate(
         centroids = st_centroid(x),
-        dist_to_B = as.numeric(st_distance(centroids, st_union(B))),
-        dist_to_C = as.numeric(st_distance(centroids, st_union(C))),
-        NAME_E = ifelse(dist_to_B < dist_to_C, "Quebec", "Gulf")
+
+        dist_to_B = as.numeric(
+          st_distance(centroids, st_union(B))
+        ),
+
+        dist_to_C = as.numeric(
+          st_distance(centroids, st_union(C))
+        ),
+
+        NAME_E = ifelse(
+          dist_to_B < dist_to_C,
+          "Quebec",
+          "Gulf"
+        )
       ) |>
       group_by(NAME_E) |>
       summarise(
-        geoms = st_union(x),
+        Shape = st_union(x),
         .groups = "drop"
       ) |>
       mutate(
-        OBJECTID = NA,
-        NOM_F = NA,
-        Shape_Length = NA,
-        Shape_Area = NA
+        Shape_Length = as.numeric(
+          st_length(
+            st_boundary(
+              st_transform(Shape, 3347)
+            )
+          )
+        ),
+        Shape_Area = as.numeric(
+          st_area(
+            st_transform(Shape, 3347)
+          )
+        )
       ) |>
       bind_rows(
-        PA[!grepl("Gulf", PA$NAME_E), ]
+        PA |>
+          filter(!grepl("Gulf", NAME_E)) |>
+          select(
+            NAME_E,
+            NOM_F,
+            Shape_Length,
+            Shape_Area,
+            Shape
+          )
       ) |>
       mutate(
         NAME_E = if_else(
@@ -147,68 +208,40 @@ raw_data_targets <- list(
           "Maritimes",
           NAME_E
         ),
+
         NAME_E = if_else(
           NAME_E == "Newfoundland-Labrador Shelves",
           "Newfoundland & Labrador",
           NAME_E
         )
       ) |>
-      select(
-        NAME_E,
-        geoms,
-        OBJECTID,
-        NOM_F,
-        Shape_Length,
-        Shape_Area
+      st_as_sf()
+
+    regions <- regions |>
+      mutate(
+        Shape_Length = as.numeric(
+          st_length(
+            st_boundary(
+              st_transform(Shape, 3347)
+            )
+          )
+        ),
+        Shape_Area = as.numeric(
+          st_area(
+            st_transform(Shape, 3347)
+          )
+        )
       )
 
-    regions <- st_set_geometry(regions, "geoms")
+    regions$NOM_F[which(regions$NAME_E == "Gulf")] <- 'Golfe'
+    regions$NOM_F[which(regions$NAME_E == "Quebec")] <- 'Québec'
 
-    #### OLD
-    # PA <- get_spatial_layer(
-    #   "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/eastern_canada_marine_spatial_planning_areas/MapServer/0"
-    # )
-    #
-    # canada <- ne_states(country = "Canada", returnclass = "sf")
-    #
-    # canada <- st_transform(canada, st_crs(PA))
-    #
-    # A <- PA[grepl(PA$NAME_E, pattern = "Gulf"), ]
-    # B <- canada[canada$name_en %in% c("Quebec", "Newfoundland and Labrador"), ]
-    # C <- canada[
-    #   canada$name_en %in%
-    #     c("New Brunswick", "Nova Scotia", "Prince Edward Island"),
-    # ]
-    #
-    # # Create a fine resolution grid within A
-    # grid_points <- st_make_grid(A, cellsize = 0.025, what = "polygons") %>%
-    #   st_as_sf() %>%
-    #   st_filter(A) # Keep only points inside A
-    #
-    # # Determine which part is closer to which reference polygon
-    # regions <- grid_points |>
-    #   st_as_sf() |>
-    #   mutate(
-    #     centroids = st_centroid(x),
-    #     dist_to_B = as.numeric(st_distance(centroids, st_union(B))),
-    #     dist_to_C = as.numeric(st_distance(centroids, st_union(C))),
-    #     NAME_E = ifelse(dist_to_B < dist_to_C, "Quebec", "Gulf")
-    #   ) |>
-    #   group_by(NAME_E) |>
-    #   summarise(geoms = st_union(x)) |>
-    #   bind_rows(PA[!grepl(PA$NAME_E, pattern = "Gulf"), ]) |>
-    #   mutate(
-    #     NAME_E = if_else(
-    #       NAME_E == "Scotian Shelf and Bay of Fundy",
-    #       "Maritimes",
-    #       NAME_E
-    #     ),
-    #     NAME_E = if_else(
-    #       NAME_E == "Newfoundland-Labrador Shelves",
-    #       "Newfoundland & Labrador",
-    #       NAME_E
-    #     )
-    #   )
+    regions
+
+
+
+
+
   }),
 
   tar_target(name = MPAs, command = {
@@ -981,13 +1014,13 @@ raw_data_targets <- list(
 
     # Year of publication
     item_id <- "34d06e4bb5114d7fa5cf5faef019f4dd"
-    info <- request(paste0(
+    info <- httr2::request(paste0(
       "https://egisp.dfo-mpo.gc.ca/portal/sharing/rest/content/items/",
       item_id,
       "?f=json"
     )) |>
-      req_perform() |>
-      resp_body_json()
+      httr2::req_perform() |>
+      httr2::resp_body_json()
 
     infauna$year_of_publication <- as.numeric(format(as.POSIXct(
       info$created / 1000,
@@ -1721,9 +1754,9 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       "?path=data/Derived_Occupations_Stations.rda&per_page=1"
     )
 
-    commit <- request(url) |>
-      req_perform() |>
-      resp_body_json()
+    commit <- httr2::request(url) |>
+      httr2::req_perform() |>
+      httr2::resp_body_json()
 
     last_updated <- commit[[1]]$commit$committer$date
 
@@ -1742,9 +1775,9 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       "?path=data/Zooplankton_Annual_Stations.rda&per_page=1"
     )
 
-    commit <- request(url) |>
-      req_perform() |>
-      resp_body_json()
+    commit <- httr2::request(url) |>
+      httr2::req_perform() |>
+      httr2::resp_body_json()
 
     last_updated <- commit[[1]]$commit$committer$date
 
@@ -1764,9 +1797,9 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       "?path=data/Discrete_Occupations_Sections.rda&per_page=1"
     )
 
-    commit <- request(url) |>
-      req_perform() |>
-      resp_body_json()
+    commit <- httr2::request(url) |>
+      httr2::req_perform() |>
+      httr2::resp_body_json()
 
     last_updated <- commit[[1]]$commit$committer$date
 
@@ -2817,9 +2850,9 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     # year of publication
     rest_url <- "https://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/SubmarineCables/FeatureServer/2"
 
-    info <- request(paste0(rest_url, "?f=json")) |>
-      req_perform() |>
-      resp_body_json()
+    info <- httr2::request(paste0(rest_url, "?f=json")) |>
+      httr2::req_perform() |>
+      httr2::resp_body_json()
 
     data$year_of_publication <- as.numeric(format(as.POSIXct(info$editingInfo$dataLastEditDate / 1000,
                                            origin = "1970-01-01",tz = "UTC"), "%Y"))

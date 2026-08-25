@@ -620,6 +620,7 @@ list(
       deliverables
       collaborations
       salary
+      data_modelled_kelp
       return(TRUE)
     },
     deployment = "worker"
