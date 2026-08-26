@@ -41,3 +41,7 @@ for (i in seq_along(data_targets)) {
 }
 
 publication_years
+
+
+## Need to address these targets
+data_targets <- data_targets[-which(data_targets %in% c("data_designtargets_gdb", "data_designtargets_lookup", 'data_obis', 'data_inaturalist', 'data_inseadistance_matrix','data_musquash_MMMP_birds','data_protconn_EL_by_region','data_WORMS_species_distributions','data_otn_tags','data_WORMS_species_distributions_polygons'))]

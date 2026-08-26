@@ -237,11 +237,6 @@ raw_data_targets <- list(
     regions$NOM_F[which(regions$NAME_E == "Quebec")] <- 'Québec'
 
     regions
-
-
-
-
-
   }),
 
   tar_target(name = MPAs, command = {
@@ -335,8 +330,6 @@ raw_data_targets <- list(
       geoms = sf::st_geometry(fc)
     )
     areas_full <- rbind(areas_full, fundian)
-
-
     areas_full
   }),
 
@@ -974,6 +967,7 @@ raw_data_targets <- list(
       bind_rows()
     distributions$stagnant_source <- FALSE
     distributions$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
+    distributions
 
   }),
 
@@ -1125,6 +1119,7 @@ raw_data_targets <- list(
       coliform_data[[i]] <- do.call(rbind, colifor)
     }
     coliform_data <- do.call(rbind, coliform_data)
+
     coliform_data$`Time Collected` <- format(
       as.POSIXct(
         as.numeric(coliform_data$`Time Collected`) * 86400,
@@ -1137,8 +1132,8 @@ raw_data_targets <- list(
     coliform_data$stagnant_source <- TRUE
 
     coliform_data$year_of_publication <- max(as.numeric(unlist(regmatches(
-      unlist(sheet_names),
-      gregexpr("\\d{4}", sheet_names)
+      unlist(sheets),
+      gregexpr("\\d{4}", sheets)
     ))))
 
     coliform_data
@@ -1437,8 +1432,6 @@ tar_target(name = data_kelp_modelled, command = {
   kelp$year_of_publication <- year_of_publication
   kelp$stagnant_source <- FALSE
   kelp
-
-
 }),
 
 tar_target(name = data_macroalgae_modelled, command = {
@@ -1525,7 +1518,6 @@ tar_target(name = data_macroalgae_modelled, command = {
 
 
 tar_target(name = data_kelp_distribution_and_abundance, command = {
-
   occurrence <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Occurrence.csv")
   event <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Event.csv")
   measurements <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/extendedMeasurementOrFact.csv")
@@ -1584,9 +1576,7 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       str_extract("(?<=Data last updated )\\w+ \\d{1,2}, \\d{4}") |>
       str_extract("\\d{4}")
   }
-
   data$stagnant_source <- TRUE
-
   data
 }),
 
@@ -1714,8 +1704,6 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     water_quality$stagnant_source <- TRUE
 
     water_quality
-
-
   }),
 
   tar_target(name = data_azmp_fixed_stations, command = {
@@ -1782,7 +1770,6 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     last_updated <- commit[[1]]$commit$committer$date
 
     df$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
-
     df
   }),
 
@@ -2168,45 +2155,6 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     otn$year_of_publication <- as.numeric(format(Sys.Date, "%Y"))
 
     otn
-
-
-
-
-
-  }),
-
-  tar_target(data_otn_number_of_recievers, command = {
-    # Looking at number of receivers
-
-    DF <- data_otn_recievers[
-      -which(
-        is.na(data_otn_recievers$stn_lat) | is.na(data_otn_recievers$stn_long)
-      ),
-    ]
-    df <- DF %>%
-      st_as_sf(coords = c("stn_long", "stn_lat"), crs = 4326) %>% # create geometry
-      dplyr::select(FID, deploy_date, geometry)
-
-    df_with_areaID <- st_join(df, MPAs %>% dplyr::select(NAME_E), left = TRUE)
-
-    # Rename for clarity
-    df_with_areaID <- df_with_areaID %>%
-      rename(areaID = NAME_E)
-
-    number_receivers_in_mpas <- list()
-
-    for (i in seq_along(unique(df_with_areaID$areaID))) {
-      if (!(is.na(unique(df_with_areaID$areaID)[i]))) {
-        number_receivers_in_mpas[[i]] <- length(which(
-          df_with_areaID$areaID == unique(df_with_areaID$areaID)[i]
-        ))
-      } else {
-        number_receivers_in_mpas[[i]] <- length(which(is.na(
-          df_with_areaID$areaID
-        )))
-      }
-    }
-    names(number_receivers_in_mpas) <- unique(df_with_areaID$areaID)
   }),
 
   tar_target(data_gliders, command = {
@@ -2597,6 +2545,8 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
 
     # Most recent modification year
     glider_data$year_of_publication <- max(as.numeric(unique(dates$year)))
+
+    glider_data
   }),
 
   tar_target(
@@ -2778,6 +2728,7 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     )
 
     final$year_of_publication <- as.numeric(format(max(dates, na.rm = TRUE), "%Y"))
+    final$stagnant_source <- FALSE
 
     return(final)
   }),
@@ -2794,9 +2745,11 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     ))
     ## END YEAR
 
-    grey_seals[['data']]$stagnant_source <- FALSE
-    grey_seals[['data']]$year_of_publication <- yop
-    return(grey_seals)
+    x <- grey_seals[['data']]
+    x$stagnant_source <- FALSE
+
+    x$year_of_publication <- yop
+    return(x)
   }),
   tar_target(name = data_offshore_energy_wells, command = {
     url <- "https://cnsopbdigitaldata.ca/geoviewer/dmc/public/dow-2025.xlsx"

@@ -621,6 +621,10 @@ list(
       collaborations
       salary
       data_modelled_kelp
+      data_kelp_distribution_and_abundance
+      data_macroalgae_modelled
+      data_otn_recievers
+      data_buoy
       return(TRUE)
     },
     deployment = "worker"
