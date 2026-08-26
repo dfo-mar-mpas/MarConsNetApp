@@ -9,8 +9,6 @@ publication_years <- data.frame(
 
 ### IF LIST, look for info in there
 ### if marea object look for it in there
-### Should also maybe look at rawdata (rawdata_inaturalist_download/ data_inaturalist)
-### data_vessel_traffic might cause problems
 for (i in seq_along(data_targets)) {
   message(i)
 

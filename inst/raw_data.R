@@ -761,6 +761,13 @@ raw_data_targets <- list(
       downloaded <- c()
 
       for (i in seq_len(nrow(rawdata_obis_s3_manifest))) {
+        message(i)
+        if (i == 1) {
+          if (dir.exists("/mnt/sambashare/MarConsNet/MarConsNetTargets/data/obis_data/occurrence")) {
+            next
+          }
+        }
+
         key <- rawdata_obis_s3_manifest$key[i]
         local_path <- file.path(store, "..", "data", "obis_data", key)
 
@@ -791,7 +798,7 @@ raw_data_targets <- list(
       n_y = 10
 
       (st_make_grid(
-        st_union(regions$geoms),
+        st_union(regions$Shape),
         n = c(n_x, n_y)
       ) |>
         st_as_sf() |>
@@ -903,6 +910,8 @@ raw_data_targets <- list(
 
       x$stagnant_source <- FALSE
       x$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
+
+      x
     }
   ),
 
@@ -1867,7 +1876,7 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       )
   }),
 
-  tar_target(name = rawdata_inaturalist_download, command = {
+  tar_age(name = rawdata_inaturalist_download, command = {
     d <- 5000
 
     simplegeom <- st_simplify(
@@ -1878,25 +1887,36 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       st_union() |>
       st_as_text()
 
+    credentials <- read.csv(
+      file.path(path_to_store(), "..", "data", "gbif_pwd.csv")
+    )
     occ_download(
       pred_within(simplegeom),
       pred_in("institutionCode", "iNaturalist"),
       pred("hasCoordinate", TRUE),
       pred("hasGeospatialIssue", FALSE),
-      format = "SIMPLE_CSV"
+      format = "SIMPLE_CSV",
+      user=credentials$User,
+      pwd=credentials$Pwd,
+      email=credentials$Email
     )
-  }),
+  },
+  age = as.difftime(365, units = "days")),
 
   tar_target(name = data_inaturalist, command = {
     occ_download_wait(rawdata_inaturalist_download)
     x <- occ_download_get(rawdata_inaturalist_download)
-    occ_download_import(x) |>
+    xx <- occ_download_import(x) |>
       st_as_sf(
         coords = c("decimalLongitude", "decimalLatitude"),
         crs = 4326,
         remove = FALSE
       ) |>
       st_join(MPAs[, "NAME_E"], join = st_within)
+
+    xx$stagnant_source <- FALSE
+    xx$year_of_publication <- as.numeric(format(as.Date(attr(rawdata_inaturalist_download, "created")), "%Y"))
+    xx
   }),
 
   tar_target(name = creature_feature, command = {
