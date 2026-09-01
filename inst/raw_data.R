@@ -768,6 +768,11 @@ raw_data_targets <- list(
           }
         }
 
+        if (rawdata_obis_s3_manifest$size[i]/ 1024^3 > 15) { # THERE WAS A FILE BIGGER THAN 15 GB
+          message(paste0("ignoring ", i, " file: ", rawdata_obis_s3_manifest$key[i], " because it was ", round(rawdata_obis_s3_manifest$size[i]/1024^3,2), "GB"))
+        next
+          }
+
         key <- rawdata_obis_s3_manifest$key[i]
         local_path <- file.path(store, "..", "data", "obis_data", key)
 
@@ -1338,6 +1343,7 @@ raw_data_targets <- list(
     DATA2$subclass <- NA
     DATA2$class <- NA
     DATA2$common_name <- NA
+    DATA2$stagnant_source <- FALSE
 
     for (i in seq_along(unique(DATA2$species))) {
       message(paste0("For loop ", i, " of ", length(unique(DATA2$species))))
@@ -1826,7 +1832,7 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
 
   tar_target(name = data_musquash_MMMP_birds, command = {
     # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
-    data_MMMP_birds_raw |>
+    x <- data_MMMP_birds_raw |>
       filter(!is.na(DecimalLatitude), !is.na(DecimalLongitude)) |>
       st_as_sf(
         coords = c("DecimalLongitude", "DecimalLatitude"),
@@ -1853,7 +1859,9 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
         MonthCollected,
         DayCollected,
         CollectorNumber,
-        ScientificName
+        ScientificName,
+        stagnant_source,
+        year_of_publication
       ) |>
       reframe(n = n()) |>
       pivot_wider(
@@ -1874,6 +1882,8 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
         -DayCollected,
         -CollectorNumber
       )
+
+    x
   }),
 
   tar_age(name = rawdata_inaturalist_download, command = {
