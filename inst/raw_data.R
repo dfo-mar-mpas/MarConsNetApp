@@ -2868,5 +2868,141 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     r_stars$stagnant_source <- TRUE
 
     return(r_stars)
-  })
+  }),
+
+
+tar_target(name=data_epibenthic_communities_biological,
+           command= {
+             ## BIOLOGICAL DATA
+
+             url2 <- 'https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/c2e8c6d9-f07f-4f89-804a-871d6512e487/file_downloaded'
+             file2 <- tempfile(fileext = ".xlsx")
+
+             request(url2) |>
+               req_perform() |>
+               resp_body_raw() |>
+               writeBin(file2)
+
+             biological_data2 <- read_excel(file2) # Occurrence data of 317 epifaunal taxa found on the Scotian Shelf and Gulf of Maine/ Bay pf Fundy during summer RV surveys
+
+             # Reshaping the data
+             # Identify the species columns
+             species_start <- which(names(biological_data2) == "Abietinaria_abietina")
+             species_cols <- species_start:ncol(biological_data2)
+
+             # Create output data frame
+             df <- data.frame(
+               ID = paste0(biological_data2$Mission, biological_data2$Set),
+               latitude = biological_data2$`Start Latitude`,
+               longitude = biological_data2$`Start Longitude`,
+               species = NA_character_,
+               detections = NA_character_,
+               year_of_data_collection = 2017,
+               stringsAsFactors = FALSE
+             )
+
+             # Cycle through each sample
+             for (l in seq_len(nrow(biological_data2))) {
+
+               # Get species and their detections for this sample
+               species_values <- biological_data2[l, species_cols]
+
+               keep <- which(as.numeric(species_values) > 0)
+
+               if (length(keep) > 0) {
+                 species_names <- names(species_values)[keep]
+                 detection_values <- as.numeric(species_values[keep])
+
+                 # Species
+                 df$species[l] <- paste0(
+                   species_names,
+                   collapse = ", "
+                 )
+
+                 # Detections
+                 df$detections[l] <- paste0(
+                   detection_values,
+                   collapse = ", "
+                 )
+               }
+             }
+
+             df <- df %>%
+               separate_rows(species, detections, sep = ",\\s*") %>%
+               mutate(detections = as.numeric(detections))
+
+             df$species <- clean_species_names(df$species)
+             df$class <- NA
+             df$common_name <- NA
+             df$subclass <- NA
+
+             for (i in seq_along(unique(df$species))) {
+               message(paste0("For loop ", i, " of ", length(unique(df$species))))
+               df$subclass[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level="Subclass")
+               df$class[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level='Class')
+               #df$common_name[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level='common_name')
+             }
+
+             df <- add_assumptions(
+               df,
+               caveats='Benthic data collected with trawling net (not great catchability for benthic organisms, so what is collected may not represent what is on the bottom'
+             )
+
+             df <- st_as_sf(
+               df,
+               coords = c("longitude", "latitude"),
+               crs = 4326,
+               remove = FALSE
+             )
+
+             df$stagnant_source <- TRUE
+             df$year_of_publication <- as.numeric(format(file.info(file2)$atime, "%Y"))
+
+             df
+           }),
+
+tar_target(name=data_epibenthic_communities_environmental,
+           command={
+             env_urls <- c(
+               bottom_current_mean =
+                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/0b49f9aa-f6f1-4c74-bb8b-91cfd4058941/file_downloaded",
+               bottom_salinity_mean =
+                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/dfbe8bdd-1168-4e08-844c-8830a2451013/file_downloaded",
+               bottom_temperature_mean =
+                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/64db951f-047c-4956-822a-105a2600400f/file_downloaded",
+               depth =
+                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/6470aecf-f963-4c71-8606-6889d193bd59/file_downloaded",
+               fishing_effort_mobile =
+                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/1973d23d-319a-4d7d-be56-951b977edece/file_downloaded",
+               sediment_grain_size =
+                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/d40463cb-3683-425a-87ab-a95ba09cd617/file_downloaded",
+               slope =
+                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/060bda2f-5a86-4e40-8129-a4d44b16622c/file_downloaded"
+             )
+
+             # Temporary directory for the TIFFs
+             env_dir <- tempfile("mendeley_environmental_")
+             dir.create(env_dir)
+
+             # Download files
+             env_files <- vapply(names(env_urls), function(x) {
+               file <- file.path(env_dir, paste0(x, ".tif"))
+
+               request(env_urls[[x]]) |>
+                 req_perform() |>
+                 resp_body_raw() |>
+                 writeBin(file)
+
+               file
+             }, character(1))
+
+             # Load as terra rasters
+             env_rasters <- lapply(env_files, rast)
+             names(env_rasters) <- names(env_urls)
+             env_rasters$stagnant_source <- TRUE
+             env_rasters$year_of_publication <- as.numeric(format(file.info(file2)$atime, "%Y"))
+
+             env_rasters
+
+           })
 )

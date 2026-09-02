@@ -79,7 +79,7 @@ df$subclass <- NA
 
 for (i in seq_along(unique(df$species))) {
   message(paste0("For loop ", i, " of ", length(unique(df$species))))
-  df$subclass[which(DATA2$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level="Subclass")
+  df$subclass[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level="Subclass")
   df$class[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level='Class')
   #df$common_name[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level='common_name')
 }
@@ -96,27 +96,8 @@ df <- st_as_sf(
   remove = FALSE
 )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+df$stagnant_source <- TRUE
+df$year_of_publication <- as.numeric(format(file.info(file2)$atime, "%Y"))
 
 
 

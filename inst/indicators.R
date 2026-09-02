@@ -391,28 +391,6 @@ indicator_targets <- list(
       group_by(suitable_habitat, habitat_type) %>%
       summarise(geometry = st_union(geometry), .groups = "drop")
 
-    onedrive <- Sys.getenv("OneDriveCommercial")
-
-    data$year_of_publication <- {
-
-      ld_path <- file.path(
-        onedrive,
-        "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
-        "Laminaria digitata",
-        "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
-      )
-
-      sl_path <- file.path(
-        onedrive,
-        "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
-        "Saccharina latissima",
-        "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
-      )
-
-      # Get modified dates
-      file_dates <- file.info(c(ld_path, sl_path))$mtime
-      format(max(file_dates), "%Y")
-    }
 
     data$min_target <- 30
     data$max_target <- 100
