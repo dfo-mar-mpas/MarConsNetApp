@@ -3,106 +3,210 @@ indicator_targets <- list(
 
   # SME VALIDATED INDICATORS (THEY'VE DONE THROUGH THE PROCESS)
 
-  # tar_map(
-  #   values = tibble::tibble(
-  #     class = sort(unique(data_edna_data$class))
+  # tar_target(
+  #   name = ind_benthic_characteristics_diversity,
+  #   {
+  #     data <- data_edna_data
+  #
+  #     x <- process_indicator(
+  #       data = data[data$class == class, ],
+  #       readiness = "Ready",
+  #       indicator_var_name = "detections",
+  #       indicator = "Diversity of the benthos",
+  #       type = "in situ",
+  #       units = "read number",
+  #       scoring = "desired trend: no decrease",
+  #       PPTID = 480,
+  #       source = "eDNA",
+  #       project_short_title = "Animal Acoustic Tagging",
+  #       bin_rationale = "FIXME",
+  #       climate = FALSE,
+  #       SME = "Ryan Stanley and Nick Jeffery",
+  #       indicator_rationale = "Direct biodiversity measure",
+  #       areas = MPAs,
+  #       plot_type = c("map", "community_composition"),
+  #       plot_lm = FALSE,
+  #       theme = "Benthic Environment",
+  #       objectives = c(
+  #         "Protect Vazella pourtalesi glass sponges",
+  #         "Protect continental shelf habitats and associated benthic and demersal communities",
+  #         "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
+  #       ),
+  #       SME_validated = TRUE,
+  #       other_nest_variables = c(
+  #         "species",
+  #         "year_of_data_collection",
+  #         "ID",
+  #         "date",
+  #         "species_richness",
+  #         "method",
+  #         "location",
+  #         "detections",
+  #         "subclass",
+  #         "class",
+  #         "common_name"
+  #       )
+  #     )
+  #
+  #     x
+  #   }
+  # ) |>
+  #   tar_map(
+  #     names = class,
+  #     values = tibble::tibble(
+  #       class = c(
+  #         "Teleostei",
+  #         "Elasmobranchii",
+  #         "Copepoda",
+  #         "Ascidiacea",
+  #         "Florideophyceae",
+  #         "Malacostraca",
+  #         "Branchiopoda",
+  #         "Demospongiae",
+  #         "Asteroidea",
+  #         "Mamiellophyceae",
+  #         "Bivalvia",
+  #         "Hydrozoa",
+  #         "Ophiuroidea",
+  #         "Polychaeta",
+  #         "Gastropoda",
+  #         "Insecta",
+  #         "Bangiophyceae",
+  #         "Gymnolaemata",
+  #         "Mammalia",
+  #         "Hexacorallia",
+  #         "Eurotatoria",
+  #         "Echinoidea",
+  #         "Scyphozoa",
+  #         "Tentaculata",
+  #         "Staurozoa",
+  #         "Pilidiophora",
+  #         "Cephalopoda",
+  #         "Caudofoveata",
+  #         "Thecostraca",
+  #         "Polyplacophora",
+  #         "Aves",
+  #         "Nuda",
+  #         "Chromadorea",
+  #         "Holothuroidea",
+  #         "Crinoidea",
+  #         "Octocorallia",
+  #         "Trematoda",
+  #         "Bacillariophyceae",
+  #         "Sipunculidea",
+  #         "Pyramimonadophyceae",
+  #         "Anthozoa",
+  #         "Hexactinellida"
+  #       )
+  #     )
   #   ),
-  #   names = class,
   #
-  #   tar_target(
-  #     ind_benthic_characteristics_diversity,
-  #     {
-  #       data <- data_edna_data
   #
-  #       x <- process_indicator(
-  #         data = data[data$class == class, ],
-  #         readiness = "Ready",
-  #         indicator_var_name = "detections",
-  #         indicator = "Diversity of the benthos",
-  #         type = "in situ",
-  #         units = "read number",
-  #         scoring = "proportion of species",
-  #         PPTID = 480,
-  #         source = "eDNA",
-  #         project_short_title = "Animal Acoustic Tagging",
-  #         bin_rationale = "FIXME",
-  #         climate = FALSE,
-  #         SME = "Ryan Stanley and Nick Jeffery",
-  #         indicator_rationale = "Direct biodiversity measure",
-  #         areas = MPAs,
-  #         plot_type = c("map", "community_composition"),
-  #         plot_lm = FALSE,
-  #         theme = "Benthic Environment",
-  #         objectives = c(
-  #           "Protect Vazella pourtalesi glass sponges",
-  #           "Protect continental shelf habitats and associated benthic and demersal communities",
-  #           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
-  #         ),
-  #         SME_validated = TRUE,
-  #         other_nest_variables = c(
-  #           "species",
-  #           "year_of_data_collection"
+  # tar_target(
+  #   name = ind_benthic_characteristics_composition,
+  #   {
+  #     # These are listed here so the dependencies are tracked
+  #     data_edna_data
+  #     MPAs
+  #
+  #     message(class(data_edna_data))
+  #
+  #     data <- data_edna_data
+  #
+  #     x <- process_indicator(
+  #       data = data[data$class == class, ],
+  #       readiness = "Ready",
+  #       indicator_var_name = "detections",
+  #       indicator = "Community Composition of the benthos",
+  #       type = "in situ",
+  #       units = "read number",
+  #       scoring = "community retention",
+  #       PPTID = 480,
+  #       source = "eDNA",
+  #       project_short_title = "Animal Acoustic Tagging",
+  #       bin_rationale = "FIXME",
+  #       climate = FALSE,
+  #       SME = "Ryan Stanley and Nick Jeffery",
+  #       indicator_rationale = "Direct biodiversity measure",
+  #       areas = MPAs,
+  #       plot_type = c("map", "community_composition"),
+  #       plot_lm = FALSE,
+  #       theme = "Benthic Environment",
+  #       objectives = c(
+  #         "Protect Vazella pourtalesi glass sponges",
+  #         "Protect continental shelf habitats and associated benthic and demersal communities",
+  #         "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
+  #       ),
+  #       SME_validated = TRUE,
+  #       other_nest_variables = c(
+  #         "species",
+  #         "year_of_data_collection",
+  #         "ID",
+  #         "date",
+  #         "species_richness",
+  #         "method",
+  #         "location",
+  #         "detections",
+  #         "subclass",
+  #         "class",
+  #         "common_name"
+  #       )
+  #     )
+  #
+  #     save_plots(dplyr::select(x, -data, -adjacent_data))
+  #
+  #     dplyr::select(x, -plot)
+  #   }
+  # ) |>
+  #   tar_map(
+  #     names = class,
+  #     values = tibble::tibble(
+  #       class =  c(
+  #         "Teleostei",
+  #         "Elasmobranchii",
+  #         "Copepoda",
+  #         "Ascidiacea",
+  #         "Florideophyceae",
+  #         "Malacostraca",
+  #         "Branchiopoda",
+  #         "Demospongiae",
+  #         "Asteroidea",
+  #         "Mamiellophyceae",
+  #         "Bivalvia",
+  #         "Hydrozoa",
+  #         "Ophiuroidea",
+  #         "Polychaeta",
+  #         "Gastropoda",
+  #         "Insecta",
+  #         "Bangiophyceae",
+  #         "Gymnolaemata",
+  #         "Mammalia",
+  #         "Hexacorallia",
+  #         "Eurotatoria",
+  #         "Echinoidea",
+  #         "Scyphozoa",
+  #         "Tentaculata",
+  #         "Staurozoa",
+  #         "Pilidiophora",
+  #         "Cephalopoda",
+  #         "Caudofoveata",
+  #         "Thecostraca",
+  #         "Polyplacophora",
+  #         "Aves",
+  #         "Nuda",
+  #         "Chromadorea",
+  #         "Holothuroidea",
+  #         "Crinoidea",
+  #         "Octocorallia",
+  #         "Trematoda",
+  #         "Bacillariophyceae",
+  #         "Sipunculidea",
+  #         "Pyramimonadophyceae",
+  #         "Anthozoa",
+  #         "Hexactinellida"
   #         )
-  #       )
-  #
-  #       x
-  #     }
-  #   )
-  # ),
-
-
-
-
-  # tar_map(
-  #   values = tibble::tibble(class = sort(unique(data_edna_data$class))),
-  #   names = class,
-  #
-  #   tar_target(
-  #     ind_benthic_characteristics_composition,
-  #     {
-  #       data_edna_data
-  #       MPAs
-  #       message(class(data_edna_data))
-  #
-  #       data <- data_edna_data
-  #
-  #
-  #       x <- process_indicator(
-  #         data = data[which(data$class == "Teleostei"), ],
-  #         readiness = "Ready",
-  #         indicator_var_name = "detections",
-  #         indicator = "Community Composition of the benthos",
-  #         type = "in situ",
-  #         units = "read number",
-  #         scoring = "community retention",
-  #         PPTID = 480,
-  #         source = "eDNA",
-  #         project_short_title = "Animal Acoustic Tagging",
-  #         bin_rationale = "FIXME",
-  #         climate = FALSE,
-  #         SME = "Ryan Stanley and Nick Jeffery",
-  #         indicator_rationale = "Direct biodiversity measure",
-  #         areas = MPAs,
-  #         plot_type = c("map", "community_composition"),
-  #         plot_lm = FALSE,
-  #         theme = "Benthic Environment",
-  #         objectives = c(
-  #           "Protect Vazella pourtalesi glass sponges",
-  #           "Protect continental shelf habitats and associated benthic and demersal communities",
-  #           "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
-  #         ),
-  #         SME_validated = TRUE,
-  #         other_nest_variables = c("species", "year_of_data_collection", 'method')
-  #       )
-
-  # save_plots(dplyr::select(x, -data, -adjacent_data))
-  # dplyr::select(x, -plot)
-  #
-  #       x
-  #     }
-  #   )
-  #
-  # ),
+  #     )
+  #   ),
 
 
   tar_target(name = ind_large_wolffish, command = {
@@ -148,62 +252,95 @@ indicator_targets <- list(
   }), #Biomass Metrics, Trophic Structure and Function
 
 
-  # tar_map(
-  #   values = tibble::tibble(trophic = sort(unique(data_edna_data$ai_trophic_level))),
-  #   names = trophic,
+  # tar_target(
+  #   name = ind_species_per_trophic_edna,
+  #   {
+  #     data <- data_edna_data
   #
-  # tar_target(name = ind_species_per_trophic_edna, command = {
-  #   data <- data_edna_data
+  #     trophic_levels <- read_excel(
+  #       paste0(
+  #         dirname(path_to_store()),
+  #         "/data/AI_trophic_groups.xlsx"
+  #       )
+  #     )
   #
-  #   trophic_levels <- read_excel(paste0(dirname(path_to_store()), "/data/AI_trophic_groups.xlsx"))
-  #   data$ai_trophic_level <- NA
-  #   for (i in seq_along(unique(data$class))) {
-  #     data$ai_trophic_level[which(data$class == unique(data$class)[i])] <- trophic_levels$trophic_group[which(trophic_levels$class == unique(data$class)[i])]
+  #     data$ai_trophic_level <- NA
+  #
+  #     for (i in seq_along(unique(data$class))) {
+  #       data$ai_trophic_level[
+  #         which(data$class == unique(data$class)[i])
+  #       ] <- trophic_levels$trophic_group[
+  #         which(trophic_levels$class == unique(data$class)[i])
+  #       ]
+  #     }
+  #
+  #     x <- process_indicator(
+  #       data = data[data$ai_trophic_level == trophic, ],
+  #       readiness = "Ready",
+  #       indicator_var_name = "detections",
+  #       indicator = "Species per trophic level within each habitat type",
+  #       type = "in situ",
+  #       units = "read number",
+  #       scoring = "desired trend: no decrease",
+  #       PPTID = 480,
+  #       source = "eDNA",
+  #       project_short_title = "Animal Acoustic Tagging",
+  #       bin_rationale = "FIXME",
+  #       climate = FALSE,
+  #       SME = "Ryan Stanley and Nick Jeffery",
+  #       indicator_rationale = "Direct biodiversity measure",
+  #       areas = MPAs,
+  #       plot_type = c(
+  #         "detections",
+  #         "community_composition"
+  #       ),
+  #       plot_lm = FALSE,
+  #       theme = "Trophic Structure and Function",
+  #       objectives = c(
+  #         "Maintain biodiversity of individual species, communities and populations within the different ecotypes"
+  #       ),
+  #       SME_validated = TRUE,
+  #       other_nest_variables = c("species", "year_of_data_collection", 'ID', 'date', 'species_richness', 'method', 'location', 'subclass', 'class', 'common_name', 'ai_trophic_level'),
+  #       indicator_caveats = paste(
+  #         "eDNA is a poor metric of trophic because everything is relative.",
+  #         "We do not know the age or size of species we detect."
+  #       ),
+  #       indicator_assumptions = paste(
+  #         "The trophic level of each species was assigned by AI and verified by humans.",
+  #         "We are assuming this is correct."
+  #       )
+  #     )
+  #
+  #     save_plots(
+  #       dplyr::select(x, -data, -adjacent_data)
+  #     )
+  #
+  #     dplyr::select(x, -plot)
   #   }
-  #
-  #   x <- process_indicator(
-  #     data = data[which(data$ai_trophic_level == 'Predator'),],
-  #     readiness = "Ready",
-  #     indicator_var_name = "detections",
-  #     indicator = "Species per trophic level within each habitat type",
-  #     type = "in situ",
-  #     units = "read number",
-  #     scoring = "proportion of species",
-  #     PPTID = 480,
-  #     source = "eDNA",
-  #     project_short_title = "Animal Acoustic Tagging",
-  #     bin_rationale = "FIXME",
-  #     climate = FALSE,
-  #     SME = "Ryan Stanley and Nick Jeffery",
-  #     indicator_rationale = "Direct biodiversity measure",
-  #     areas = MPAs,
-  #     plot_type = c('detections', 'community_composition'),
-  #     plot_lm = FALSE,
-  #     theme = "Trophic Structure and Function",
-  #     objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"),
-  #     SME_validated = TRUE,
-  #     other_nest_variables = c("species", "year_of_data_collection"),
-  #     indicator_caveats ='eDNA is a poor metric of trophic because everything is relative. We do not know the age or size of species we detect.',
-  #     indicator_assumptions = 'The trophic level of each species was assigned by AI and verified by humans. We are assuming this is correct.'
-  #   )
+  # ) |>
+  #   tar_map(
+  #     values = tibble::tibble(
+  #       trophic = sort(unique(data_edna_data$ai_trophic_level))
+  #     ),
+  #     names = trophic
+  #   ),
 
-  # save_plots(dplyr::select(x, -data, -adjacent_data))
-  # dplyr::select(x, -plot)
-  #
-  # })), # Functional Diversity, Trophic Structure and Function
+
+
+
 
   tar_target(name = ind_rel_abundance_groundfish, command = {
 
     data <- data_edna_data
 
-    top_5_species <- data %>%
+    top_species <- data %>%
       group_by(species) %>%
       summarise(
         total_detections = sum(detections, na.rm = TRUE),
         .groups = "drop"
       ) %>%
       arrange(desc(total_detections)) %>%
-      slice_head(n = 10)
+      slice_head(n = 5)
 
 
 
@@ -211,13 +348,7 @@ indicator_targets <- list(
       data = data[
         which(
           tolower(trimws(data$species)) %in%
-            tolower(c(
-              "Tautogolabrus adspersus",
-              "Gadus morhua",
-              "Melanogrammus aeglefinus",
-              "Pholis gunnellus",
-              "Sebastes sp"
-            ))
+            tolower(top_species$species)
         ),
       ],
       readiness = "Ready",
@@ -225,7 +356,7 @@ indicator_targets <- list(
       indicator = "Relative abundance and biomass of select groundfish species",
       type = "in situ",
       units = "read number",
-      scoring = "proportion of species",
+      scoring = "desired trend: no decrease",
       PPTID = 480,
       source = "eDNA",
       project_short_title = "Animal Acoustic Tagging",
@@ -240,7 +371,7 @@ indicator_targets <- list(
       objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock
 ", "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"),
       SME_validated = TRUE,
-      other_nest_variables = c("species", "year_of_data_collection"),
+      other_nest_variables = c("species", "year_of_data_collection", 'ID', 'date', 'species_richness', 'method', 'location', 'subclass', 'class', 'common_name'),
       indicator_caveats ='eDNA is a poor metric of relative abundance or biomass'
     )
 
@@ -249,6 +380,9 @@ indicator_targets <- list(
 
 
   }), # Biomass Metrics, Fish and Fishery Resources
+
+
+  # END EDNA
 
   tar_target(name = ind_distinctive_benthic_characteristics_kelp, command = {  # Halle
     data <- data_kelp_modelled  %>%
