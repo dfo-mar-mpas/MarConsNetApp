@@ -2,7 +2,7 @@ indicator_targets <- list(
   # INDICATORS WITH DATA ----
 
   # SME VALIDATED INDICATORS (THEY'VE DONE THROUGH THE PROCESS)
-
+  #
   # tar_target(
   #   name = ind_benthic_characteristics_diversity,
   #   {
@@ -24,7 +24,7 @@ indicator_targets <- list(
   #       SME = "Ryan Stanley and Nick Jeffery",
   #       indicator_rationale = "Direct biodiversity measure",
   #       areas = MPAs,
-  #       plot_type = c("map", "community_composition"),
+  #       plot_type = c("detections", "indicator_by_taxa"),
   #       plot_lm = FALSE,
   #       theme = "Benthic Environment",
   #       objectives = c(
@@ -129,7 +129,7 @@ indicator_targets <- list(
   #       SME = "Ryan Stanley and Nick Jeffery",
   #       indicator_rationale = "Direct biodiversity measure",
   #       areas = MPAs,
-  #       plot_type = c("map", "community_composition"),
+  #       plot_type = c("detections", "indicator_by_taxa"),
   #       plot_lm = FALSE,
   #       theme = "Benthic Environment",
   #       objectives = c(
@@ -251,7 +251,6 @@ indicator_targets <- list(
     x
   }), #Biomass Metrics, Trophic Structure and Function
 
-
   # tar_target(
   #   name = ind_species_per_trophic_edna,
   #   {
@@ -292,7 +291,7 @@ indicator_targets <- list(
   #       areas = MPAs,
   #       plot_type = c(
   #         "detections",
-  #         "community_composition"
+  #         "indicator_by_taxa"
   #       ),
   #       plot_lm = FALSE,
   #       theme = "Trophic Structure and Function",
@@ -324,9 +323,6 @@ indicator_targets <- list(
   #     ),
   #     names = trophic
   #   ),
-
-
-
 
 
   tar_target(name = ind_rel_abundance_groundfish, command = {
@@ -365,7 +361,7 @@ indicator_targets <- list(
       SME = "Ryan Stanley and Nick Jeffery",
       indicator_rationale = "Direct biodiversity measure",
       areas = MPAs,
-      plot_type = c('detections','community_composition'),
+      plot_type = c('detections','indicator_by_taxa'),
       plot_lm = FALSE,
       theme = "Fish and Fishery Resources",
       objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock
@@ -651,8 +647,51 @@ indicator_targets <- list(
 
   }), # Threats to Productivity, Trophic Structure and Function
 
+  ## JAVIER (coming up)
 
+  tar_target(name=ind_species_per_trophic_epibenthic_communities,
+             command={
+  message(class(data_epibenthic_communities_biological))
+  trophic_levels <- read_excel(paste0(dirname(path_to_store()), "/data/AI_trophic_groups.xlsx"))
+  data_epibenthic_communities_biological$ai_trophic_level <- NA
+  for (i in seq_along(unique(data_epibenthic_communities_biological$class))) {
+    data_epibenthic_communities_biological$ai_trophic_level[which(data_epibenthic_communities_biological$class == unique(data_epibenthic_communities_biological$class)[i])] <- trophic_levels$trophic_group[which(trophic_levels$class == unique(data_epibenthic_communities_biological$class)[i])]
+  }
 
+  data_epibenthic_communities_biological$min_target <- 0
+  data_epibenthic_communities_biological$max_target <- 30
+  data_epibenthic_communities_biological$plainname <- 'the total region samplled by the RV survey'
+
+  mpas <- MPAs %>%
+    st_filter(data_epibenthic_communities_biological[which(data_epibenthic_communities_biological$ai_trophic_level == 'Predator'),]) %>%
+    filter(NAME_E != "Non_Conservation_Area")
+
+  x <- process_indicator(
+    data = data_epibenthic_communities_biological[which(data_epibenthic_communities_biological$ai_trophic_level == 'Predator'),],
+    readiness = "Ready",
+    indicator_var_name = "detections",
+    indicator = "Benthic species per trophic level within each habitat type",
+    type = "in situ",
+    units = NA, # FIXME
+    scoring = "representation: regional relative ranking", # protection coverage (# this says how well each ara represents teh benthic biodiversity found in the broadrer region)
+    PPTID = 395,
+    source = "RV",
+    project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+    bin_rationale = "FIXME",
+    climate = FALSE,
+    SME = "Javier Murillo Perez",
+    indicator_rationale = "Direct biodiversity measure",
+    areas = mpas,
+    plot_type = c('detections'),
+    plot_lm = FALSE,
+    theme = "Trophic Structure and Function",
+    objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"),
+    SME_validated = TRUE,
+    other_nest_variables = c("species","ID", "year_of_data_collection", 'ai_trophic_level', 'min_target', 'max_target', 'stagnant_source', 'subclass', 'class', 'detections', 'latitude', 'longitude', 'common_name'),
+    scale='region-site'
+  )
+
+  }),
 
 
   # NON-VALIDATED INDICATORS
@@ -962,7 +1001,7 @@ indicator_targets <- list(
       climate_expectation = "FIXME",
       indicator_rationale = "FIXME",
       bin_rationale = "FIXME",
-      plot_type = c("violin", "map"),
+      plot_type = c("boxplot", "map"),
       objectives = c(
         "Maintain productivity of harvested species",
         "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
@@ -1010,7 +1049,7 @@ indicator_targets <- list(
       bin_rationale = "FIXME",
       project_short_title = "RV Survey",
       areas = MPAs,
-      plot_type = c("violin", "map"),
+      plot_type = c("boxplot", "map"),
       plot_lm = FALSE,
       theme = "Fish and Fishery Resources",
       SME = "Unknown",
@@ -1063,7 +1102,7 @@ indicator_targets <- list(
       bin_rationale = "FIXME",
       project_short_title = "RV Survey",
       areas = MPAs,
-      plot_type = c("violin", "map"),
+      plot_type = c("boxplot", "map"),
       plot_lm = FALSE,
       SME = "Unknown",
       control_polygon = control_polygons,
@@ -1119,7 +1158,7 @@ indicator_targets <- list(
       bin_rationale = "FIXME",
       project_short_title = "RV Survey",
       areas = MPAs,
-      plot_type = c("violin", "map"),
+      plot_type = c("boxplot", "map"),
       plot_lm = FALSE,
       theme = "Fish and Fishery Resources",
       SME = "Unknown",
@@ -1197,7 +1236,7 @@ indicator_targets <- list(
       indicator_var_name = "relative_biomass",
       type = "in situ",
       units = NA,
-      scoring = "desired state: increase",
+      scoring = "desired trend: increase",
       PPTID = 579,
       source = "AZMP",
       climate_expectation = "FIXME",
@@ -1214,7 +1253,7 @@ indicator_targets <- list(
         "taxa"
       ),
       areas = MPAs,
-      plot_type = c('community-composition', 'map'),
+      plot_type = c('detection', 'map'), # species-detection. This may not work anymore.
       plot_lm = FALSE,
       SME = "Unknown",
       theme = "Secondary Production",
@@ -1223,7 +1262,8 @@ indicator_targets <- list(
         "Maintain/promote ecosystem structure and functioning",
         "Maintain Functional Biodiversity",
         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
+      ),
+      externalData = rep(30, 46)
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
@@ -2446,7 +2486,7 @@ indicator_targets <- list(
       climate = TRUE,
       other_nest_variables = "depth",
       areas = MPAs,
-      plot_type = c('outside-comparison', 'map'),
+      plot_type = c('time-series', 'map'),
       SME = "Unknown",
       plot_lm = FALSE,
       control_polygon = control_polygons,
@@ -2487,7 +2527,7 @@ indicator_targets <- list(
       climate_expectation = "FIXME",
       indicator_rationale = "Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
       bin_rationale = "FIXME",
-      plot_type = c('outside-comparison', 'map'),
+      plot_type = c('time-series', 'map'),
       control_polygon = control_polygons,
       plot_lm = FALSE,
       theme = "Ocean Conditions",
@@ -2527,7 +2567,7 @@ indicator_targets <- list(
       project_short_title = "Water Quality",
       climate = TRUE,
       areas = MPAs[MPAs$NAME_E == "Musquash Estuary Marine Protected Area", ],
-      plot_type = c('outside-comparison', 'map'),
+      plot_type = c('time-series', 'map'),
       plot_lm = FALSE,
       latitude = 'Lat',
       longitude = "Lon",
@@ -2573,7 +2613,7 @@ indicator_targets <- list(
       project_short_title = "Water Quality",
       climate = TRUE,
       areas = MPAs[MPAs$NAME_E == "Musquash Estuary Marine Protected Area", ],
-      plot_type = c('outside-comparison', 'map'),
+      plot_type = c('time-series', 'map'),
       plot_lm = FALSE,
       control_polygon = control_polygons,
       theme = "Anthropogenic Pressure and Impacts",

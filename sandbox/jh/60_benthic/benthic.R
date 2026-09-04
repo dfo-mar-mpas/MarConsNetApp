@@ -142,35 +142,33 @@ names(env_rasters) <- names(env_urls)
 
 env_rasters$depth
 
+## INDICATOR 1: Number of species per trophic level within each habitat type
+## INDICATOR 1 IS HERE.
 
-
-
-## INDICAOTR 1: Number of species per trophic level within each habitat type
-
+data_epibenthic_communities_biological <- df
 
    trophic_levels <- read_excel(paste0(dirname(path_to_store()), "/data/AI_trophic_groups.xlsx"))
-   df$ai_trophic_level <- NA
-   for (i in seq_along(unique(df$class))) {
-     df$ai_trophic_level[which(df$class == unique(df$class)[i])] <- trophic_levels$trophic_group[which(trophic_levels$class == unique(df$class)[i])]
+   data_epibenthic_communities_biological$ai_trophic_level <- NA
+   for (i in seq_along(unique(data_epibenthic_communities_biological$class))) {
+     data_epibenthic_communities_biological$ai_trophic_level[which(data_epibenthic_communities_biological$class == unique(data_epibenthic_communities_biological$class)[i])] <- trophic_levels$trophic_group[which(trophic_levels$class == unique(data_epibenthic_communities_biological$class)[i])]
    }
 
-   df$min_target <- 0
-   df$max_target <- 30
-   df$plainname <- 'the total region samplled by the RV survey'
-   df$date_of_publication <- 2024 # Won't change.
+   data_epibenthic_communities_biological$min_target <- 0
+   data_epibenthic_communities_biological$max_target <- 30
+   data_epibenthic_communities_biological$plainname <- 'the total region samplled by the RV survey'
 
    mpas <- MPAs %>%
-     st_filter(df[which(df$ai_trophic_level == 'Predator'),]) %>%
+     st_filter(data_epibenthic_communities_biological[which(data_epibenthic_communities_biological$ai_trophic_level == 'Predator'),]) %>%
      filter(NAME_E != "Non_Conservation_Area")
 
    x <- process_indicator(
-     data = df[which(df$ai_trophic_level == 'Predator'),],
+     data = data_epibenthic_communities_biological[which(data_epibenthic_communities_biological$ai_trophic_level == 'Predator'),],
      readiness = "Ready",
      indicator_var_name = "detections",
      indicator = "Benthic species per trophic level within each habitat type",
      type = "in situ",
      units = NA, # FIXME
-     scoring = "proportion: good species",
+     scoring = "representation: regional relative ranking", # protection coverage (# this says how well each ara represents teh benthic biodiversity found in the broadrer region)
      PPTID = 395,
      source = "RV",
      project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
@@ -184,11 +182,14 @@ env_rasters$depth
      theme = "Trophic Structure and Function",
      objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"),
      SME_validated = TRUE,
-     other_nest_variables = c("species", "year_of_data_collection"),
+     other_nest_variables = c("species","ID", "year_of_data_collection", 'ai_trophic_level', 'min_target', 'max_target', 'stagnant_source', 'subclass', 'class', 'detections', 'latitude', 'longitude', 'common_name'),
      scale='region-site'
    )
 # save_plots(dplyr::select(x, -data, -adjacent_data))
 # dplyr::select(x, -plot)
+
+
+## END OF INDICATOR 1
 
 
 
