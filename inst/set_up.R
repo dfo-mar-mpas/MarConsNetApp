@@ -59,7 +59,8 @@ pkgs <- c(
   'rfishbase',
   'taxize',
   'rgbif',
-  'R.utils'
+  'R.utils',
+  'httr2'
 )
 shelf(pkgs)
 
