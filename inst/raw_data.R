@@ -383,6 +383,74 @@ raw_data_targets <- list(
       geoms = sf::st_geometry(fc)
     )
     areas_full <- rbind(areas_full, fundian)
+
+    ## Adding OSW areas
+    tmpdir <- tempdir()
+    dir.create(tmpdir, showWarnings = FALSE)
+    on.exit(unlink(tmpdir, recursive = TRUE))
+
+    download.file(
+      "https://cnsopbdigitaldata.ca/geoviewer/dmc/public/Designated-WEA.zip",
+      destfile = file.path(tmpdir, "Designated-WEA.zip")
+    )
+
+    unzip(file.path(tmpdir, "Designated-WEA.zip"), exdir = tmpdir)
+    files <- unzip(
+      file.path(tmpdir, "Designated-WEA.zip"),
+      exdir = tmpdir,
+      list = TRUE
+    )
+
+    wa <- st_read(
+      file.path(tmpdir, files$Name[grepl("\\.shp$", files$Name)])
+    ) |>
+      dplyr::left_join(
+        data.frame(
+          OBJECTID = 9000:9003,
+          WEA = c(
+            "French Bank",
+            "Middle Bank",
+            "Sable Island Bank",
+            "Sydney Bight"
+          )
+        ),
+        by = "WEA"
+      )
+
+    # Match CRS
+    wa <- st_transform(wa, st_crs(areas_full))
+
+    # Rename geometry to match areas_full
+    wa <- wa |>
+      dplyr::rename(geoms = geometry)
+
+    # Create the attributes
+    df <- wa |>
+      dplyr::transmute(
+        NAME_E = WEA,
+        NAME_F = c(
+          "Banc French",
+          "Banc du Milieu",
+          "Banc de l'île de Sable",
+          "Bight de Sydney"
+        ),
+        geoms = geoms,
+        region = "Maritimes",
+        date_of_establishment = 2025
+      )
+
+    # Tell sf that geoms is the geometry column
+    st_geometry(df) <- "geoms"
+
+    # Check
+    st_crs(df)
+    st_crs(areas_full)
+    names(df)
+    names(areas_full)
+
+    # Combine
+    areas_full <- rbind(areas_full, df)
+
     areas_full
   }),
 
@@ -3090,9 +3158,9 @@ raw_data_targets <- list(
       function(x) {
         file <- file.path(env_dir, paste0(x, ".tif"))
 
-        request(env_urls[[x]]) |>
-          req_perform() |>
-          resp_body_raw() |>
+        httr2::request(env_urls[[x]]) |>
+          httr2::req_perform() |>
+          httr2::resp_body_raw() |>
           writeBin(file)
 
         file
@@ -3101,14 +3169,42 @@ raw_data_targets <- list(
     )
 
     # Load as terra rasters
-    env_rasters <- lapply(env_files, rast)
+    env_rasters <- lapply(env_files, terra::rast)
     names(env_rasters) <- names(env_urls)
     env_rasters$stagnant_source <- TRUE
-    env_rasters$year_of_publication <- as.numeric(format(
-      file.info(file2)$atime,
-      "%Y"
-    ))
+
+    env_rasters$year_of_publication <- 2024
 
     env_rasters
+  }),
+  tar_target(name = data_benthic, command = {
+    tmp_dir <- tempdir()
+
+    # Base URL
+    base_url <- "https://raw.githubusercontent.com/dfo-mar-mpas/stannsbank_mpa/main/data/Shapefiles"
+
+    # Download all required shapefile components
+    benth_files <- c(
+      "benthoscape.shp",
+      "benthoscape.shx",
+      "benthoscape.dbf",
+      "benthoscape.prj"
+    )
+
+    for (f in benth_files) {
+      download.file(
+        url = paste0(base_url, "/", f),
+        destfile = file.path(tmp_dir, f),
+        mode = "wb"
+      )
+    }
+
+    # Read shapefile
+    benthoscape <- sf::st_read(
+      file.path(tmp_dir, "benthoscape.shp"),
+      quiet = TRUE
+    )
+
+    benthoscape
   })
 )
