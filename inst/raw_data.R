@@ -43,10 +43,8 @@ raw_data_targets <- list(
   }),
 
   tar_target(name = regions, command = {
-
     # Fixed ArcGIS geometry query issue by manually downloading features and rebuilding sf object;
     # transformed to WGS84 and preserved original attributes for downstream region processing.
-
 
     # ---------------------------------------------------------
     # 1. Download DFO Marine Spatial Planning Areas
@@ -122,18 +120,20 @@ raw_data_targets <- list(
     ]
 
     B <- canada[
-      canada$name_en %in% c(
-        "Quebec",
-        "Newfoundland and Labrador"
-      ),
+      canada$name_en %in%
+        c(
+          "Quebec",
+          "Newfoundland and Labrador"
+        ),
     ]
 
     C <- canada[
-      canada$name_en %in% c(
-        "New Brunswick",
-        "Nova Scotia",
-        "Prince Edward Island"
-      ),
+      canada$name_en %in%
+        c(
+          "New Brunswick",
+          "Nova Scotia",
+          "Prince Edward Island"
+        ),
     ]
 
     # ---------------------------------------------------------
@@ -152,7 +152,6 @@ raw_data_targets <- list(
     # 6. Determine whether each grid cell is closer to
     #    Quebec/NL or the Maritimes
     # ---------------------------------------------------------
-
 
     regions <- grid_points |>
       mutate(
@@ -258,45 +257,57 @@ raw_data_targets <- list(
     areas <- areas |>
       filter(!is.na(region))
 
-    sf::sf_use_s2(FALSE)
+    # turning off s2 doesn't seem necessary anymore?
+    # on.exit(sf::sf_use_s2(TRUE))
+    # sf::sf_use_s2(FALSE)
 
     ## DATA-EEZ way is causing problems, commenting out for now.
-#
-#     eez_buffer <- data_eez |>
-#       st_transform(3979) |>
-#       st_union() |>
-#       st_simplify(dTolerance = 50000) |>
-#       st_buffer(550000) |>
-#       st_make_valid() |>
-#       st_transform(st_crs(areas))
-#
-#     # Get union of all MPAs
-#     all_mpa_union <- st_union(areas$geoms)
-#
-#     # Compute difference (the "outside" area)
-#     outside_geom <- st_difference(eez_buffer, all_mpa_union) |> st_make_valid()
-#
-#     sf::sf_use_s2(TRUE)
+    #
+    eez_buffer <- data_eez |>
+      st_transform(3979) |>
+      st_union() |>
+      st_simplify(dTolerance = 50000) |>
+      st_buffer(550000) |>
+      st_make_valid() |>
+      st_transform(st_crs(areas))
 
-    # Step 6: Create the Outside row
-    ## Adding non conservation areas
-    bbox_coords <- matrix(c(
-      -171, 24,  # xmin, ymin (Hawaii/Alaska/Florida range)
-      -50,  24,  # xmax, ymin
-      -50,  84,  # xmax, ymax
-      -171, 84,  # xmin, ymax
-      -171, 24   # close the polygon
-    ), ncol = 2, byrow = TRUE)
-
-    bbox <- st_polygon(list(bbox_coords)) |>
-      st_sfc(crs = st_crs(areas)) |>
-      st_make_valid()
-
-    # Step 4: Get union of all MPAs
+    # Get union of all MPAs
     all_mpa_union <- st_union(areas$geoms)
 
-    # Step 5: Compute difference (the "outside" area)
-    outside_geom <- st_difference(bbox, all_mpa_union) |> st_make_valid()
+    # Compute difference (the "outside" area)
+    outside_geom <- st_difference(eez_buffer, all_mpa_union) |> st_make_valid()
+
+    # sf::sf_use_s2(TRUE)
+
+    # going back to the eez method
+    # # Step 6: Create the Outside row
+    # ## Adding non conservation areas
+    # bbox_coords <- matrix(
+    #   c(
+    #     -171,
+    #     24, # xmin, ymin (Hawaii/Alaska/Florida range)
+    #     -50,
+    #     24, # xmax, ymin
+    #     -50,
+    #     84, # xmax, ymax
+    #     -171,
+    #     84, # xmin, ymax
+    #     -171,
+    #     24 # close the polygon
+    #   ),
+    #   ncol = 2,
+    #   byrow = TRUE
+    # )
+
+    # bbox <- st_polygon(list(bbox_coords)) |>
+    #   st_sfc(crs = st_crs(areas)) |>
+    #   st_make_valid()
+
+    # # Step 4: Get union of all MPAs
+    # all_mpa_union <- st_union(areas$geoms)
+
+    # # Step 5: Compute difference (the "outside" area)
+    # outside_geom <- st_difference(bbox, all_mpa_union) |> st_make_valid()
 
     # Step 6: Create the Outside row
     outside_row <- tibble(
@@ -313,14 +324,56 @@ raw_data_targets <- list(
     areas_full <- bind_rows(areas, outside_row)
 
     areas_full$date_of_establishment <- c(
-      2019,2005,1981,2017,2017,2016,2007,2017,2022,2017,2017, 2005,2005,2016,
-2017,2004,2017,2017,2017,2016,2019,2016,1998,2004,1996,2004,2004,1998,2002,2014,
-      1986,2006,2017,2016,2017,2017,1985,2017,2017,2017,2017,2017,2017,2017,2000
+      2019,
+      2005,
+      1981,
+      2017,
+      2017,
+      2016,
+      2007,
+      2017,
+      2022,
+      2017,
+      2017,
+      2005,
+      2005,
+      2016,
+      2017,
+      2004,
+      2017,
+      2017,
+      2017,
+      2016,
+      2019,
+      2016,
+      1998,
+      2004,
+      1996,
+      2004,
+      2004,
+      1998,
+      2002,
+      2014,
+      1986,
+      2006,
+      2017,
+      2016,
+      2017,
+      2017,
+      1985,
+      2017,
+      2017,
+      2017,
+      2017,
+      2017,
+      2017,
+      2017,
+      2000
     )
 
     ## Now adding Fundian Channel
     da <- data_draft_areas()
-    fc <- da[which(da$SiteName_E == "Fundian Channel-Browns Bank"),]
+    fc <- da[which(da$SiteName_E == "Fundian Channel-Browns Bank"), ]
     fc <- sf::st_transform(fc, sf::st_crs(areas_full))
     fundian <- sf::st_sf(
       NAME_E = fc$SiteName_E,
@@ -333,7 +386,8 @@ raw_data_targets <- list(
     areas_full
   }),
 
-  tar_target(name = data_eez, command = { # TECHNICALLY SHOULD HAVE A STAGNANT_SOURCE AND YEAR_OF_PUBLICATION BUT IGNORING FOR NOW
+  tar_target(name = data_eez, command = {
+    # TECHNICALLY SHOULD HAVE A STAGNANT_SOURCE AND YEAR_OF_PUBLICATION BUT IGNORING FOR NOW
     data_eez <- mregions2::gaz_geometry(8493)
   }),
 
@@ -661,7 +715,10 @@ raw_data_targets <- list(
     )
 
     geoserver_receivers$stagnant_source <- FALSE
-    geoserver_receivers$year_of_publication <- as.numeric(format(Sys.Date(), "%Y")) #live-updating OTN GeoServer layer
+    geoserver_receivers$year_of_publication <- as.numeric(format(
+      Sys.Date(),
+      "%Y"
+    )) #live-updating OTN GeoServer layer
     geoserver_receivers
   }),
 
@@ -694,11 +751,14 @@ raw_data_targets <- list(
     # You can then work with the rasters
     names(rasters) <- basename(raster_files)
 
-
-
-    lines <- readLines('https://open.canada.ca/data/en/dataset/37b59b8b-1c1c-4869-802f-c09571cc984b')
-    year <- as.numeric(sub(".*(\\d{4}).*", "\\1",
-                           lines[which(grepl("Date published", lines, ignore.case = TRUE)) + 2]))
+    lines <- readLines(
+      'https://open.canada.ca/data/en/dataset/37b59b8b-1c1c-4869-802f-c09571cc984b'
+    )
+    year <- as.numeric(sub(
+      ".*(\\d{4}).*",
+      "\\1",
+      lines[which(grepl("Date published", lines, ignore.case = TRUE)) + 2]
+    ))
 
     rasters <- lapply(rasters, function(x) {
       x$year_of_publication <- year
@@ -763,15 +823,19 @@ raw_data_targets <- list(
       for (i in seq_len(nrow(rawdata_obis_s3_manifest))) {
         message(i)
         if (i == 1) {
-          if (dir.exists("/mnt/sambashare/MarConsNet/MarConsNetTargets/data/obis_data/occurrence")) {
+          if (
+            dir.exists(
+              "/mnt/sambashare/MarConsNet/MarConsNetTargets/data/obis_data/occurrence"
+            )
+          ) {
             next
           }
         }
 
-        if (rawdata_obis_s3_manifest$size[i]/ 1024^3 > 15) { # THERE WAS A FILE BIGGER THAN 15 GB
-          message(paste0("ignoring ", i, " file: ", rawdata_obis_s3_manifest$key[i], " because it was ", round(rawdata_obis_s3_manifest$size[i]/1024^3,2), "GB"))
-        next
-          }
+        # if (rawdata_obis_s3_manifest$size[i]/ 1024^3 > 15) { # THERE WAS A FILE BIGGER THAN 15 GB
+        #   message(paste0("ignoring ", i, " file: ", rawdata_obis_s3_manifest$key[i], " because it was ", round(rawdata_obis_s3_manifest$size[i]/1024^3,2), "GB"))
+        # next
+        #   }
 
         key <- rawdata_obis_s3_manifest$key[i]
         local_path <- file.path(store, "..", "data", "obis_data", key)
@@ -799,8 +863,8 @@ raw_data_targets <- list(
   tar_target(
     name = rawdata_obis_grid,
     command = {
-      n_x = 10
-      n_y = 10
+      n_x <- 10
+      n_y <- 10
 
       (st_make_grid(
         st_union(regions$Shape),
@@ -948,11 +1012,15 @@ raw_data_targets <- list(
     })
     names(ais) <- layers$name
 
-
     ## Date of publication and stagnant state
-    lines <- readLines('https://open.canada.ca/data/en/dataset/8d87f574-0661-40a0-822f-e9eabc35780d')
-    year <- as.numeric(sub(".*(\\d{4}).*", "\\1",
-                           lines[which(grepl("Date published", lines, ignore.case = TRUE)) + 2]))
+    lines <- readLines(
+      'https://open.canada.ca/data/en/dataset/8d87f574-0661-40a0-822f-e9eabc35780d'
+    )
+    year <- as.numeric(sub(
+      ".*(\\d{4}).*",
+      "\\1",
+      lines[which(grepl("Date published", lines, ignore.case = TRUE)) + 2]
+    ))
 
     ais <- lapply(ais, function(x) {
       x$year_of_publication <- year
@@ -982,7 +1050,6 @@ raw_data_targets <- list(
     distributions$stagnant_source <- FALSE
     distributions$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
     distributions
-
   }),
 
   tar_target(name = data_WORMS_species_distributions_polygons, {
@@ -1030,11 +1097,14 @@ raw_data_targets <- list(
       httr2::req_perform() |>
       httr2::resp_body_json()
 
-    infauna$year_of_publication <- as.numeric(format(as.POSIXct(
-      info$created / 1000,
-      origin = "1970-01-01",
-      tz = "UTC"
-    ), "%Y"))
+    infauna$year_of_publication <- as.numeric(format(
+      as.POSIXct(
+        info$created / 1000,
+        origin = "1970-01-01",
+        tz = "UTC"
+      ),
+      "%Y"
+    ))
 
     infauna
   }),
@@ -1332,8 +1402,8 @@ raw_data_targets <- list(
 
     DATA2 <- add_assumptions(
       df_sf,
-      assumptions='This is eDNA data so it is an indirect measure of diversity. Often times benthic samples will have species that may also be associted with the pelagic environment. This may need to be considered if the indicator is benthic focused or if it is compared to/combined with another benthic dataset (e.g., RV Trawl).',
-      caveats='Species identification should be curated, but at the same time additional checks should be put in place to ensure there are no erroneous species (e.g., Pacific sister species can sometimes be associated with a DNA read in the bioinformatic pipeline instead of the Atlantic equivalent, which invariably is what was actually in the environment and was the source of the DNA).'
+      assumptions = 'This is eDNA data so it is an indirect measure of diversity. Often times benthic samples will have species that may also be associted with the pelagic environment. This may need to be considered if the indicator is benthic focused or if it is compared to/combined with another benthic dataset (e.g., RV Trawl).',
+      caveats = 'Species identification should be curated, but at the same time additional checks should be put in place to ensure there are no erroneous species (e.g., Pacific sister species can sometimes be associated with a DNA read in the bioinformatic pipeline instead of the Atlantic equivalent, which invariably is what was actually in the environment and was the source of the DNA).'
     )
 
     names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
@@ -1347,255 +1417,266 @@ raw_data_targets <- list(
 
     for (i in seq_along(unique(DATA2$species))) {
       message(paste0("For loop ", i, " of ", length(unique(DATA2$species))))
-      DATA2$subclass[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level="Subclass")
-      DATA2$class[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level='Class')
-      DATA2$common_name[which(DATA2$species == unique(DATA2$species)[i])] <- taxize_species(unique(DATA2$species)[i], level='common_name')
+      DATA2$subclass[which(
+        DATA2$species == unique(DATA2$species)[i]
+      )] <- taxize_species(unique(DATA2$species)[i], level = "Subclass")
+      DATA2$class[which(
+        DATA2$species == unique(DATA2$species)[i]
+      )] <- taxize_species(unique(DATA2$species)[i], level = 'Class')
+      DATA2$common_name[which(
+        DATA2$species == unique(DATA2$species)[i]
+      )] <- taxize_species(unique(DATA2$species)[i], level = 'common_name')
     }
 
     DATA2
-
   }),
 
-tar_target(name=bathymetry, command={
-## For this, I am using the readGEBO.bathy function in marmap.
-## I went to https://www.bodc.ac.uk/data/hosted_data_systems/gebco_gridded_bathymetry_data/
-## and manually had to download north america bathymetry and place it in the data folder
-## of the sambadrive.
-path <- file.path(dirname(store), "data", 'gebco_2026_n79.0_s0.0_w-144.0_e15.0.nc')
-bathy <- rast(path)
-bathy$stagnant_source <- TRUE
-bathy$year_of_publication <- as.numeric(format(file.info(path)$ctime, "%Y"))
-bathy
-}),
-
-tar_target(name=shallow_bathymetry, command={
-  ## For this, I am using the readGEBO.bathy function in marmap.
-  ## I went to https://www.bodc.ac.uk/data/hosted_data_systems/gebco_gridded_bathymetry_data/
-  ## and manually had to download north america bathymetry and place it in the data folder
-  ## of the sambadrive.
-  bathymetry >= -30 & bathymetry < 0
-}),
-
-
-tar_target(name = data_kelp_modelled, command = {
-
-  onedrive <- Sys.getenv("OneDriveCommercial")
-
-  raster_folder <- file.path(
-    onedrive,
-    "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
-  )
-
-  l_digitata_current <- rast(
-    file.path(
-      raster_folder,
-      "Laminaria digitata",
-      "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
+  tar_target(name = bathymetry, command = {
+    ## For this, I am using the readGEBO.bathy function in marmap.
+    ## I went to https://www.bodc.ac.uk/data/hosted_data_systems/gebco_gridded_bathymetry_data/
+    ## and manually had to download north america bathymetry and place it in the data folder
+    ## of the sambadrive.
+    path <- file.path(
+      dirname(store),
+      "data",
+      'gebco_2026_n79.0_s0.0_w-144.0_e15.0.nc'
     )
-  )
+    bathy <- rast(path)
+    bathy$stagnant_source <- TRUE
+    bathy$year_of_publication <- as.numeric(format(file.info(path)$ctime, "%Y"))
+    bathy
+  }),
 
-  s_latissima_current <- rast(
-    file.path(
-      raster_folder,
-      "Saccharina latissima",
-      "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
+  tar_target(name = shallow_bathymetry, command = {
+    ## For this, I am using the readGEBO.bathy function in marmap.
+    ## I went to https://www.bodc.ac.uk/data/hosted_data_systems/gebco_gridded_bathymetry_data/
+    ## and manually had to download north america bathymetry and place it in the data folder
+    ## of the sambadrive.
+    bathymetry >= -30 & bathymetry < 0
+  }),
+
+  tar_target(name = data_kelp_modelled, command = {
+    onedrive <- Sys.getenv("OneDriveCommercial")
+
+    raster_folder <- file.path(
+      onedrive,
+      "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
     )
-  )
 
-  l_digitata_poly <- as.polygons(
-    l_digitata_current == 1,
-    aggregate = TRUE
-  ) |>
-    st_as_sf() %>%
-    mutate(species = "Laminaria digitata",
-           suitable_habitat = Laminaria_digitata_Bathy_rm4_20240223_avg_Binary == 1,
-           habitat_type = "kelp") |>
-    # filter(Laminaria_digitata_Bathy_rm4_20240223_avg_Binary == 1) |>
-    select(species,suitable_habitat,habitat_type)
-
-
-  s_latissima_poly <- as.polygons(
-    s_latissima_current == 1,
-    aggregate = TRUE
-  ) |>
-    st_as_sf() %>%
-    mutate(species = "Saccharina latissima",
-           suitable_habitat = Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary == 1,
-           habitat_type = "kelp") |>
-    select(species,suitable_habitat,habitat_type)
-
-  kelp <- bind_rows(s_latissima_poly,l_digitata_poly)
-
-  kelp <- add_assumptions(
-    kelp,
-    assumptions='Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
-    caveats='Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
-  )
-
-
-  species_folders <- file.path(
-    raster_folder,
-    c("Laminaria digitata", "Saccharina latissima")
-  )
-
-  folder_info <- file.info(species_folders)
-
-  year_of_publication <- as.numeric(
-    format(max(folder_info$mtime, na.rm = TRUE), "%Y")
-  )
-
-  kelp$year_of_publication <- year_of_publication
-  kelp$stagnant_source <- FALSE
-  kelp
-}),
-
-tar_target(name = data_macroalgae_modelled, command = {
-
-  onedrive <- Sys.getenv("OneDriveCommercial")
-
-  raster_folder <- file.path(
-    onedrive,
-    "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
-  )
-
-  species_files <- data.frame(
-    species = c(
-      "Antithamnion sparsum",
-      "Bonnemaisonia hamifera",
-      "Codium fragile",
-      "Dasysiphonia japonica",
-      "Fucus serratus"
-    ),
-    tif = c(
-      "Antithamnion_sparsum_Bathy_rm2_20240304_avg_Binary.tif",
-      "Bonnemaisonia_hamifera_Bathy_rm2MinusYRMin_20240304_avg_Binary.tif",
-      "Codium_fragile_Bathy_rm3_20240304_avg_Binary.tif",
-      "Dasysiphonia_japonica_Bathy_rm3MinusYRMax_20240304_avg_Binary.tif",
-      "Fucus_serratus_Bathy_rm3_20240227_avg_Binary.tif"
-    )
-  )
-
-  all_polys <- vector("list", nrow(species_files))
-
-  for (i in seq_len(nrow(species_files))) {
-    message(i)
-
-    current <- rast(
+    l_digitata_current <- rast(
       file.path(
         raster_folder,
-        species_files$species[i],
-        species_files$tif[i]
+        "Laminaria digitata",
+        "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
       )
     )
 
-    all_polys[[i]] <- as.polygons(
-      current == 1,
+    s_latissima_current <- rast(
+      file.path(
+        raster_folder,
+        "Saccharina latissima",
+        "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
+      )
+    )
+
+    l_digitata_poly <- as.polygons(
+      l_digitata_current == 1,
       aggregate = TRUE
     ) |>
-      st_as_sf() |>
+      st_as_sf() %>%
       mutate(
-        species = species_files$species[i],
-        suitable_habitat = TRUE,
-        habitat_type = "macroalgae"
+        species = "Laminaria digitata",
+        suitable_habitat = Laminaria_digitata_Bathy_rm4_20240223_avg_Binary ==
+          1,
+        habitat_type = "kelp"
       ) |>
-      select(
-        species,
-        suitable_habitat,
-        habitat_type,
-        geometry
+      # filter(Laminaria_digitata_Bathy_rm4_20240223_avg_Binary == 1) |>
+      select(species, suitable_habitat, habitat_type)
+
+    s_latissima_poly <- as.polygons(
+      s_latissima_current == 1,
+      aggregate = TRUE
+    ) |>
+      st_as_sf() %>%
+      mutate(
+        species = "Saccharina latissima",
+        suitable_habitat = Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary ==
+          1,
+        habitat_type = "kelp"
+      ) |>
+      select(species, suitable_habitat, habitat_type)
+
+    kelp <- bind_rows(s_latissima_poly, l_digitata_poly)
+
+    kelp <- add_assumptions(
+      kelp,
+      assumptions = 'Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
+      caveats = 'Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
+    )
+
+    species_folders <- file.path(
+      raster_folder,
+      c("Laminaria digitata", "Saccharina latissima")
+    )
+
+    folder_info <- file.info(species_folders)
+
+    year_of_publication <- as.numeric(
+      format(max(folder_info$mtime, na.rm = TRUE), "%Y")
+    )
+
+    kelp$year_of_publication <- year_of_publication
+    kelp$stagnant_source <- FALSE
+    kelp
+  }),
+
+  tar_target(name = data_macroalgae_modelled, command = {
+    onedrive <- Sys.getenv("OneDriveCommercial")
+
+    raster_folder <- file.path(
+      onedrive,
+      "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
+    )
+
+    species_files <- data.frame(
+      species = c(
+        "Antithamnion sparsum",
+        "Bonnemaisonia hamifera",
+        "Codium fragile",
+        "Dasysiphonia japonica",
+        "Fucus serratus"
+      ),
+      tif = c(
+        "Antithamnion_sparsum_Bathy_rm2_20240304_avg_Binary.tif",
+        "Bonnemaisonia_hamifera_Bathy_rm2MinusYRMin_20240304_avg_Binary.tif",
+        "Codium_fragile_Bathy_rm3_20240304_avg_Binary.tif",
+        "Dasysiphonia_japonica_Bathy_rm3MinusYRMax_20240304_avg_Binary.tif",
+        "Fucus_serratus_Bathy_rm3_20240227_avg_Binary.tif"
       )
-  }
+    )
 
-  macroalgae <- bind_rows(all_polys)
+    all_polys <- vector("list", nrow(species_files))
 
-  macroalgae <- add_assumptions(
-    macroalgae,
-    assumptions='Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
-    caveats='Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
-  )
+    for (i in seq_len(nrow(species_files))) {
+      message(i)
 
+      current <- rast(
+        file.path(
+          raster_folder,
+          species_files$species[i],
+          species_files$tif[i]
+        )
+      )
 
-  species_folders <- file.path(
-    raster_folder,
-    species_files$species
-  )
-
-  folder_info <- file.info(species_folders)
-
-  year_of_publication <- as.numeric(
-    format(max(folder_info$mtime, na.rm = TRUE), "%Y")
-  )
-
-  macroalgae$year_of_publication <- year_of_publication
-  macroalgae$stagnant_source <- FALSE
-  macroalgae
-}),
-
-
-tar_target(name = data_kelp_distribution_and_abundance, command = {
-  occurrence <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Occurrence.csv")
-  event <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Event.csv")
-  measurements <- read_csv("https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/extendedMeasurementOrFact.csv")
-
-  ## Joining all tables but keeping only relevant tables.
-  data <- occurrence %>%
-    select(
-      eventID,
-      occurrenceID,
-      scientificName,
-      taxonRank,
-      eventDate,
-      basisOfRecord,
-      samplingProtocol
-    ) %>%
-    left_join(
-      event %>%
+      all_polys[[i]] <- as.polygons(
+        current == 1,
+        aggregate = TRUE
+      ) |>
+        st_as_sf() |>
+        mutate(
+          species = species_files$species[i],
+          suitable_habitat = TRUE,
+          habitat_type = "macroalgae"
+        ) |>
         select(
-          eventID,
-          decimalLatitude,
-          decimalLongitude,
-          country,
-          datasetName
-        ),
-      by = "eventID"
-    ) %>%
-    left_join(
-      measurements %>%
-        select(
-          eventID,
-          occurrenceID,
-          measurementType,
-          measurementValue,
-          measurementUnit
-        ),
-      by = c("eventID", "occurrenceID")
-    ) %>%
-    rename(latitude=decimalLatitude,
-           longitude=decimalLongitude) %>%
-    mutate(year = format(as.Date(eventDate), "%Y"))
+          species,
+          suitable_habitat,
+          habitat_type,
+          geometry
+        )
+    }
 
-  data <- add_assumptions(
-    data,
-    assumptions='Not all macroalgae are identified to the species level.',
-    caveats='Percent cover are not the most sensitive measure to changes in abundance but are useful as an indicator. '
-  )
+    macroalgae <- bind_rows(all_polys)
 
-  ##PROCESS INDICATOR
+    macroalgae <- add_assumptions(
+      macroalgae,
+      assumptions = 'Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
+      caveats = 'Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
+    )
 
-  data$year_of_publication <- {
-    url <- "https://open.canada.ca/data/en/dataset/f1a022a4-b9bf-47d0-b641-2067ea568962/resource/a47f5b93-9424-48a5-a65c-5fd5c6bc2b70"
-    page <- read_html(url)
-    page_text <- html_text2(page)
+    species_folders <- file.path(
+      raster_folder,
+      species_files$species
+    )
 
-    page_text |>
-      str_extract("(?<=Data last updated )\\w+ \\d{1,2}, \\d{4}") |>
-      str_extract("\\d{4}")
-  }
-  data$stagnant_source <- TRUE
-  data
-}),
+    folder_info <- file.info(species_folders)
 
+    year_of_publication <- as.numeric(
+      format(max(folder_info$mtime, na.rm = TRUE), "%Y")
+    )
 
+    macroalgae$year_of_publication <- year_of_publication
+    macroalgae$stagnant_source <- FALSE
+    macroalgae
+  }),
+
+  tar_target(name = data_kelp_distribution_and_abundance, command = {
+    occurrence <- read_csv(
+      "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Occurrence.csv"
+    )
+    event <- read_csv(
+      "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/Event.csv"
+    )
+    measurements <- read_csv(
+      "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/f1a022a4-b9bf-47d0-b641-2067ea568962/attachments/extendedMeasurementOrFact.csv"
+    )
+
+    ## Joining all tables but keeping only relevant tables.
+    data <- occurrence %>%
+      select(
+        eventID,
+        occurrenceID,
+        scientificName,
+        taxonRank,
+        eventDate,
+        basisOfRecord,
+        samplingProtocol
+      ) %>%
+      left_join(
+        event %>%
+          select(
+            eventID,
+            decimalLatitude,
+            decimalLongitude,
+            country,
+            datasetName
+          ),
+        by = "eventID"
+      ) %>%
+      left_join(
+        measurements %>%
+          select(
+            eventID,
+            occurrenceID,
+            measurementType,
+            measurementValue,
+            measurementUnit
+          ),
+        by = c("eventID", "occurrenceID")
+      ) %>%
+      rename(latitude = decimalLatitude, longitude = decimalLongitude) %>%
+      mutate(year = format(as.Date(eventDate), "%Y"))
+
+    data <- add_assumptions(
+      data,
+      assumptions = 'Not all macroalgae are identified to the species level.',
+      caveats = 'Percent cover are not the most sensitive measure to changes in abundance but are useful as an indicator. '
+    )
+
+    ##PROCESS INDICATOR
+
+    data$year_of_publication <- {
+      url <- "https://open.canada.ca/data/en/dataset/f1a022a4-b9bf-47d0-b641-2067ea568962/resource/a47f5b93-9424-48a5-a65c-5fd5c6bc2b70"
+      page <- read_html(url)
+      page_text <- html_text2(page)
+
+      page_text |>
+        str_extract("(?<=Data last updated )\\w+ \\d{1,2}, \\d{4}") |>
+        str_extract("\\d{4}")
+    }
+    data$stagnant_source <- TRUE
+    data
+  }),
 
   tar_target(name = data_musquash_nekton_occurence, command = {
     # data from https://catalogue.ogsl.ca/en/dataset/ca-cioos_4c93ac96-0a9f-41d5-9505-80a3b24c30ae
@@ -1658,14 +1739,14 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     good_sheet_names <- list()
 
     for (i in seq_along(sheet_names)) {
-
       sheet <- sheet_names[i]
 
       # Read sheet without assuming column names
       raw <- read_excel(
         file,
         sheet = sheet,
-        col_names = FALSE, skip=20
+        col_names = FALSE,
+        skip = 20
       )
 
       # Find the row containing "Station"
@@ -1673,10 +1754,12 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
         apply(
           raw,
           1,
-          function(x) any(
-            trimws(as.character(x)) == "Station",
-            na.rm = TRUE
-          )
+          function(x) {
+            any(
+              trimws(as.character(x)) == "Station",
+              na.rm = TRUE
+            )
+          }
         )
       )
 
@@ -1826,7 +1909,10 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       header = TRUE
     )
     x$stagnant_source <- TRUE
-    x$year_of_publication <- as.numeric(format(max(file.info(file_path)$mtime, na.rm = TRUE), "%Y"))
+    x$year_of_publication <- as.numeric(format(
+      max(file.info(file_path)$mtime, na.rm = TRUE),
+      "%Y"
+    ))
     x
   }),
 
@@ -1886,32 +1972,35 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     x
   }),
 
-  tar_age(name = rawdata_inaturalist_download, command = {
-    d <- 5000
+  tar_age(
+    name = rawdata_inaturalist_download,
+    command = {
+      d <- 5000
 
-    simplegeom <- st_simplify(
-      st_buffer(MPAs[MPAs$NAME_E != "Non_Conservation_Area", ], d),
-      dTolerance = d
-    ) |>
-      st_make_valid() |>
-      st_union() |>
-      st_as_text()
+      simplegeom <- st_simplify(
+        st_buffer(MPAs[MPAs$NAME_E != "Non_Conservation_Area", ], d),
+        dTolerance = d
+      ) |>
+        st_make_valid() |>
+        st_union() |>
+        st_as_text()
 
-    credentials <- read.csv(
-      file.path(path_to_store(), "..", "data", "gbif_pwd.csv")
-    )
-    occ_download(
-      pred_within(simplegeom),
-      pred_in("institutionCode", "iNaturalist"),
-      pred("hasCoordinate", TRUE),
-      pred("hasGeospatialIssue", FALSE),
-      format = "SIMPLE_CSV",
-      user=credentials$User,
-      pwd=credentials$Pwd,
-      email=credentials$Email
-    )
-  },
-  age = as.difftime(365, units = "days")),
+      credentials <- read.csv(
+        file.path(path_to_store(), "..", "data", "gbif_pwd.csv")
+      )
+      occ_download(
+        pred_within(simplegeom),
+        pred_in("institutionCode", "iNaturalist"),
+        pred("hasCoordinate", TRUE),
+        pred("hasGeospatialIssue", FALSE),
+        format = "SIMPLE_CSV",
+        user = credentials$User,
+        pwd = credentials$Pwd,
+        email = credentials$Email
+      )
+    },
+    age = as.difftime(365, units = "days")
+  ),
 
   tar_target(name = data_inaturalist, command = {
     occ_download_wait(rawdata_inaturalist_download)
@@ -1925,7 +2014,10 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       st_join(MPAs[, "NAME_E"], join = st_within)
 
     xx$stagnant_source <- FALSE
-    xx$year_of_publication <- as.numeric(format(as.Date(attr(rawdata_inaturalist_download, "created")), "%Y"))
+    xx$year_of_publication <- as.numeric(format(
+      as.Date(attr(rawdata_inaturalist_download, "created")),
+      "%Y"
+    ))
     xx
   }),
 
@@ -2739,7 +2831,6 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
 
     final <- rbind(wh, wh2)
 
-
     ## YEAR OF PUBLICATION (I go right to the source that the function uses)
     dirs <- getURL(
       "https://www.meds-sdmm.dfo-mpo.gc.ca/alphapro/wave/waveshare/csvData/",
@@ -2757,7 +2848,10 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       format = "%m/%d/%Y %I:%M %p"
     )
 
-    final$year_of_publication <- as.numeric(format(max(dates, na.rm = TRUE), "%Y"))
+    final$year_of_publication <- as.numeric(format(
+      max(dates, na.rm = TRUE),
+      "%Y"
+    ))
     final$stagnant_source <- FALSE
 
     return(final)
@@ -2813,7 +2907,10 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     wells$latitude <- convert_dms(latitude_clean)
     wells$longitude <- convert_dms(longitude_clean) * (-1)
     wells$stagnant_source <- TRUE
-    wells$year_of_publication <- as.numeric(regmatches(url, regexpr("\\d{4}", url)))
+    wells$year_of_publication <- as.numeric(regmatches(
+      url,
+      regexpr("\\d{4}", url)
+    ))
 
     return(wells)
   }),
@@ -2837,14 +2934,19 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
       httr2::req_perform() |>
       httr2::resp_body_json()
 
-    data$year_of_publication <- as.numeric(format(as.POSIXct(info$editingInfo$dataLastEditDate / 1000,
-                                           origin = "1970-01-01",tz = "UTC"), "%Y"))
-
-
+    data$year_of_publication <- as.numeric(format(
+      as.POSIXct(
+        info$editingInfo$dataLastEditDate / 1000,
+        origin = "1970-01-01",
+        tz = "UTC"
+      ),
+      "%Y"
+    ))
 
     return(data)
   }),
-  tar_target(data_vessel_traffic, command = { # JAIM
+  tar_target(data_vessel_traffic, command = {
+    # JAIM
     mpa_vect <- vect(MPAs)
     url <- "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/5b86e2d2-cec1-4956-a9d5-12d487aca11b/attachments/NorthwestAtlantic_VesselDensity_2023_AIS.zip"
     temp_zip <- tempfile(fileext = ".zip")
@@ -2863,146 +2965,150 @@ tar_target(name = data_kelp_distribution_and_abundance, command = {
     vals <- r_stars[[1]]
     vals[!is.finite(vals)] <- NA
     r_stars[[1]] <- vals
-    r_stars$year_of_publication <- unlist(unique(as.numeric(regmatches(names(r_stars), regexpr("\\d{4}", names(r_stars))))))
+    r_stars$year_of_publication <- unlist(unique(as.numeric(regmatches(
+      names(r_stars),
+      regexpr("\\d{4}", names(r_stars))
+    ))))
 
     r_stars$stagnant_source <- TRUE
 
     return(r_stars)
   }),
 
+  tar_target(name = data_epibenthic_communities_biological, command = {
+    ## BIOLOGICAL DATA
 
-tar_target(name=data_epibenthic_communities_biological,
-           command= {
-             ## BIOLOGICAL DATA
+    url2 <- 'https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/c2e8c6d9-f07f-4f89-804a-871d6512e487/file_downloaded'
+    file2 <- tempfile(fileext = ".xlsx")
 
-             url2 <- 'https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/c2e8c6d9-f07f-4f89-804a-871d6512e487/file_downloaded'
-             file2 <- tempfile(fileext = ".xlsx")
+    request(url2) |>
+      req_perform() |>
+      resp_body_raw() |>
+      writeBin(file2)
 
-             request(url2) |>
-               req_perform() |>
-               resp_body_raw() |>
-               writeBin(file2)
+    biological_data2 <- read_excel(file2) # Occurrence data of 317 epifaunal taxa found on the Scotian Shelf and Gulf of Maine/ Bay pf Fundy during summer RV surveys
 
-             biological_data2 <- read_excel(file2) # Occurrence data of 317 epifaunal taxa found on the Scotian Shelf and Gulf of Maine/ Bay pf Fundy during summer RV surveys
+    # Reshaping the data
+    # Identify the species columns
+    species_start <- which(names(biological_data2) == "Abietinaria_abietina")
+    species_cols <- species_start:ncol(biological_data2)
 
-             # Reshaping the data
-             # Identify the species columns
-             species_start <- which(names(biological_data2) == "Abietinaria_abietina")
-             species_cols <- species_start:ncol(biological_data2)
+    # Create output data frame
+    df <- data.frame(
+      ID = paste0(biological_data2$Mission, biological_data2$Set),
+      latitude = biological_data2$`Start Latitude`,
+      longitude = biological_data2$`Start Longitude`,
+      species = NA_character_,
+      detections = NA_character_,
+      year_of_data_collection = 2017,
+      stringsAsFactors = FALSE
+    )
 
-             # Create output data frame
-             df <- data.frame(
-               ID = paste0(biological_data2$Mission, biological_data2$Set),
-               latitude = biological_data2$`Start Latitude`,
-               longitude = biological_data2$`Start Longitude`,
-               species = NA_character_,
-               detections = NA_character_,
-               year_of_data_collection = 2017,
-               stringsAsFactors = FALSE
-             )
+    # Cycle through each sample
+    for (l in seq_len(nrow(biological_data2))) {
+      # Get species and their detections for this sample
+      species_values <- biological_data2[l, species_cols]
 
-             # Cycle through each sample
-             for (l in seq_len(nrow(biological_data2))) {
+      keep <- which(as.numeric(species_values) > 0)
 
-               # Get species and their detections for this sample
-               species_values <- biological_data2[l, species_cols]
+      if (length(keep) > 0) {
+        species_names <- names(species_values)[keep]
+        detection_values <- as.numeric(species_values[keep])
 
-               keep <- which(as.numeric(species_values) > 0)
+        # Species
+        df$species[l] <- paste0(
+          species_names,
+          collapse = ", "
+        )
 
-               if (length(keep) > 0) {
-                 species_names <- names(species_values)[keep]
-                 detection_values <- as.numeric(species_values[keep])
+        # Detections
+        df$detections[l] <- paste0(
+          detection_values,
+          collapse = ", "
+        )
+      }
+    }
 
-                 # Species
-                 df$species[l] <- paste0(
-                   species_names,
-                   collapse = ", "
-                 )
+    df <- df %>%
+      separate_rows(species, detections, sep = ",\\s*") %>%
+      mutate(detections = as.numeric(detections))
 
-                 # Detections
-                 df$detections[l] <- paste0(
-                   detection_values,
-                   collapse = ", "
-                 )
-               }
-             }
+    df$species <- clean_species_names(df$species)
+    df$class <- NA
+    df$common_name <- NA
+    df$subclass <- NA
 
-             df <- df %>%
-               separate_rows(species, detections, sep = ",\\s*") %>%
-               mutate(detections = as.numeric(detections))
+    for (i in seq_along(unique(df$species))) {
+      message(paste0("For loop ", i, " of ", length(unique(df$species))))
+      df$subclass[which(df$species == unique(df$species)[i])] <- taxize_species(
+        unique(df$species)[i],
+        level = "Subclass"
+      )
+      df$class[which(df$species == unique(df$species)[i])] <- taxize_species(
+        unique(df$species)[i],
+        level = 'Class'
+      )
+      #df$common_name[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level='common_name')
+    }
 
-             df$species <- clean_species_names(df$species)
-             df$class <- NA
-             df$common_name <- NA
-             df$subclass <- NA
+    df <- add_assumptions(
+      df,
+      caveats = 'Benthic data collected with trawling net (not great catchability for benthic organisms, so what is collected may not represent what is on the bottom'
+    )
 
-             for (i in seq_along(unique(df$species))) {
-               message(paste0("For loop ", i, " of ", length(unique(df$species))))
-               df$subclass[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level="Subclass")
-               df$class[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level='Class')
-               #df$common_name[which(df$species == unique(df$species)[i])] <- taxize_species(unique(df$species)[i], level='common_name')
-             }
+    df <- st_as_sf(
+      df,
+      coords = c("longitude", "latitude"),
+      crs = 4326,
+      remove = FALSE
+    )
 
-             df <- add_assumptions(
-               df,
-               caveats='Benthic data collected with trawling net (not great catchability for benthic organisms, so what is collected may not represent what is on the bottom'
-             )
+    df$stagnant_source <- TRUE
+    df$year_of_publication <- as.numeric(format(file.info(file2)$atime, "%Y"))
 
-             df <- st_as_sf(
-               df,
-               coords = c("longitude", "latitude"),
-               crs = 4326,
-               remove = FALSE
-             )
+    df
+  }),
 
-             df$stagnant_source <- TRUE
-             df$year_of_publication <- as.numeric(format(file.info(file2)$atime, "%Y"))
+  tar_target(name = data_epibenthic_communities_environmental, command = {
+    env_urls <- c(
+      bottom_current_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/0b49f9aa-f6f1-4c74-bb8b-91cfd4058941/file_downloaded",
+      bottom_salinity_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/dfbe8bdd-1168-4e08-844c-8830a2451013/file_downloaded",
+      bottom_temperature_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/64db951f-047c-4956-822a-105a2600400f/file_downloaded",
+      depth = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/6470aecf-f963-4c71-8606-6889d193bd59/file_downloaded",
+      fishing_effort_mobile = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/1973d23d-319a-4d7d-be56-951b977edece/file_downloaded",
+      sediment_grain_size = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/d40463cb-3683-425a-87ab-a95ba09cd617/file_downloaded",
+      slope = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/060bda2f-5a86-4e40-8129-a4d44b16622c/file_downloaded"
+    )
 
-             df
-           }),
+    # Temporary directory for the TIFFs
+    env_dir <- tempfile("mendeley_environmental_")
+    dir.create(env_dir)
 
-tar_target(name=data_epibenthic_communities_environmental,
-           command={
-             env_urls <- c(
-               bottom_current_mean =
-                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/0b49f9aa-f6f1-4c74-bb8b-91cfd4058941/file_downloaded",
-               bottom_salinity_mean =
-                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/dfbe8bdd-1168-4e08-844c-8830a2451013/file_downloaded",
-               bottom_temperature_mean =
-                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/64db951f-047c-4956-822a-105a2600400f/file_downloaded",
-               depth =
-                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/6470aecf-f963-4c71-8606-6889d193bd59/file_downloaded",
-               fishing_effort_mobile =
-                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/1973d23d-319a-4d7d-be56-951b977edece/file_downloaded",
-               sediment_grain_size =
-                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/d40463cb-3683-425a-87ab-a95ba09cd617/file_downloaded",
-               slope =
-                 "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/060bda2f-5a86-4e40-8129-a4d44b16622c/file_downloaded"
-             )
+    # Download files
+    env_files <- vapply(
+      names(env_urls),
+      function(x) {
+        file <- file.path(env_dir, paste0(x, ".tif"))
 
-             # Temporary directory for the TIFFs
-             env_dir <- tempfile("mendeley_environmental_")
-             dir.create(env_dir)
+        request(env_urls[[x]]) |>
+          req_perform() |>
+          resp_body_raw() |>
+          writeBin(file)
 
-             # Download files
-             env_files <- vapply(names(env_urls), function(x) {
-               file <- file.path(env_dir, paste0(x, ".tif"))
+        file
+      },
+      character(1)
+    )
 
-               request(env_urls[[x]]) |>
-                 req_perform() |>
-                 resp_body_raw() |>
-                 writeBin(file)
+    # Load as terra rasters
+    env_rasters <- lapply(env_files, rast)
+    names(env_rasters) <- names(env_urls)
+    env_rasters$stagnant_source <- TRUE
+    env_rasters$year_of_publication <- as.numeric(format(
+      file.info(file2)$atime,
+      "%Y"
+    ))
 
-               file
-             }, character(1))
-
-             # Load as terra rasters
-             env_rasters <- lapply(env_files, rast)
-             names(env_rasters) <- names(env_urls)
-             env_rasters$stagnant_source <- TRUE
-             env_rasters$year_of_publication <- as.numeric(format(file.info(file2)$atime, "%Y"))
-
-             env_rasters
-
-           })
+    env_rasters
+  })
 )
