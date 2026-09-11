@@ -84,7 +84,7 @@ if (!nzchar(store)) {
 }
 
 
-tar_config_set(store = store)
+tar_config_set(store = store, script = "inst/_targets.R")
 
 conservation_targets <- read.csv(file.path(
   dirname(path_to_store()),
