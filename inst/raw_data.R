@@ -949,15 +949,18 @@ raw_data_targets <- list(
   tar_target(
     name = rawdata_obis_by_cell,
     command = {
-      duckdb_spatial_installed
-
       cellwkt <- rawdata_obis_grid$x |>
         st_as_text()
 
       con <- dbConnect(duckdb::duckdb(shared_home = TRUE))
       on.exit(dbDisconnect(con, shutdown = TRUE))
 
-      if (!"spatial" %in% duckdb::duckdb_installed_extensions()) {
+      installed <- dbGetQuery(
+        con,
+        "SELECT * FROM duckdb_extensions() WHERE extension_name = 'spatial' AND installed"
+      )
+
+      if (nrow(installed) == 0) {
         dbExecute(con, "INSTALL spatial")
       }
 
