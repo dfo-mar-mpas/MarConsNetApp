@@ -93,7 +93,7 @@ tar_load(c(MPAs,
            Ecological,
            all_project_geoms,
            deliverables,
-           csas,
+           data_csas,
            climate_change,
            salary,
            objective_tabs,
@@ -593,13 +593,13 @@ cat("<br>")
 cat("**CSAS**")
 cat("<br>")
 cat("<br>")
-csas_keep <- which(grepl(paste(params$mpas, collapse = "|"), csas$title)) # params$mpas
+csas_keep <- which(grepl(paste(params$mpas, collapse = "|"), data_csas$title)) # params$mpas
 if (params$mpas == "Western and Emerald Banks Marine Refuge") {
-csas_keep <- c(csas_keep, which(grepl("Emerald Banks", csas$title, ignore.case=TRUE)))
+csas_keep <- c(csas_keep, which(grepl("Emerald Banks", data_csas$title, ignore.case=TRUE)))
 } else if (params$mpas ==  "St. Anns Bank Marine Protected Area") {
   csas_keep <- c(csas_keep, which(grepl("Anns", csas$title, ignore.case=TRUE)))
 } else if (params$mpas == "Musquash Estuary Marine Protected Area") {
-  csas_keep <- c(csas_keep, which(grepl("Musquash", csas$title, ignore.case=TRUE)))
+  csas_keep <- c(csas_keep, which(grepl("Musquash", data_csas$title, ignore.case=TRUE)))
 }
 
 if (length(csas_keep) > 0) {

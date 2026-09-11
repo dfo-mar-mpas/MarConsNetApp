@@ -524,7 +524,7 @@ list(
     deliverables <- DD
   }),
 
-  tar_target(name = csas, command = {
+  tar_target(name = data_csas, command = {
     cookie
 
     links <- c("https://dmapps/api/csas/meetings/")
@@ -602,7 +602,7 @@ list(
     Ecological
     all_project_geoms
     deliverables
-    csas
+    data_csas
 
     #TODO https://github.com/dfo-mar-mpas/MarConsNetApp/issues/184
     # mpas <- MPAs$NAME_E
@@ -6200,7 +6200,7 @@ list(
         "Context",
         "collaborations",
         "deliverables",
-        "csas",
+        "data_csas",
         "climate",
         "cost_of_mpas",
         "salary",

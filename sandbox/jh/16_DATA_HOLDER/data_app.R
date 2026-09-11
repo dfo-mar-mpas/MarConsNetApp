@@ -1,24 +1,98 @@
 .libPaths("C:/Users/HARBINJ/AppData/Local/R/win-library/4.4")
-library(targets); library(dplyr); library(argoFloats); library(azmpdata); library(raster); library(shiny); library(leaflet)
-library(dplyr); library(sf); library(shinyjs); library(viridis); library(arcpullr); library(devtools)
-library(MarConsNetAnalysis);library(MarConsNetData);
-library(TBSpayRates); library(dataSPA); library(readxl)
-library(ggplot2); library(shinyBS); library(Mar.datawrangling); library(DT); library(rmarkdown)
-library(stringr); library(tidyr); library(officer); library(RColorBrewer); library(rvest); library(httr2); library(httr);
-library(tidyverse); library(dplyr); library(oceglider); library(RCurl); library(oce); library(marea); library(rgbif);library(qs2); library(webshot); library(librarian); library(tibble)
+library(targets)
+library(dplyr)
+library(argoFloats)
+library(azmpdata)
+library(raster)
+library(shiny)
+library(leaflet)
+library(dplyr)
+library(sf)
+library(shinyjs)
+library(viridis)
+library(arcpullr)
+library(devtools)
+library(MarConsNetAnalysis)
+library(MarConsNetData)
+library(TBSpayRates)
+library(dataSPA)
+library(readxl)
+library(ggplot2)
+library(shinyBS)
+library(Mar.datawrangling)
+library(DT)
+library(rmarkdown)
+library(stringr)
+library(tidyr)
+library(officer)
+library(RColorBrewer)
+library(rvest)
+library(httr2)
+library(httr)
+library(tidyverse)
+library(dplyr)
+library(oceglider)
+library(RCurl)
+library(oce)
+library(marea)
+library(rgbif)
+library(qs2)
+library(webshot)
+library(librarian)
+library(tibble)
 library(base64enc)
 webshot::install_phantomjs()
 
-tar_load(c("APPTABS","pillar_ecol_df","all_project_geoms","MPA_report_card",
-           "MPAs","areas","regions","flowerPalette","indicatorFlower","Objectives_processed",
-           "N_Objectives","om","Ecological", "Context", "collaborations", "deliverables", "csas",
-           "climate_change", "cost_of_mpas", "salary", "theme_table", "objective_tabs", "objective_indicators",
-           "creature_feature", "labels", "map_palette", "all_indicator_project_geoms", "conservation_targets_target"))
-source("R/app.R");app()
+tar_load(c(
+  "APPTABS",
+  "pillar_ecol_df",
+  "all_project_geoms",
+  "MPA_report_card",
+  "MPAs",
+  "areas",
+  "regions",
+  "flowerPalette",
+  "indicatorFlower",
+  "Objectives_processed",
+  "N_Objectives",
+  "om",
+  "Ecological",
+  "Context",
+  "collaborations",
+  "deliverables",
+  "data_csas",
+  "climate_change",
+  "cost_of_mpas",
+  "salary",
+  "theme_table",
+  "objective_tabs",
+  "objective_indicators",
+  "creature_feature",
+  "labels",
+  "map_palette",
+  "all_indicator_project_geoms",
+  "conservation_targets_target"
+))
+source("R/app.R")
+app()
 
-tar_make(c("all_project_geoms", "MPA_report_card", "all_indicator_project_geoms", "pillar_ecol_df", "theme_table"),
-         script="inst/_targets.R")
-tar_load(c("all_project_geoms", "MPA_report_card", "odf", "pillar_ecol_df", "plot_files"))
+tar_make(
+  c(
+    "all_project_geoms",
+    "MPA_report_card",
+    "all_indicator_project_geoms",
+    "pillar_ecol_df",
+    "theme_table"
+  ),
+  script = "inst/_targets.R"
+)
+tar_load(c(
+  "all_project_geoms",
+  "MPA_report_card",
+  "odf",
+  "pillar_ecol_df",
+  "plot_files"
+))
 
 
 # TEST
@@ -28,4 +102,3 @@ glider_df <- data_gliders
 # Want stratification to be decreasing.
 # Decreasing MLD	Stronger stratification
 # Increasing MLD	Weaker stratification
-
