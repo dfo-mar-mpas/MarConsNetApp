@@ -549,7 +549,7 @@ raw_data_targets <- list(
   ),
 
   tar_target(
-    name = collaborations,
+    name = data_collaborations,
     command = {
       cookie
       col <- dataSPA::getData(type = 'collaboration', cookie = cookie)

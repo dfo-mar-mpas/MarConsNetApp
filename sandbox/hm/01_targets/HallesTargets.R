@@ -377,7 +377,7 @@ list(
     SAL[-(which(SAL$activity_type == "Other")), ]
   }),
 
-  tar_target(name = collaborations, command = {
+  tar_target(name = data_collaborations, command = {
     cookie
     col <- dataSPA::getData(type = 'collaboration', cookie = cookie)
   }),
@@ -593,7 +593,7 @@ list(
     N_Objectives
     Objectives_processed
     MPA_report_card
-    collaborations
+    data_collaborations
     creature_feature
     cost_of_mpas
     data_om
@@ -6198,7 +6198,7 @@ list(
         "data_om",
         "Ecological",
         "Context",
-        "collaborations",
+        "data_collaborations",
         "data_deliverables",
         "data_csas",
         "climate",

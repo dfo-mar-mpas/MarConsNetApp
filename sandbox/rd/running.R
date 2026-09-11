@@ -81,7 +81,7 @@ tar_load(c(
   N_Objectives,
   Objectives_processed,
   MPA_report_card,
-  collaborations
+  data_collaborations
 ))
 
 tar_make(

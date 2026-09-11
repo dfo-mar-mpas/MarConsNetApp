@@ -328,7 +328,7 @@ list(
       "data_om",
       "Ecological",
       "Context",
-      "collaborations",
+      "data_collaborations",
       "data_deliverables",
       "data_csas",
       "cost_of_mpas",
@@ -482,7 +482,7 @@ list(
         "data_om",
         "Ecological",
         "Context",
-        "collaborations",
+        "data_collaborations",
         "data_deliverables",
         "data_csas",
         "cost_of_mpas",
@@ -618,7 +618,7 @@ list(
       data_om
       data_csas
       data_deliverables
-      collaborations
+      data_collaborations
       salary
       data_modelled_kelp
       data_kelp_distribution_and_abundance

@@ -69,7 +69,7 @@ tar_load(c(MPAs,
            objective_tabs,
            N_Objectives,
            MPA_report_card,
-           collaborations,
+           data_collaborations,
            creature_feature,
            cost_of_mpas,
            data_om,
@@ -1282,9 +1282,9 @@ if (any(p_subset == "NA")) {
   p_subset <- p_subset[-which(p_subset == "NA")]
 }
 
-# if (any(p_subset %in% collaborations$project_id)) {
-#   good_col <- which(collaborations$project_id %in% p_subset)
-#   collab_subset <- collaborations[good_col,]
+# if (any(p_subset %in% data_collaborations$project_id)) {
+#   good_col <- which(data_collaborations$project_id %in% p_subset)
+#   collab_subset <- data_collaborations[good_col,]
 # 
 #   ## For collaborations, I need to obtain the year. This would allow me to say 'for this year, x collaborations happened, but in previous years for this project, Y collaborations have happened).
 # 
