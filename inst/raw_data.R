@@ -510,7 +510,7 @@ raw_data_targets <- list(
   }),
 
   tar_target(
-    name = om,
+    name = data_om,
     command = {
       cookie
       OM <- dataSPA::getData(

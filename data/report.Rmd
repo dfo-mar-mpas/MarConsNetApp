@@ -88,7 +88,7 @@ tar_load(c(MPAs,
            collaborations,
            creature_feature,
            cost_of_mpas,
-           om,
+           data_om,
            regions,
            Ecological,
            all_project_geoms,
@@ -188,8 +188,8 @@ if (length(com$project_id) != 0) {
       amount = rep(NA, length(PS$project_id))
     )
     for (j in seq_along(PS$project_id)) {
-      keep <- which(om$project_id == PS$project_id[j])
-      adjusted_ps[[i]]$amount[j] <- sum(om$amount[keep] * PS$percent_sites_in_mpa[j])
+      keep <- which(data_om$project_id == PS$project_id[j])
+      adjusted_ps[[i]]$amount[j] <- sum(data_om$amount[keep] * PS$percent_sites_in_mpa[j])
     }
   }
   
@@ -2034,7 +2034,7 @@ if (length(com$project_id) != 0) {
       The amount is based on percentage of samples taken in the area of interest.</p>")
   
   
-  om_in_site <- om[which(om$project_id %in% unique(com$project_id)),]
+  om_in_site <- data_om[which(data_om$project_id %in% unique(com$project_id)),]
 
   for (i in seq_along(unique(com$project_id))) {
     p_id <- as.numeric(unique(com$project_id)[i])
@@ -2049,7 +2049,7 @@ if (length(com$project_id) != 0) {
 
 ```{r,results='asis', message=FALSE, error=FALSE, warning=FALSE, echo=FALSE}
 if (length(com$project_id) != 0) {
-dataSPA_plot <- dataSPA::plotSPA(om = om_in_site, which = "omBar")
+dataSPA_plot <- dataSPA::plotSPA(data_om = om_in_site, which = "omBar")
 
 
 # Save to a temporary HTML file

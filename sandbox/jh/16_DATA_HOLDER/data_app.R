@@ -55,7 +55,7 @@ tar_load(c(
   "indicatorFlower",
   "Objectives_processed",
   "N_Objectives",
-  "om",
+  "data_om",
   "Ecological",
   "Context",
   "collaborations",

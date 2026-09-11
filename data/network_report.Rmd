@@ -72,7 +72,7 @@ tar_load(c(MPAs,
            collaborations,
            creature_feature,
            cost_of_mpas,
-           om,
+           data_om,
            regions,
            Ecological,
            all_project_geoms,
@@ -896,11 +896,11 @@ if (length(cost_of_mpas2$project_id) != 0) {
   OMs <- list()
   for (i in seq_along(projects)) {
     percent_sites_in_network <- sum(cost_of_mpas2$percent_sites_in_mpa[which(cost_of_mpas2$project_id == projects[i])])
-    om$amount[which(as.numeric(om$project_id) == as.numeric(projects[i]))] <- om$amount[which(as.numeric(om$project_id) == as.numeric(projects[i]))]*percent_sites_in_network
-    OMs[[i]] <- om[which(as.numeric(om$project_id) == as.numeric(projects[i])),]
+    data_om$amount[which(as.numeric(data_om$project_id) == as.numeric(projects[i]))] <- data_om$amount[which(as.numeric(data_om$project_id) == as.numeric(projects[i]))]*percent_sites_in_network
+    OMs[[i]] <- data_om[which(as.numeric(data_om$project_id) == as.numeric(projects[i])),]
   }
   network_om <- do.call(rbind, OMs)
-  plotly_plot <- try(dataSPA::plotSPA(om=network_om, which="omBar"), silent=TRUE)
+  plotly_plot <- try(dataSPA::plotSPA(data_om=network_om, which="omBar"), silent=TRUE)
 
   # Print statement for O&M
 
@@ -944,8 +944,8 @@ for (i in seq_along(ps)) {
     amount = rep(NA, length(PS$project_id))
   )
   for (j in seq_along(PS$project_id)) {
-    keep <- which(om$project_id == PS$project_id[j])
-    adjusted_ps[[i]]$amount[j] <- sum(om$amount[keep] * PS$percent_sites_in_mpa[j])
+    keep <- which(data_om$project_id == PS$project_id[j])
+    adjusted_ps[[i]]$amount[j] <- sum(data_om$amount[keep] * PS$percent_sites_in_mpa[j])
   }
 }
 

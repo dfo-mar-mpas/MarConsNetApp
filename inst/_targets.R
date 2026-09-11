@@ -283,7 +283,7 @@ list(
     # This is because all of our indicators like this use external open data.
 
     command = {
-      project_costs <- om |>
+      project_costs <- data_om |>
         group_by(project_id) |>
         reframe(totalamount = sum(amount))
 
@@ -325,7 +325,7 @@ list(
       "flowerPalette",
       "indicatorFlower",
       "N_Objectives",
-      "om",
+      "data_om",
       "Ecological",
       "Context",
       "collaborations",
@@ -479,7 +479,7 @@ list(
         "flowerPalette",
         "indicatorFlower",
         "N_Objectives",
-        "om",
+        "data_om",
         "Ecological",
         "Context",
         "collaborations",
@@ -615,7 +615,7 @@ list(
     command = {
       data_rv
       data_rv_det
-      om
+      data_om
       data_csas
       deliverables
       collaborations

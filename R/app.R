@@ -2429,9 +2429,9 @@ app <- function() {
 
           PPTProjects <- pillar_ecol_df$PPTID[keepind]
 
-          #PPTProjects <- sort(unique(om$project_id[which(grepl(area, om$tags, ignore.case = TRUE) & grepl(flower, om$tags, ignore.case = TRUE))]))
+          #PPTProjects <- sort(unique(data_om$project_id[which(grepl(area, data_om$tags, ignore.case = TRUE) & grepl(flower, data_om$tags, ignore.case = TRUE))]))
           PPTtitles <- unlist(lapply(PPTProjects, function(x) {
-            unique(om$project_title[which(om$project_id == x)])
+            unique(data_om$project_title[which(data_om$project_id == x)])
           }))
 
           if (exists("flower")) {
@@ -2488,14 +2488,16 @@ app <- function() {
                   if (y == "NA") {
                     NA
                   } else {
-                    unique(om$activity_type[which(om$project_id == y)])
+                    unique(data_om$activity_type[which(
+                      data_om$project_id == y
+                    )])
                   }
                 }) |>
                   paste(collapse = "; ")
               } else {
-                unique(om$activity_type[which(om$project_id == x)])
+                unique(data_om$activity_type[which(data_om$project_id == x)])
               }
-              unique(om$activity_type[which(om$project_id == x)])
+              unique(data_om$activity_type[which(data_om$project_id == x)])
             }))
 
             if (length(activityType) == 0) {
@@ -2878,8 +2880,8 @@ app <- function() {
           Projects[i] <- NA
         } else {
           Projects[i] <- paste0(
-            unique(om$project_title[which(
-              om$project_id == as.numeric(indicatorProject[i])
+            unique(data_om$project_title[which(
+              data_om$project_id == as.numeric(indicatorProject[i])
             )]),
             " : ",
             '<a href=\"http://glf-proxy:8018/mar-spa/reports/',
