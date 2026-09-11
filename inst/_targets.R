@@ -461,9 +461,9 @@ list(
     name = upload_all_data_to_shiny,
     command = {
       if (Sys.getenv("USERPROFILE") == "C:\\Users\\DaigleR") {
-        serveruser = "rdaigle"
+        serveruser <- "rdaigle"
       } else if (Sys.getenv("USERPROFILE") == "C:\\Users\\HarbinJ") {
-        serveruser = "jharbin"
+        serveruser <- "jharbin"
       } else {
         return(TRUE)
       }
@@ -623,7 +623,7 @@ list(
       data_modelled_kelp
       data_kelp_distribution_and_abundance
       data_macroalgae_modelled
-      data_otn_recievers
+      data_otn_receivers
       data_buoy
       return(TRUE)
     },
