@@ -945,16 +945,6 @@ raw_data_targets <- list(
     }
   ),
 
-  tar_target(
-    duckdb_spatial_installed,
-    {
-      con <- dbConnect(duckdb::duckdb())
-      on.exit(dbDisconnect(con, shutdown = TRUE))
-      dbExecute(con, "INSTALL spatial")
-      TRUE
-    }
-  ),
-
   # Target 2: one branch per grid cell — query DuckDB
   tar_target(
     name = rawdata_obis_by_cell,
@@ -964,8 +954,25 @@ raw_data_targets <- list(
       cellwkt <- rawdata_obis_grid$x |>
         st_as_text()
 
-      con <- dbConnect(duckdb::duckdb())
-      dbExecute(con, "SET memory_limit='16GB'")
+      con <- dbConnect(duckdb::duckdb(shared_home = TRUE))
+      on.exit(dbDisconnect(con, shutdown = TRUE))
+
+      if (!"spatial" %in% duckdb::duckdb_installed_extensions()) {
+        dbExecute(con, "INSTALL spatial")
+      }
+
+      dbExecute(
+        con,
+        paste0(
+          "SET memory_limit='",
+          0.75 *
+            as.numeric(system(
+              "free -g | awk '/^Mem:/{print $7}'",
+              intern = TRUE
+            )),
+          "GB'"
+        )
+      )
 
       occ <- dbGetQuery(
         con,
