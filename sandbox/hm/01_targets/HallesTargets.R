@@ -382,7 +382,7 @@ list(
     col <- dataSPA::getData(type = 'collaboration', cookie = cookie)
   }),
 
-  tar_target(name = deliverables, command = {
+  tar_target(name = data_deliverables, command = {
     cookie
     debug <- 0
     links <- c(
@@ -521,7 +521,7 @@ list(
     DD <- DD[, c("project_id", "classification_display", "description", "year")]
     DD <- DD[-which(is.na(DD$classification_display)), ]
 
-    deliverables <- DD
+    data_deliverables <- DD
   }),
 
   tar_target(name = data_csas, command = {
@@ -601,7 +601,7 @@ list(
     regions
     Ecological
     all_project_geoms
-    deliverables
+    data_deliverables
     data_csas
 
     #TODO https://github.com/dfo-mar-mpas/MarConsNetApp/issues/184
@@ -6199,7 +6199,7 @@ list(
         "Ecological",
         "Context",
         "collaborations",
-        "deliverables",
+        "data_deliverables",
         "data_csas",
         "climate",
         "cost_of_mpas",

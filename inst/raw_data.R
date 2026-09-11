@@ -558,7 +558,7 @@ raw_data_targets <- list(
   ),
 
   tar_target(
-    name = deliverables,
+    name = data_deliverables,
     command = {
       cookie
       debug <- 0
@@ -705,7 +705,7 @@ raw_data_targets <- list(
       )]
       DD <- DD[-which(is.na(DD$classification_display)), ]
 
-      deliverables <- DD
+      data_deliverables <- DD
     },
     deployment = "worker"
   ),

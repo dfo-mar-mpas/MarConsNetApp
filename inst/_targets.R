@@ -329,7 +329,7 @@ list(
       "Ecological",
       "Context",
       "collaborations",
-      "deliverables",
+      "data_deliverables",
       "data_csas",
       "cost_of_mpas",
       "salary",
@@ -483,7 +483,7 @@ list(
         "Ecological",
         "Context",
         "collaborations",
-        "deliverables",
+        "data_deliverables",
         "data_csas",
         "cost_of_mpas",
         "salary",
@@ -617,7 +617,7 @@ list(
       data_rv_det
       data_om
       data_csas
-      deliverables
+      data_deliverables
       collaborations
       salary
       data_modelled_kelp

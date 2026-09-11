@@ -76,7 +76,7 @@ tar_load(c(MPAs,
            regions,
            Ecological,
            all_project_geoms,
-           deliverables,
+           data_deliverables,
            data_csas,
            climate_change,
            salary,
@@ -1337,10 +1337,10 @@ if (any(p_subset == "NA")) {
 ### Deliverables
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, results='asis'}
-deliv_keep <- which(deliverables$project_id %in% p_subset & deliverables$year == last_year) # Only projects for this area / last year
+deliv_keep <- which(data_deliverables$project_id %in% p_subset & data_deliverables$year == last_year) # Only projects for this area / last year
 
 if (length(deliv_keep > 0)) {
-  delv <- deliverables[deliv_keep,][c("classification_display", "description")]
+  delv <- data_deliverables[deliv_keep,][c("classification_display", "description")]
   if (any(str_count(delv$description, "\\S+") > 35)) {
   delv$description[which(str_count(delv$description, "\\S+") > 35)] <- " "
   }
@@ -1349,7 +1349,7 @@ if (length(deliv_keep > 0)) {
   
   print(knitr::kable(delv, caption = paste0("Deliverables for " , last_year ),row.names=FALSE))
 } else {
-  cat("There has been no identified deliverables in the Project Planning Tool for projects supporting this area.")
+  cat("There has been no identified data_deliverables in the Project Planning Tool for projects supporting this area.")
 }
 
 ```

@@ -59,7 +59,7 @@ tar_load(c(
   "Ecological",
   "Context",
   "collaborations",
-  "deliverables",
+  "data_deliverables",
   "data_csas",
   "climate_change",
   "cost_of_mpas",
