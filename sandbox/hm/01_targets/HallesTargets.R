@@ -802,7 +802,7 @@ list(
   }),
 
   ############ data loading ############
-  tar_target(name = data_otn_recievers, command = {
+  tar_target(name = data_otn_receivers, command = {
     geoserver_receivers <- readr::read_csv(
       'https://members.oceantrack.org/geoserver/otn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=otn:stations_receivers&outputFormat=csv',
       guess_max = 13579
@@ -1698,9 +1698,9 @@ list(
   tar_target(ind_otn_number_of_recievers, command = {
     # Looking at number of receivers
 
-    DF <- data_otn_recievers[
+    DF <- data_otn_receivers[
       -which(
-        is.na(data_otn_recievers$stn_lat) | is.na(data_otn_recievers$stn_long)
+        is.na(data_otn_receivers$stn_lat) | is.na(data_otn_receivers$stn_long)
       ),
     ]
     df <- DF %>%
