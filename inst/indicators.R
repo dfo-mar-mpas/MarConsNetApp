@@ -2219,7 +2219,7 @@ indicator_targets <- list(
 
   tar_target(name = ind_ebsa_representation, command = {
     x <- process_indicator(
-      data = ebsa,
+      data = data_ebsa,
       indicator_var_name = "Name",
       indicator = "EBSA Representation",
       type = "expert opinion",

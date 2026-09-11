@@ -240,8 +240,8 @@ list(
     )
   ),
 
-  tar_target(name = ebsa, command = {
-    ebsa <- get_spatial_layer(
+  tar_target(name = data_ebsa, command = {
+    data_ebsa <- get_spatial_layer(
       "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/ecologically_and_biologically_significant_areas/MapServer/1"
     ) |>
       st_make_valid() |>
@@ -1184,7 +1184,7 @@ list(
     ds_all
   ),
 
-  tar_target(rv_rawdata_env, {
+  tar_target(rawdata_rv_env, {
     # Environment
     # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
     library(Mar.datawrangling)
@@ -1222,10 +1222,10 @@ list(
     # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
 
     # for whatever reason, we need to run:
-    # tar_invalidate(c("ds_all","rv_rawdata_env"))
+    # tar_invalidate(c("ds_all","rawdata_rv_env"))
     # before re-running this target
 
-    temp <- rv_rawdata_env
+    temp <- rawdata_rv_env
     ds_all # mentioned here because otherwise it won't be available for self_filter
 
     GSINF <- temp$GSINF |>
@@ -1247,9 +1247,9 @@ list(
 
   tar_target(data_rv_det, {
     # for whatever reason, we need to run:
-    # tar_invalidate(c("ds_all","rv_rawdata_env"))
+    # tar_invalidate(c("ds_all","rawdata_rv_env"))
     # before re-running this target
-    temp <- rv_rawdata_env
+    temp <- rawdata_rv_env
     ds_all # mentioned here because otherwise it won't be available for self_filter
 
     temp$GSINF <- temp$GSINF |>
@@ -3114,7 +3114,7 @@ list(
 
   tar_target(name = ind_ebsa_representation, command = {
     process_indicator(
-      data = ebsa,
+      data = data_ebsa,
       indicator_var_name = "Name",
       indicator = "EBSA Representation",
       type = "TBD",

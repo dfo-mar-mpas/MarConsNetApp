@@ -459,7 +459,7 @@ raw_data_targets <- list(
     data_eez <- mregions2::gaz_geometry(8493)
   }),
 
-  tar_target(name = ebsa, command = {
+  tar_target(name = data_ebsa, command = {
     get_spatial_layer(
       "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/ecologically_and_biologically_significant_areas/MapServer/1"
     ) |>
@@ -1305,39 +1305,43 @@ raw_data_targets <- list(
     coliform_data
   }),
 
-  tar_target(rv_rawdata_env, {
-    # Environment
-    # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
-    Mar.datawrangling:::get_ds_all() # used here because otherwise it won't be available for self_filter
-    .pkgenv <- new.env(parent = emptyenv())
+  tar_age(
+    rawdata_rv_env,
+    {
+      # Environment
+      # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
+      Mar.datawrangling:::get_ds_all() # used here because otherwise it won't be available for self_filter
+      .pkgenv <- new.env(parent = emptyenv())
 
-    get_pesd_dw_dir <- function() {
-      file.path("C:", "DFO-MPO", "PESDData", "MarDatawrangling")
-    }
+      get_pesd_dw_dir <- function() {
+        file.path("C:", "DFO-MPO", "PESDData", "MarDatawrangling")
+      }
 
-    get_ds_all <- function() {
-      .pkgenv$ds_all
-    }
+      get_ds_all <- function() {
+        .pkgenv$ds_all
+      }
 
-    pwd <- read.table(
-      "\\\\wpnsbio9039519.mar.dfo-mpo.ca\\sambashare\\MarConsNet\\MarConsNetTargets\\app_targets/objects/oracle.txt"
-    )$V1
+      pwd <- read.table(
+        "\\\\wpnsbio9039519.mar.dfo-mpo.ca\\sambashare\\MarConsNet\\MarConsNetTargets\\app_targets/objects/oracle.txt"
+      )$V1
 
-    get_data(
-      'rv',
-      extract_user = "DAIGLER",
-      extract_computer = "WLNSBIO90210",
-      cxn = ROracle::dbConnect(
-        DBI::dbDriver("Oracle"),
-        username = "DAIGLER",
-        password = pwd,
-        "PTRAN"
-      ),
-      reextract.override = T,
-      env = .pkgenv
-    )
-    .pkgenv
-  }),
+      get_data(
+        'rv',
+        extract_user = "DAIGLER",
+        extract_computer = "WLNSBIO90210",
+        cxn = ROracle::dbConnect(
+          DBI::dbDriver("Oracle"),
+          username = "DAIGLER",
+          password = pwd,
+          "PTRAN"
+        ),
+        reextract.override = T,
+        env = .pkgenv
+      )
+      .pkgenv
+    },
+    age = as.difftime(365, units = "days")
+  ),
 
   tar_target(
     data_rv,
@@ -1345,10 +1349,10 @@ raw_data_targets <- list(
       # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
 
       # for whatever reason, we need to run:
-      # tar_invalidate(c("ds_all","rv_rawdata_env"))
+      # tar_invalidate(c("ds_all","rawdata_rv_env"))
       # before re-running this target
 
-      temp <- rv_rawdata_env
+      temp <- rawdata_rv_env
       Mar.datawrangling:::get_ds_all() # used here because otherwise it won't be available for self_filter
 
       GSINF <- temp$GSINF |>
@@ -1374,9 +1378,9 @@ raw_data_targets <- list(
     data_rv_det,
     {
       # for whatever reason, we need to run:
-      # tar_invalidate(c("ds_all","rv_rawdata_env"))
+      # tar_invalidate(c("ds_all","rawdata_rv_env"))
       # before re-running this target
-      temp <- rv_rawdata_env
+      temp <- rawdata_rv_env
       Mar.datawrangling:::get_ds_all() # used here because otherwise it won't be available for self_filter
 
       temp$GSINF <- temp$GSINF |>
