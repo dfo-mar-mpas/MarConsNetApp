@@ -6,48 +6,48 @@ indicator_targets <- list(
   # tar_target(
   #   name = ind_benthic_characteristics_diversity,
   #   {
-      # data <- data_edna_data
-      #
-      # x <- process_indicator(
-      #   data = data[data$class == class, ],
-      #   readiness = "Ready",
-      #   indicator_var_name = "detections",
-      #   indicator = "Diversity of the benthos",
-      #   type = "in situ",
-      #   units = "read number",
-      #   scoring = "desired trend: no decrease",
-      #   PPTID = 480,
-      #   source = "eDNA",
-      #   project_short_title = "Animal Acoustic Tagging",
-      #   bin_rationale = "FIXME",
-      #   climate = FALSE,
-      #   SME = "Ryan Stanley and Nick Jeffery",
-      #   indicator_rationale = "Direct biodiversity measure",
-      #   areas = MPAs,
-      #   plot_type = c("detections", "indicator_by_taxa"),
-      #   habitat_display=environmental_layers,
-      #   plot_lm = FALSE,
-      #   theme = "Benthic Environment",
-      #   objectives = c(
-      #     "Protect Vazella pourtalesi glass sponges",
-      #     "Protect continental shelf habitats and associated benthic and demersal communities",
-      #     "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
-      #   ),
-      #   SME_validated = TRUE,
-      #   other_nest_variables = c(
-      #     "species",
-      #     "year_of_data_collection",
-      #     "ID",
-      #     "date",
-      #     "species_richness",
-      #     "method",
-      #     "location",
-      #     "detections",
-      #     "subclass",
-      #     "class",
-      #     "common_name"
-      #   )
-      # )
+  # data <- data_edna_data
+  #
+  # x <- process_indicator(
+  #   data = data[data$class == class, ],
+  #   readiness = "Ready",
+  #   indicator_var_name = "detections",
+  #   indicator = "Diversity of the benthos",
+  #   type = "in situ",
+  #   units = "read number",
+  #   scoring = "desired trend: no decrease",
+  #   PPTID = 480,
+  #   source = "eDNA",
+  #   project_short_title = "Animal Acoustic Tagging",
+  #   bin_rationale = "FIXME",
+  #   climate = FALSE,
+  #   SME = "Ryan Stanley and Nick Jeffery",
+  #   indicator_rationale = "Direct biodiversity measure",
+  #   areas = MPAs,
+  #   plot_type = c("detections", "indicator_by_taxa"),
+  #   habitat_display=environmental_layers,
+  #   plot_lm = FALSE,
+  #   theme = "Benthic Environment",
+  #   objectives = c(
+  #     "Protect Vazella pourtalesi glass sponges",
+  #     "Protect continental shelf habitats and associated benthic and demersal communities",
+  #     "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
+  #   ),
+  #   SME_validated = TRUE,
+  #   other_nest_variables = c(
+  #     "species",
+  #     "year_of_data_collection",
+  #     "ID",
+  #     "date",
+  #     "species_richness",
+  #     "method",
+  #     "location",
+  #     "detections",
+  #     "subclass",
+  #     "class",
+  #     "common_name"
+  #   )
+  # )
   #
   #     x
   #   }
@@ -209,15 +209,13 @@ indicator_targets <- list(
   #     )
   #   ),
 
-
   tar_target(name = ind_large_wolffish, command = {
-
     data_edna_data
     MPAs
     message(class(data_edna_data))
 
     data <- data_edna_data
-    data <- data[which(data$species == "Anarhichas denticulatus"),]
+    data <- data[which(data$species == "Anarhichas denticulatus"), ]
 
     x <- process_indicator(
       data = data, # Only looking at wolf fish
@@ -237,17 +235,27 @@ indicator_targets <- list(
       areas = MPAs,
       plot_type = c('detections', 'time-series'),
       plot_lm = FALSE,
-      theme ="Trophic Structure and Function",
+      theme = "Trophic Structure and Function",
       objectives = c(
         "Promote the survival and recovery of Northern Wolffish by minimizing risk of harm from human activities (e.g., bycatch in the commercial fishery) in the Laurentian Channel"
       ),
       SME_validated = TRUE,
-      other_nest_variables = c("species", "year_of_data_collection", 'ID', 'date', 'species_richness', 'method', 'location', 'subclass', 'class', 'common_name')
+      other_nest_variables = c(
+        "species",
+        "year_of_data_collection",
+        'ID',
+        'date',
+        'species_richness',
+        'method',
+        'location',
+        'subclass',
+        'class',
+        'common_name'
+      )
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
-
 
     x
   }), #Biomass Metrics, Trophic Structure and Function
@@ -325,9 +333,7 @@ indicator_targets <- list(
   #     names = trophic
   #   ),
 
-
   tar_target(name = ind_rel_abundance_groundfish_edna, command = {
-
     data <- data_edna_data
 
     top_species <- data %>%
@@ -338,8 +344,6 @@ indicator_targets <- list(
       ) %>%
       arrange(desc(total_detections)) %>%
       slice_head(n = 5)
-
-
 
     x <- process_indicator(
       data = data[
@@ -362,38 +366,48 @@ indicator_targets <- list(
       SME = "Ryan Stanley and Nick Jeffery",
       indicator_rationale = "Direct biodiversity measure",
       areas = MPAs,
-      plot_type = c('detections','indicator_by_taxa'),
+      plot_type = c('detections', 'indicator_by_taxa'),
       plot_lm = FALSE,
       theme = "Fish and Fishery Resources",
-      objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock
-", "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"),
+      objectives = c(
+        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock
+",
+        "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"
+      ),
       SME_validated = TRUE,
-      other_nest_variables = c("species", "year_of_data_collection", 'ID', 'date', 'species_richness', 'method', 'location', 'subclass', 'class', 'common_name'),
-      indicator_caveats ='eDNA is a poor metric of relative abundance or biomass'
+      other_nest_variables = c(
+        "species",
+        "year_of_data_collection",
+        'ID',
+        'date',
+        'species_richness',
+        'method',
+        'location',
+        'subclass',
+        'class',
+        'common_name'
+      ),
+      indicator_caveats = 'eDNA is a poor metric of relative abundance or biomass'
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
-
-
   }), # Biomass Metrics, Fish and Fishery Resources
-
 
   # END EDNA
 
-  tar_target(name = ind_distinctive_benthic_characteristics_kelp, command = {  # Halle
-    data <- data_kelp_modelled  %>%
+  tar_target(name = ind_distinctive_benthic_characteristics_kelp, command = {
+    # Halle
+    data <- data_kelp_modelled %>%
       filter(suitable_habitat) %>%
       select(suitable_habitat, habitat_type, geometry) %>%
       group_by(suitable_habitat, habitat_type) %>%
       summarise(geometry = st_union(geometry), .groups = "drop")
-
 
     data$min_target <- 30
     data$max_target <- 100
     data$plainname <- 'the total modelled kelp region that is less than 30 m'
 
-
     mpas <- MPAs %>%
       st_filter(data) %>%
       filter(NAME_E != "Non_Conservation_Area")
@@ -429,7 +443,6 @@ indicator_targets <- list(
     ) |>
       filter(suitable_habitat == TRUE)
 
-
     x <- process_indicator(
       data = data,
       indicator_var_name = "suitable_habitat",
@@ -439,7 +452,10 @@ indicator_targets <- list(
       scoring = "coverage",
       PPTID = c(1633, 2576),
       source = "OneDrive",
-      project_short_title = c('Development and application of high throughput community monitoring','Predicting and assessing interannual change in kelp forest habitat'),
+      project_short_title = c(
+        'Development and application of high throughput community monitoring',
+        'Predicting and assessing interannual change in kelp forest habitat'
+      ),
       areas = mpas,
       climate_expectation = "FIXME",
       indicator_rationale = "Kelp forests support high biodiversity and productivity, and provide ecosystem services",
@@ -464,119 +480,125 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
-  tar_target(name = ind_distinctive_benthic_characteristics_macroalgae, command = {
-    data <- data_macroalgae_modelled  %>%
-      filter(suitable_habitat) %>%
-      select(suitable_habitat, habitat_type, geometry) %>%
-      group_by(suitable_habitat, habitat_type) %>%
-      summarise(geometry = st_union(geometry), .groups = "drop")
-    onedrive <- Sys.getenv("OneDriveCommercial")
+  tar_target(
+    name = ind_distinctive_benthic_characteristics_macroalgae,
+    command = {
+      data <- data_macroalgae_modelled %>%
+        filter(suitable_habitat) %>%
+        select(suitable_habitat, habitat_type, geometry) %>%
+        group_by(suitable_habitat, habitat_type) %>%
+        summarise(geometry = st_union(geometry), .groups = "drop")
+      onedrive <- Sys.getenv("OneDriveCommercial")
 
-    data$year_of_publication <- {
+      data$year_of_publication <- {
+        ld_path <- file.path(
+          onedrive,
+          "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
+          "Laminaria digitata",
+          "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
+        )
 
-      ld_path <- file.path(
-        onedrive,
-        "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
-        "Laminaria digitata",
-        "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
+        sl_path <- file.path(
+          onedrive,
+          "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
+          "Saccharina latissima",
+          "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
+        )
+
+        # Get modified dates
+        file_dates <- file.info(c(ld_path, sl_path))$mtime
+        format(max(file_dates), "%Y")
+      }
+
+      data$min_target <- 30
+      data$max_target <- 100
+      data$plainname <- 'the total modelled macroalgae region that is less than 30 m'
+
+      mpas <- MPAs %>%
+        st_filter(data) %>%
+        filter(NAME_E != "Non_Conservation_Area")
+
+      musquash <- st_transform(
+        mpas,
+        crs(shallow_bathymetry)
       )
 
-      sl_path <- file.path(
-        onedrive,
-        "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs",
-        "Saccharina latissima",
-        "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
+      cols <- cellFromXY(
+        bathy,
+        cbind(
+          c(st_bbox(musquash)$xmin, st_bbox(musquash)$xmax),
+          c(st_bbox(musquash)$ymin, st_bbox(musquash)$ymax)
+        )
+      )
+      musquash_ext <- ext(st_bbox(musquash))
+
+      bathy_musquash <- crop(bathy, musquash_ext)
+
+      # Only include data that is in 30 m or less
+      shallow_poly <- as.polygons(
+        bathy_musquash,
+        values = TRUE,
+        na.rm = TRUE
+      ) |>
+        st_as_sf() |>
+        filter(elevation == 1)
+
+      data <- st_intersection(
+        data |> st_make_valid(),
+        shallow_poly
+      ) |>
+        filter(suitable_habitat == TRUE)
+
+      x <- process_indicator(
+        data = data,
+        indicator_var_name = "suitable_habitat",
+        indicator = "Diversity and community composition of the benthos and characteristics of surficial geology at selected sampling stations located in the identified distinctive seabed features of the AOI, plus abundance or biomass and size composition of the defining benthic taxa of those features",
+        type = "model",
+        units = "percent area",
+        scoring = "coverage",
+        PPTID = c(1633, 2576),
+        source = "OneDrive",
+        project_short_title = c(
+          'Development and application of high throughput community monitoring',
+          'Predicting and assessing interannual change in kelp forest habitat'
+        ),
+        areas = mpas,
+        climate_expectation = "FIXME",
+        indicator_rationale = "Kelp forests support high biodiversity and productivity, and provide ecosystem services",
+        bin_rationale = "FIXME",
+        plot_type = "map",
+        year = 'year_of_data_collection',
+        objectives = c(
+          "Protect unique, rare, or sensitive ecological features",
+          "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+          "Habitat required for all species, particularly priority species, is maintained and protected"
+        ),
+        theme = "Benthic Environment",
+        externalData = NULL,
+        scale = "region-site",
+        SME = "Kira Krumhansl",
+        control_polygon = NA,
+        SME_validated = TRUE,
+        plot_lm = FALSE
       )
 
-      # Get modified dates
-      file_dates <- file.info(c(ld_path, sl_path))$mtime
-      format(max(file_dates), "%Y")
+      save_plots(dplyr::select(x, -data, -adjacent_data))
+      dplyr::select(x, -plot)
     }
-
-    data$min_target <- 30
-    data$max_target <- 100
-    data$plainname <- 'the total modelled macroalgae region that is less than 30 m'
-
-
-    mpas <- MPAs %>%
-      st_filter(data) %>%
-      filter(NAME_E != "Non_Conservation_Area")
-
-    musquash <- st_transform(
-      mpas,
-      crs(shallow_bathymetry)
-    )
-
-    cols <- cellFromXY(
-      bathy,
-      cbind(
-        c(st_bbox(musquash)$xmin, st_bbox(musquash)$xmax),
-        c(st_bbox(musquash)$ymin, st_bbox(musquash)$ymax)
-      )
-    )
-    musquash_ext <- ext(st_bbox(musquash))
-
-    bathy_musquash <- crop(bathy, musquash_ext)
-
-    # Only include data that is in 30 m or less
-    shallow_poly <- as.polygons(
-      bathy_musquash,
-      values = TRUE,
-      na.rm = TRUE
-    ) |>
-      st_as_sf() |>
-      filter(elevation == 1)
-
-    data <- st_intersection(
-      data |> st_make_valid(),
-      shallow_poly
-    ) |>
-      filter(suitable_habitat == TRUE)
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "suitable_habitat",
-      indicator = "Diversity and community composition of the benthos and characteristics of surficial geology at selected sampling stations located in the identified distinctive seabed features of the AOI, plus abundance or biomass and size composition of the defining benthic taxa of those features",
-      type = "model",
-      units = "percent area",
-      scoring = "coverage",
-      PPTID = c(1633, 2576),
-      source = "OneDrive",
-      project_short_title = c('Development and application of high throughput community monitoring','Predicting and assessing interannual change in kelp forest habitat'),
-      areas = mpas,
-      climate_expectation = "FIXME",
-      indicator_rationale = "Kelp forests support high biodiversity and productivity, and provide ecosystem services",
-      bin_rationale = "FIXME",
-      plot_type = "map",
-      year = 'year_of_data_collection',
-      objectives = c(
-        "Protect unique, rare, or sensitive ecological features",
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-        "Habitat required for all species, particularly priority species, is maintained and protected"
-      ),
-      theme = "Benthic Environment",
-      externalData = NULL,
-      scale = "region-site",
-      SME = "Kira Krumhansl",
-      control_polygon = NA,
-      SME_validated = TRUE,
-      plot_lm = FALSE
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-
+  ),
 
   tar_target(name = ind_nonindigenous_rel_indigenous, command = {
-
     data <- data_kelp_distribution_and_abundance
 
     eD <- rep(20, length(MPAs$NAME_E))
 
     x <- process_indicator(
-      data = data[which(data$scientificName %in% c("Membranipora membranacea", "Fucus serratus")),],
+      data = data[
+        which(
+          data$scientificName %in%
+            c("Membranipora membranacea", "Fucus serratus")
+        ),
+      ],
       readiness = "Ready",
       indicator_var_name = "measurementValue",
       indicator = "Number of non-indigenous species relative to indigenous species in MPA",
@@ -584,7 +606,10 @@ indicator_targets <- list(
       units = "percent cover",
       scoring = "proportion: bad species",
       PPTID = c(1633, 2576),
-      project_short_title = c('Development and application of high throughput community monitoring','predicting and assessing interannual change in kelp forest habitat'),
+      project_short_title = c(
+        'Development and application of high throughput community monitoring',
+        'predicting and assessing interannual change in kelp forest habitat'
+      ),
       source = "kelp",
       project_short_title = "Placeholder", # FIXME
       bin_rationale = "FIXME",
@@ -595,34 +620,39 @@ indicator_targets <- list(
       plot_type = c('map-species', 'region-mpa-comparison'),
       plot_lm = FALSE,
       theme = "Trophic Structure and Function",
-      objectives = c('Minimize unintended introduction and transmission of invasive species',
-                     'Prevent and Mitigate Invasive Alien Species'),
+      objectives = c(
+        'Minimize unintended introduction and transmission of invasive species',
+        'Prevent and Mitigate Invasive Alien Species'
+      ),
       SME_validated = TRUE,
-      other_nest_variables = c("scientificName", "year_of_data_collection", 'taxonRank', 'measurementType'),
-      externalData=eD,
-      indicator_caveats ="Since there is no overlap with data samples in the MPAs we are also looking at the spread of non-indigenous species within a 20 km buffer."
+      other_nest_variables = c(
+        "scientificName",
+        "year_of_data_collection",
+        'taxonRank',
+        'measurementType'
+      ),
+      externalData = eD,
+      indicator_caveats = "Since there is no overlap with data samples in the MPAs we are also looking at the spread of non-indigenous species within a 20 km buffer."
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
-
-
   }), # Biomass Metrics, Trophic Structure and Function?
 
-
   tar_target(name = ind_invasive, command = {
-
     data <- data_kelp_distribution_and_abundance
 
     eD <- rep(20, length(MPAs$NAME_E))
 
     x <- process_indicator(
-      data = data[which(data$scientificName %in% c("Membranipora membranacea")),],
+      data = data[
+        which(data$scientificName %in% c("Membranipora membranacea")),
+      ],
       readiness = "Ready",
       indicator_var_name = "measurementValue",
       indicator = "Reports of known invasive species in the MPA and spread of established invasive species towards the MPA",
       type = "in situ",
-      direction='inverse',
+      direction = 'inverse',
       units = "percent cover",
       scoring = "mpa effect: regional proportion",
       PPTID = NA, # FIXME
@@ -636,79 +666,117 @@ indicator_targets <- list(
       plot_type = c('map-species', 'region-mpa-comparison'),
       plot_lm = FALSE,
       theme = "Trophic Structure and Function",
-      objectives = c('Control introduction and proliferation of disease/pathogens'),
+      objectives = c(
+        'Control introduction and proliferation of disease/pathogens'
+      ),
       SME_validated = TRUE,
-      externalData=eD,
-      other_nest_variables = c("scientificName", "year_of_data_collection", 'taxonRank', 'measurementType'),
-      indicator_caveats ="Since there is no overlap with data samples in the MPAs we are also looking at the spread of non-indigenous species within a 20 km buffer."
+      externalData = eD,
+      other_nest_variables = c(
+        "scientificName",
+        "year_of_data_collection",
+        'taxonRank',
+        'measurementType'
+      ),
+      indicator_caveats = "Since there is no overlap with data samples in the MPAs we are also looking at the spread of non-indigenous species within a 20 km buffer."
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
-
   }), # Threats to Productivity, Trophic Structure and Function
 
   ## JAVIER (coming up)
 
-  tar_target(name=ind_species_per_trophic_epibenthic_communities,
-             command={
-  message(class(data_epibenthic_communities_biological))
-  trophic_levels <- read_excel(paste0(dirname(path_to_store()), "/data/AI_trophic_groups.xlsx"))
-  data_epibenthic_communities_biological$ai_trophic_level <- NA
-  for (i in seq_along(unique(data_epibenthic_communities_biological$class))) {
-    data_epibenthic_communities_biological$ai_trophic_level[which(data_epibenthic_communities_biological$class == unique(data_epibenthic_communities_biological$class)[i])] <- trophic_levels$trophic_group[which(trophic_levels$class == unique(data_epibenthic_communities_biological$class)[i])]
-  }
+  tar_target(name = ind_species_per_trophic_epibenthic_communities, command = {
+    message(class(data_epibenthic_communities_biological))
+    trophic_levels <- read_excel(paste0(
+      dirname(path_to_store()),
+      "/data/AI_trophic_groups.xlsx"
+    ))
+    data_epibenthic_communities_biological$ai_trophic_level <- NA
+    for (i in seq_along(unique(data_epibenthic_communities_biological$class))) {
+      data_epibenthic_communities_biological$ai_trophic_level[which(
+        data_epibenthic_communities_biological$class ==
+          unique(data_epibenthic_communities_biological$class)[i]
+      )] <- trophic_levels$trophic_group[which(
+        trophic_levels$class ==
+          unique(data_epibenthic_communities_biological$class)[i]
+      )]
+    }
 
-  data_epibenthic_communities_biological$min_target <- 0
-  data_epibenthic_communities_biological$max_target <- 30
-  data_epibenthic_communities_biological$plainname <- 'the total region samplled by the RV survey'
+    data_epibenthic_communities_biological$min_target <- 0
+    data_epibenthic_communities_biological$max_target <- 30
+    data_epibenthic_communities_biological$plainname <- 'the total region samplled by the RV survey'
 
-  mpas <- MPAs %>%
-    st_filter(data_epibenthic_communities_biological[which(data_epibenthic_communities_biological$ai_trophic_level == 'Predator'),]) %>%
-    filter(NAME_E != "Non_Conservation_Area")
+    mpas <- MPAs %>%
+      st_filter(data_epibenthic_communities_biological[
+        which(
+          data_epibenthic_communities_biological$ai_trophic_level == 'Predator'
+        ),
+      ]) %>%
+      filter(NAME_E != "Non_Conservation_Area")
 
-  environmental_layers <- c(
-    data_epibenthic_communities_environmental[
-      c("bottom_current_mean",
-        "bottom_temperature_mean",
-        "sediment_grain_size")
-    ],
-    list(data_benthoscape = data_benthoscape)
-  )
+    environmental_layers <- c(
+      data_epibenthic_communities_environmental[
+        c(
+          "bottom_current_mean",
+          "bottom_temperature_mean",
+          "sediment_grain_size"
+        )
+      ],
+      list(data_benthoscape = data_benthoscape)
+    )
 
-  x <- process_indicator(
-    data = data_epibenthic_communities_biological[which(data_epibenthic_communities_biological$ai_trophic_level == 'Predator'),],
-    readiness = "Ready",
-    indicator_var_name = "detections",
-    indicator = "Benthic species per trophic level within each habitat type",
-    type = "in situ",
-    units = NA, # FIXME
-    scoring = "representation: regional relative ranking", # protection coverage (# this says how well each ara represents teh benthic biodiversity found in the broadrer region)
-    PPTID = 395,
-    source = "RV",
-    project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
-    bin_rationale = "FIXME",
-    climate = FALSE,
-    SME = "Javier Murillo Perez",
-    indicator_rationale = "Direct biodiversity measure",
-    areas = mpas,
-    plot_type = c('detections'),
-    habitat_display=environmental_layers,
-    plot_lm = FALSE,
-    theme = "Trophic Structure and Function",
-    objectives = c("Maintain biodiversity of individual species, communities and populations within the different ecotypes"),
-    SME_validated = TRUE,
-    other_nest_variables = c("species","ID", "year_of_data_collection", 'ai_trophic_level', 'min_target', 'max_target', 'stagnant_source', 'subclass', 'class', 'detections', 'latitude', 'longitude', 'common_name'),
-    scale='region-site'
-  )
+    x <- process_indicator(
+      data = data_epibenthic_communities_biological[
+        which(
+          data_epibenthic_communities_biological$ai_trophic_level == 'Predator'
+        ),
+      ],
+      readiness = "Ready",
+      indicator_var_name = "detections",
+      indicator = "Benthic species per trophic level within each habitat type",
+      type = "in situ",
+      units = NA, # FIXME
+      scoring = "representation: regional relative ranking", # protection coverage (# this says how well each ara represents teh benthic biodiversity found in the broadrer region)
+      PPTID = 395,
+      source = "RV",
+      project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+      bin_rationale = "FIXME",
+      climate = FALSE,
+      SME = "Javier Murillo Perez",
+      indicator_rationale = "Direct biodiversity measure",
+      areas = mpas,
+      plot_type = c('detections'),
+      habitat_display = environmental_layers,
+      plot_lm = FALSE,
+      theme = "Trophic Structure and Function",
+      objectives = c(
+        "Maintain biodiversity of individual species, communities and populations within the different ecotypes"
+      ),
+      SME_validated = TRUE,
+      other_nest_variables = c(
+        "species",
+        "ID",
+        "year_of_data_collection",
+        'ai_trophic_level',
+        'min_target',
+        'max_target',
+        'stagnant_source',
+        'subclass',
+        'class',
+        'detections',
+        'latitude',
+        'longitude',
+        'common_name'
+      ),
+      scale = 'region-site'
+    )
 
-  save_plots(dplyr::select(x, -data, -adjacent_data))
-  dplyr::select(x, -plot)
-
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
   }),
 
   tar_target(name = ind_rel_abundance_groundfish_epibenthic, command = {
-
     data <- data_epibenthic_communities_biological
 
     top_species <- data %>%
@@ -719,8 +787,6 @@ indicator_targets <- list(
       ) %>%
       arrange(desc(total_detections)) %>%
       slice_head(n = 5)
-
-
 
     x <- process_indicator(
       data = data[
@@ -737,159 +803,186 @@ indicator_targets <- list(
       scoring = "desired trend: no decrease",
       PPTID = 395,
       source = "RV",
-      project_short_title =  "Mapping biodiversity and ecosystem services of benthic communities",
+      project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
       bin_rationale = "FIXME",
       climate = FALSE,
       SME = "Javier Murillo Perez",
       indicator_rationale = "Direct biodiversity measure",
       areas = MPAs,
-      plot_type = c('detections','indicator_by_taxa'),
+      plot_type = c('detections', 'indicator_by_taxa'),
       plot_lm = FALSE,
       theme = "Fish and Fishery Resources",
-      objectives = c("Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock
-", "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"),
+      objectives = c(
+        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock
+",
+        "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance"
+      ),
       SME_validated = TRUE,
-      other_nest_variables = c("species","ID", "year_of_data_collection", 'ai_trophic_level', 'min_target', 'max_target', 'stagnant_source', 'subclass', 'class', 'detections', 'latitude', 'longitude', 'common_name')
+      other_nest_variables = c(
+        "species",
+        "ID",
+        "year_of_data_collection",
+        'ai_trophic_level',
+        'min_target',
+        'max_target',
+        'stagnant_source',
+        'subclass',
+        'class',
+        'detections',
+        'latitude',
+        'longitude',
+        'common_name'
+      )
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
-
-
   }), # Biomass Metrics, Fish and Fishery Resources
 
+  tar_target(name = sediment_geology_characteristics, command = {
+    # JAIM HERE
+    environmental_layers <- c(
+      data_epibenthic_communities_environmental[
+        c(
+          "sediment_grain_size"
+        )
+      ]
+    )
 
-  tar_target(name=sediment_geology_characteristics,
-             command={
-               # JAIM HERE
-               environmental_layers <- c(
-                 data_epibenthic_communities_environmental[
-                   c(
-                     "sediment_grain_size")
-                 ]
-               )
+    ## STEP 1: CALCULATE THE PROPORTION OF SEABED AREA IN EACH SUBSTRATE CLASS - > NOTE: THESE CLASSES WERE MANUALLY ASSIGNED.
+    sediment <- data_epibenthic_communities_environmental$sediment_grain_size
 
-               ## STEP 1: CALCULATE THE PROPORTION OF SEABED AREA IN EACH SUBSTRATE CLASS - > NOTE: THESE CLASSES WERE MANUALLY ASSIGNED.
-               sediment <- data_epibenthic_communities_environmental$sediment_grain_size
+    # Convert continuous grain size (mm) into substrate classes
+    sediment_class <- terra::classify(
+      sediment,
+      rcl = matrix(
+        c(
+          -Inf,
+          0.063,
+          1, # Mud
+          0.063,
+          2,
+          2, # Sand
+          2,
+          4,
+          3, # Granule
+          4,
+          64,
+          4, # Gravel
+          64,
+          Inf,
+          5 # Cobbles/boulders
+        ),
+        ncol = 3,
+        byrow = TRUE
+      ),
+      include.lowest = TRUE
+    )
 
-               # Convert continuous grain size (mm) into substrate classes
-               sediment_class <- terra::classify(
-                 sediment,
-                 rcl = matrix(
-                   c(
-                     -Inf, 0.063, 1,   # Mud
-                     0.063, 2,    2,   # Sand
-                     2,     4,    3,   # Granule
-                     4,     64,   4,   # Gravel
-                     64,    Inf,  5    # Cobbles/boulders
-                   ),
-                   ncol = 3,
-                   byrow = TRUE
-                 ),
-                 include.lowest = TRUE
-               )
+    # Give the classes meaningful names
+    levels(sediment_class) <- data.frame(
+      value = 1:5,
+      class = c(
+        "Mud",
+        "Sand",
+        "Granule",
+        "Gravel",
+        "Cobbles/boulders"
+      )
+    )
 
-               # Give the classes meaningful names
-               levels(sediment_class) <- data.frame(
-                 value = 1:5,
-                 class = c(
-                   "Mud",
-                   "Sand",
-                   "Granule",
-                   "Gravel",
-                   "Cobbles/boulders"
-                 )
-               )
+    #terra::freq(sediment_class)
 
-               #terra::freq(sediment_class)
+    # STEP 1B: CALCULATE THE PROPORTION OF EACH SUBSTRATE CLASS WITHIN EACH MPA
+    sediment_mpa <- terra::extract(
+      sediment_class,
+      terra::vect(MPAs)
+    )
 
-               # STEP 1B: CALCULATE THE PROPORTION OF EACH SUBSTRATE CLASS WITHIN EACH MPA
-               sediment_mpa <- terra::extract(
-                 sediment_class,
-                 terra::vect(MPAs)
-               )
+    # Calculate proportion of each substrate class within each MPA
+    sediment_proportions <- sediment_mpa |>
+      filter(!is.na(class)) |>
+      count(ID, class) |>
+      group_by(ID) |>
+      mutate(
+        proportion = n / sum(n)
+      ) |>
+      ungroup()
 
-               # Calculate proportion of each substrate class within each MPA
-               sediment_proportions <- sediment_mpa |>
-                 filter(!is.na(class)) |>
-                 count(ID, class) |>
-                 group_by(ID) |>
-                 mutate(
-                   proportion = n / sum(n)
-                 ) |>
-                 ungroup()
+    sediment_proportions
 
-               sediment_proportions
+    # STEP 2: CALCULATE DIVERSITY INDEX (SHANNON DIVERSITY)
 
-               # STEP 2: CALCULATE DIVERSITY INDEX (SHANNON DIVERSITY)
+    sediment_diversity <- sediment_proportions |>
+      group_by(ID) |>
+      summarise(
+        shannon = -sum(proportion * log(proportion))
+      )
 
-               sediment_diversity <- sediment_proportions |>
-                 group_by(ID) |>
-                 summarise(
-                   shannon = -sum(proportion * log(proportion))
-                 )
+    ## Putting everything today for process_indicator
+    sediment_indicator <- sediment_diversity |>
+      mutate(
+        year_of_publication = unique(
+          data_epibenthic_communities_environmental$year_of_publication
+        )
+      ) |>
+      left_join(
+        sediment_proportions |>
+          group_by(ID) |>
+          summarise(
+            proportions = paste(
+              paste(class, n, proportion, sep = ","),
+              collapse = "; "
+            )
+          ),
+        by = "ID"
+      ) |>
+      left_join(
+        MPAs |>
+          st_drop_geometry() |>
+          mutate(ID = row_number()) |>
+          select(ID, NAME_E, region),
+        by = "ID"
+      ) |>
+      select(NAME_E, region, shannon, proportions, year_of_publication)
+    names(sediment_indicator)[
+      names(sediment_indicator) == "proportions"
+    ] <- "data"
 
-               ## Putting everything today for process_indicator
-               sediment_indicator <- sediment_diversity |>
-                 mutate(year_of_publication = unique(data_epibenthic_communities_environmental$year_of_publication)) |>
-                 left_join(
-                   sediment_proportions |>
-                     group_by(ID) |>
-                     summarise(
-                       proportions = paste(
-                         paste(class, n, proportion, sep = ","),
-                         collapse = "; "
-                       )
-                     ),
-                   by = "ID"
-                 ) |>
-                 left_join(
-                   MPAs |>
-                     st_drop_geometry() |>
-                     mutate(ID = row_number()) |>
-                     select(ID, NAME_E, region),
-                   by = "ID"
-                 ) |>
-                 select(NAME_E, region, shannon, proportions, year_of_publication)
-               names(sediment_indicator)[names(sediment_indicator) == "proportions"] <- "data"
+    ## now process_indicator
 
-               ## now process_indicator
+    x <- process_indicator(
+      data = sediment_indicator,
+      readiness = "Ready",
+      indicator_var_name = "shannon",
+      indicator = "Sediment/ Geology characeristics",
+      type = "in situ",
+      units = "mm",
+      scoring = "representation: regional relative ranking calculated",
+      PPTID = 395,
+      source = "RV",
+      project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+      bin_rationale = "FIXME",
+      climate = FALSE,
+      SME = "Javier Murillo Perez",
+      indicator_rationale = "Direct biodiversity measure",
+      areas = MPAs,
+      plot_type = c("detections"),
+      habitat_display = environmental_layers,
+      plot_lm = FALSE,
+      theme = "Benthic Environment",
+      objectives = c(
+        "Protect Vazella pourtalesi glass sponges",
+        "Protect continental shelf habitats and associated benthic and demersal communities",
+        "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
+      ), # FIXME
+      SME_validated = TRUE,
+      other_nest_variables = c('data', 'region')
+    )
 
-
-               x <- process_indicator(
-                 data = sediment_indicator,
-                 readiness = "Ready",
-                 indicator_var_name = "shannon",
-                 indicator = "Sediment/ Geology characeristics",
-                 type = "in situ",
-                 units = "mm",
-                 scoring = "representation: regional relative ranking calculated",
-                 PPTID = 395,
-                 source = "RV",
-                 project_short_title =  "Mapping biodiversity and ecosystem services of benthic communities",
-                 bin_rationale = "FIXME",
-                 climate = FALSE,
-                 SME = "Javier Murillo Perez",
-                 indicator_rationale = "Direct biodiversity measure",
-                 areas = MPAs,
-                 plot_type = c("detections"),
-                 habitat_display=environmental_layers,
-                 plot_lm = FALSE,
-                 theme = "Benthic Environment",
-                 objectives = c(
-                   "Protect Vazella pourtalesi glass sponges",
-                   "Protect continental shelf habitats and associated benthic and demersal communities",
-                   "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
-                 ), # FIXME
-                 SME_validated = TRUE,
-                 other_nest_variables = c('data', 'region')
-               )
-
-               save_plots(dplyr::select(x, -data, -adjacent_data))
-               dplyr::select(x, -plot)
-
-             }),
-
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
 
   # NON-VALIDATED INDICATORS
 
@@ -911,7 +1004,7 @@ indicator_targets <- list(
     x$quality_statement <- NA
     x$source <- "Ocean Tracking Network"
     x$climate_expectation <- "FIXME"
-    x$objectives = paste0(
+    x$objectives <- paste0(
       c(
         "Minimize harmful impacts from human activities on cetacean populations and their habitats",
         "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
@@ -1166,7 +1259,7 @@ indicator_targets <- list(
   }),
 
   tar_target(ind_fish_length, command = {
-    data <- rv_data_det |>
+    data <- data_rv_det |>
       mutate(
         longitude = LONGITUDE,
         latitude = LATITUDE,
@@ -1216,7 +1309,7 @@ indicator_targets <- list(
   }),
 
   tar_target(ind_fish_weight, command = {
-    data <- rv_data_det |>
+    data <- data_rv_det |>
       mutate(
         longitude = LONGITUDE,
         latitude = LATITUDE,
@@ -1264,7 +1357,7 @@ indicator_targets <- list(
   }),
 
   tar_target(ind_haddock_counts, command = {
-    data = rv_data |>
+    data <- data_rv |>
       filter(COMM %in% c("HADDOCK")) |>
       mutate(
         longitude = LONGITUDE,
@@ -1319,7 +1412,7 @@ indicator_targets <- list(
   }),
 
   tar_target(ind_haddock_biomass, command = {
-    data <- rv_data |>
+    data <- data_rv |>
       filter(COMM %in% c("HADDOCK")) |>
       mutate(
         longitude = LONGITUDE,
@@ -3262,7 +3355,6 @@ indicator_targets <- list(
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_vessel_traffic, command = {
-
     raster_bbox <- sf::st_bbox(
       c(
         xmin = -82.5,
@@ -3310,10 +3402,6 @@ indicator_targets <- list(
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
-
-
-
-
 
   # PLACEHOLDER INDICATORS ----
 
@@ -3689,7 +3777,6 @@ indicator_targets <- list(
       theme = "Ocean Structure and Movement"
     )
   }), # Environmental Representativity, Ocean Structure and Movement?
-
 
   tar_target(name = ind_size_distribution_groundfish, command = {
     ind_placeholder(
@@ -4933,7 +5020,6 @@ indicator_targets <- list(
       theme = "Anthropogenic Pressure and Impacts"
     )
   }), #Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
-
 
   tar_target(name = ind_fish_nekton_fluxes, command = {
     ind_placeholder(

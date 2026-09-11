@@ -613,8 +613,8 @@ list(
   tar_target(
     windowsdependenttargets,
     command = {
-      rv_data
-      rv_data_det
+      data_rv
+      data_rv_det
       om
       csas
       deliverables

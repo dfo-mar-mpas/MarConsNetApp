@@ -1340,7 +1340,7 @@ raw_data_targets <- list(
   }),
 
   tar_target(
-    rv_data,
+    data_rv,
     {
       # THIS TARGET NEEDS TO GET MADE ON WINDOWS (NOT LINUX)
 
@@ -1371,7 +1371,7 @@ raw_data_targets <- list(
   ),
 
   tar_target(
-    rv_data_det,
+    data_rv_det,
     {
       # for whatever reason, we need to run:
       # tar_invalidate(c("ds_all","rv_rawdata_env"))
@@ -1399,7 +1399,7 @@ raw_data_targets <- list(
   ),
 
   tar_target(name = fish_weight_per_1.75kn_tow, command = {
-    rv_data |>
+    data_rv |>
       filter(
         COMM %in%
           c(

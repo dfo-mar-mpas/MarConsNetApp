@@ -1,7 +1,7 @@
 library(dplyr)
-df <- rv_data
+df <- data_rv
 # 1️⃣ Define size threshold for small vs large (adjust as needed)
-size_threshold <- 30  # e.g., 30 cm
+size_threshold <- 30 # e.g., 30 cm
 
 # 2️⃣ Filter for demersal species only
 demersal <- df %>%
@@ -16,8 +16,8 @@ demersal <- demersal %>%
 proportion_summary <- demersal %>%
   group_by(NAFO_ZONE, size_class) %>%
   summarize(
-    n_fish = sum(TOTNO, na.rm=TRUE),           # number of individuals
-    biomass = sum(FWT, na.rm=TRUE)             # total biomass
+    n_fish = sum(TOTNO, na.rm = TRUE), # number of individuals
+    biomass = sum(FWT, na.rm = TRUE) # total biomass
   ) %>%
   ungroup() %>%
   # calculate proportion of large/small fish per NAFO_ZONE

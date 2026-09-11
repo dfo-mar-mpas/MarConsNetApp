@@ -15,7 +15,7 @@ require(tidyr)
 require(dplyr)
 
 
-tar_load(c("MPAs", "rv_data"))
+tar_load(c("MPAs", "data_rv"))
 
 inter <- st_read(
   "../../../Downloads/Musquash_IntertidalArea_AIA/MusquashIntertidalArea.shp"
@@ -532,7 +532,7 @@ ggplot(poollong) +
 
 
 ####### rv survey
-rv_wide <- rv_data |>
+rv_wide <- data_rv |>
   filter(
     NAME_E ==
       "Western/Emerald Banks Conservation Area (Restricted Fisheries Zone)",

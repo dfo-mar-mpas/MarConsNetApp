@@ -112,11 +112,11 @@ tar_visnetwork(script = "inst/_targets.R")
 #                      fields = "name") |>
 #   unlist(use.names = FALSE)
 # tar_invalidate(mani[grepl("ind_",mani)])
-# tar_load(names=mani[!grepl("rv_data",mani)])
+# tar_load(names=mani[!grepl("data_rv",mani)])
 # mani <- tar_manifest(script = "inst/_targets.R",
 #                      fields = "name") |>
 #   unlist(use.names = FALSE)
-# tar_load(names=mani[!grepl("data",mani)&!grepl("obis",mani)&!grepl("rv_data",mani)&!grepl("ind_",mani)&!grepl("bin_",mani)&!grepl("ecol_obj",mani)])
+# tar_load(names=mani[!grepl("data",mani)&!grepl("obis",mani)&!grepl("data_rv",mani)&!grepl("ind_",mani)&!grepl("bin_",mani)&!grepl("ecol_obj",mani)])
 # tar_invalidate(names=c("ds_all","rv_rawdata_env",mani[grepl("ind_",mani)]))
 # tar_make(c("APPTABS"),script = "inst/_targets.R")
 # tar_load(names=mani[grepl("ind_",mani)])
