@@ -776,7 +776,7 @@ raw_data_targets <- list(
 
   # INDICATOR DATA ----
 
-  tar_target(name = data_otn_recievers, command = {
+  tar_target(name = data_otn_receivers, command = {
     geoserver_receivers <- readr::read_csv(
       'https://members.oceantrack.org/geoserver/otn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=otn:stations_receivers&outputFormat=csv',
       guess_max = 13579
@@ -1158,34 +1158,38 @@ raw_data_targets <- list(
     polygons
   }),
 
-  tar_target(name = "data_musquash_benthic_infauna", command = {
-    infauna <- arcpullr::get_spatial_layer(
-      "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/musquash_benthic_infauna/MapServer/1"
-    )
+  tar_age(
+    name = "data_musquash_benthic_infauna",
+    command = {
+      infauna <- arcpullr::get_spatial_layer(
+        "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/musquash_benthic_infauna/MapServer/1"
+      )
 
-    infauna$stagnant_source <- FALSE
+      infauna$stagnant_source <- FALSE
 
-    # Year of publication
-    item_id <- "34d06e4bb5114d7fa5cf5faef019f4dd"
-    info <- httr2::request(paste0(
-      "https://egisp.dfo-mpo.gc.ca/portal/sharing/rest/content/items/",
-      item_id,
-      "?f=json"
-    )) |>
-      httr2::req_perform() |>
-      httr2::resp_body_json()
+      # Year of publication
+      item_id <- "34d06e4bb5114d7fa5cf5faef019f4dd"
+      info <- httr2::request(paste0(
+        "https://egisp.dfo-mpo.gc.ca/portal/sharing/rest/content/items/",
+        item_id,
+        "?f=json"
+      )) |>
+        httr2::req_perform() |>
+        httr2::resp_body_json()
 
-    infauna$year_of_publication <- as.numeric(format(
-      as.POSIXct(
-        info$created / 1000,
-        origin = "1970-01-01",
-        tz = "UTC"
-      ),
-      "%Y"
-    ))
+      infauna$year_of_publication <- as.numeric(format(
+        as.POSIXct(
+          info$created / 1000,
+          origin = "1970-01-01",
+          tz = "UTC"
+        ),
+        "%Y"
+      ))
 
-    infauna
-  }),
+      infauna
+    },
+    age = as.difftime(365, units = "days")
+  ),
 
   tar_target(data_musquash_coliform, command = {
     lat <- c(
@@ -1458,56 +1462,60 @@ raw_data_targets <- list(
   #   data_QC_gulf_biogenic_habitat
   # }),
 
-  tar_target(name = data_edna_data, command = {
-    token <- read.table(file.path(
-      dirname(path_to_store()),
-      'data',
-      "token.txt"
-    ))$V1
+  tar_age(
+    name = data_edna_data,
+    command = {
+      token <- read.table(file.path(
+        dirname(path_to_store()),
+        'data',
+        "token.txt"
+      ))$V1
 
-    data <- MarConsNetData::data_eDNA(token = token)
+      data <- MarConsNetData::data_eDNA(token = token)
 
-    data <- data %>%
-      filter(!is.na(latitude), !is.na(longitude))
+      data <- data %>%
+        filter(!is.na(latitude), !is.na(longitude))
 
-    df_sf <- sf::st_as_sf(
-      data,
-      coords = c("longitude", "latitude"), # your coordinate column names
-      crs = 4326
-    )
+      df_sf <- sf::st_as_sf(
+        data,
+        coords = c("longitude", "latitude"), # your coordinate column names
+        crs = 4326
+      )
 
-    #df_sf <- df_sf[, c("year", "species_richness", "geometry")]
+      #df_sf <- df_sf[, c("year", "species_richness", "geometry")]
 
-    DATA2 <- add_assumptions(
-      df_sf,
-      assumptions = 'This is eDNA data so it is an indirect measure of diversity. Often times benthic samples will have species that may also be associted with the pelagic environment. This may need to be considered if the indicator is benthic focused or if it is compared to/combined with another benthic dataset (e.g., RV Trawl).',
-      caveats = 'Species identification should be curated, but at the same time additional checks should be put in place to ensure there are no erroneous species (e.g., Pacific sister species can sometimes be associated with a DNA read in the bioinformatic pipeline instead of the Atlantic equivalent, which invariably is what was actually in the environment and was the source of the DNA).'
-    )
+      DATA2 <- add_assumptions(
+        df_sf,
+        assumptions = 'This is eDNA data so it is an indirect measure of diversity. Often times benthic samples will have species that may also be associted with the pelagic environment. This may need to be considered if the indicator is benthic focused or if it is compared to/combined with another benthic dataset (e.g., RV Trawl).',
+        caveats = 'Species identification should be curated, but at the same time additional checks should be put in place to ensure there are no erroneous species (e.g., Pacific sister species can sometimes be associated with a DNA read in the bioinformatic pipeline instead of the Atlantic equivalent, which invariably is what was actually in the environment and was the source of the DNA).'
+      )
 
-    names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
+      names(DATA2)[which(names(DATA2) == 'year')] <- 'year_of_data_collection'
 
-    DATA2$species <- clean_species_names(DATA2$species)
+      DATA2$species <- clean_species_names(DATA2$species)
 
-    DATA2$subclass <- NA
-    DATA2$class <- NA
-    DATA2$common_name <- NA
-    DATA2$stagnant_source <- FALSE
+      DATA2$subclass <- NA
+      DATA2$class <- NA
+      DATA2$common_name <- NA
+      DATA2$stagnant_source <- FALSE
 
-    for (i in seq_along(unique(DATA2$species))) {
-      message(paste0("For loop ", i, " of ", length(unique(DATA2$species))))
-      DATA2$subclass[which(
-        DATA2$species == unique(DATA2$species)[i]
-      )] <- taxize_species(unique(DATA2$species)[i], level = "Subclass")
-      DATA2$class[which(
-        DATA2$species == unique(DATA2$species)[i]
-      )] <- taxize_species(unique(DATA2$species)[i], level = 'Class')
-      DATA2$common_name[which(
-        DATA2$species == unique(DATA2$species)[i]
-      )] <- taxize_species(unique(DATA2$species)[i], level = 'common_name')
-    }
+      for (i in seq_along(unique(DATA2$species))) {
+        message(paste0("For loop ", i, " of ", length(unique(DATA2$species))))
+        DATA2$subclass[which(
+          DATA2$species == unique(DATA2$species)[i]
+        )] <- taxize_species(unique(DATA2$species)[i], level = "Subclass")
+        DATA2$class[which(
+          DATA2$species == unique(DATA2$species)[i]
+        )] <- taxize_species(unique(DATA2$species)[i], level = 'Class')
+        DATA2$common_name[which(
+          DATA2$species == unique(DATA2$species)[i]
+        )] <- taxize_species(unique(DATA2$species)[i], level = 'common_name')
+      }
 
-    DATA2
-  }),
+      DATA2
+    },
+    age = as.difftime(365, units = "days")
+  ),
 
   tar_target(name = bathymetry, command = {
     ## For this, I am using the readGEBO.bathy function in marmap.
@@ -1533,160 +1541,168 @@ raw_data_targets <- list(
     bathymetry >= -30 & bathymetry < 0
   }),
 
-  tar_target(name = data_kelp_modelled, command = {
-    onedrive <- Sys.getenv("OneDriveCommercial")
+  tar_age(
+    name = data_kelp_modelled,
+    command = {
+      onedrive <- Sys.getenv("OneDriveCommercial")
 
-    raster_folder <- file.path(
-      onedrive,
-      "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
-    )
-
-    l_digitata_current <- rast(
-      file.path(
-        raster_folder,
-        "Laminaria digitata",
-        "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
+      raster_folder <- file.path(
+        onedrive,
+        "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
       )
-    )
 
-    s_latissima_current <- rast(
-      file.path(
-        raster_folder,
-        "Saccharina latissima",
-        "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
-      )
-    )
-
-    l_digitata_poly <- as.polygons(
-      l_digitata_current == 1,
-      aggregate = TRUE
-    ) |>
-      st_as_sf() %>%
-      mutate(
-        species = "Laminaria digitata",
-        suitable_habitat = Laminaria_digitata_Bathy_rm4_20240223_avg_Binary ==
-          1,
-        habitat_type = "kelp"
-      ) |>
-      # filter(Laminaria_digitata_Bathy_rm4_20240223_avg_Binary == 1) |>
-      select(species, suitable_habitat, habitat_type)
-
-    s_latissima_poly <- as.polygons(
-      s_latissima_current == 1,
-      aggregate = TRUE
-    ) |>
-      st_as_sf() %>%
-      mutate(
-        species = "Saccharina latissima",
-        suitable_habitat = Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary ==
-          1,
-        habitat_type = "kelp"
-      ) |>
-      select(species, suitable_habitat, habitat_type)
-
-    kelp <- bind_rows(s_latissima_poly, l_digitata_poly)
-
-    kelp <- add_assumptions(
-      kelp,
-      assumptions = 'Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
-      caveats = 'Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
-    )
-
-    species_folders <- file.path(
-      raster_folder,
-      c("Laminaria digitata", "Saccharina latissima")
-    )
-
-    folder_info <- file.info(species_folders)
-
-    year_of_publication <- as.numeric(
-      format(max(folder_info$mtime, na.rm = TRUE), "%Y")
-    )
-
-    kelp$year_of_publication <- year_of_publication
-    kelp$stagnant_source <- FALSE
-    kelp
-  }),
-
-  tar_target(name = data_macroalgae_modelled, command = {
-    onedrive <- Sys.getenv("OneDriveCommercial")
-
-    raster_folder <- file.path(
-      onedrive,
-      "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
-    )
-
-    species_files <- data.frame(
-      species = c(
-        "Antithamnion sparsum",
-        "Bonnemaisonia hamifera",
-        "Codium fragile",
-        "Dasysiphonia japonica",
-        "Fucus serratus"
-      ),
-      tif = c(
-        "Antithamnion_sparsum_Bathy_rm2_20240304_avg_Binary.tif",
-        "Bonnemaisonia_hamifera_Bathy_rm2MinusYRMin_20240304_avg_Binary.tif",
-        "Codium_fragile_Bathy_rm3_20240304_avg_Binary.tif",
-        "Dasysiphonia_japonica_Bathy_rm3MinusYRMax_20240304_avg_Binary.tif",
-        "Fucus_serratus_Bathy_rm3_20240227_avg_Binary.tif"
-      )
-    )
-
-    all_polys <- vector("list", nrow(species_files))
-
-    for (i in seq_len(nrow(species_files))) {
-      message(i)
-
-      current <- rast(
+      l_digitata_current <- rast(
         file.path(
           raster_folder,
-          species_files$species[i],
-          species_files$tif[i]
+          "Laminaria digitata",
+          "Laminaria_digitata_Bathy_rm4_20240223_avg_Binary.tif"
         )
       )
 
-      all_polys[[i]] <- as.polygons(
-        current == 1,
+      s_latissima_current <- rast(
+        file.path(
+          raster_folder,
+          "Saccharina latissima",
+          "Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary.tif"
+        )
+      )
+
+      l_digitata_poly <- as.polygons(
+        l_digitata_current == 1,
         aggregate = TRUE
       ) |>
-        st_as_sf() |>
+        st_as_sf() %>%
         mutate(
-          species = species_files$species[i],
-          suitable_habitat = TRUE,
-          habitat_type = "macroalgae"
+          species = "Laminaria digitata",
+          suitable_habitat = Laminaria_digitata_Bathy_rm4_20240223_avg_Binary ==
+            1,
+          habitat_type = "kelp"
         ) |>
-        select(
-          species,
-          suitable_habitat,
-          habitat_type,
-          geometry
+        # filter(Laminaria_digitata_Bathy_rm4_20240223_avg_Binary == 1) |>
+        select(species, suitable_habitat, habitat_type)
+
+      s_latissima_poly <- as.polygons(
+        s_latissima_current == 1,
+        aggregate = TRUE
+      ) |>
+        st_as_sf() %>%
+        mutate(
+          species = "Saccharina latissima",
+          suitable_habitat = Saccharina_latissima_Bathy_rm2MinusRugosityAndProfile_20240223_avg_Binary ==
+            1,
+          habitat_type = "kelp"
+        ) |>
+        select(species, suitable_habitat, habitat_type)
+
+      kelp <- bind_rows(s_latissima_poly, l_digitata_poly)
+
+      kelp <- add_assumptions(
+        kelp,
+        assumptions = 'Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
+        caveats = 'Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
+      )
+
+      species_folders <- file.path(
+        raster_folder,
+        c("Laminaria digitata", "Saccharina latissima")
+      )
+
+      folder_info <- file.info(species_folders)
+
+      year_of_publication <- as.numeric(
+        format(max(folder_info$mtime, na.rm = TRUE), "%Y")
+      )
+
+      kelp$year_of_publication <- year_of_publication
+      kelp$stagnant_source <- FALSE
+      kelp
+    },
+    age = as.difftime(365, units = "days")
+  ),
+
+  tar_age(
+    name = data_macroalgae_modelled,
+    command = {
+      onedrive <- Sys.getenv("OneDriveCommercial")
+
+      raster_folder <- file.path(
+        onedrive,
+        "Krumhansl, Kira (DFO_MPO)'s files - 2021 2024 Species Distribution Model Outputs"
+      )
+
+      species_files <- data.frame(
+        species = c(
+          "Antithamnion sparsum",
+          "Bonnemaisonia hamifera",
+          "Codium fragile",
+          "Dasysiphonia japonica",
+          "Fucus serratus"
+        ),
+        tif = c(
+          "Antithamnion_sparsum_Bathy_rm2_20240304_avg_Binary.tif",
+          "Bonnemaisonia_hamifera_Bathy_rm2MinusYRMin_20240304_avg_Binary.tif",
+          "Codium_fragile_Bathy_rm3_20240304_avg_Binary.tif",
+          "Dasysiphonia_japonica_Bathy_rm3MinusYRMax_20240304_avg_Binary.tif",
+          "Fucus_serratus_Bathy_rm3_20240227_avg_Binary.tif"
         )
-    }
+      )
 
-    macroalgae <- bind_rows(all_polys)
+      all_polys <- vector("list", nrow(species_files))
 
-    macroalgae <- add_assumptions(
-      macroalgae,
-      assumptions = 'Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
-      caveats = 'Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
-    )
+      for (i in seq_len(nrow(species_files))) {
+        message(i)
 
-    species_folders <- file.path(
-      raster_folder,
-      species_files$species
-    )
+        current <- rast(
+          file.path(
+            raster_folder,
+            species_files$species[i],
+            species_files$tif[i]
+          )
+        )
 
-    folder_info <- file.info(species_folders)
+        all_polys[[i]] <- as.polygons(
+          current == 1,
+          aggregate = TRUE
+        ) |>
+          st_as_sf() |>
+          mutate(
+            species = species_files$species[i],
+            suitable_habitat = TRUE,
+            habitat_type = "macroalgae"
+          ) |>
+          select(
+            species,
+            suitable_habitat,
+            habitat_type,
+            geometry
+          )
+      }
 
-    year_of_publication <- as.numeric(
-      format(max(folder_info$mtime, na.rm = TRUE), "%Y")
-    )
+      macroalgae <- bind_rows(all_polys)
 
-    macroalgae$year_of_publication <- year_of_publication
-    macroalgae$stagnant_source <- FALSE
-    macroalgae
-  }),
+      macroalgae <- add_assumptions(
+        macroalgae,
+        assumptions = 'Models combine recent (2022–23) and historical (2012–23) occurrence data with averaged environmental variables. Environmental layers were harmonized to a common resolution, with coarser layers resampled to the finer resolution. Models use multiple algorithms to relate species occurrences to environmental conditions and predict suitable habitat.',
+        caveats = 'Predicted suitable habitat does not indicate species abundance or confirm species presence. Predictions are based on a model-derived suitability threshold to classify habitat as suitable or unsuitable. Models can also be used to project potential distributions under future environmental conditions, including decadal or longer time scales. '
+      )
+
+      species_folders <- file.path(
+        raster_folder,
+        species_files$species
+      )
+
+      folder_info <- file.info(species_folders)
+
+      year_of_publication <- as.numeric(
+        format(max(folder_info$mtime, na.rm = TRUE), "%Y")
+      )
+
+      macroalgae$year_of_publication <- year_of_publication
+      macroalgae$stagnant_source <- FALSE
+      macroalgae
+    },
+    age = as.difftime(365, units = "days")
+  ),
 
   tar_target(name = data_kelp_distribution_and_abundance, command = {
     occurrence <- read_csv(
@@ -1882,93 +1898,113 @@ raw_data_targets <- list(
     water_quality
   }),
 
-  tar_target(name = data_azmp_fixed_stations, command = {
-    DOS <- azmpdata::Derived_Occupations_Stations
+  tar_age(
+    name = data_azmp_fixed_stations,
+    command = {
+      DOS <- azmpdata::Derived_Occupations_Stations
 
-    # Add rows one by one
-    x <- azmpdata::Zooplankton_Annual_Stations |>
-      select(station) |>
-      unique() |>
-      rowwise() |>
-      mutate(
-        longitude = if_else(
-          station == "HL2",
-          DOS$longitude[DOS$station == station][274],
-          DOS$longitude[DOS$station == station][1]
-        ),
-        latitude = if_else(
-          station == "HL2",
-          DOS$latitude[DOS$station == station][274],
-          DOS$latitude[DOS$station == station][1]
+      # Add rows one by one
+      x <- azmpdata::Zooplankton_Annual_Stations |>
+        select(station) |>
+        unique() |>
+        rowwise() |>
+        mutate(
+          longitude = if_else(
+            station == "HL2",
+            DOS$longitude[DOS$station == station][274],
+            DOS$longitude[DOS$station == station][1]
+          ),
+          latitude = if_else(
+            station == "HL2",
+            DOS$latitude[DOS$station == station][274],
+            DOS$latitude[DOS$station == station][1]
+          )
+        ) |>
+        add_row(
+          station = "Halifax",
+          latitude = 43.5475,
+          longitude = -63.5714
+        ) |>
+        add_row(
+          station = "Yarmouth",
+          latitude = 43.8377,
+          longitude = -66.1150
+        ) |>
+        add_row(
+          station = "North Sydney",
+          latitude = 46.2051,
+          longitude = -60.2563
         )
-      ) |>
-      add_row(station = "Halifax", latitude = 43.5475, longitude = -63.5714) |>
-      add_row(station = "Yarmouth", latitude = 43.8377, longitude = -66.1150) |>
-      add_row(
-        station = "North Sydney",
-        latitude = 46.2051,
-        longitude = -60.2563
+
+      x$stagnant_source <- FALSE
+
+      # YEAR OF PUBLICATION
+      url <- paste0(
+        "https://api.github.com/repos/casaultb/azmpdata/commits",
+        "?path=data/Derived_Occupations_Stations.rda&per_page=1"
       )
 
-    x$stagnant_source <- FALSE
+      commit <- httr2::request(url) |>
+        httr2::req_perform() |>
+        httr2::resp_body_json()
 
-    # YEAR OF PUBLICATION
-    url <- paste0(
-      "https://api.github.com/repos/casaultb/azmpdata/commits",
-      "?path=data/Derived_Occupations_Stations.rda&per_page=1"
-    )
+      last_updated <- commit[[1]]$commit$committer$date
 
-    commit <- httr2::request(url) |>
-      httr2::req_perform() |>
-      httr2::resp_body_json()
+      x$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
+      x
+    },
+    age = as.difftime(365, units = "days")
+  ),
 
-    last_updated <- commit[[1]]$commit$committer$date
+  tar_age(
+    name = data_azmp_zooplankton_annual_stations,
+    command = {
+      df <- azmpdata::Zooplankton_Annual_Stations |>
+        left_join(data_azmp_fixed_stations, by = "station")
+      df$stagnant_source <- FALSE
 
-    x$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
-    x
-  }),
+      # YEAR OF PUBLICATION
+      url <- paste0(
+        "https://api.github.com/repos/casaultb/azmpdata/commits",
+        "?path=data/Zooplankton_Annual_Stations.rda&per_page=1"
+      )
 
-  tar_target(name = data_azmp_zooplankton_annual_stations, command = {
-    df <- azmpdata::Zooplankton_Annual_Stations |>
-      left_join(data_azmp_fixed_stations, by = "station")
-    df$stagnant_source <- FALSE
+      commit <- httr2::request(url) |>
+        httr2::req_perform() |>
+        httr2::resp_body_json()
 
-    # YEAR OF PUBLICATION
-    url <- paste0(
-      "https://api.github.com/repos/casaultb/azmpdata/commits",
-      "?path=data/Zooplankton_Annual_Stations.rda&per_page=1"
-    )
+      last_updated <- commit[[1]]$commit$committer$date
 
-    commit <- httr2::request(url) |>
-      httr2::req_perform() |>
-      httr2::resp_body_json()
+      df$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
+      df
+    },
+    age = as.difftime(365, units = "days")
+  ),
 
-    last_updated <- commit[[1]]$commit$committer$date
+  tar_age(
+    name = data_azmp_Discrete_Occupations_Sections,
+    command = {
+      df <- azmpdata::Discrete_Occupations_Sections |>
+        mutate(year = as.numeric(format(date, "%Y")))
+      df$stagnant_source <- FALSE
 
-    df$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
-    df
-  }),
+      # YEAR OF PUBLICATION
+      url <- paste0(
+        "https://api.github.com/repos/casaultb/azmpdata/commits",
+        "?path=data/Discrete_Occupations_Sections.rda&per_page=1"
+      )
 
-  tar_target(name = data_azmp_Discrete_Occupations_Sections, command = {
-    df <- azmpdata::Discrete_Occupations_Sections |>
-      mutate(year = as.numeric(format(date, "%Y")))
-    df$stagnant_source <- FALSE
+      commit <- httr2::request(url) |>
+        httr2::req_perform() |>
+        httr2::resp_body_json()
 
-    # YEAR OF PUBLICATION
-    url <- paste0(
-      "https://api.github.com/repos/casaultb/azmpdata/commits",
-      "?path=data/Discrete_Occupations_Sections.rda&per_page=1"
-    )
+      last_updated <- commit[[1]]$commit$committer$date
 
-    commit <- httr2::request(url) |>
-      httr2::req_perform() |>
-      httr2::resp_body_json()
-
-    last_updated <- commit[[1]]$commit$committer$date
-
-    df$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
-    df
-  }),
+      df$year_of_publication <- as.numeric(substr(last_updated, 1, 4))
+      df
+    },
+    age = as.difftime(365, units = "days")
+  ),
 
   tar_target(name = data_MMMP_birds_raw, command = {
     # data from https://naturecounts.ca/nc/default/datasets.jsp?code=MMMP&sec=bmdr
@@ -2282,472 +2318,480 @@ raw_data_targets <- list(
     pattern = map(regions)
   ),
 
-  tar_target(data_otn_tags, command = {
-    tags <- readr::read_csv(
-      'https://members.oceantrack.org/geoserver/otn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=otn:animals&outputFormat=csv',
-      guess_max = 13579
-    )
-    tags <- tags %>%
-      group_by(catalognumber) %>% # group by catalognumber
-      slice(1) %>% # keep the first row in each group
-      ungroup() # ungroup after slicing
-
-    pattern_dash <- "^.*?(\\d{4}-\\d{2}-\\d{2}T[^_]*_)"
-    pattern_underscore <- "^.*?(\\d{4}_\\d{2}_\\d{2}T[^_]*_)"
-
-    otn <- data_obis |>
-      filter(
-        rightsHolder ==
-          "Ocean Tracking Network, Dalhousie University, Halifax, Nova Scotia otndc@dal.ca",
-        !is.na(decimalLatitude),
-        !is.na(decimalLongitude),
-        !grepl("release|capture", occurrenceID) # exclude release and capture events, which are not detections of tagged animals
-      ) |>
-      select(
-        dataset_id,
-        aphiaid,
-        catalogNumber,
-        collectionCode,
-        datasetID,
-        datasetName,
-        decimalLatitude,
-        decimalLongitude,
-        eventDate,
-        eventID,
-        occurrenceID,
-        organismID,
-        organismName,
-        rightsHolder,
-        scientificName,
-        NAME_E.x,
-        geometry
-      ) |>
-      filter(grepl(
-        paste(unique(tags$collectioncode), collapse = "|"),
-        occurrenceID
-      )) |>
-      mutate(
-        tag_id = sub(
-          "_.*$",
-          "",
-          case_when(
-            grepl(pattern_dash, occurrenceID) ~ sub(
-              pattern_dash,
-              "",
-              occurrenceID
-            ),
-            grepl(pattern_underscore, occurrenceID) ~ sub(
-              pattern_underscore,
-              "",
-              occurrenceID
-            ),
-            .default = sub("^.*?_", "", occurrenceID)
-          )
-        )
-      ) |>
-      filter(tag_id %in% tags$catalognumber) |>
-      rename(areaID = NAME_E.x)
-
-    otn$stagnant_source <- FALSE
-
-    ## year of publication
-
-    otn$year_of_publication <- as.numeric(format(Sys.Date, "%Y"))
-
-    otn
-  }),
-
-  tar_target(data_gliders, command = {
-    reDownload <- FALSE
-    options(timeout = 700)
-    dataDir <- file.path(dirname(path_to_store()), 'data', 'gliders')
-    ftpUrl <- read.table(file.path(
-      dirname(path_to_store()),
-      'data',
-      'gliders',
-      "url.txt"
-    ))$V1
-    dirs <- getURL(
-      paste(ftpUrl, '', sep = "/"),
-      ftp.use.epsv = FALSE,
-      dirlistonly = TRUE
-    )
-    dirnames <- strsplit(dirs, "\r*\n")[[1]]
-    okdir <- grepl('^GLD\\w+$', dirnames) # just in case something else gets put there
-    glddir <- dirnames[okdir]
-    # define subdirectory of which processed files to download
-    subdir <- 'L0-timeseries-post'
-    for (dir in glddir) {
-      message(which(glddir == dir), " of ", length(glddir))
-      cat(paste('Check directory', dir), sep = '\n')
-      # check that subdir exists
-      pathcheck <- paste(ftpUrl, dir, '', sep = '/')
-      glddircontents <- try(
-        getURL(url = pathcheck, ftp.use.epsv = FALSE, dirlistonly = TRUE),
-        silent = TRUE
+  tar_age(
+    data_otn_tags,
+    command = {
+      tags <- readr::read_csv(
+        'https://members.oceantrack.org/geoserver/otn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=otn:animals&outputFormat=csv',
+        guess_max = 13579
       )
-      glddircontents <- strsplit(glddircontents, "\r*\n")[[1]]
-      path <- paste(
-        ftpUrl,
-        dir,
-        subdir,
-        '', # to add '/' at end
-        sep = '/'
-      )
-      files <- try(
-        getURL(url = path, ftp.use.epsv = FALSE, dirlistonly = TRUE),
-        silent = TRUE
-      )
-      if (!inherits(files, "try-error")) {
-        filenames <- strsplit(files, "\r*\n")[[1]]
-        cat(paste('    Found', length(filenames), 'files'), sep = '\n')
-        if (length(filenames) != 0) {
-          # meaning data was able to be processed
-          # should only be 1 file, but for completeness
-          for (f in filenames) {
-            url <- paste0(path, f)
-            destfile <- paste(dataDir, f, sep = '/')
-            if (!file.exists(destfile) | reDownload) {
-              cat(paste('        Downloading', f), sep = '\n')
-              downloadedFile <- try(
-                download.file(url = url, destfile = destfile, mode = 'wb'),
-                silent = TRUE
-              )
-            } else {
-              cat(paste('        ', destfile, 'exists locally.'), sep = '\n')
-              Sys.sleep(15)
-            }
-          } # closes f
-        } # closes length(filenames)
-      } else {
-        # closes hasSubDir
-        cat(paste('      ', subdir, 'does not exist.'), sep = '\n')
-      }
-    }
+      tags <- tags %>%
+        group_by(catalognumber) %>% # group by catalognumber
+        slice(1) %>% # keep the first row in each group
+        ungroup() # ungroup after slicing
 
-    # Making the netcdfs into a data frame for the app
+      pattern_dash <- "^.*?(\\d{4}-\\d{2}-\\d{2}T[^_]*_)"
+      pattern_underscore <- "^.*?(\\d{4}_\\d{2}_\\d{2}T[^_]*_)"
 
-    files <- list.files(path = dataDir, pattern = "\\.nc$", full.names = TRUE)
-    glider_list <- vector("list", length(files)) # pre-allocate list
-
-    #message(paste0("files , ", files))
-
-    for (i in seq_along(files)) {
-      message(i, "of ", length(files))
-      x <- try(oceglider::read.glider.netcdf(file = files[i]), silent = TRUE)
-      if (!(inherits(x, "try-error"))) {
-        # weird dates in the files due to a hardware issue with the gliders
-        #good_year <- names(which.max(table(as.numeric(format(x[['time']], "%Y")))))
-        #message(paste0("hi ", good_year))
-        x <- oceglider::subset(
-          x,
-          grepl(
-            names(which.max(table(as.numeric(format(x[['time']], "%Y"))))),
-            time
-          )
-        )
-
-        # Remove profiles with profileIndex == 0 (inflecting/stalled)
-        x <- oceglider::subset(x, which(!(profileIndex == 0)))
-        if (!(length(x[['profileIndex']]) == 0)) {
-          # vertically binning and temporally averaging the data. For our analysis we bin it to 1dbar and hourly average.
-
-          # startTime and endTime will be numeric, that's OK b/c it will work for next calculation
-          # find which profiles are within the defined averaging time
-          # here it will be 1 hour.
-          dt <- 60 * 60 #sph
-          # define depth bins
-          dz <- 1 # size of depth bins
-          nz <- 600 # max depth of bins
-          z <- seq(1, nz, by = dz)
-
-          # initialize indices output
-          vars <- names(x[['data']][['payload1']]) # get all variables in glider file
-          # define breaks for splitting data
-          zbreaks <- c(0, z) + dz / 2
-
-          dsubdata <- x[['data']][['payload1']]
-
-          dsubdata$mld <- NA
-
-          for (j in seq_along(unique(dsubdata$profileIndex))) {
-            message(j, " is j and i = ", i)
-            keep <- which(
-              x[['profileIndex']] == unique(dsubdata$profileIndex)[j]
+      otn <- data_obis |>
+        filter(
+          rightsHolder ==
+            "Ocean Tracking Network, Dalhousie University, Halifax, Nova Scotia otndc@dal.ca",
+          !is.na(decimalLatitude),
+          !is.na(decimalLongitude),
+          !grepl("release|capture", occurrenceID) # exclude release and capture events, which are not detections of tagged animals
+        ) |>
+        select(
+          dataset_id,
+          aphiaid,
+          catalogNumber,
+          collectionCode,
+          datasetID,
+          datasetName,
+          decimalLatitude,
+          decimalLongitude,
+          eventDate,
+          eventID,
+          occurrenceID,
+          organismID,
+          organismName,
+          rightsHolder,
+          scientificName,
+          NAME_E.x,
+          geometry
+        ) |>
+        filter(grepl(
+          paste(unique(tags$collectioncode), collapse = "|"),
+          occurrenceID
+        )) |>
+        mutate(
+          tag_id = sub(
+            "_.*$",
+            "",
+            case_when(
+              grepl(pattern_dash, occurrenceID) ~ sub(
+                pattern_dash,
+                "",
+                occurrenceID
+              ),
+              grepl(pattern_underscore, occurrenceID) ~ sub(
+                pattern_underscore,
+                "",
+                occurrenceID
+              ),
+              .default = sub("^.*?_", "", occurrenceID)
             )
+          )
+        ) |>
+        filter(tag_id %in% tags$catalognumber) |>
+        rename(areaID = NAME_E.x)
 
-            if (
-              !all(is.na(dsubdata$PSAL[keep])) &&
-                !all(is.na(dsubdata$TEMP[keep])) &&
-                !all(is.na(dsubdata$depth[keep]))
-            ) {
-              # Use depth as a proxy for pressure (1 m ≈ 1 dbar)
-              approx_pres <- dsubdata$depth[keep]
-              SA <- gsw_SA_from_SP(
-                dsubdata$PSAL[keep],
-                approx_pres[keep],
-                mean(dsubdata$longitude[keep], na.rm = TRUE),
-                mean(dsubdata$latitude[keep], na.rm = TRUE)
-              )
-              CT <- gsw_CT_from_t(SA, dsubdata$TEMP[keep], approx_pres)
-              rho <- gsw_rho(SA, CT, approx_pres)
+      otn$stagnant_source <- FALSE
 
-              # Define MLD function using Δρ threshold
-              calc_mld <- function(depth, density, threshold = 0.03) {
-                ord <- order(depth)
-                depth <- depth[ord]
-                density <- density[ord]
-                surface_density <- density[which.min(depth)]
-                idx <- which(density - surface_density > threshold)
-                if (length(idx) == 0) {
-                  return(max(depth, na.rm = TRUE)) # fallback if no stratification
-                } else {
-                  return(depth[min(idx)])
-                }
+      ## year of publication
+
+      otn$year_of_publication <- as.numeric(format(Sys.Date, "%Y"))
+
+      otn
+    },
+    age = as.difftime(365, units = "days")
+  ),
+
+  tar_age(
+    data_gliders,
+    command = {
+      reDownload <- FALSE
+      options(timeout = 700)
+      dataDir <- file.path(dirname(path_to_store()), 'data', 'gliders')
+      ftpUrl <- read.table(file.path(
+        dirname(path_to_store()),
+        'data',
+        'gliders',
+        "url.txt"
+      ))$V1
+      dirs <- getURL(
+        paste(ftpUrl, '', sep = "/"),
+        ftp.use.epsv = FALSE,
+        dirlistonly = TRUE
+      )
+      dirnames <- strsplit(dirs, "\r*\n")[[1]]
+      okdir <- grepl('^GLD\\w+$', dirnames) # just in case something else gets put there
+      glddir <- dirnames[okdir]
+      # define subdirectory of which processed files to download
+      subdir <- 'L0-timeseries-post'
+      for (dir in glddir) {
+        message(which(glddir == dir), " of ", length(glddir))
+        cat(paste('Check directory', dir), sep = '\n')
+        # check that subdir exists
+        pathcheck <- paste(ftpUrl, dir, '', sep = '/')
+        glddircontents <- try(
+          getURL(url = pathcheck, ftp.use.epsv = FALSE, dirlistonly = TRUE),
+          silent = TRUE
+        )
+        glddircontents <- strsplit(glddircontents, "\r*\n")[[1]]
+        path <- paste(
+          ftpUrl,
+          dir,
+          subdir,
+          '', # to add '/' at end
+          sep = '/'
+        )
+        files <- try(
+          getURL(url = path, ftp.use.epsv = FALSE, dirlistonly = TRUE),
+          silent = TRUE
+        )
+        if (!inherits(files, "try-error")) {
+          filenames <- strsplit(files, "\r*\n")[[1]]
+          cat(paste('    Found', length(filenames), 'files'), sep = '\n')
+          if (length(filenames) != 0) {
+            # meaning data was able to be processed
+            # should only be 1 file, but for completeness
+            for (f in filenames) {
+              url <- paste0(path, f)
+              destfile <- paste(dataDir, f, sep = '/')
+              if (!file.exists(destfile) | reDownload) {
+                cat(paste('        Downloading', f), sep = '\n')
+                downloadedFile <- try(
+                  download.file(url = url, destfile = destfile, mode = 'wb'),
+                  silent = TRUE
+                )
+              } else {
+                cat(paste('        ', destfile, 'exists locally.'), sep = '\n')
+                Sys.sleep(15)
               }
-
-              dsubdata$mld[keep] <- calc_mld(dsubdata$depth[keep], rho)
-            } else {
-              dsubdata$mld[keep] <- NA
-            }
-          }
-
-          # Add mld into variable list:
-          vars <- c(vars, "mld")
-
-          # Above is to determine the MLD for each profile (upcast and downcast in the glider netcdf)
-
-          # split the data based on pressure breaks (zbreaks)
-          dsplit <- split(
-            x = dsubdata,
-            f = cut(dsubdata[['PRES']], breaks = zbreaks)
-          )
-          # now do the mean for each split
-          ## time is an issue for the `apply(..., FUN=mean)` so omit it
-          ## this is OK as we'll do the mean time over the entire profile
-          dmean <- lapply(dsplit, function(k) {
-            apply(
-              X = k[, !names(k) %in% 'time'],
-              MARGIN = 2,
-              FUN = mean,
-              na.rm = TRUE
-            )
-          })
-          ## combine it together
-          dmeanall <- as.data.frame(do.call('rbind', dmean))
-          ### find which rows have all NA values
-          omitrows <- apply(X = dmeanall, MARGIN = 1, FUN = function(k) {
-            all(is.na(k))
-          })
-          dmeanall <- dmeanall[!omitrows, ]
-          zprofile <- z[!omitrows]
-          ## create ctd object
-          ### get average values from all data in dsub for certain parameters
-          profileTime <- mean(dsubdata[['time']], na.rm = TRUE)
-          profileLongitude <- mean(dsubdata[['longitude']], na.rm = TRUE)
-          profileLatitude <- mean(dsubdata[['latitude']], na.rm = TRUE)
-          ### create ctd object
-          ctdadd <- oce::as.ctd(
-            salinity = dmeanall[['PSAL']],
-            temperature = dmeanall[['TEMP']],
-            pressure = zprofile,
-            conductivity = dmeanall[['CNDC']],
-            longitude = profileLongitude,
-            latitude = profileLatitude,
-            time = profileTime
-          )
-          ### add remaining variables,
-          ###     omit a few extra to avoid misleading user, these include :
-          ###         PRES2, depth
-          addvars <- vars[
-            !vars %in%
-              c(
-                'PSAL',
-                'TEMP',
-                'PRES',
-                'CNDC',
-                'longitude',
-                'latitude',
-                'time',
-                'PRES2',
-                'depth'
-              )
-          ]
-          for (addvar in addvars) {
-            addvarname <- addvar
-
-            ctdadd <- oce::oceSetData(
-              object = ctdadd,
-              name = addvarname,
-              value = dmeanall[[addvar]]
-            )
-          }
-          ### add metadata from original file
-          ctdadd@metadata <- x@metadata
-          ### have to re-set longitude, latitude, and time
-          ctdadd <- oce::oceSetMetadata(
-            object = ctdadd,
-            name = 'longitude',
-            value = profileLongitude
-          )
-          ctdadd <- oce::oceSetMetadata(
-            object = ctdadd,
-            name = 'latitude',
-            value = profileLatitude
-          )
-          ctdadd <- oce::oceSetMetadata(
-            object = ctdadd,
-            name = 'time',
-            value = profileTime
-          )
-          ### save ctd
-          x <- ctdadd
-
-          glider_list[[i]] <- data.frame(
-            BBP700 = if (!is.null(x[["BBP700"]])) x[["BBP700"]] else NA,
-            CDOM = if (!is.null(x[["CDOM"]])) x[["CDOM"]] else NA,
-            CHLA = if (!is.null(x[["CHLA"]])) x[["CHLA"]] else NA,
-            CNDC = if (!is.null(x[["CNDC"]])) x[["CNDC"]] else NA,
-            CNDC2 = if (!is.null(x[["CNDC2"]])) x[["CNDC2"]] else NA,
-            DeadReckoning = if (!is.null(x[["DeadReckoning"]])) {
-              x[["DeadReckoning"]]
-            } else {
-              NA
-            },
-            depth = if (!is.null(x[["depth"]])) x[["depth"]] else NA,
-            DOXY = if (!is.null(x[["DOXY"]])) x[["DOXY"]] else NA,
-            FLUORESCENCE_CHLA = if (!is.null(x[["FLUORESCENCE_CHLA"]])) {
-              x[["FLUORESCENCE_CHLA"]]
-            } else {
-              NA
-            },
-            FREQUENCY_DOXY = if (!is.null(x[["FREQUENCY_DOXY"]])) {
-              x[["FREQUENCY_DOXY"]]
-            } else {
-              NA
-            },
-            GLIDER_HEADING = if (!is.null(x[["GLIDER_HEADING"]])) {
-              x[["GLIDER_HEADING"]]
-            } else {
-              NA
-            },
-            GLIDER_PITCH = if (!is.null(x[["GLIDER_PITCH"]])) {
-              x[["GLIDER_PITCH"]]
-            } else {
-              NA
-            },
-            GLIDER_ROLL = if (!is.null(x[["GLIDER_ROLL"]])) {
-              x[["GLIDER_ROLL"]]
-            } else {
-              NA
-            },
-            latitude = if (!is.null(x[["latitude"]])) x[["latitude"]] else NA,
-            LEGATO_CODA_CORR_PHASE = if (
-              !is.null(x[["LEGATO_CODA_CORR_PHASE"]])
-            ) {
-              x[["LEGATO_CODA_CORR_PHASE"]]
-            } else {
-              NA
-            },
-            longitude = if (!is.null(x[["longitude"]])) {
-              x[["longitude"]]
-            } else {
-              NA
-            },
-            MFLUV1_NAPH_SCALED = if (!is.null(x[["MFLUV1_NAPH_SCALED"]])) {
-              x[["MFLUV1_NAPH_SCALED"]]
-            } else {
-              NA
-            },
-            MFLUV1_PHE_SCALED = if (!is.null(x[["MFLUV1_PHE_SCALED"]])) {
-              x[["MFLUV1_PHE_SCALED"]]
-            } else {
-              NA
-            },
-            MFLUV1_TMP = if (!is.null(x[["MFLUV1_TMP"]])) {
-              x[["MFLUV1_TMP"]]
-            } else {
-              NA
-            },
-            MFLUV1_TRY_SCALED = if (!is.null(x[["MFLUV1_TRY_SCALED"]])) {
-              x[["MFLUV1_TRY_SCALED"]]
-            } else {
-              NA
-            },
-            NavState = if (!is.null(x[["NavState"]])) x[["NavState"]] else NA,
-            oxygenConcentration = if (!is.null(x[["oxygenConcentration"]])) {
-              x[["oxygenConcentration"]]
-            } else {
-              NA
-            },
-            PRES = if (!is.null(x[["PRES"]])) x[["PRES"]] else NA,
-            PRES2 = if (!is.null(x[["PRES2"]])) x[["PRES2"]] else NA,
-            profileDirection = if (!is.null(x[["profileDirection"]])) {
-              x[["profileDirection"]]
-            } else {
-              NA
-            },
-            profileIndex = if (!is.null(x[["profileIndex"]])) {
-              x[["profileIndex"]]
-            } else {
-              NA
-            },
-            PSAL = if (!is.null(x[["PSAL"]])) x[["PSAL"]] else NA,
-            PSAL2 = if (!is.null(x[["PSAL2"]])) x[["PSAL2"]] else NA,
-            salinity = if (!is.null(x[["salinity"]])) x[["salinity"]] else NA,
-            TEMP = if (!is.null(x[["TEMP"]])) x[["TEMP"]] else NA,
-            TEMP_DOXY = if (!is.null(x[["TEMP_DOXY"]])) {
-              x[["TEMP_DOXY"]]
-            } else {
-              NA
-            },
-            TEMP2 = if (!is.null(x[["TEMP2"]])) x[["TEMP2"]] else NA,
-            time = if (!is.null(x[["time"]])) x[["time"]] else NA,
-            mld = if (!is.null(x[["mld"]])) x[["mld"]] else NA
-          )
+            } # closes f
+          } # closes length(filenames)
         } else {
-          # 0 index
+          # closes hasSubDir
+          cat(paste('      ', subdir, 'does not exist.'), sep = '\n')
+        }
+      }
+
+      # Making the netcdfs into a data frame for the app
+
+      files <- list.files(path = dataDir, pattern = "\\.nc$", full.names = TRUE)
+      glider_list <- vector("list", length(files)) # pre-allocate list
+
+      #message(paste0("files , ", files))
+
+      for (i in seq_along(files)) {
+        message(i, "of ", length(files))
+        x <- try(oceglider::read.glider.netcdf(file = files[i]), silent = TRUE)
+        if (!(inherits(x, "try-error"))) {
+          # weird dates in the files due to a hardware issue with the gliders
+          #good_year <- names(which.max(table(as.numeric(format(x[['time']], "%Y")))))
+          #message(paste0("hi ", good_year))
+          x <- oceglider::subset(
+            x,
+            grepl(
+              names(which.max(table(as.numeric(format(x[['time']], "%Y"))))),
+              time
+            )
+          )
+
+          # Remove profiles with profileIndex == 0 (inflecting/stalled)
+          x <- oceglider::subset(x, which(!(profileIndex == 0)))
+          if (!(length(x[['profileIndex']]) == 0)) {
+            # vertically binning and temporally averaging the data. For our analysis we bin it to 1dbar and hourly average.
+
+            # startTime and endTime will be numeric, that's OK b/c it will work for next calculation
+            # find which profiles are within the defined averaging time
+            # here it will be 1 hour.
+            dt <- 60 * 60 #sph
+            # define depth bins
+            dz <- 1 # size of depth bins
+            nz <- 600 # max depth of bins
+            z <- seq(1, nz, by = dz)
+
+            # initialize indices output
+            vars <- names(x[['data']][['payload1']]) # get all variables in glider file
+            # define breaks for splitting data
+            zbreaks <- c(0, z) + dz / 2
+
+            dsubdata <- x[['data']][['payload1']]
+
+            dsubdata$mld <- NA
+
+            for (j in seq_along(unique(dsubdata$profileIndex))) {
+              message(j, " is j and i = ", i)
+              keep <- which(
+                x[['profileIndex']] == unique(dsubdata$profileIndex)[j]
+              )
+
+              if (
+                !all(is.na(dsubdata$PSAL[keep])) &&
+                  !all(is.na(dsubdata$TEMP[keep])) &&
+                  !all(is.na(dsubdata$depth[keep]))
+              ) {
+                # Use depth as a proxy for pressure (1 m ≈ 1 dbar)
+                approx_pres <- dsubdata$depth[keep]
+                SA <- gsw_SA_from_SP(
+                  dsubdata$PSAL[keep],
+                  approx_pres[keep],
+                  mean(dsubdata$longitude[keep], na.rm = TRUE),
+                  mean(dsubdata$latitude[keep], na.rm = TRUE)
+                )
+                CT <- gsw_CT_from_t(SA, dsubdata$TEMP[keep], approx_pres)
+                rho <- gsw_rho(SA, CT, approx_pres)
+
+                # Define MLD function using Δρ threshold
+                calc_mld <- function(depth, density, threshold = 0.03) {
+                  ord <- order(depth)
+                  depth <- depth[ord]
+                  density <- density[ord]
+                  surface_density <- density[which.min(depth)]
+                  idx <- which(density - surface_density > threshold)
+                  if (length(idx) == 0) {
+                    return(max(depth, na.rm = TRUE)) # fallback if no stratification
+                  } else {
+                    return(depth[min(idx)])
+                  }
+                }
+
+                dsubdata$mld[keep] <- calc_mld(dsubdata$depth[keep], rho)
+              } else {
+                dsubdata$mld[keep] <- NA
+              }
+            }
+
+            # Add mld into variable list:
+            vars <- c(vars, "mld")
+
+            # Above is to determine the MLD for each profile (upcast and downcast in the glider netcdf)
+
+            # split the data based on pressure breaks (zbreaks)
+            dsplit <- split(
+              x = dsubdata,
+              f = cut(dsubdata[['PRES']], breaks = zbreaks)
+            )
+            # now do the mean for each split
+            ## time is an issue for the `apply(..., FUN=mean)` so omit it
+            ## this is OK as we'll do the mean time over the entire profile
+            dmean <- lapply(dsplit, function(k) {
+              apply(
+                X = k[, !names(k) %in% 'time'],
+                MARGIN = 2,
+                FUN = mean,
+                na.rm = TRUE
+              )
+            })
+            ## combine it together
+            dmeanall <- as.data.frame(do.call('rbind', dmean))
+            ### find which rows have all NA values
+            omitrows <- apply(X = dmeanall, MARGIN = 1, FUN = function(k) {
+              all(is.na(k))
+            })
+            dmeanall <- dmeanall[!omitrows, ]
+            zprofile <- z[!omitrows]
+            ## create ctd object
+            ### get average values from all data in dsub for certain parameters
+            profileTime <- mean(dsubdata[['time']], na.rm = TRUE)
+            profileLongitude <- mean(dsubdata[['longitude']], na.rm = TRUE)
+            profileLatitude <- mean(dsubdata[['latitude']], na.rm = TRUE)
+            ### create ctd object
+            ctdadd <- oce::as.ctd(
+              salinity = dmeanall[['PSAL']],
+              temperature = dmeanall[['TEMP']],
+              pressure = zprofile,
+              conductivity = dmeanall[['CNDC']],
+              longitude = profileLongitude,
+              latitude = profileLatitude,
+              time = profileTime
+            )
+            ### add remaining variables,
+            ###     omit a few extra to avoid misleading user, these include :
+            ###         PRES2, depth
+            addvars <- vars[
+              !vars %in%
+                c(
+                  'PSAL',
+                  'TEMP',
+                  'PRES',
+                  'CNDC',
+                  'longitude',
+                  'latitude',
+                  'time',
+                  'PRES2',
+                  'depth'
+                )
+            ]
+            for (addvar in addvars) {
+              addvarname <- addvar
+
+              ctdadd <- oce::oceSetData(
+                object = ctdadd,
+                name = addvarname,
+                value = dmeanall[[addvar]]
+              )
+            }
+            ### add metadata from original file
+            ctdadd@metadata <- x@metadata
+            ### have to re-set longitude, latitude, and time
+            ctdadd <- oce::oceSetMetadata(
+              object = ctdadd,
+              name = 'longitude',
+              value = profileLongitude
+            )
+            ctdadd <- oce::oceSetMetadata(
+              object = ctdadd,
+              name = 'latitude',
+              value = profileLatitude
+            )
+            ctdadd <- oce::oceSetMetadata(
+              object = ctdadd,
+              name = 'time',
+              value = profileTime
+            )
+            ### save ctd
+            x <- ctdadd
+
+            glider_list[[i]] <- data.frame(
+              BBP700 = if (!is.null(x[["BBP700"]])) x[["BBP700"]] else NA,
+              CDOM = if (!is.null(x[["CDOM"]])) x[["CDOM"]] else NA,
+              CHLA = if (!is.null(x[["CHLA"]])) x[["CHLA"]] else NA,
+              CNDC = if (!is.null(x[["CNDC"]])) x[["CNDC"]] else NA,
+              CNDC2 = if (!is.null(x[["CNDC2"]])) x[["CNDC2"]] else NA,
+              DeadReckoning = if (!is.null(x[["DeadReckoning"]])) {
+                x[["DeadReckoning"]]
+              } else {
+                NA
+              },
+              depth = if (!is.null(x[["depth"]])) x[["depth"]] else NA,
+              DOXY = if (!is.null(x[["DOXY"]])) x[["DOXY"]] else NA,
+              FLUORESCENCE_CHLA = if (!is.null(x[["FLUORESCENCE_CHLA"]])) {
+                x[["FLUORESCENCE_CHLA"]]
+              } else {
+                NA
+              },
+              FREQUENCY_DOXY = if (!is.null(x[["FREQUENCY_DOXY"]])) {
+                x[["FREQUENCY_DOXY"]]
+              } else {
+                NA
+              },
+              GLIDER_HEADING = if (!is.null(x[["GLIDER_HEADING"]])) {
+                x[["GLIDER_HEADING"]]
+              } else {
+                NA
+              },
+              GLIDER_PITCH = if (!is.null(x[["GLIDER_PITCH"]])) {
+                x[["GLIDER_PITCH"]]
+              } else {
+                NA
+              },
+              GLIDER_ROLL = if (!is.null(x[["GLIDER_ROLL"]])) {
+                x[["GLIDER_ROLL"]]
+              } else {
+                NA
+              },
+              latitude = if (!is.null(x[["latitude"]])) x[["latitude"]] else NA,
+              LEGATO_CODA_CORR_PHASE = if (
+                !is.null(x[["LEGATO_CODA_CORR_PHASE"]])
+              ) {
+                x[["LEGATO_CODA_CORR_PHASE"]]
+              } else {
+                NA
+              },
+              longitude = if (!is.null(x[["longitude"]])) {
+                x[["longitude"]]
+              } else {
+                NA
+              },
+              MFLUV1_NAPH_SCALED = if (!is.null(x[["MFLUV1_NAPH_SCALED"]])) {
+                x[["MFLUV1_NAPH_SCALED"]]
+              } else {
+                NA
+              },
+              MFLUV1_PHE_SCALED = if (!is.null(x[["MFLUV1_PHE_SCALED"]])) {
+                x[["MFLUV1_PHE_SCALED"]]
+              } else {
+                NA
+              },
+              MFLUV1_TMP = if (!is.null(x[["MFLUV1_TMP"]])) {
+                x[["MFLUV1_TMP"]]
+              } else {
+                NA
+              },
+              MFLUV1_TRY_SCALED = if (!is.null(x[["MFLUV1_TRY_SCALED"]])) {
+                x[["MFLUV1_TRY_SCALED"]]
+              } else {
+                NA
+              },
+              NavState = if (!is.null(x[["NavState"]])) x[["NavState"]] else NA,
+              oxygenConcentration = if (!is.null(x[["oxygenConcentration"]])) {
+                x[["oxygenConcentration"]]
+              } else {
+                NA
+              },
+              PRES = if (!is.null(x[["PRES"]])) x[["PRES"]] else NA,
+              PRES2 = if (!is.null(x[["PRES2"]])) x[["PRES2"]] else NA,
+              profileDirection = if (!is.null(x[["profileDirection"]])) {
+                x[["profileDirection"]]
+              } else {
+                NA
+              },
+              profileIndex = if (!is.null(x[["profileIndex"]])) {
+                x[["profileIndex"]]
+              } else {
+                NA
+              },
+              PSAL = if (!is.null(x[["PSAL"]])) x[["PSAL"]] else NA,
+              PSAL2 = if (!is.null(x[["PSAL2"]])) x[["PSAL2"]] else NA,
+              salinity = if (!is.null(x[["salinity"]])) x[["salinity"]] else NA,
+              TEMP = if (!is.null(x[["TEMP"]])) x[["TEMP"]] else NA,
+              TEMP_DOXY = if (!is.null(x[["TEMP_DOXY"]])) {
+                x[["TEMP_DOXY"]]
+              } else {
+                NA
+              },
+              TEMP2 = if (!is.null(x[["TEMP2"]])) x[["TEMP2"]] else NA,
+              time = if (!is.null(x[["time"]])) x[["time"]] else NA,
+              mld = if (!is.null(x[["mld"]])) x[["mld"]] else NA
+            )
+          } else {
+            # 0 index
+            glider_list[[i]] <- NULL
+          }
+        } else {
           glider_list[[i]] <- NULL
         }
-      } else {
-        glider_list[[i]] <- NULL
       }
-    }
 
-    glider_data <- do.call(rbind, glider_list)
-    glider_data$stagnant_source <- FALSE
+      glider_data <- do.call(rbind, glider_list)
+      glider_data$stagnant_source <- FALSE
 
-    ## YEAR OF PUBLICATION
+      ## YEAR OF PUBLICATION
 
-    # Split into individual file listings
-    lines <- strsplit(dirs, "\r*\n")[[1]]
+      # Split into individual file listings
+      lines <- strsplit(dirs, "\r*\n")[[1]]
 
-    # Extract dates from the FTP listing
-    dates <- regmatches(
-      lines,
-      gregexpr(
-        "[A-Z][a-z]{2} [ 0-9]{1,2} [0-9]{2}:[0-9]{2}",
-        lines
+      # Extract dates from the FTP listing
+      dates <- regmatches(
+        lines,
+        gregexpr(
+          "[A-Z][a-z]{2} [ 0-9]{1,2} [0-9]{2}:[0-9]{2}",
+          lines
+        )
       )
-    )
 
-    dates <- as.character(unlist(dates))
+      dates <- as.character(unlist(dates))
 
-    # Convert dates to R dates
-    dates <- as.POSIXct(
-      dates,
-      format = "%b %d %H:%M",
-      tz = "UTC"
-    )
+      # Convert dates to R dates
+      dates <- as.POSIXct(
+        dates,
+        format = "%b %d %H:%M",
+        tz = "UTC"
+      )
 
-    # FTP listings without a year are assumed to be from the current year
-    dates$year <- as.numeric(format(Sys.Date(), "%Y"))
+      # FTP listings without a year are assumed to be from the current year
+      dates$year <- as.numeric(format(Sys.Date(), "%Y"))
 
-    # Most recent modification year
-    glider_data$year_of_publication <- max(as.numeric(unique(dates$year)))
+      # Most recent modification year
+      glider_data$year_of_publication <- max(as.numeric(unique(dates$year)))
 
-    glider_data
-  }),
+      glider_data
+    },
+    age = as.difftime(365, units = "days")
+  ),
 
   tar_target(
     name = data_designtargets_gdb,
@@ -2818,141 +2862,159 @@ raw_data_targets <- list(
       )
     }
   ),
-  tar_target(name = data_buoy, command = {
-    arguments <- c(
-      "Banquereau Bank",
-      "East Scotian Slope",
-      "Halifax",
-      "Halifax DISCUS TriAx",
-      "Halifax Harbour",
-      "Laurentian Fan",
-      "Port Hope",
-      "Prince Edward Point",
-      "Tail of the Bank"
-    )
-    dfs <- NULL
-    for (i in seq_along(arguments)) {
-      message(i)
-      destdir <- tempdir(check = TRUE)
-      file <- dod.buoy("MEDS", arguments[i], destdir = destdir)
-      col.names <- strsplit(readLines(file, 1), ",")[[1]]
-      d <- read.csv(file, skip = 2, col.names = col.names)
-      names(d) <- tolower(names(d))
+  tar_age(
+    name = data_buoy,
+    command = {
+      arguments <- c(
+        "Banquereau Bank",
+        "East Scotian Slope",
+        "Halifax",
+        "Halifax DISCUS TriAx",
+        "Halifax Harbour",
+        "Laurentian Fan",
+        "Port Hope",
+        "Prince Edward Point",
+        "Tail of the Bank"
+      )
+      dfs <- NULL
+      for (i in seq_along(arguments)) {
+        message(i)
+        destdir <- tempdir(check = TRUE)
+        file <- dod.buoy("MEDS", arguments[i], destdir = destdir)
+        col.names <- strsplit(readLines(file, 1), ",")[[1]]
+        d <- read.csv(file, skip = 2, col.names = col.names)
+        names(d) <- tolower(names(d))
 
-      if ("vwh." %in% names(d)) {
-        d$waveheight <- d$vwh.
-      }
-      if ('date' %in% names(d)) {
-        d$date_revamped <- as.POSIXct(
-          d$date,
-          tz = "UTC",
-          format = "%m/%d/%Y %H:%M"
-        )
-      } else {
-        d$date_revamped <- NA
-      }
+        if ("vwh." %in% names(d)) {
+          d$waveheight <- d$vwh.
+        }
+        if ('date' %in% names(d)) {
+          d$date_revamped <- as.POSIXct(
+            d$date,
+            tz = "UTC",
+            format = "%m/%d/%Y %H:%M"
+          )
+        } else {
+          d$date_revamped <- NA
+        }
 
-      dfs[[i]] <- d[, c("latitude", 'longitude', 'date_revamped', 'waveheight')]
+        dfs[[i]] <- d[, c(
+          "latitude",
+          'longitude',
+          'date_revamped',
+          'waveheight'
+        )]
 
-      unlink(destdir, recursive = TRUE)
-    }
-
-    wave_height <- do.call(rbind, dfs)
-
-    wh <- wave_height[-(which(is.na(wave_height$waveheight))), ]
-    wh$longitude <- -1 * (wh$longitude)
-
-    ## SECOND DATA SOURCE
-    arguments <- c('h1', 'halifax', 'hkb', 'saint_john', 'saint_johns')
-    dfs <- NULL
-
-    for (i in seq_along(arguments)) {
-      message(i, " of ", length(arguments))
-      destdir <- tempdir(check = TRUE)
-      file <- dod.buoy("smartatlantic", arguments[i], destdir = destdir)
-      col.names <- strsplit(readLines(file, 1), ",")[[1]]
-      d <- read.csv(file, skip = 2, col.names = col.names)
-      names(d) <- tolower(names(d))
-
-      if ('lat' %in% names(d)) {
-        d$latitude <- d$lat
-        d$longitude <- d$lon
+        unlink(destdir, recursive = TRUE)
       }
 
-      if ("wave_ht_sig" %in% names(d)) {
-        d$waveheight <- d$wave_ht_sig
-      } else {
-        browser(1)
+      wave_height <- do.call(rbind, dfs)
+
+      wh <- wave_height[-(which(is.na(wave_height$waveheight))), ]
+      wh$longitude <- -1 * (wh$longitude)
+
+      ## SECOND DATA SOURCE
+      arguments <- c('h1', 'halifax', 'hkb', 'saint_john', 'saint_johns')
+      dfs <- NULL
+
+      for (i in seq_along(arguments)) {
+        message(i, " of ", length(arguments))
+        destdir <- tempdir(check = TRUE)
+        file <- dod.buoy("smartatlantic", arguments[i], destdir = destdir)
+        col.names <- strsplit(readLines(file, 1), ",")[[1]]
+        d <- read.csv(file, skip = 2, col.names = col.names)
+        names(d) <- tolower(names(d))
+
+        if ('lat' %in% names(d)) {
+          d$latitude <- d$lat
+          d$longitude <- d$lon
+        }
+
+        if ("wave_ht_sig" %in% names(d)) {
+          d$waveheight <- d$wave_ht_sig
+        } else {
+          browser(1)
+        }
+
+        if ('timestamp' %in% names(d)) {
+          d$date_revamped <- as.POSIXct(
+            d$timestamp,
+            tz = "UTC",
+            format = "%Y-%m-%dT%H:%M:%SZ"
+          )
+        } else {
+          browser(2)
+          d$date_revamped <- NA
+        }
+
+        dfs[[i]] <- d[, c(
+          "latitude",
+          'longitude',
+          'date_revamped',
+          'waveheight'
+        )]
+
+        unlink(destdir, recursive = TRUE)
       }
 
-      if ('timestamp' %in% names(d)) {
-        d$date_revamped <- as.POSIXct(
-          d$timestamp,
-          tz = "UTC",
-          format = "%Y-%m-%dT%H:%M:%SZ"
-        )
-      } else {
-        browser(2)
-        d$date_revamped <- NA
-      }
+      wave_height2 <- do.call(rbind, dfs)
 
-      dfs[[i]] <- d[, c("latitude", 'longitude', 'date_revamped', 'waveheight')]
+      wh2 <- wave_height2[-(which(is.na(wave_height2$waveheight))), ]
+      wh2$latitude <- round(wh2$latitude, 2)
+      wh2$longitude <- round(wh2$longitude, 2)
 
-      unlink(destdir, recursive = TRUE)
-    }
+      final <- rbind(wh, wh2)
 
-    wave_height2 <- do.call(rbind, dfs)
+      ## YEAR OF PUBLICATION (I go right to the source that the function uses)
+      dirs <- getURL(
+        "https://www.meds-sdmm.dfo-mpo.gc.ca/alphapro/wave/waveshare/csvData/",
+        ftp.use.epsv = FALSE,
+        dirlistonly = FALSE
+      )
 
-    wh2 <- wave_height2[-(which(is.na(wave_height2$waveheight))), ]
-    wh2$latitude <- round(wh2$latitude, 2)
-    wh2$longitude <- round(wh2$longitude, 2)
+      dates <- regmatches(
+        dirs,
+        gregexpr("\\d{1,2}/\\d{1,2}/\\d{4} \\d{1,2}:\\d{2} [AP]M", dirs)
+      )[[1]]
 
-    final <- rbind(wh, wh2)
+      dates <- as.POSIXct(
+        dates,
+        format = "%m/%d/%Y %I:%M %p"
+      )
 
-    ## YEAR OF PUBLICATION (I go right to the source that the function uses)
-    dirs <- getURL(
-      "https://www.meds-sdmm.dfo-mpo.gc.ca/alphapro/wave/waveshare/csvData/",
-      ftp.use.epsv = FALSE,
-      dirlistonly = FALSE
-    )
+      final$year_of_publication <- as.numeric(format(
+        max(dates, na.rm = TRUE),
+        "%Y"
+      ))
+      final$stagnant_source <- FALSE
 
-    dates <- regmatches(
-      dirs,
-      gregexpr("\\d{1,2}/\\d{1,2}/\\d{4} \\d{1,2}:\\d{2} [AP]M", dirs)
-    )[[1]]
+      return(final)
+    },
+    age = as.difftime(365, units = "days")
+  ),
+  tar_age(
+    name = data_seals,
+    command = {
+      library(marea)
+      data(grey_seals)
 
-    dates <- as.POSIXct(
-      dates,
-      format = "%m/%d/%Y %I:%M %p"
-    )
+      ## YEAR
+      url <- "https://api.github.com/repos/MarEcosystemApproaches/marea/commits?path=data/grey_seals.rda&per_page=1"
+      commits <- jsonlite::fromJSON(paste(readLines(url), collapse = ""))
+      yop <- as.numeric(format(
+        as.Date(commits$commit$committer$date),
+        "%Y"
+      ))
+      ## END YEAR
 
-    final$year_of_publication <- as.numeric(format(
-      max(dates, na.rm = TRUE),
-      "%Y"
-    ))
-    final$stagnant_source <- FALSE
+      x <- grey_seals[['data']]
+      x$stagnant_source <- FALSE
 
-    return(final)
-  }),
-  tar_target(name = data_seals, command = {
-    library(marea)
-    data(grey_seals)
-
-    ## YEAR
-    url <- "https://api.github.com/repos/MarEcosystemApproaches/marea/commits?path=data/grey_seals.rda&per_page=1"
-    commits <- jsonlite::fromJSON(paste(readLines(url), collapse = ""))
-    yop <- as.numeric(format(
-      as.Date(commits$commit$committer$date),
-      "%Y"
-    ))
-    ## END YEAR
-
-    x <- grey_seals[['data']]
-    x$stagnant_source <- FALSE
-
-    x$year_of_publication <- yop
-    return(x)
-  }),
+      x$year_of_publication <- yop
+      return(x)
+    },
+    age = as.difftime(365, units = "days")
+  ),
   tar_target(name = data_offshore_energy_wells, command = {
     url <- "https://cnsopbdigitaldata.ca/geoviewer/dmc/public/dow-2025.xlsx"
 
@@ -3187,7 +3249,7 @@ raw_data_targets <- list(
 
     env_rasters
   }),
-  tar_target(name = data_benthic, command = {
+  tar_target(name = data_benthoscape, command = {
     tmp_dir <- tempdir()
 
     # Base URL
