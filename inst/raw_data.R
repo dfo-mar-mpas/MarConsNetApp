@@ -468,7 +468,7 @@ raw_data_targets <- list(
       mutate(year_of_publication = 2007)
   }),
 
-  tar_target(name = sar_ch, command = {
+  tar_target(name = data_sar_ch, command = {
     # ESRI REST cannot handle the query, downloading the FGDB manually instead from:
     # https://open.canada.ca/data/en/dataset/db177a8c-5d7d-49eb-8290-31e6a45d786c
 
@@ -491,7 +491,7 @@ raw_data_targets <- list(
     unzip(zip_file, exdir = unzip_dir)
     gdb <- list.dirs(unzip_dir)[grepl("\\.gdb", list.dirs(unzip_dir))]
 
-    sar_ch <- st_read(
+    data_sar_ch <- st_read(
       gdb,
       layer = st_layers(gdb)[grepl("_EN", st_layers(gdb)[, 1]), 1]
     ) |>
@@ -500,7 +500,7 @@ raw_data_targets <- list(
       st_transform(st_crs(regions)) |>
       st_filter(regions) |>
       mutate(year_of_publication = 2025)
-    sar_ch
+    data_sar_ch
   }),
 
   # DMAPPS ----

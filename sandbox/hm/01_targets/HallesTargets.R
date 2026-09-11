@@ -248,7 +248,7 @@ list(
       st_filter(regions)
   }),
 
-  tar_target(name = sar_ch, command = {
+  tar_target(name = data_sar_ch, command = {
     # ESRI REST cannot handle the query, downloading the FGDB manually instead from:
     # https://open.canada.ca/data/en/dataset/db177a8c-5d7d-49eb-8290-31e6a45d786c
 
@@ -270,7 +270,7 @@ list(
     # Unzip the file
     unzip(zip_file, exdir = unzip_dir)
 
-    sar_ch <- st_read(
+    data_sar_ch <- st_read(
       file.path(unzip_dir, "CriticalHabitat_EDH_2025.gdb"),
       layer = "DFO_SARA_CH_EDH"
     ) |>
@@ -346,7 +346,7 @@ list(
     ))$V1
   }),
 
-  tar_target(name = om, command = {
+  tar_target(name = data_om, command = {
     cookie
     OM <- dataSPA::getData(
       type = "om",
@@ -596,7 +596,7 @@ list(
     collaborations
     creature_feature
     cost_of_mpas
-    om
+    data_om
     objective_tabs
     regions
     Ecological
@@ -3143,7 +3143,7 @@ list(
   }),
 
   tar_target(name = ind_SAR_CH_representation, command = {
-    data <- sar_ch |>
+    data <- data_sar_ch |>
       rowwise() |>
       mutate(
         name = if_else(
@@ -6130,7 +6130,7 @@ list(
     # This is because all of our indicators like this use external open data.
 
     command = {
-      project_costs <- om |>
+      project_costs <- data_om |>
         group_by(project_id) |>
         reframe(totalamount = sum(amount))
 
@@ -6195,7 +6195,7 @@ list(
         "indicatorFlower",
         "Objectives_processed",
         "N_Objectives",
-        "om",
+        "data_om",
         "Ecological",
         "Context",
         "collaborations",

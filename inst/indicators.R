@@ -2252,7 +2252,7 @@ indicator_targets <- list(
   }),
 
   tar_target(name = ind_SAR_CH_representation, command = {
-    data <- sar_ch |>
+    data <- data_sar_ch |>
       rowwise() |>
       mutate(
         name = if_else(
