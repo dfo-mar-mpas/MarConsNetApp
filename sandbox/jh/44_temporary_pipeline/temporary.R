@@ -19,7 +19,7 @@ tar_load(c(
   "data_csas",
   "climate",
   "cost_of_mpas",
-  "salary"
+  "data_salary"
 ))
 
 # NEXT
@@ -120,7 +120,7 @@ tar_load(c(
   "data_csas",
   "climate",
   "cost_of_mpas",
-  "salary"
+  "data_salary"
 ))
 
 # NEXT
@@ -224,7 +224,7 @@ tar_load(c(
   "data_csas",
   "climate",
   "cost_of_mpas",
-  "salary"
+  "data_salary"
 ))
 
 #source("R/app.R"); app()

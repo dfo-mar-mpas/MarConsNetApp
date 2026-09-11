@@ -63,7 +63,7 @@ tar_load(c(
   "data_csas",
   "climate_change",
   "cost_of_mpas",
-  "salary",
+  "data_salary",
   "theme_table",
   "objective_tabs",
   "objective_indicators",

@@ -79,7 +79,7 @@ tar_load(c(MPAs,
            data_deliverables,
            data_csas,
            climate_change,
-           salary,
+           data_salary,
            objective_tabs),
          store = path_to_store())
 
@@ -908,11 +908,11 @@ if (length(cost_of_mpas2$project_id) != 0) {
   SALs <- list()
    for (i in seq_along(projects)) {
     percent_sites_in_network <- sum(cost_of_mpas2$percent_sites_in_mpa[which(cost_of_mpas2$project_id == projects[i])])
-    salary$amount_week[which(as.numeric(salary$project_id) == as.numeric(projects[i]))] <- salary$amount_week[which(as.numeric(salary$project_id) == as.numeric(projects[i]))]*percent_sites_in_network
-    SALs[[i]] <- salary[which(as.numeric(salary$project_id) == as.numeric(projects[i])),]
+    data_salary$amount_week[which(as.numeric(data_salary$project_id) == as.numeric(projects[i]))] <- data_salary$amount_week[which(as.numeric(data_salary$project_id) == as.numeric(projects[i]))]*percent_sites_in_network
+    SALs[[i]] <- data_salary[which(as.numeric(data_salary$project_id) == as.numeric(projects[i])),]
   }
   network_salary <- do.call(rbind, SALs)
-  salary_plot <-  try(dataSPA::plotSPA(salary=network_salary, which="salaryBar"), silent=TRUE)
+  salary_plot <-  try(dataSPA::plotSPA(data_salary=network_salary, which="salaryBar"), silent=TRUE)
 
   tagList(
     tags$p("Disclaimer: The cost information is based on the funding information in the Project Planning Tool. The amount is based on percentage of samples taken in the area of interest compared to the total samples."),
@@ -959,8 +959,8 @@ for (i in seq_along(ps)) {
     amount = rep(NA, length(PS$project_id))
   )
   for (j in seq_along(PS$project_id)) {
-    keep <- which(salary$project_id == PS$project_id[j])
-    adjusted_ps_salary[[i]]$amount[j] <- sum(salary$amount_week[keep] * PS$percent_sites_in_mpa[j])
+    keep <- which(data_salary$project_id == PS$project_id[j])
+    adjusted_ps_salary[[i]]$amount[j] <- sum(data_salary$amount_week[keep] * PS$percent_sites_in_mpa[j])
   }
 }
 

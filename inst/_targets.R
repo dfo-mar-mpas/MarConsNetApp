@@ -332,7 +332,7 @@ list(
       "data_deliverables",
       "data_csas",
       "cost_of_mpas",
-      "salary",
+      "data_salary",
       "objective_tabs",
       "objective_indicators",
       "map_palette",
@@ -486,7 +486,7 @@ list(
         "data_deliverables",
         "data_csas",
         "cost_of_mpas",
-        "salary",
+        "data_salary",
         "objective_tabs",
         "objective_indicators",
         "map_palette",
@@ -619,7 +619,7 @@ list(
       data_csas
       data_deliverables
       data_collaborations
-      salary
+      data_salary
       data_modelled_kelp
       data_kelp_distribution_and_abundance
       data_macroalgae_modelled

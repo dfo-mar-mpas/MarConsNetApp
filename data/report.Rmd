@@ -95,7 +95,7 @@ tar_load(c(MPAs,
            data_deliverables,
            data_csas,
            climate_change,
-           salary,
+           data_salary,
            objective_tabs,
            all_indicator_project_geoms), store=path_to_store())
 

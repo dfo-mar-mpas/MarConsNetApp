@@ -362,7 +362,7 @@ list(
     OM[-(which(OM$activity_type == "Other")), ]
   }),
 
-  tar_target(name = salary, command = {
+  tar_target(name = data_salary, command = {
     SAL <- dataSPA::getData(
       type = "salary",
       age = 3000,
@@ -6203,7 +6203,7 @@ list(
         "data_csas",
         "climate",
         "cost_of_mpas",
-        "salary",
+        "data_salary",
         "theme_table",
         "objective_tabs",
         "objective_indicators"

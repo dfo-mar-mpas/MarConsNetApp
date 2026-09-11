@@ -530,7 +530,7 @@ raw_data_targets <- list(
   ),
 
   tar_target(
-    name = salary,
+    name = data_salary,
     command = {
       SAL <- dataSPA::getData(
         type = "salary",
