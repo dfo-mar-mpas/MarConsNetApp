@@ -1032,7 +1032,8 @@ raw_data_targets <- list(
       out_path
     },
     pattern = map(rawdata_obis_grid),
-    iteration = "list"
+    iteration = "list",
+    format = "file"
   ),
 
   tar_target(
@@ -3213,46 +3214,6 @@ raw_data_targets <- list(
     df
   }),
 
-  tar_target(name = data_epibenthic_communities_environmental, command = {
-    env_urls <- c(
-      bottom_current_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/0b49f9aa-f6f1-4c74-bb8b-91cfd4058941/file_downloaded",
-      bottom_salinity_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/dfbe8bdd-1168-4e08-844c-8830a2451013/file_downloaded",
-      bottom_temperature_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/64db951f-047c-4956-822a-105a2600400f/file_downloaded",
-      depth = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/6470aecf-f963-4c71-8606-6889d193bd59/file_downloaded",
-      fishing_effort_mobile = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/1973d23d-319a-4d7d-be56-951b977edece/file_downloaded",
-      sediment_grain_size = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/d40463cb-3683-425a-87ab-a95ba09cd617/file_downloaded",
-      slope = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/060bda2f-5a86-4e40-8129-a4d44b16622c/file_downloaded"
-    )
-
-    # Temporary directory for the TIFFs
-    env_dir <- tempfile("mendeley_environmental_")
-    dir.create(env_dir)
-
-    # Download files
-    env_files <- vapply(
-      names(env_urls),
-      function(x) {
-        file <- file.path(env_dir, paste0(x, ".tif"))
-
-        httr2::request(env_urls[[x]]) |>
-          httr2::req_perform() |>
-          httr2::resp_body_raw() |>
-          writeBin(file)
-
-        file
-      },
-      character(1)
-    )
-
-    # Load as terra rasters
-    env_rasters <- lapply(env_files, terra::rast)
-    names(env_rasters) <- names(env_urls)
-    env_rasters$stagnant_source <- TRUE
-
-    env_rasters$year_of_publication <- 2024
-
-    env_rasters
-  }),
   tar_target(name = data_benthoscape, command = {
     tmp_dir <- tempdir()
 
@@ -3284,3 +3245,86 @@ raw_data_targets <- list(
     benthoscape
   })
 )
+
+
+func_data_epibenthic_communities_environmental <- function() {
+  env_urls <- c(
+    bottom_current_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/0b49f9aa-f6f1-4c74-bb8b-91cfd4058941/file_downloaded",
+    bottom_salinity_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/dfbe8bdd-1168-4e08-844c-8830a2451013/file_downloaded",
+    bottom_temperature_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/64db951f-047c-4956-822a-105a2600400f/file_downloaded",
+    depth = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/6470aecf-f963-4c71-8606-6889d193bd59/file_downloaded",
+    fishing_effort_mobile = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/1973d23d-319a-4d7d-be56-951b977edece/file_downloaded",
+    sediment_grain_size = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/d40463cb-3683-425a-87ab-a95ba09cd617/file_downloaded",
+    slope = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/060bda2f-5a86-4e40-8129-a4d44b16622c/file_downloaded"
+  )
+
+  # Temporary directory for the TIFFs
+  env_dir <- tempfile("mendeley_environmental_")
+  dir.create(env_dir)
+
+  # Download files
+  env_files <- vapply(
+    names(env_urls),
+    function(x) {
+      file <- file.path(env_dir, paste0(x, ".tif"))
+
+      httr2::request(env_urls[[x]]) |>
+        httr2::req_perform() |>
+        httr2::resp_body_raw() |>
+        writeBin(file)
+
+      file
+    },
+    character(1)
+  )
+
+  # Load as terra rasters
+  env_rasters <- lapply(env_files, terra::rast)
+  names(env_rasters) <- names(env_urls)
+  env_rasters$stagnant_source <- TRUE
+
+  env_rasters$year_of_publication <- 2024
+
+  env_rasters
+}
+
+data_epibenthic_communities_environmental <- (function() {
+  env_urls <- c(
+    bottom_current_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/0b49f9aa-f6f1-4c74-bb8b-91cfd4058941/file_downloaded",
+    bottom_salinity_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/dfbe8bdd-1168-4e08-844c-8830a2451013/file_downloaded",
+    bottom_temperature_mean = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/64db951f-047c-4956-822a-105a2600400f/file_downloaded",
+    depth = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/6470aecf-f963-4c71-8606-6889d193bd59/file_downloaded",
+    fishing_effort_mobile = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/1973d23d-319a-4d7d-be56-951b977edece/file_downloaded",
+    sediment_grain_size = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/d40463cb-3683-425a-87ab-a95ba09cd617/file_downloaded",
+    slope = "https://data.mendeley.com/public-files/datasets/n8yk8rds9y/files/060bda2f-5a86-4e40-8129-a4d44b16622c/file_downloaded"
+  )
+
+  # Temporary directory for the TIFFs
+  env_dir <- tempfile("mendeley_environmental_")
+  dir.create(env_dir)
+
+  # Download files
+  env_files <- vapply(
+    names(env_urls),
+    function(x) {
+      file <- file.path(env_dir, paste0(x, ".tif"))
+
+      httr2::request(env_urls[[x]]) |>
+        httr2::req_perform() |>
+        httr2::resp_body_raw() |>
+        writeBin(file)
+
+      file
+    },
+    character(1)
+  )
+
+  # Load as terra rasters
+  env_rasters <- lapply(env_files, terra::rast)
+  names(env_rasters) <- names(env_urls)
+  env_rasters$stagnant_source <- TRUE
+
+  env_rasters$year_of_publication <- 2024
+
+  env_rasters
+})()
