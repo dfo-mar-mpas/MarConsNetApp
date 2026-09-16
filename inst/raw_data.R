@@ -3243,7 +3243,59 @@ raw_data_targets <- list(
     )
 
     benthoscape
-  })
+  }),
+
+  tar_target(name = data_whale_sightings, command = {
+    filename <- paste0(
+      dirname(store),
+      "/data/whales/filtered_sightings_2026-09-15.csv"
+    )
+    sightings <- read.csv(filename, skip = 19)
+    sightings$year_of_publication <- stringr::str_extract(filename, "\\d{4}")
+    sightings$stagnant_source <- TRUE #https://mits-sgim.azure.cloud-nuage.dfo-mpo.gc.ca/sightings
+    sightings <- sightings[c(
+      'Year',
+      'Latitude',
+      'Longitude',
+      'Species_Common_Name',
+      'Reported_Count'
+    )]
+
+    sightings
+  }),
+
+  tar_map(
+    values = tibble(
+      type = c("core", "bgc", "deep")
+    ),
+
+    names = "type",
+
+    tar_target(
+      data_argo,
+
+      {
+        destdir <- paste0(dirname(store), "/data/argo/", type)
+
+        ai <- getIndex(filename = type, destdir = destdir)
+
+        lonlim <- c(-120, -75)
+
+        latlim <- c(10, 40)
+
+        subset <- subset(
+          ai,
+          rectangle = list(longitude = lonlim, latitude = latlim)
+        )
+
+        profiles <- getProfiles(subset, destdir = destdir)
+
+        argos <- readProfiles(profiles, destdir = destdir)
+
+        argos
+      }
+    )
+  )
 )
 
 

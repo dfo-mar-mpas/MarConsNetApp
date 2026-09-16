@@ -60,7 +60,8 @@ pkgs <- c(
   'taxize',
   'rgbif',
   'R.utils',
-  'httr2'
+  'httr2',
+  'argoFloats'
 )
 shelf(pkgs)
 

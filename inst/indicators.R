@@ -886,7 +886,7 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }), # Biomass Metrics, Fish and Fishery Resources
 
-  tar_target(name = sediment_geology_characteristics, command = {
+  tar_target(name = ind_sediment_geology_characteristics, command = {
     # JAIM HERE
     environmental_layers <- c(
       data_epibenthic_communities_environmental[
@@ -955,8 +955,6 @@ indicator_targets <- list(
         proportion = n / sum(n)
       ) |>
       ungroup()
-
-    sediment_proportions
 
     # STEP 2: CALCULATE DIVERSITY INDEX (SHANNON DIVERSITY)
 
@@ -1030,6 +1028,295 @@ indicator_targets <- list(
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
+
+  tar_target(name = ind_benthic_species_richness_inside_outside, command = {
+    message(class(data_epibenthic_communities_biological))
+
+    mpas <- MPAs %>%
+      st_filter(data_epibenthic_communities_biological) %>%
+      filter(NAME_E != "Non_Conservation_Area")
+
+    environmental_layers <- c(
+      data_epibenthic_communities_environmental[
+        c("sediment_grain_size")
+      ]
+    )
+
+    mpas <- sf::st_transform(
+      mpas,
+      sf::st_crs(data)
+    )
+
+    control_polygons <- sf::st_transform(
+      control_polygons,
+      sf::st_crs(data)
+    )
+
+    data <- data_epibenthic_communities_biological |>
+      dplyr::select(latitude, longitude, species, year_of_publication)
+
+    x <- process_indicator(
+      data = data,
+      readiness = "Ready",
+      indicator_var_name = "species",
+      indicator = "Benthic Species Richness Inside Outside Comparison",
+      type = "in situ",
+      units = NA, # FIXME
+      scoring = "mpa effect: median difference", # protection coverage (# this says how well each ara represents teh benthic biodiversity found in the broadrer region)
+      PPTID = 395,
+      source = "RV",
+      project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+      bin_rationale = "FIXME",
+      climate = FALSE,
+      SME = "Javier Murillo Perez",
+      indicator_rationale = "Direct biodiversity measure",
+      areas = mpas,
+      plot_type = c('detections'),
+      plot_lm = FALSE,
+      theme = "Trophic Structure and Function",
+      objectives = c(
+        "Maintain biodiversity of individual species, communities and populations within the different ecotypes"
+      ),
+      SME_validated = TRUE,
+      other_nest_variables = c(
+        "species",
+        "ID",
+        "year_of_data_collection",
+        'ai_trophic_level',
+        'min_target',
+        'max_target',
+        'stagnant_source',
+        'subclass',
+        'class',
+        'detections',
+        'latitude',
+        'longitude',
+        'common_name'
+      ),
+      scale = 'region-site',
+      control_polygon = control_polygons
+    )
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
+  tar_target(
+    name = ind_sediment_geology_characteristics_inside_outside,
+    command = {
+      environmental_layers <- c(
+        data_epibenthic_communities_environmental[
+          c("sediment_grain_size")
+        ]
+      )
+
+      ## STEP 1: CLASSIFY SEDIMENT GRAIN SIZE
+
+      sediment <- data_epibenthic_communities_environmental$sediment_grain_size
+
+      sediment_class <- terra::classify(
+        sediment,
+        rcl = matrix(
+          c(
+            -Inf,
+            0.063,
+            1, # Mud
+            0.063,
+            2,
+            2, # Sand
+            2,
+            4,
+            3, # Granule
+            4,
+            64,
+            4, # Gravel
+            64,
+            Inf,
+            5 # Cobbles/boulders
+          ),
+          ncol = 3,
+          byrow = TRUE
+        ),
+        include.lowest = TRUE
+      )
+
+      levels(sediment_class) <- data.frame(
+        value = 1:5,
+        class = c(
+          "Mud",
+          "Sand",
+          "Granule",
+          "Gravel",
+          "Cobbles/boulders"
+        )
+      )
+
+      ## STEP 2: CALCULATE SHANNON DIVERSITY INSIDE MPAs
+
+      sediment_mpa <- terra::extract(
+        sediment_class,
+        terra::vect(MPAs)
+      )
+
+      sediment_proportions_mpa <- sediment_mpa |>
+        filter(!is.na(class)) |>
+        count(ID, class) |>
+        group_by(ID) |>
+        mutate(
+          proportion = n / sum(n)
+        ) |>
+        ungroup()
+
+      sediment_diversity_mpa <- sediment_proportions_mpa |>
+        group_by(ID) |>
+        summarise(
+          shannon = -sum(proportion * log(proportion)),
+          .groups = "drop"
+        )
+
+      ## STEP 3: CALCULATE SHANNON DIVERSITY IN CONTROL AREAS
+
+      sediment_control <- terra::extract(
+        sediment_class,
+        terra::vect(control_polygons)
+      )
+
+      sediment_proportions_control <- sediment_control |>
+        filter(!is.na(class)) |>
+        count(ID, class) |>
+        group_by(ID) |>
+        mutate(
+          proportion = n / sum(n)
+        ) |>
+        ungroup()
+
+      sediment_diversity_control <- sediment_proportions_control |>
+        group_by(ID) |>
+        summarise(
+          shannon = -sum(proportion * log(proportion)),
+          .groups = "drop"
+        )
+
+      ## STEP 4: CREATE MPA DATA WITH GEOMETRY
+
+      sediment_mpa_indicator <- sediment_diversity_mpa |>
+        mutate(
+          year_of_publication = unique(
+            data_epibenthic_communities_environmental$year_of_publication
+          )
+        ) |>
+        left_join(
+          sediment_proportions_mpa |>
+            group_by(ID) |>
+            summarise(
+              proportions = paste(
+                paste(class, n, proportion, sep = ","),
+                collapse = "; "
+              ),
+              .groups = "drop"
+            ),
+          by = "ID"
+        ) |>
+        left_join(
+          MPAs |>
+            mutate(ID = row_number()) |>
+            select(ID, NAME_E, region),
+          by = "ID"
+        ) |>
+        mutate(
+          area_type = "MPA"
+        )
+
+      ## STEP 5: CREATE CONTROL DATA
+
+      sediment_control_indicator <- sediment_diversity_control |>
+        mutate(
+          year_of_publication = unique(
+            data_epibenthic_communities_environmental$year_of_publication
+          )
+        ) |>
+        left_join(
+          sediment_proportions_control |>
+            group_by(ID) |>
+            summarise(
+              proportions = paste(
+                paste(class, n, proportion, sep = ","),
+                collapse = "; "
+              ),
+              .groups = "drop"
+            ),
+          by = "ID"
+        ) |>
+        left_join(
+          control_polygons |>
+            mutate(ID = row_number()) |>
+            select(ID, NAME_E, region, buffer_distance),
+          by = "ID"
+        ) |>
+        mutate(
+          area_type = "Control"
+        )
+
+      ## STEP 6: COMBINE MPA + CONTROL RESULTS
+
+      sediment_indicator <- bind_rows(
+        sediment_mpa_indicator,
+        sediment_control_indicator
+      ) |>
+        st_as_sf(
+          sf_column_name = "geoms",
+          crs = st_crs(MPAs)
+        )
+
+      names(sediment_indicator)[
+        names(sediment_indicator) == "proportions"
+      ] <- "data"
+
+      sediment_indicator <- sediment_indicator %>%
+        select(
+          shannon,
+          year_of_publication,
+          data,
+          NAME_E,
+          area_type,
+          geoms,
+          buffer_distance
+        )
+      sediment_indicator <- sediment_indicator %>%
+        rename(shannon_diversity = shannon)
+
+      x <- process_indicator(
+        data = sediment_indicator,
+        readiness = "Ready",
+        indicator_var_name = "shannon_diversity",
+        indicator = "Sediment/ Geology characeristics",
+        type = "in situ",
+        units = "mm",
+        scoring = "mpa effect: calculation comparison",
+        control_polygon = control_polygons,
+        PPTID = 395,
+        source = "RV",
+        project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+        bin_rationale = "FIXME",
+        climate = FALSE,
+        SME = "Javier Murillo Perez",
+        indicator_rationale = "Direct biodiversity measure",
+        areas = MPAs,
+        plot_type = c("detections"),
+        habitat_display = environmental_layers,
+        plot_lm = FALSE,
+        theme = "Benthic Environment",
+        objectives = c(
+          "Protect Vazella pourtalesi glass sponges",
+          "Protect continental shelf habitats and associated benthic and demersal communities",
+          "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
+        ), # FIXME
+        SME_validated = TRUE
+      )
+
+      save_plots(dplyr::select(x, -data, -adjacent_data))
+      dplyr::select(x, -plot)
+    }
+  ),
 
   # NON-VALIDATED INDICATORS
 
@@ -3443,7 +3730,8 @@ indicator_targets <- list(
         "Control unintended incidental mortality for all species",
         "Limit disturbing activity in important reproductive areas/seasons"
       ),
-      data_year_of_publication = 2023
+      data_year_of_publication = 2023,
+      inverse = TRUE
     )
 
     save_plots(dplyr::select(x, -data, -adjacent_data))
@@ -3761,22 +4049,6 @@ indicator_targets <- list(
       theme = "Benthic Environment"
     )
   }), # Biomass Metrics, Benthic Environment
-
-  tar_target(name = ind_epibenthic_infaunal, command = {
-    ind_placeholder(
-      ind_name = "Diversity of Epibenthic and Infaunal Communities",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "RV Survey",
-      objectives = c(
-        "Maintain biodiversity of individual species, communities and populations within the different ecotypes",
-        "Maintain Species Biodiversity"
-      ),
-      theme = "Benthic Environment"
-    )
-  }), # Species Diversity, Benthic Environment
 
   tar_target(name = ind_community_comp_epibenthic_infaunal, command = {
     ind_placeholder(
