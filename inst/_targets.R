@@ -620,11 +620,6 @@ list(
       data_deliverables
       data_collaborations
       data_salary
-      data_modelled_kelp
-      data_kelp_distribution_and_abundance
-      data_macroalgae_modelled
-      data_otn_receivers
-      data_buoy
       return(TRUE)
     },
     deployment = "worker"
