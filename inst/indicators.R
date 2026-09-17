@@ -1318,6 +1318,170 @@ indicator_targets <- list(
     }
   ),
 
+  ## ARGO
+
+  tar_target(ind_temperature, command = {
+
+    ## AZMP
+    data <- data_azmp_Discrete_Occupations_Sections |>
+      dplyr::select(longitude, latitude, year, depth, temperature)
+
+    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    data$year_of_publication <- 2025
+    data$source <- 'azmp'
+
+    ## GLIDERS
+
+    gliders <- data.frame(longitude=data_gliders$longitude, latitude=data_gliders$latitude,
+                          year_of_data_collection=as.numeric(format(data_gliders$time, "%Y")),
+                          depth=data_gliders$depth, temperature=data_gliders$TEMP,
+                          year_of_publication=data_gliders$year_of_publication, source='gliders')
+
+
+    ## ARGO
+    argos <- data_argo_core
+
+    argos_data <- data.frame(
+      longitude = rep(
+        sapply(argos[['longitude']], `[`, 1),
+        lengths(argos[['depth']])
+      ),
+      latitude = rep(
+        sapply(argos[['latitude']], `[`, 1),
+        lengths(argos[['depth']])
+      ),
+      year_of_data_collection = rep(
+        as.numeric(substr(as.character(unlist(argos[['time']])), 1, 4)[
+          cumsum(c(1, head(lengths(argos[['time']]), -1)))
+        ]),
+        lengths(argos[['depth']])
+      ),
+      depth = unlist(argos[['depth']]),
+      temperature = unlist(argos[['temperature']]),
+      year_of_publication = max(
+        as.numeric(substr(unlist(argos[['dateUpdate']]), 1, 4)),
+        na.rm = TRUE
+      ),
+      source = "Argo"
+    )
+
+
+
+    data <- rbind(data, gliders, argos_data)
+    data <- st_as_sf(
+      data,
+      coords = c("longitude", "latitude"),
+      crs = 4326
+    )
+
+
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "temperature",
+      indicator = "Temperature",
+      type = 'in situ',
+      units = "C",
+      scoring = "desired trend: decrease",
+      PPTID = c(579,385,428),
+      source = c("AZMP", 'gliders', 'Argo Floats'),
+      project_short_title = "AZMP",
+      climate = TRUE,
+      other_nest_variables = c("depth", 'source', 'year_of_data_collection', 'year_of_publication'),
+      areas = MPAs,
+      climate_expectation = "FIXME",
+      SME = "Unknown",
+      indicator_rationale = "Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
+      bin_rationale = "FIXME",
+      plot_type = c('time-series', 'map'),
+      plot_lm = FALSE,
+      theme = "Ocean Conditions",
+      objectives = c(
+        "Maintain/promote ecosystem structure and functioning",
+        "Maintain Ecosystem Resistance",
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      )
+    )
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
+  tar_target(ind_oxygen, command = {
+
+    ## GLIDERS
+    d1 <- data_gliders |>
+      filter(!is.na(DOXY)) |>
+      mutate(
+        year_of_data_collection = as.numeric(format(time, "%Y"))
+      ) |>
+      select(longitude, latitude, year_of_data_collection, DOXY, depth) |>
+      mutate(year_of_publication = as.numeric(format(Sys.Date(), "%Y")),
+             source='gliders') |>
+      rename(oxygen=DOXY)
+
+    ## BGC ARGO
+
+    argos <- data_argos_bgc
+    d2 <- data.frame(
+      longitude = rep(
+        sapply(argos[['longitude']], `[`, 1),
+        lengths(argos[['depth']])
+      ),
+      latitude = rep(
+        sapply(argos[['latitude']], `[`, 1),
+        lengths(argos[['depth']])
+      ),
+      year_of_data_collection = rep(
+        as.numeric(substr(as.character(unlist(argos[['time']])), 1, 4)[
+          cumsum(c(1, head(lengths(argos[['time']]), -1)))
+        ]),
+        lengths(argos[['depth']])
+      ),
+      depth = unlist(argos[['depth']]),
+      oxygen = unlist(argos[['oxygen']]),
+      year_of_publication = max(
+        as.numeric(substr(unlist(argos[['dateUpdate']]), 1, 4)),
+        na.rm = TRUE
+      ),
+      source = "Argo"
+    )
+
+    oxygen_data <- rbind(d1,d2)
+
+
+    x <- process_indicator(
+      data = oxygen_data,
+      indicator_var_name = "DOXY",
+      indicator = "Oxygen",
+      type = 'in situ',
+      units = "mu * mol/kg",
+      scoring = "desired state: increase",
+      PPTID = 385,
+      source = "Glider Program",
+      project_short_title = "Glider Program",
+      climate = TRUE,
+      control_polygon = control_polygons,
+      SME = "Unknown",
+      climate_expectation = "FIXME",
+      indicator_rationale = "Deoxygenation can impact marine life and its ecosystem directly and indirectly, and lead to changes in the abundance and distribution of fish, which, in turn, affects fisheries and productivity (e.g., Kim et al. 2023). This variable may be particularly important to monitor in deep habitats, where oxygen levels are depleted.",
+      bin_rationale = "FIXME",
+      other_nest_variables = "depth",
+      areas = MPAs,
+      plot_type = c('time-series', 'map'),
+      plot_lm = FALSE,
+      theme = "Ocean Conditions",
+      objectives = c(
+        "Maintain/promote ecosystem structure and functioning",
+        "Maintain Ecosystem Resistance",
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      )
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
+
   # NON-VALIDATED INDICATORS
 
   tar_target(ind_otn_proportion_tags_detected_in_multiple_mpas, command = {
@@ -1968,45 +2132,6 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
-  tar_target(ind_oxygen, command = {
-    x <- process_indicator(
-      data = data_gliders |>
-        filter(!is.na(DOXY)) |>
-        mutate(
-          year_of_data_collection = as.numeric(format(time, "%Y"))
-        ) |>
-        select(longitude, latitude, year_of_data_collection, DOXY, depth) |>
-        mutate(year_of_publication = as.numeric(format(Sys.Date(), "%Y"))),
-      indicator_var_name = "DOXY",
-      indicator = "Oxygen",
-      type = 'in situ',
-      units = "mu * mol/kg",
-      scoring = "desired state: increase",
-      PPTID = 385,
-      source = "Glider Program",
-      project_short_title = "Glider Program",
-      climate = TRUE,
-      control_polygon = control_polygons,
-      SME = "Unknown",
-      climate_expectation = "FIXME",
-      indicator_rationale = "Deoxygenation can impact marine life and its ecosystem directly and indirectly, and lead to changes in the abundance and distribution of fish, which, in turn, affects fisheries and productivity (e.g., Kim et al. 2023). This variable may be particularly important to monitor in deep habitats, where oxygen levels are depleted.",
-      bin_rationale = "FIXME",
-      other_nest_variables = "depth",
-      areas = MPAs,
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Ocean Conditions",
-      objectives = c(
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Ecosystem Resistance",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
   tar_target(ind_stratification, command = {
     MPAs
     data <- data_gliders
@@ -2246,44 +2371,6 @@ indicator_targets <- list(
       )
     )
 
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_temperature, command = {
-    data <- data_azmp_Discrete_Occupations_Sections |>
-      dplyr::select(longitude, latitude, year, depth, temperature)
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "temperature",
-      indicator = "Temperature",
-      type = 'in situ',
-      units = "C",
-      scoring = "desired state: decrease",
-      PPTID = 579,
-      source = "AZMP",
-      project_short_title = "AZMP",
-      control_polygon = control_polygons,
-      climate = TRUE,
-      other_nest_variables = "depth",
-      areas = MPAs,
-      climate_expectation = "FIXME",
-      SME = "Unknown",
-      indicator_rationale = "Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
-      bin_rationale = "FIXME",
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Ocean Conditions",
-      objectives = c(
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Ecosystem Resistance",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
