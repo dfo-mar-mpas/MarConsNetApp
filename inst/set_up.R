@@ -61,7 +61,9 @@ pkgs <- c(
   'rgbif',
   'R.utils',
   'httr2',
-  'argoFloats'
+  'argoFloats',
+  'oce',
+  'ocedata'
 )
 shelf(pkgs)
 

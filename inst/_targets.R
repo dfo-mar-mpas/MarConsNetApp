@@ -620,6 +620,9 @@ list(
       data_deliverables
       data_collaborations
       data_salary
+      data_argo_core
+      data_argo_bgc
+      data_argo_deep
       return(TRUE)
     },
     deployment = "worker"

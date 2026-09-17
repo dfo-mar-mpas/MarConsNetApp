@@ -3266,7 +3266,7 @@ raw_data_targets <- list(
 
   tar_map(
     values = tibble(
-      type = c("core", "bgc", "deep")
+      type = c("core", "bgc")
     ),
 
     names = "type",
@@ -3277,18 +3277,18 @@ raw_data_targets <- list(
       {
         destdir <- paste0(dirname(store), "/data/argo/", type)
 
-        ai <- getIndex(filename = type, destdir = destdir)
+        ai <- getIndex(filename = type, destdir = destdir, ago=0)
 
         lonlim <- c(-120, -75)
 
         latlim <- c(10, 40)
 
-        subset <- subset(
+        subset_prof <- subset(
           ai,
           rectangle = list(longitude = lonlim, latitude = latlim)
         )
 
-        profiles <- getProfiles(subset, destdir = destdir)
+        profiles <- getProfiles(subset_prof, destdir = destdir, skip=TRUE)
 
         argos <- readProfiles(profiles, destdir = destdir)
 
