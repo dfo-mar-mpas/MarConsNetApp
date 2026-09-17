@@ -199,28 +199,28 @@ indicator_targets <- list(
           "Ophiuroidea",
           "Polychaeta",
           "Gastropoda",
-          "Insecta",
-          "Bangiophyceae",
+          # "Insecta", #TODO: none found IN conservation area, make function more robust?
+          # "Bangiophyceae", #TODO: none found IN conservation area, make function more robust?
           "Gymnolaemata",
           "Mammalia",
           "Hexacorallia",
           "Eurotatoria",
           "Echinoidea",
           "Scyphozoa",
-          "Tentaculata",
-          "Staurozoa",
+          # "Tentaculata", #TODO: none found IN conservation area, make function more robust?
+          # "Staurozoa",
           "Pilidiophora",
-          "Cephalopoda",
+          # "Cephalopoda", #TODO: none found IN conservation area, make function more robust?
           "Caudofoveata",
           "Thecostraca",
-          "Polyplacophora",
-          "Aves",
-          "Nuda",
-          "Chromadorea",
+          # "Polyplacophora", #TODO: none found IN conservation area, make function more robust?
+          # "Aves", #TODO: none found IN conservation area, make function more robust?
+          # "Nuda", #TODO: none found IN conservation area, make function more robust?
+          # "Chromadorea", #TODO: none found IN conservation area, make function more robust?
           "Holothuroidea",
           "Crinoidea",
           "Octocorallia",
-          "Trematoda",
+          # "Trematoda", #TODO: none found IN conservation area, make function more robust?
           "Bacillariophyceae",
           "Sipunculidea",
           "Pyramimonadophyceae",
