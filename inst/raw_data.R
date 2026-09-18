@@ -3275,13 +3275,17 @@ raw_data_targets <- list(
       data_argo,
 
       {
-        destdir <- paste0(dirname(store), "/data/argo/", type)
 
-        ai <- getIndex(filename = type, destdir = destdir, ago=0)
+        #destdir <- "C:/Users/HARBINJ/Documents/data/argo"
+        #type <- 'bgc'
+        #destdir <- paste0(dirname(store), "/data/argo/", type)
+        destdir <- tmpDir()
 
-        lonlim <- c(-120, -75)
+        ai <- argoFloats::getIndex(filename = type, destdir = destdir, age=0)
 
-        latlim <- c(10, 40)
+        lonlim <- c(-68, -45)
+
+        latlim <- c(40, 52)
 
         subset_prof <- subset(
           ai,
