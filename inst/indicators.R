@@ -1339,43 +1339,19 @@ indicator_targets <- list(
 
 
     ## ARGO
-    argos <- data_argo_core
+    core_data <- data.frame(data_argo_df_core[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
+                                              'temperature', 'year_of_publication', 'source')])
 
-    argos_data <- data.frame(
-      longitude = rep(
-        sapply(argos[['longitude']], `[`, 1),
-        lengths(argos[['depth']])
-      ),
-      latitude = rep(
-        sapply(argos[['latitude']], `[`, 1),
-        lengths(argos[['depth']])
-      ),
-      year_of_data_collection = rep(
-        as.numeric(substr(as.character(unlist(argos[['time']])), 1, 4)[
-          cumsum(c(1, head(lengths(argos[['time']]), -1)))
-        ]),
-        lengths(argos[['depth']])
-      ),
-      depth = unlist(argos[['depth']]),
-      temperature = unlist(argos[['temperature']]),
-      year_of_publication = max(
-        as.numeric(substr(unlist(argos[['dateUpdate']]), 1, 4)),
-        na.rm = TRUE
-      ),
-      source = "Argo"
-    )
+    data <- rbind(data, gliders, core_data)
 
+    data <- data[!is.na(data$latitude) &
+                                 !is.na(data$longitude), ]
 
-
-    data <- rbind(data, gliders, argos_data)
     data <- st_as_sf(
       data,
       coords = c("longitude", "latitude"),
       crs = 4326
     )
-
-
-
     x <- process_indicator(
       data = data,
       indicator_var_name = "temperature",
@@ -1393,7 +1369,7 @@ indicator_targets <- list(
       SME = "Unknown",
       indicator_rationale = "Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
       bin_rationale = "FIXME",
-      plot_type = c('time-series', 'map'),
+      plot_type = c('map', 'time-series','water column profile'),
       plot_lm = FALSE,
       theme = "Ocean Conditions",
       objectives = c(
@@ -1421,58 +1397,102 @@ indicator_targets <- list(
 
     ## BGC ARGO
 
-    argos <- data_argos_bgc
-    d2 <- data.frame(
-      longitude = rep(
-        sapply(argos[['longitude']], `[`, 1),
-        lengths(argos[['depth']])
-      ),
-      latitude = rep(
-        sapply(argos[['latitude']], `[`, 1),
-        lengths(argos[['depth']])
-      ),
-      year_of_data_collection = rep(
-        as.numeric(substr(as.character(unlist(argos[['time']])), 1, 4)[
-          cumsum(c(1, head(lengths(argos[['time']]), -1)))
-        ]),
-        lengths(argos[['depth']])
-      ),
-      depth = unlist(argos[['depth']]),
-      oxygen = unlist(argos[['oxygen']]),
-      year_of_publication = max(
-        as.numeric(substr(unlist(argos[['dateUpdate']]), 1, 4)),
-        na.rm = TRUE
-      ),
-      source = "Argo"
-    )
+    d2 <- data.frame(data_argo_df_bgc[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
+                                              'oxygen', 'year_of_publication', 'source')])
+
 
     oxygen_data <- rbind(d1,d2)
+    oxygen_data <- oxygen_data[!is.na(oxygen_data$latitude) &
+                                 !is.na(oxygen_data$longitude), ]
 
+    oxygen_data <- st_as_sf(
+      oxygen_data,
+      coords = c("longitude", "latitude"),
+      crs = 4326,
+      remove = FALSE
+    )
 
     x <- process_indicator(
       data = oxygen_data,
-      indicator_var_name = "DOXY",
+      indicator_var_name = "oxygen",
       indicator = "Oxygen",
       type = 'in situ',
       units = "mu * mol/kg",
-      scoring = "desired state: increase",
+      scoring = "desired trend: increase",
       PPTID = 385,
       source = "Glider Program",
       project_short_title = "Glider Program",
       climate = TRUE,
-      control_polygon = control_polygons,
       SME = "Unknown",
       climate_expectation = "FIXME",
       indicator_rationale = "Deoxygenation can impact marine life and its ecosystem directly and indirectly, and lead to changes in the abundance and distribution of fish, which, in turn, affects fisheries and productivity (e.g., Kim et al. 2023). This variable may be particularly important to monitor in deep habitats, where oxygen levels are depleted.",
       bin_rationale = "FIXME",
-      other_nest_variables = "depth",
+      other_nest_variables = c("depth", 'year_of_publication','source', 'year_of_data_collection'),
       areas = MPAs,
-      plot_type = c('time-series', 'map'),
+      plot_type = c('map', 'time-series', 'water column profile'),
       plot_lm = FALSE,
       theme = "Ocean Conditions",
       objectives = c(
         "Maintain/promote ecosystem structure and functioning",
         "Maintain Ecosystem Resistance",
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      )
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
+
+  tar_target(ind_chlorophyll, command = {
+    data1 <- data_azmp_Discrete_Occupations_Sections |>
+      dplyr::select(longitude, latitude, year, depth, chlorophyll)
+
+    names(data1)[which(names(data1) == 'year')] <- 'year_of_data_collection'
+    data1$year_of_publication <- 2025
+    data1$source <- "AZMP"
+
+
+    ## ARGO
+    data2 <- data.frame(data_argo_df_bgc[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
+                                        'chlorophyllA', 'year_of_publication', 'source')])
+
+    names(data2)[which(names(data2) == 'chlorophyllA')] <- 'chlorophyll'
+
+
+    data <- rbind(data1,data2)
+    data <- data[!is.na(data$latitude) &
+                                 !is.na(data$longitude), ]
+
+    data <- st_as_sf(
+      data,
+      coords = c("longitude", "latitude"),
+      crs = 4326,
+      remove = FALSE
+    )
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "chlorophyll",
+      indicator = "Chlorophyll",
+      type = 'in situ',
+      units = "ug/L",
+      scoring = "desired trend: stable",
+      PPTID = 579,
+      source = "AZMP",
+      project_short_title = "AZMP",
+      other_nest_variables = c("depth", 'year_of_publication','source', 'year_of_data_collection'),
+      SME = "Unknown",
+      areas = MPAs,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Chlorophyll a measurements are typically used as a proxy for primary production at the ocean surface, which, in turn, can influence ocean bottom conditions through benthic/pelagic coupling.",
+      bin_rationale = "FIXME",
+      plot_type = c('map', 'time-series','water column profile'),
+      plot_lm = FALSE,
+      theme = "Primary Production",
+      objectives = c(
+        "Maintain/promote ecosystem structure and functioning",
+        "Maintain Functional Biodiversity",
         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
       )
     )
@@ -2367,44 +2387,6 @@ indicator_targets <- list(
       objectives = c(
         "Maintain/promote ecosystem structure and functioning",
         "Maintain Ecosystem Resistance",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_chlorophyll, command = {
-    data <- data_azmp_Discrete_Occupations_Sections |>
-      dplyr::select(longitude, latitude, year, depth, chlorophyll)
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "chlorophyll",
-      indicator = "Chlorophyll",
-      type = 'in situ',
-      units = "ug/L",
-      scoring = "desired state: stable",
-      PPTID = 579,
-      source = "AZMP",
-      project_short_title = "AZMP",
-      other_nest_variables = "depth",
-      control_polygon = control_polygons,
-      SME = "Unknown",
-      areas = MPAs,
-      climate_expectation = "FIXME",
-      indicator_rationale = "Chlorophyll a measurements are typically used as a proxy for primary production at the ocean surface, which, in turn, can influence ocean bottom conditions through benthic/pelagic coupling.",
-      bin_rationale = "FIXME",
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Primary Production",
-      objectives = c(
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Functional Biodiversity",
         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
       )
     )

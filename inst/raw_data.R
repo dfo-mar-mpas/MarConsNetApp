@@ -3299,7 +3299,118 @@ raw_data_targets <- list(
         argos
       }
     )
+  ),
+
+    tar_target(
+      data_argo_df_bgc,
+      command=
+      {
+        message('test')
+        message(class(data_argo_bgc))
+        argos_bgc_df <- data.frame()
+
+        for (i in seq_along(data_argo_bgc@data$argos)) {
+
+          cat("\r", i, "of", length(data_argo_bgc@data$argos))
+
+          x <- data_argo_bgc@data$argos[[i]]
+
+          pressure <- x@data$pressure
+
+          if (length(pressure) == 0) next
+
+          n <- nrow(pressure)
+
+          oxygen <- x@data$oxygen
+          chlorophyllA <- x@data$chlorophyllA
+          BBP700 <- x@data$BBP700
+          CDOM <- x@data$CDOM
+
+          if (is.matrix(oxygen)) oxygen <- as.vector(oxygen)
+          if (is.matrix(chlorophyllA)) chlorophyllA <- as.vector(chlorophyllA)
+          if (is.matrix(BBP700)) BBP700 <- as.vector(BBP700)
+          if (is.matrix(CDOM)) CDOM <- as.vector(CDOM)
+
+          if (length(oxygen) == 0) oxygen <- rep(NA, n * length(x@data$longitude))
+          if (length(chlorophyllA) == 0) chlorophyllA <- rep(NA, n * length(x@data$longitude))
+          if (length(BBP700) == 0) BBP700 <- rep(NA, n * length(x@data$longitude))
+          if (length(CDOM) == 0) CDOM <- rep(NA, n * length(x@data$longitude))
+
+          temp <- data.frame(
+            longitude = rep(x@data$longitude, each = n),
+            latitude = rep(x@data$latitude, each = n),
+            year_of_data_collection = rep(
+              as.numeric(format(x@metadata$time, "%Y")),
+              each = n
+            ),
+            depth = as.vector(pressure),
+            oxygen = oxygen,
+            chlorophyllA = chlorophyllA,
+            BBP700 = BBP700,
+            CDOM = CDOM,
+            year_of_publication = as.numeric(format(Sys.Date(), "%Y")),
+            source = "argos"
+          )
+          argos_bgc_df <- rbind(argos_bgc_df, temp)
+        }
+        argos_bgc_df$stagnant_source <- FALSE
+        argos_bgc_df
+      }
+    ),
+
+  tar_target(
+    data_argo_df_core,
+    command={
+      argos_core_df <- data.frame()
+
+      for (i in seq_along(data_argo_core@data$argos)) {
+
+        cat("\r", i, "of", length(data_argo_core@data$argos))
+
+        x <- data_argo_core@data$argos[[i]]
+
+        pressure <- x@data$pressure
+
+        if (length(pressure) == 0) next
+
+        n <- nrow(pressure)
+
+        temperature <- x@data$temperature
+        salinity <- x@data$salinity
+
+        if (is.matrix(temperature)) temperature <- as.vector(temperature)
+        if (is.matrix(salinity)) salinity <- as.vector(salinity)
+
+        if (length(temperature) == 0) {
+          temperature <- rep(NA, n * length(x@data$longitude))
+        }
+
+        if (length(salinity) == 0) {
+          salinity <- rep(NA, n * length(x@data$longitude))
+        }
+
+        temp <- data.frame(
+          longitude = rep(x@data$longitude, each = n),
+          latitude = rep(x@data$latitude, each = n),
+          year_of_data_collection = rep(
+            as.numeric(format(x@metadata$time, "%Y")),
+            each = n
+          ),
+          depth = as.vector(pressure),
+          temperature = temperature,
+          salinity = salinity,
+          year_of_publication = as.numeric(format(Sys.Date(), "%Y")),
+          source = "argos"
+        )
+
+        argos_core_df <- rbind(argos_core_df, temp)
+      }
+
+      argos_core_df$stagnant_source <- FALSE
+      argos_core_df
+    }
   )
+
 )
 
 
