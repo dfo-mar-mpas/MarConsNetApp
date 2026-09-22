@@ -887,7 +887,6 @@ indicator_targets <- list(
   }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_sediment_geology_characteristics, command = {
-    # JAIM HERE
     environmental_layers <- c(
       data_epibenthic_communities_environmental[
         c(
@@ -1419,9 +1418,9 @@ indicator_targets <- list(
       type = 'in situ',
       units = "mu * mol/kg",
       scoring = "desired trend: increase",
-      PPTID = 385,
-      source = "Glider Program",
-      project_short_title = "Glider Program",
+      PPTID = c(385,428),
+      source = c("Gliders", "Argo"),
+      project_short_title = c("Glider Program", "Argo Program"),
       climate = TRUE,
       SME = "Unknown",
       climate_expectation = "FIXME",
@@ -1478,9 +1477,9 @@ indicator_targets <- list(
       type = 'in situ',
       units = "ug/L",
       scoring = "desired trend: stable",
-      PPTID = 579,
-      source = "AZMP",
-      project_short_title = "AZMP",
+      PPTID = c(579,428),
+      source = c("AZMP", "Argo"),
+      project_short_title = c("AZMP", "Argo"),
       other_nest_variables = c("depth", 'year_of_publication','source', 'year_of_data_collection'),
       SME = "Unknown",
       areas = MPAs,
@@ -1500,6 +1499,159 @@ indicator_targets <- list(
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
+
+  tar_target(ind_salinity, command = {
+    ## AZMP
+    data <- data_azmp_Discrete_Occupations_Sections |>
+      dplyr::select(longitude, latitude, year, depth, salinity)
+
+    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    data$year_of_publication <- 2025
+    data$source <- 'AZMP'
+
+    ## Gliders
+    gliders <- data.frame(longitude=data_gliders$longitude, latitude=data_gliders$latitude,
+                          year_of_data_collection=as.numeric(format(data_gliders$time, "%Y")),
+                          depth=data_gliders$depth, salinity=data_gliders$salinity,
+                          year_of_publication=data_gliders$year_of_publication, source='gliders')
+
+    ## ARGO
+    core_data <- data.frame(data_argo_df_core[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
+                                                'salinity', 'year_of_publication', 'source')])
+
+    data <- rbind(data, gliders, core_data)
+
+    data <- data[!is.na(data$latitude) &
+                   !is.na(data$longitude), ]
+
+    data <- st_as_sf(
+      data,
+      coords = c("longitude", "latitude"),
+      crs = 4326
+    )
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "salinity",
+      indicator = "Salinity",
+      type = 'in situ',
+      units = "psu",
+      scoring = "desired trend: stable",
+      PPTID = c(579,428),
+      source = c("AZMP", "Argo"),
+      project_short_title = c("AZMP", "Argo"),
+      other_nest_variables = c("depth", 'year_of_publication','source', 'year_of_data_collection'),
+      areas = MPAs,
+      climate_expectation = "FIXME",
+      SME = "Unknown",
+      indicator_rationale = "Salinity changes can impact ocean biological functions and may produce community shifts including trophic cascades (e.g., Röthig et al. 2023). Changes in salinity can also adversely affect the temperature tolerance of aquatic organisms (e.g., Farias et al. 2024)",
+      bin_rationale = "FIXME",
+      plot_type = c('map', 'time-series', 'water column profile'),
+      plot_lm = FALSE,
+      theme = "Ocean Conditions",
+      objectives = c(
+        "Maintain/promote ecosystem structure and functioning",
+        "Maintain Ecosystem Resistance",
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      )
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
+  tar_target(name = ind_light_availability, command = { #ind_environmental_conditions_near_seabed
+
+
+    ## ARGO
+    data <- data.frame(data_argo_df_bgc[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
+                                           'CDOM', 'year_of_publication', 'source')])
+
+    data <- data[!is.na(data$latitude) & !is.na(data$longitude), ]
+
+    data <- st_as_sf(
+      data,
+      coords = c("longitude", "latitude"),
+      crs = 4326,
+      remove = FALSE
+    )
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "CDOM",
+      indicator = "Colored Dissolved Organic Matter (Light Penetration Proxy)",
+      type = 'in situ',
+      units = "FIXME",
+      scoring = "desired trend: decrease",
+      PPTID = 428,
+      source = "Argo",
+      project_short_title = "Argo Program",
+      other_nest_variables = c("depth", 'year_of_publication','source', 'year_of_data_collection'),
+      SME = "Unknown",
+      areas = MPAs,
+      climate_expectation = "FIXME",
+      indicator_rationale = "FIXME",
+      bin_rationale = "FIXME",
+      plot_type = c('map', 'time-series','water column profile'),
+      plot_lm = FALSE,
+      theme = "Primary Production",
+      objectives = c(
+        "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
+        "Maintain and monitor the quality of water and sediments of the Gully; and",
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      ),
+      proxy='light availability: inverse'
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }), # Environmental Representativity, Ocean Conditions
+
+
+
+  tar_target(ind_stratification, command = { # JAIM
+    data <- data_gliders
+    year <- as.numeric(format(data$time, "%Y"))
+    data$year_of_data_collection <- year
+    data <- data[which(!is.na(data$mld)), ]
+    data <- data[, c(
+      "longitude",
+      "latitude",
+      "year_of_data_collection",
+      "mld",
+      "depth"
+    )]
+
+    data$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "mld",
+      indicator = "Mixed Layer Depth",
+      type = 'in situ',
+      units = "m",
+      scoring = "desired state: increase",
+      PPTID = 385,
+      source = "Glider Program",
+      control_polygon = control_polygons,
+      project_short_title = "Glider Program",
+      climate = TRUE,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Stratification of the mixed layer plays a complementary role in phytoplankton blooms (e.g., Greenan et al. 2004).",
+      bin_rationale = "FIXME",
+      other_nest_variables = "depth",
+      SME = "Unknown",
+      areas = MPAs,
+      plot_type = c('time-series', 'map'),
+      plot_lm = FALSE,
+      theme = "Ocean Structure and Movement",
+      objectives = NA
+    )
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
+
 
 
   # NON-VALIDATED INDICATORS
@@ -2152,49 +2304,6 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
-  tar_target(ind_stratification, command = {
-    MPAs
-    data <- data_gliders
-    year <- as.numeric(format(data$time, "%Y"))
-    data$year_of_data_collection <- year
-    data <- data[which(!is.na(data$mld)), ]
-    data <- data[, c(
-      "longitude",
-      "latitude",
-      "year_of_data_collection",
-      "mld",
-      "depth"
-    )]
-
-    data$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "mld",
-      indicator = "Mixed Layer Depth",
-      type = 'in situ',
-      units = "m",
-      scoring = "desired state: increase",
-      PPTID = 385,
-      source = "Glider Program",
-      control_polygon = control_polygons,
-      project_short_title = "Glider Program",
-      climate = TRUE,
-      climate_expectation = "FIXME",
-      indicator_rationale = "Stratification of the mixed layer plays a complementary role in phytoplankton blooms (e.g., Greenan et al. 2004).",
-      bin_rationale = "FIXME",
-      other_nest_variables = "depth",
-      SME = "Unknown",
-      areas = MPAs,
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Ocean Structure and Movement",
-      objectives = NA
-    )
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
   tar_target(
     ind_ave_ph_level,
     command = {
@@ -2347,44 +2456,6 @@ indicator_targets <- list(
       theme = "Primary Production",
       objectives = c(
         "Control alteration of nutrient concentrations affecting primary production",
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Ecosystem Resistance",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_salinity, command = {
-    data <- data_azmp_Discrete_Occupations_Sections |>
-      dplyr::select(longitude, latitude, year, depth, salinity)
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "salinity",
-      indicator = "Salinity",
-      type = 'in situ',
-      units = "psu",
-      scoring = "desired state: stable",
-      PPTID = 579,
-      source = "AZMP",
-      project_short_title = "AZMP",
-      other_nest_variables = "depth",
-      areas = MPAs,
-      climate_expectation = "FIXME",
-      SME = "Unknown",
-      control_polygon = control_polygons,
-      indicator_rationale = "Salinity changes can impact ocean biological functions and may produce community shifts including trophic cascades (e.g., Röthig et al. 2023). Changes in salinity can also adversely affect the temperature tolerance of aquatic organisms (e.g., Farias et al. 2024)",
-      bin_rationale = "FIXME",
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Ocean Conditions",
-      objectives = c(
         "Maintain/promote ecosystem structure and functioning",
         "Maintain Ecosystem Resistance",
         "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
@@ -4831,21 +4902,6 @@ indicator_targets <- list(
       theme = "Trophic Structure and Function"
     )
   }), # Biomass Metrics,Trophic Structure and Function
-
-  tar_target(name = ind_environmental_conditions_near_seabed, command = {
-    ind_placeholder(
-      ind_name = "Temperature, salinity, oxygen concentration, alkalinity, pH, light levels, chlorophyll, pigments and nutrients in water column within the MPA, including in close proximity to the seabed",
-      areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"), ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-        "Maintain and monitor the quality of water and sediments of the Gully; and",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_environmental_conditions_azmp_lines, command = {
     ind_placeholder(
