@@ -3091,7 +3091,6 @@ raw_data_targets <- list(
     return(data)
   }),
   tar_target(data_vessel_traffic, command = {
-    # JAIM
     mpa_vect <- vect(MPAs)
     url <- "https://api-proxy.edh-cde.dfo-mpo.gc.ca/catalogue/records/5b86e2d2-cec1-4956-a9d5-12d487aca11b/attachments/NorthwestAtlantic_VesselDensity_2023_AIS.zip"
     temp_zip <- tempfile(fileext = ".zip")
@@ -3264,7 +3263,7 @@ raw_data_targets <- list(
     sightings
   }),
 
-  tar_map(
+  tar_map( # KYLO
     values = tibble(
       type = c("core", "bgc")
     ),
@@ -3322,32 +3321,51 @@ raw_data_targets <- list(
           n <- nrow(pressure)
 
           oxygen <- x@data$oxygen
+          nitrate <- x@data$nitrate
+          silicate <- x@data$silicate
+          phosphate <- x@data$phosphate
           chlorophyllA <- x@data$chlorophyllA
           BBP700 <- x@data$BBP700
           CDOM <- x@data$CDOM
+          pH <- x@data$pH
 
           if (is.matrix(oxygen)) oxygen <- as.vector(oxygen)
           if (is.matrix(chlorophyllA)) chlorophyllA <- as.vector(chlorophyllA)
           if (is.matrix(BBP700)) BBP700 <- as.vector(BBP700)
           if (is.matrix(CDOM)) CDOM <- as.vector(CDOM)
+          if (is.matrix(pH)) pH <- as.vector(pH)
+          if (is.matrix(nitrate)) nitrate <- as.vector(nitrate)
+          if (is.matrix(silicate)) silicate <- as.vector(silicate)
+          if (is.matrix(phosphate)) phosphate <- as.vector(phosphate)
+
 
           if (length(oxygen) == 0) oxygen <- rep(NA, n * length(x@data$longitude))
           if (length(chlorophyllA) == 0) chlorophyllA <- rep(NA, n * length(x@data$longitude))
           if (length(BBP700) == 0) BBP700 <- rep(NA, n * length(x@data$longitude))
           if (length(CDOM) == 0) CDOM <- rep(NA, n * length(x@data$longitude))
+          if (length(pH) == 0) pH <- rep(NA, n * length(x@data$longitude))
+          if (length(nitrate) == 0) nitrate <- rep(NA, n * length(x@data$longitude))
+          if (length(silicate) == 0) silicate <- rep(NA, n * length(x@data$longitude))
+          if (length(phosphate) == 0) phosphate <- rep(NA, n * length(x@data$longitude))
+
 
           temp <- data.frame(
             longitude = rep(x@data$longitude, each = n),
             latitude = rep(x@data$latitude, each = n),
+            date=rep(x@metadata$time, each=n),
             year_of_data_collection = rep(
               as.numeric(format(x@metadata$time, "%Y")),
               each = n
             ),
             depth = as.vector(pressure),
             oxygen = oxygen,
+            nitrate=nitrate,
+            silicate=silicate,
+            phosphate=phosphate,
             chlorophyllA = chlorophyllA,
             BBP700 = BBP700,
             CDOM = CDOM,
+            pH=pH,
             year_of_publication = as.numeric(format(Sys.Date(), "%Y")),
             source = "argos"
           )
@@ -3392,6 +3410,7 @@ raw_data_targets <- list(
         temp <- data.frame(
           longitude = rep(x@data$longitude, each = n),
           latitude = rep(x@data$latitude, each = n),
+          date=rep(x@metadata$time, each=n),
           year_of_data_collection = rep(
             as.numeric(format(x@metadata$time, "%Y")),
             each = n

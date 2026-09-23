@@ -1323,10 +1323,9 @@ indicator_targets <- list(
 
     ## AZMP
     data <- data_azmp_Discrete_Occupations_Sections |>
-      dplyr::select(longitude, latitude, year, depth, temperature)
+      dplyr::select(longitude, latitude, year, depth, temperature, year_of_publication)
 
     names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
     data$source <- 'azmp'
 
     ## GLIDERS
@@ -1390,8 +1389,7 @@ indicator_targets <- list(
         year_of_data_collection = as.numeric(format(time, "%Y"))
       ) |>
       select(longitude, latitude, year_of_data_collection, DOXY, depth) |>
-      mutate(year_of_publication = as.numeric(format(Sys.Date(), "%Y")),
-             source='gliders') |>
+      mutate(source='gliders') |>
       rename(oxygen=DOXY)
 
     ## BGC ARGO
@@ -1445,10 +1443,9 @@ indicator_targets <- list(
 
   tar_target(ind_chlorophyll, command = {
     data1 <- data_azmp_Discrete_Occupations_Sections |>
-      dplyr::select(longitude, latitude, year, depth, chlorophyll)
+      dplyr::select(longitude, latitude, year, depth, chlorophyll, year_of_publication)
 
     names(data1)[which(names(data1) == 'year')] <- 'year_of_data_collection'
-    data1$year_of_publication <- 2025
     data1$source <- "AZMP"
 
 
@@ -1503,10 +1500,9 @@ indicator_targets <- list(
   tar_target(ind_salinity, command = {
     ## AZMP
     data <- data_azmp_Discrete_Occupations_Sections |>
-      dplyr::select(longitude, latitude, year, depth, salinity)
+      dplyr::select(longitude, latitude, year, depth, salinity, year_of_publication)
 
     names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
     data$source <- 'AZMP'
 
     ## Gliders
@@ -1561,8 +1557,6 @@ indicator_targets <- list(
   }),
 
   tar_target(name = ind_light_availability, command = { #ind_environmental_conditions_near_seabed
-
-
     ## ARGO
     data <- data.frame(data_argo_df_bgc[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
                                            'CDOM', 'year_of_publication', 'source')])
@@ -1607,50 +1601,283 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }), # Environmental Representativity, Ocean Conditions
 
+  tar_target(ind_stratification, command = {
+    ## AZMP
+    data <- data_azmp_Discrete_Occupations_Sections |>
+      dplyr::select(longitude, latitude, date, year, depth, temperature, salinity, year_of_publication)
+
+    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    data$source <- 'azmp'
+
+    ## ARGO
+    core_data <- data.frame(data_argo_df_core[c('latitude', 'longitude','date', 'year_of_data_collection', 'depth',
+                                                'temperature','salinity', 'year_of_publication', 'source')])
+
+    data <- rbind(data, core_data)
+
+    data <- data[!is.na(data$latitude) &
+                   !is.na(data$longitude),]
+    data <- data[complete.cases(data[, c("salinity", "temperature", "depth", "latitude")]), ]
+
+    profiles <- split(
+      data,
+      interaction(data$date, data$latitude, data$longitude, drop = TRUE)
+    )
+    ## Calculate NA for each profile
+
+    data$n2 <- NA_real_
+
+    for (i in seq_along(profiles)) {
+
+      profile <- profiles[[i]]
+
+      n2 <- gsw::gsw_Nsquared(
+        SA = profile$salinity,
+        CT = profile$temperature,
+        p = profile$depth,
+        latitude = profile$latitude[1]
+      )$N2
+
+      profiles[[i]]$n2 <- c(NA, n2)
+    }
+
+    data <- do.call(rbind, profiles) ## JAIM (TEST)
+
+    data <- data %>% select(depth, n2, year_of_publication, year_of_data_collection)
 
 
-  tar_target(ind_stratification, command = { # JAIM
-    data <- data_gliders
-    year <- as.numeric(format(data$time, "%Y"))
-    data$year_of_data_collection <- year
-    data <- data[which(!is.na(data$mld)), ]
-    data <- data[, c(
-      "longitude",
-      "latitude",
-      "year_of_data_collection",
-      "mld",
-      "depth"
-    )]
 
-    data$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
+    data <- st_as_sf(
+      data,
+      coords = c("longitude", "latitude"),
+      crs = 4326
+    )
+    data <- data[!is.na(data$n2), ]
+    data <- data[is.finite(data$n2), ]
 
     x <- process_indicator(
       data = data,
-      indicator_var_name = "mld",
-      indicator = "Mixed Layer Depth",
+      indicator_var_name = "n2",
+      indicator = "Buoyancy frequency squared",
       type = 'in situ',
-      units = "m",
-      scoring = "desired state: increase",
+      units = "s-1",
+      scoring = "desired trend: stable",
       PPTID = 385,
       source = "Glider Program",
-      control_polygon = control_polygons,
       project_short_title = "Glider Program",
       climate = TRUE,
       climate_expectation = "FIXME",
       indicator_rationale = "Stratification of the mixed layer plays a complementary role in phytoplankton blooms (e.g., Greenan et al. 2004).",
       bin_rationale = "FIXME",
-      other_nest_variables = "depth",
+      other_nest_variables = c("depth", 'year_of_publication','year_of_data_collection'),
       SME = "Unknown",
       areas = MPAs,
-      plot_type = c('time-series', 'map'),
+      plot_type = c('map', 'time-series', 'water column profile'),
       plot_lm = FALSE,
       theme = "Ocean Structure and Movement",
-      objectives = NA
+      objectives = NA,
+      proxy='Water-column stratification: positive'
     )
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
 
+  tar_target(
+    ind_ph,
+    command = {
+      data <- data.frame(data_argo_df_bgc[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
+                                          'pH', 'year_of_publication', 'source')])
+
+
+      data <- data[!is.na(data$latitude) &
+                     !is.na(data$longitude),]
+
+      data <- st_as_sf(
+        data,
+        coords = c("longitude", "latitude"),
+        crs = 4326
+      )
+      data <- data[!is.na(data$pH), ]
+
+      x <- process_indicator(
+        data = data,
+        indicator_var_name = "pH",
+        indicator = "pH levels",
+        type = 'model',
+        units = " ",
+        scoring = "desired trend: increase",
+        PPTID = c(579,428),
+        source = c("AZMP", "Argo"),
+        project_short_title = c("AZMP", "Argo"),
+        climate = TRUE,
+        climate_expectation = "FIXME",
+        indicator_rationale = "Reduction in seawater pH as a consequence of ocean acidification may cause behavioral and physiological effects on fish (e.g., Heuer and Grosell 2014; Li et al. 2023). Ocean acidification can also increase calcium carbonate saturation affecting calcifying invertebrates such as echinoderms, mollusks, corals and crustaceans, that will experience difficultly maintaining their calcium carbonate exoskeleton and shells (e.g., Byrne and Fitzer 2019; Medeiros and Souza 2023; Shi and Li 2024).",
+        bin_rationale = "FIXME",
+        SME = "Unknown",
+        areas = MPAs,
+        plot_type = c('map', 'time-series', 'water column profile'),
+        plot_lm = FALSE,
+        other_nest_variables = c('year_of_data_collection', 'depth'),
+        theme = "Ocean Structure and Movement",
+        objectives = NA
+      )
+      save_plots(dplyr::select(x, -data, -adjacent_data))
+      dplyr::select(x, -plot)
+    }
+  ),
+
+tar_map(
+  values = tibble(
+    n_type = c("nitrate", "silicate", "phosphate")
+  ),
+
+  names = "n_type",
+  tar_target(ind_nutrient, command = { # KYLO
+
+    ## AZMP
+    data <- data_azmp_Discrete_Occupations_Sections |>
+      dplyr::select(longitude, latitude, year, depth, nutrient=all_of(type), year_of_publication)
+
+    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    data$source <- 'azmp'
+
+    ## ARGO JAIM TEST
+
+    d2 <- data_argo_df_bgc |>
+      dplyr::select(
+        latitude,
+        longitude,
+        year_of_data_collection,
+        depth,
+        nutrient = all_of(n_type),
+        year_of_publication,
+        source
+      )
+
+    data <- rbind(data, d2)
+
+    data <- data[!is.na(data$latitude) &
+                   !is.na(data$longitude), ]
+
+    data <- st_as_sf(
+      data,
+      coords = c("longitude", "latitude"),
+      crs = 4326
+    )
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = all_of(n_type),
+      indicator = "Nutrient Conditions",
+      type = 'in situ',
+      units = "mmol/m3",
+      scoring = "desired trend: stable",
+      PPTID = c(579,428),
+      source = c("AZMP","Argo"),
+      project_short_title = c("AZMP", "Argo"),
+      climate = TRUE,
+      climate_expectation = "FIXME",
+      indicator_rationale = "Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020).",
+      bin_rationale = "FIXME",
+      other_nest_variables = "depth",
+      areas = MPAs,
+      plot_type = c('map', 'time-series', 'water column profile'),
+      plot_lm = FALSE,
+      theme = "Primary Production",
+      SME = "Unknown",
+      objectives = c(
+        "Control alteration of nutrient concentrations affecting primary production",
+        "Maintain/promote ecosystem structure and functioning",
+        "Maintain Ecosystem Resistance",
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      )
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  })),
+
+tar_target(name = ind_spring_bloom, command = {
+
+  ## AZMP DATA
+
+  data1 <- data_azmp_Discrete_Occupations_Sections |>
+    dplyr::select(longitude, latitude, year, depth, chlorophyll, year_of_publication, date)
+
+  names(data1)[which(names(data1) == 'year')] <- 'year_of_data_collection'
+  data1$source <- "AZMP"
+
+
+  ## ARGO
+  data2 <- data.frame(data_argo_df_bgc[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
+                                         'chlorophyllA', 'year_of_publication', 'source','date')])
+
+  names(data2)[which(names(data2) == 'chlorophyllA')] <- 'chlorophyll'
+  data2$date <- as.Date(data_argo_df_bgc$date)
+
+
+  data <- rbind(data1,data2)
+  data <- data[!is.na(data$latitude) &
+                 !is.na(data$longitude), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  ## Looking now at week of max peak year to year
+
+  ### Summarize chlorophyll across depth for each date, then ginf maximum date for each year.
+
+  bloom_timing <- data %>%
+    mutate(week = lubridate::isoweek(date)) %>%
+    group_by(year_of_data_collection, date, longitude, latitude, week) %>%
+    summarise(
+      chlorophyll = median(chlorophyll, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    group_by(year_of_data_collection, week) %>%
+    summarise(
+      chlorophyll = median(chlorophyll, na.rm = TRUE),
+      n_samples = n(),
+      .groups = "drop"
+    ) %>%
+    group_by(year_of_data_collection) %>%
+    slice_max(chlorophyll, n = 1, with_ties = FALSE) %>%
+    ungroup()
+
+  names(bloom_timing)[which(names(bloom_timing) == 'week')] <- 'chlorophyll_peak_week'
+
+  x <- process_indicator(
+    data = bloom_timing,
+    indicator_var_name = "chlorophyll_peak_week",
+    indicator = "Week of Max Chlorophyll Peak",
+    type = 'in situ',
+    units = "week of year",
+    scoring = "desired trend: stable",
+    PPTID = c(579,428),
+    source = c("AZMP", "Argo"),
+    project_short_title = c("AZMP", "Argo"),
+    other_nest_variables = c('year_of_data_collection', 'chlorophyll', 'geometry', 'date', 'n_samples'),
+    SME = "Unknown",
+    areas = MPAs,
+    climate_expectation = "FIXME",
+    indicator_rationale = "Chlorophyll a measurements are typically used as a proxy for primary production at the ocean surface, which, in turn, can influence ocean bottom conditions through benthic/pelagic coupling.",
+    bin_rationale = "FIXME",
+    plot_type = c('time-series'),
+    plot_lm = FALSE,
+    theme = "Primary Production",
+    objectives = c(
+      "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+      "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+    ),
+    proxy = 'day in the year for spring bloom timing: positive'
+  )
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
 
 
 
@@ -2264,207 +2491,6 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
-  tar_target(ind_nitrate, command = {
-    data <- data_azmp_Discrete_Occupations_Sections |>
-      dplyr::select(longitude, latitude, year, depth, nitrate)
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "nitrate",
-      indicator = "Nutrient Conditions (Nitrate)",
-      type = 'in situ',
-      units = "mmol/m3",
-      scoring = "desired state: decrease",
-      PPTID = 579,
-      source = "AZMP",
-      project_short_title = "AZMP",
-      control_polygon = control_polygons,
-      climate = TRUE,
-      climate_expectation = "FIXME",
-      indicator_rationale = "Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020).",
-      bin_rationale = "FIXME",
-      other_nest_variables = "depth",
-      areas = MPAs,
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Primary Production",
-      SME = "Unknown",
-      objectives = c(
-        "Control alteration of nutrient concentrations affecting primary production",
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Ecosystem Resistance",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(
-    ind_ave_ph_level,
-    command = {
-      data <- azmpdata::Derived_Annual_Carbonate
-      data$year <- as.numeric(data$year)
-      data <- data[which(!is.na(data$mean_pH_total)), ]
-      data <- data[, c("year", "section_name", "mean_pH_total")]
-      data$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
-
-      ## NOTE: THERE IS NO LATITUDE/LONGITUDE ASSOICATED WITH SECTION NAMES SO I MADE MY OWN (AND ALSO MADE AN ISSUE IN THE AZMPDATA PACKAGE)
-
-      data$latitude <- NA_real_
-      data$longitude <- NA_real_
-
-      sections <- unique(data$section_name)
-
-      for (i in seq_along(sections)) {
-        sec <- sections[i]
-
-        coords <- switch(
-          sec,
-          "Browns_Bank" = c(42.90, -66.90),
-          "Cabot_Strait" = c(47.60, -59.50),
-          "Gully" = c(43.80, -59.10),
-          "Halifax_Line" = c(44.30, -63.30),
-          "Louisbourg" = c(45.90, -59.90),
-          "Peter_Smith_Line" = c(44.00, -62.50),
-          "St_Anns_Bank" = c(46.10, -60.20),
-          "Banquereau_Bank" = c(44.80, -57.80),
-          "Portsmouth_Line" = c(43.70, -65.30),
-          "St_Pierre_Bank" = c(46.80, -56.30),
-          "Yarmouth_Line" = c(43.60, -66.30),
-          "Laurentian_Channel_Centre" = c(45.70, -57.90),
-          "Laurentian_Channel_Mouth" = c(44.90, -59.80),
-          "Viking_Buoy" = c(50.50, -48.50),
-          "Northeast_Channel" = c(42.30, -65.50),
-          "Seal_Island" = c(43.50, -66.00),
-          c(NA_real_, NA_real_) # fallback
-        )
-
-        data$latitude[data$section_name == sec] <- coords[1]
-        data$longitude[data$section_name == sec] <- coords[2]
-      }
-      data <- data[-(which(data$mean_pH_total == -999)), ]
-      data <- data[, c(
-        'year',
-        'mean_pH_total',
-        'year_of_publication',
-        'latitude',
-        'longitude'
-      )]
-
-      x <- process_indicator(
-        data = data,
-        indicator_var_name = "mean_pH_total",
-        indicator = "Average pH levels",
-        type = 'model',
-        units = " ",
-        scoring = "desired state: increase",
-        PPTID = 579,
-        source = "AZMP",
-        control_polygon = control_polygons,
-        project_short_title = "AZMP",
-        climate = TRUE,
-        climate_expectation = "FIXME",
-        indicator_rationale = "Reduction in seawater pH as a consequence of ocean acidification may cause behavioral and physiological effects on fish (e.g., Heuer and Grosell 2014; Li et al. 2023). Ocean acidification can also increase calcium carbonate saturation affecting calcifying invertebrates such as echinoderms, mollusks, corals and crustaceans, that will experience difficultly maintaining their calcium carbonate exoskeleton and shells (e.g., Byrne and Fitzer 2019; Medeiros and Souza 2023; Shi and Li 2024).",
-        bin_rationale = "FIXME",
-        SME = "Unknown",
-        areas = MPAs,
-        plot_type = c('time-series', 'map'),
-        plot_lm = FALSE,
-        theme = "Ocean Structure and Movement",
-        objectives = NA,
-        year = "year"
-      )
-      save_plots(dplyr::select(x, -data, -adjacent_data))
-      dplyr::select(x, -plot)
-    }
-  ),
-
-  tar_target(ind_silicate, command = {
-    data <- data_azmp_Discrete_Occupations_Sections |>
-      dplyr::select(longitude, latitude, year, depth, silicate)
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "silicate",
-      indicator = "Nutrient Conditions (Silicate)",
-      type = 'in situ',
-      units = "mmol/m3",
-      scoring = "desired state: decrease",
-      PPTID = 579,
-      source = "AZMP",
-      project_short_title = "AZMP",
-      control_polygon = control_polygons,
-      climate = TRUE,
-      climate_expectation = "FIXME",
-      indicator_rationale = "Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020). ",
-      bin_rationale = "FIXME",
-      other_nest_variables = "depth",
-      areas = MPAs,
-      plot_type = c('time-series', 'map'),
-      SME = "Unknown",
-      plot_lm = FALSE,
-      theme = "Primary Production",
-      objectives = c(
-        "Control alteration of nutrient concentrations affecting primary production",
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Ecosystem Resistance",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_phosphate, command = {
-    data <- data_azmp_Discrete_Occupations_Sections |>
-      dplyr::select(longitude, latitude, year, depth, phosphate)
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "phosphate",
-      indicator = "Nutrient Conditions (Phosphate)",
-      type = 'in situ',
-      units = "mmol/m3",
-      scoring = "desired state: decrease",
-      PPTID = 579,
-      source = "AZMP",
-      project_short_title = "AZMP",
-      control_polygon = control_polygons,
-      climate = TRUE,
-      climate_expectation = "FIXME",
-      indicator_rationale = "Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020).",
-      bin_rationale = "FIXME",
-      other_nest_variables = "depth",
-      areas = MPAs[
-        -(which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area")),
-      ],
-      plot_type = c('time-series', 'map'),
-      SME = "Unknown",
-      plot_lm = FALSE,
-      theme = "Primary Production",
-      objectives = c(
-        "Control alteration of nutrient concentrations affecting primary production",
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Ecosystem Resistance",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
 
   tar_target(ind_bloom_amplitude, command = {
     script_lines <- readLines(
@@ -4042,22 +4068,6 @@ indicator_targets <- list(
     )
   }), # Biomass Metrics, Primary Production
 
-  tar_target(name = ind_spring_bloom, command = {
-    ind_placeholder(
-      ind_name = "Start Date of Spring Bloom",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "AZMP",
-      objectives = c(
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      theme = "Primary Production"
-    )
-  }), # Structure and Function, Primary Production
-
   tar_target(name = ind_calanus_finmarchicus, command = {
     ind_placeholder(
       ind_name = "Biomass of Calanus finmarchicus",
@@ -4532,23 +4542,6 @@ indicator_targets <- list(
       theme = "Ocean Structure and Movement"
     )
   }), # Environmental Representativity, Ocean Structure and Movement
-
-  tar_target(name = ind_nutrients, command = {
-    ind_placeholder(
-      ind_name = "Nutrient Concentrations",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)",
-        "Control alteration of nutrient concentrations affecting primary production"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representataivity, Ocean Conditions
 
   tar_target(name = ind_cpue, command = {
     ind_placeholder(
