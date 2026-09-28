@@ -444,7 +444,6 @@ indicator_targets <- list(
   # END EDNA
 
   tar_target(name = ind_distinctive_benthic_characteristics_kelp, command = {
-    # Halle
     data <- data_kelp_modelled %>%
       filter(suitable_habitat) %>%
       select(suitable_habitat, habitat_type, geometry) %>%
@@ -1880,6 +1879,458 @@ tar_target(name = ind_spring_bloom, command = {
 }),
 
 
+## AZMP INDICATORS
+
+tar_target(ind_carbonate,
+           command={
+             data <- azmpdata::Derived_Annual_Carbonate
+             data$year <- as.numeric(data$year)
+             data <- data[which(!is.na(data$mean_omega_calcite)), ]
+             data <- data[, c("year", "section_name", "mean_omega_calcite")]
+
+             ## NOTE: THERE IS NO LATITUDE/LONGITUDE ASSOICATED WITH SECTION NAMES SO I MADE MY OWN (AND ALSO MADE AN ISSUE IN THE AZMPDATA PACKAGE)
+
+             data$latitude <- NA_real_
+             data$longitude <- NA_real_
+
+             sections <- unique(data$section_name)
+
+             for (i in seq_along(sections)) {
+               sec <- sections[i]
+
+               coords <- switch(
+                 sec,
+                 "Browns_Bank" = c(42.90, -66.90),
+                 "Cabot_Strait" = c(47.60, -59.50),
+                 "Gully" = c(43.80, -59.10),
+                 "Halifax_Line" = c(44.30, -63.30),
+                 "Louisbourg" = c(45.90, -59.90),
+                 "Peter_Smith_Line" = c(44.00, -62.50),
+                 "St_Anns_Bank" = c(46.10, -60.20),
+                 "Banquereau_Bank" = c(44.80, -57.80),
+                 "Portsmouth_Line" = c(43.70, -65.30),
+                 "St_Pierre_Bank" = c(46.80, -56.30),
+                 "Yarmouth_Line" = c(43.60, -66.30),
+                 "Laurentian_Channel_Centre" = c(45.70, -57.90),
+                 "Laurentian_Channel_Mouth" = c(44.90, -59.80),
+                 "Viking_Buoy" = c(50.50, -48.50),
+                 "Northeast_Channel" = c(42.30, -65.50),
+                 "Seal_Island" = c(43.50, -66.00),
+                 c(NA_real_, NA_real_) # fallback
+               )
+
+               data$latitude[data$section_name == sec] <- coords[1]
+               data$longitude[data$section_name == sec] <- coords[2]
+             }
+             data <- data[-(which(data$mean_omega_calcite == -999)), ]
+             data <- data[, c(
+               'year',
+               'mean_omega_calcite',
+               'year_of_publication',
+               'latitude',
+               'longitude'
+             )]
+
+             data <- st_as_sf(
+               data,
+               coords = c("longitude", "latitude"),
+               crs = 4326,
+               remove = FALSE
+             )
+             names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+             eD <- rep(20, length(MPAs$NAME_E))
+
+             x <- process_indicator(
+               data = data,
+               indicator_var_name = "mean_omega_calcite",
+               indicator = "Mean Calcium Carbonate Saturation",
+               type = 'model',
+               units = " ",
+               scoring = "desired trend: increase",
+               PPTID = c(579),
+               source = c("AZMP"),
+               project_short_title = c("AZMP"),
+               climate = TRUE,
+               climate_expectation = "FIXME",
+               indicator_rationale = "FIXME",
+               bin_rationale = "FIXME",
+               SME = "Unknown",
+               areas = MPAs,
+               plot_type = c('map','time-series'),
+               plot_lm = FALSE,
+               externalData=eD, # This is because of unknown polygon and lat/lngs
+               other_nest_variables = c('year_of_data_collection', 'year_of_publication', 'latitude', 'longitude'),
+               theme = "Ocean Conditions",
+               objectives = NA
+             )
+           }),
+
+tar_target(ind_zooplankton, command = {
+  data <- data_azmp_zooplankton_annual_stations |>
+    dplyr::select(longitude, latitude, year, zooplankton_meso_dry_weight)
+
+  names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+
+  data <- st_as_sf(data,coords = c("longitude", "latitude"),crs = 4326,remove = FALSE)
+  eD <- rep(40, length(MPAs$NAME_E))
+
+  x <- process_indicator(
+    data = data,
+    indicator = "Mesozooplankton dry weight",
+    indicator_var_name = "zooplankton_meso_dry_weight",
+    type = "in situ",
+    units = "mg/m3",
+    scoring = "desired trend: increase",
+    PPTID = 579,
+    source = "AZMP",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    externalData=eD,
+    project_short_title = "AZMP",
+    areas = MPAs,
+    plot_type = c('time-series', 'map'),
+    plot_lm = FALSE,
+    theme = "Secondary Production",
+    SME = "Unknown",
+    objectives = c(
+      "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+      "Maintain/promote ecosystem structure and functioning",
+      "Maintain Functional Biodiversity",
+      "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+
+
+tar_target(ind_zooplankton_community_composition, command = { # JAIM
+  ## Calculating what proportion of the total zooplankton biomass each zooplankton taxa represents
+  ## 1. Puts all zooplankton into one column
+  ## 2. Converts the log10 biomass back to regular biomass
+  ## 3. Groups data by station and year
+  ## Calculates each taxon's share of the total biomass
+
+  data <- data_azmp_zooplankton_annual_stations %>%
+    pivot_longer(
+      cols = matches("_log10$"),
+      names_to = "taxa",
+      values_to = "log_biomass"
+    ) %>%
+    mutate(biomass = 10^log_biomass) %>%
+    group_by(station, year) %>%
+    mutate(relative_biomass = biomass / sum(biomass, na.rm = TRUE)) %>%
+    ungroup()
+
+  ## Above tells you how much biomass was there, and what proportion of the total
+  ## zooplankton biomass did that taxon represent
+
+  names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+  names(data)[which(names(data) == 'taxa')] <- 'species'
+
+  data <- data[-which(is.na(data$relative_biomass)), ]
+
+  data$ID <- paste0(data$station, "", data$year_of_data_collection)
+
+  eD <- rep(40, length(MPAs$NAME_E))
+
+  data <- data |>
+    dplyr::mutate(
+      detections = 1
+    ) |>
+    dplyr::distinct(
+      ID,
+      species,
+      .keep_all = TRUE
+    ) |>
+    sf::st_as_sf(
+      coords = c("longitude", "latitude"),
+      crs = 4326
+    )
+
+  data <- data |>
+    dplyr::transmute(
+      ID,
+      year_of_data_collection,
+      species,
+      detections = 1
+    )
+  data$species <- sub("_log10$", "",  data$species)
+
+  environmental_layers <- c(
+    data_epibenthic_communities_environmental[
+      c(
+        "bottom_current_mean",
+        "bottom_temperature_mean",
+        "sediment_grain_size"
+      )
+    ],
+    list(data_benthoscape = data_benthoscape)
+  )
+
+  x <- process_indicator(
+    data = data,
+    indicator = "Zooplankton Community Composition",
+    indicator_var_name = "detections",
+    type = "in situ",
+    units = NA,
+    scoring = "desired trend: no decrease",
+    PPTID = 579,
+    source = "AZMP",
+    climate_expectation = "FIXME",
+    control_polygon = control_polygons,
+    indicator_rationale = "Zooplankton shifts driven by climate change can cause declines in food quality for fish (e.g., Heneghan et al. 2023).",
+    bin_rationale = "FIXME",
+    project_short_title = "AZMP",
+    other_nest_variables = c("ID", 'species','year_of_data_collection'),
+    areas = MPAs,
+    plot_type = c('detections', 'indicator_by_taxa'), # species-detection. This may not work anymore.
+    plot_lm = FALSE,
+    SME = "Unknown",
+    habitat_display = NULL,
+    theme = "Secondary Production",
+    objectives = c(
+      "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+      "Maintain/promote ecosystem structure and functioning",
+      "Maintain Functional Biodiversity",
+      "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+    ),
+    externalData = eD
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+
+## TO BE LOOKED AT SHORTLY
+
+
+tar_target(ind_surface_height, command = {
+  data <- azmpdata::Derived_Monthly_Stations |>
+    left_join(data_azmp_fixed_stations, by = "station") |>
+    dplyr::select(longitude, latitude, year, sea_surface_height)
+  names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+  data$year_of_publication <- 2025
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "sea_surface_height",
+    indicator = "sea surface height",
+    type = "model",
+    units = "m",
+    scoring = "desired state: decrease",
+    PPTID = 579,
+    source = "AZMP",
+    project_short_title = "AZMP",
+    climate = TRUE,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    control_polygon = control_polygons,
+    SME = "Unknown",
+    bin_rationale = "FIXME",
+    areas = MPAs,
+    plot_type = c('time-series', 'map'),
+    plot_lm = FALSE,
+    theme = "Ocean Structure and Movement",
+    objectives = NA
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+
+tar_target(ind_bloom_amplitude, command = {
+  script_lines <- readLines(
+    "https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_00c_define_polygons.R"
+  )
+
+  k1 <- which(grepl("poly\\$atlantic = list", script_lines))
+  k2 <- which(grepl(
+    "-61.1957, -61.1957, -59.54983, -59.54983, -61.1957",
+    script_lines
+  ))
+  script <- script_lines[k1:k2]
+  poly <- list()
+  eval(parse(text = script))
+  DF <- poly$atlantic$AZMP$CSS_V02
+
+  coords <- matrix(c(DF$lon, DF$lat), ncol = 2, byrow = FALSE)
+  coords <- rbind(coords, coords[1, ])
+  polygon_sf <- st_sfc(st_polygon(list(coords)))
+  st_crs(polygon_sf) <- 4326
+
+  data <- azmpdata::RemoteSensing_Annual_Broadscale |>
+    filter(area == "CSS_remote_sensing") |>
+    mutate(geometry = polygon_sf) |>
+    st_as_sf() |>
+    dplyr::select(year, bloom_amplitude, geometry) |>
+    st_make_valid()
+
+  names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+  data$year_of_publication <- 2021
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "bloom_amplitude",
+    indicator = "Bloom Amplitude",
+    type = "remote sensing",
+    units = "(unit unknown)",
+    scoring = "desired state: stable",
+    PPTID = 579,
+    source = "AZMP",
+    climate_expectation = "FIXME",
+    control_polygon = control_polygons,
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "AZMP",
+    areas = MPAs,
+    plot_type = c("time-series", "map"),
+    SME = "Unknown",
+    plot_lm = FALSE,
+    theme = "Primary Production",
+    objectives = c(
+      "Maintain/promote ecosystem structure and functioning",
+      "Maintain Functional Biodiversity",
+      "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+    ),
+    indicator_caveats = "This indicator is based off of a remote sensing area. Any protected area that overlaps with this remote sensing area will have the same values."
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+tar_target(ind_bloom_timing, command = {
+  script_lines <- readLines(
+    "https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_00c_define_polygons.R"
+  )
+
+  k1 <- which(grepl("poly\\$atlantic = list", script_lines))
+  k2 <- which(grepl(
+    "-61.1957, -61.1957, -59.54983, -59.54983, -61.1957",
+    script_lines
+  ))
+  script <- script_lines[k1:k2]
+  poly <- list()
+  eval(parse(text = script))
+  DF <- poly$atlantic$AZMP$CSS_V02
+
+  coords <- matrix(c(DF$lon, DF$lat), ncol = 2, byrow = FALSE)
+  coords <- rbind(coords, coords[1, ])
+  polygon_sf <- st_sfc(st_polygon(list(coords)))
+  st_crs(polygon_sf) <- 4326
+
+  data <- azmpdata::RemoteSensing_Annual_Broadscale |>
+    filter(area == "CSS_remote_sensing") |>
+    mutate(geometry = polygon_sf) |>
+    st_as_sf() |>
+    dplyr::select(year, bloom_start, geometry) |>
+    st_make_valid()
+
+  names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+  data$year_of_publication <- 2021
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "bloom_start",
+    indicator = "Bloom Start (Timing)",
+    type = "remote sensing",
+    units = "(days since January 1st)", # FIXME: I think
+    scoring = "desired state: stable",
+    PPTID = 579,
+    source = "AZMP",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "The timing of the spring bloom can directly influence the survival success of fish larvae. For example, the spring peak in phytoplankton production, along with high rates of C. finmarchicus reproduction, have been shown to occur within the historical haddock spawning period (Head et al. 2005).",
+    project_short_title = "AZMP",
+    control_polygon = control_polygons,
+    areas = MPAs,
+    plot_type = c("time-series", "map"),
+    SME = "Unknown",
+    plot_lm = FALSE,
+    theme = "Primary Production",
+    objectives = c(
+      "Maintain/promote ecosystem structure and functioning",
+      "Maintain Functional Biodiversity",
+      "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+tar_target(name = ind_phytoplankton, command = {
+  data_azmp_fixed_stations
+  # Add rows one by one
+  data <- azmpdata::Phytoplankton_Occupations_Stations
+  data$latitude <- NA
+  data$longitude <- NA
+  for (i in seq_along(unique(data$station))) {
+    data$latitude[which(
+      data$station == unique(data$station)[i]
+    )] <- data_azmp_fixed_stations$latitude[which(
+      data_azmp_fixed_stations$station == unique(data$station)[i]
+    )]
+    data$longitude[which(
+      data$station == unique(data$station)[i]
+    )] <- data_azmp_fixed_stations$longitude[which(
+      data_azmp_fixed_stations$station == unique(data$station)[i]
+    )]
+  }
+
+  data <- data |>
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |>
+    st_make_valid() |>
+    mutate(
+      sum_phytoplankton = rowSums(
+        across(c(diatoms, dinoflagellates, flagellates)),
+        na.rm = TRUE
+      )
+    ) |> # FIXME: I think
+    mutate(year = as.numeric(format(date, "%Y"))) |>
+    dplyr::select(sum_phytoplankton, year, geometry)
+
+  names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+  data$year_of_publication <- 2025
+
+  x <- process_indicator(
+    data = data,
+    indicator = "Abundance of Phytoplankton (Diatoms, Dinoflagellates,Flagellates)",
+    indicator_var_name = "sum_phytoplankton",
+    type = 'in situ',
+    units = "unit unknown",
+    scoring = "desired state: increase",
+    PPTID = 579,
+    source = "AZMP",
+    climate_expectation = "FIXME",
+    indicator_rationale = "Phytoplankton constitutes the base of the marine food web and, consequently, their production sets an upper limit on the production of all higher trophic levels.",
+    bin_rationale = "FIXME",
+    project_short_title = "AZMP",
+    control_polygon = control_polygons,
+    SME = "Unknown",
+    areas = MPAs,
+    plot_type = c('time-series', 'map'),
+    plot_lm = FALSE,
+    theme = "Primary Production",
+    objectives = c(
+      "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+      "Maintain/promote ecosystem structure and functioning",
+      "Maintain Functional Biodiversity",
+      "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+
 
   # NON-VALIDATED INDICATORS
 
@@ -2356,321 +2807,6 @@ tar_target(name = ind_spring_bloom, command = {
         "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
         "Allow sufficient escapement from exploitation for spawning",
         "Contribute to the recovery and conservation of depleted species"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_zooplankton, command = {
-    data <- data_azmp_zooplankton_annual_stations |>
-      mutate(Calanus_finmarchicus_biomass = Calanus_finmarchicus_log10) |>
-      dplyr::select(longitude, latitude, year, Calanus_finmarchicus_biomass)
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-
-    x <- process_indicator(
-      data = data,
-      indicator = "Biomass of Zooplankton (Calanus finmarchicus)",
-      indicator_var_name = "Calanus_finmarchicus_biomass",
-      type = "in situ",
-      units = "log10 of abundance",
-      scoring = "desired state: increase",
-      PPTID = 579,
-      source = "AZMP",
-      climate_expectation = "FIXME",
-      control_polygon = control_polygons,
-      indicator_rationale = "FIXME",
-      bin_rationale = "FIXME",
-      project_short_title = "AZMP",
-      areas = MPAs,
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Secondary Production",
-      SME = "Unknown",
-      objectives = c(
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Functional Biodiversity",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_zooplankton_community_composition, command = {
-    data <- data_azmp_zooplankton_annual_stations %>%
-      pivot_longer(
-        cols = matches("_log10$"),
-        names_to = "taxa",
-        values_to = "log_biomass"
-      ) %>%
-      mutate(biomass = 10^log_biomass) %>%
-      group_by(station, year) %>%
-      mutate(relative_biomass = biomass / sum(biomass, na.rm = TRUE)) %>%
-      ungroup()
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-    data <- data[-which(is.na(data$relative_biomass)), ]
-
-    x <- process_indicator(
-      data = data,
-      indicator = "Zooplankton Community Composition",
-      indicator_var_name = "relative_biomass",
-      type = "in situ",
-      units = NA,
-      scoring = "desired trend: increase",
-      PPTID = 579,
-      source = "AZMP",
-      climate_expectation = "FIXME",
-      control_polygon = control_polygons,
-      indicator_rationale = "Zooplankton shifts driven by climate change can cause declines in food quality for fish (e.g., Heneghan et al. 2023).",
-      bin_rationale = "FIXME",
-      project_short_title = "AZMP",
-      other_nest_variables = c(
-        "zooplankton_meso_dry_weight",
-        "log_biomass",
-        "biomass",
-        "relative_biomass",
-        "station",
-        "taxa"
-      ),
-      areas = MPAs,
-      plot_type = c('detection', 'map'), # species-detection. This may not work anymore.
-      plot_lm = FALSE,
-      SME = "Unknown",
-      theme = "Secondary Production",
-      objectives = c(
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Functional Biodiversity",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      externalData = rep(30, 46)
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_surface_height, command = {
-    data <- azmpdata::Derived_Monthly_Stations |>
-      left_join(data_azmp_fixed_stations, by = "station") |>
-      dplyr::select(longitude, latitude, year, sea_surface_height)
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "sea_surface_height",
-      indicator = "sea surface height",
-      type = "model",
-      units = "m",
-      scoring = "desired state: decrease",
-      PPTID = 579,
-      source = "AZMP",
-      project_short_title = "AZMP",
-      climate = TRUE,
-      climate_expectation = "FIXME",
-      indicator_rationale = "FIXME",
-      control_polygon = control_polygons,
-      SME = "Unknown",
-      bin_rationale = "FIXME",
-      areas = MPAs,
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Ocean Structure and Movement",
-      objectives = NA
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-
-  tar_target(ind_bloom_amplitude, command = {
-    script_lines <- readLines(
-      "https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_00c_define_polygons.R"
-    )
-
-    k1 <- which(grepl("poly\\$atlantic = list", script_lines))
-    k2 <- which(grepl(
-      "-61.1957, -61.1957, -59.54983, -59.54983, -61.1957",
-      script_lines
-    ))
-    script <- script_lines[k1:k2]
-    poly <- list()
-    eval(parse(text = script))
-    DF <- poly$atlantic$AZMP$CSS_V02
-
-    coords <- matrix(c(DF$lon, DF$lat), ncol = 2, byrow = FALSE)
-    coords <- rbind(coords, coords[1, ])
-    polygon_sf <- st_sfc(st_polygon(list(coords)))
-    st_crs(polygon_sf) <- 4326
-
-    data <- azmpdata::RemoteSensing_Annual_Broadscale |>
-      filter(area == "CSS_remote_sensing") |>
-      mutate(geometry = polygon_sf) |>
-      st_as_sf() |>
-      dplyr::select(year, bloom_amplitude, geometry) |>
-      st_make_valid()
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2021
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "bloom_amplitude",
-      indicator = "Bloom Amplitude",
-      type = "remote sensing",
-      units = "(unit unknown)",
-      scoring = "desired state: stable",
-      PPTID = 579,
-      source = "AZMP",
-      climate_expectation = "FIXME",
-      control_polygon = control_polygons,
-      indicator_rationale = "FIXME",
-      bin_rationale = "FIXME",
-      project_short_title = "AZMP",
-      areas = MPAs,
-      plot_type = c("time-series", "map"),
-      SME = "Unknown",
-      plot_lm = FALSE,
-      theme = "Primary Production",
-      objectives = c(
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Functional Biodiversity",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      indicator_caveats = "This indicator is based off of a remote sensing area. Any protected area that overlaps with this remote sensing area will have the same values."
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_bloom_timing, command = {
-    script_lines <- readLines(
-      "https://raw.githubusercontent.com/BIO-RSG/PhytoFit/refs/heads/master/tools/tools_00c_define_polygons.R"
-    )
-
-    k1 <- which(grepl("poly\\$atlantic = list", script_lines))
-    k2 <- which(grepl(
-      "-61.1957, -61.1957, -59.54983, -59.54983, -61.1957",
-      script_lines
-    ))
-    script <- script_lines[k1:k2]
-    poly <- list()
-    eval(parse(text = script))
-    DF <- poly$atlantic$AZMP$CSS_V02
-
-    coords <- matrix(c(DF$lon, DF$lat), ncol = 2, byrow = FALSE)
-    coords <- rbind(coords, coords[1, ])
-    polygon_sf <- st_sfc(st_polygon(list(coords)))
-    st_crs(polygon_sf) <- 4326
-
-    data <- azmpdata::RemoteSensing_Annual_Broadscale |>
-      filter(area == "CSS_remote_sensing") |>
-      mutate(geometry = polygon_sf) |>
-      st_as_sf() |>
-      dplyr::select(year, bloom_start, geometry) |>
-      st_make_valid()
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2021
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "bloom_start",
-      indicator = "Bloom Start (Timing)",
-      type = "remote sensing",
-      units = "(days since January 1st)", # FIXME: I think
-      scoring = "desired state: stable",
-      PPTID = 579,
-      source = "AZMP",
-      climate_expectation = "FIXME",
-      indicator_rationale = "FIXME",
-      bin_rationale = "The timing of the spring bloom can directly influence the survival success of fish larvae. For example, the spring peak in phytoplankton production, along with high rates of C. finmarchicus reproduction, have been shown to occur within the historical haddock spawning period (Head et al. 2005).",
-      project_short_title = "AZMP",
-      control_polygon = control_polygons,
-      areas = MPAs,
-      plot_type = c("time-series", "map"),
-      SME = "Unknown",
-      plot_lm = FALSE,
-      theme = "Primary Production",
-      objectives = c(
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Functional Biodiversity",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(name = ind_phytoplankton, command = {
-    data_azmp_fixed_stations
-    # Add rows one by one
-    data <- azmpdata::Phytoplankton_Occupations_Stations
-    data$latitude <- NA
-    data$longitude <- NA
-    for (i in seq_along(unique(data$station))) {
-      data$latitude[which(
-        data$station == unique(data$station)[i]
-      )] <- data_azmp_fixed_stations$latitude[which(
-        data_azmp_fixed_stations$station == unique(data$station)[i]
-      )]
-      data$longitude[which(
-        data$station == unique(data$station)[i]
-      )] <- data_azmp_fixed_stations$longitude[which(
-        data_azmp_fixed_stations$station == unique(data$station)[i]
-      )]
-    }
-
-    data <- data |>
-      st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |>
-      st_make_valid() |>
-      mutate(
-        sum_phytoplankton = rowSums(
-          across(c(diatoms, dinoflagellates, flagellates)),
-          na.rm = TRUE
-        )
-      ) |> # FIXME: I think
-      mutate(year = as.numeric(format(date, "%Y"))) |>
-      dplyr::select(sum_phytoplankton, year, geometry)
-
-    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data$year_of_publication <- 2025
-
-    x <- process_indicator(
-      data = data,
-      indicator = "Abundance of Phytoplankton (Diatoms, Dinoflagellates,Flagellates)",
-      indicator_var_name = "sum_phytoplankton",
-      type = 'in situ',
-      units = "unit unknown",
-      scoring = "desired state: increase",
-      PPTID = 579,
-      source = "AZMP",
-      climate_expectation = "FIXME",
-      indicator_rationale = "Phytoplankton constitutes the base of the marine food web and, consequently, their production sets an upper limit on the production of all higher trophic levels.",
-      bin_rationale = "FIXME",
-      project_short_title = "AZMP",
-      control_polygon = control_polygons,
-      SME = "Unknown",
-      areas = MPAs,
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Primary Production",
-      objectives = c(
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Maintain/promote ecosystem structure and functioning",
-        "Maintain Functional Biodiversity",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
       )
     )
 
@@ -3987,22 +4123,6 @@ tar_target(name = ind_spring_bloom, command = {
     )
   }), # Environmental Representativity, Ocean Conditions
 
-  tar_target(name = ind_carbonate, command = {
-    ind_placeholder(
-      ind_name = "Carbonate",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Readily Available",
-      source = "AZMP",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities",
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
-
   tar_target(name = ind_ave_mixed_layer_depth, command = {
     ind_placeholder(
       ind_name = "Average Mixed Layer Depth",
@@ -4033,23 +4153,6 @@ tar_target(name = ind_spring_bloom, command = {
       theme = "Ocean Conditions"
     )
   }), # Environmental Representativity, Ocean Conditions?
-
-  tar_target(name = ind_chlorophyll_a, command = {
-    ind_placeholder(
-      ind_name = "Chlorophyll a",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "AZMP",
-      objectives = c(
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)",
-        "Control alteration of nutrient concentrations affecting primary production"
-      ),
-      theme = "Primary Production"
-    )
-  }), # Structure and Function, Primary Production
 
   tar_target(name = ind_phytoplankton_biomass_and_diversity, command = {
     ind_placeholder(
