@@ -998,7 +998,7 @@ indicator_targets <- list(
       data = sediment_indicator,
       readiness = "Ready",
       indicator_var_name = "shannon",
-      indicator = "Sediment/ Geology characeristics",
+      indicator = "Sediment/ Geology characteristics",
       type = "in situ",
       units = "mm",
       scoring = "representation: regional relative ranking calculated",
@@ -1286,7 +1286,7 @@ indicator_targets <- list(
         data = sediment_indicator,
         readiness = "Ready",
         indicator_var_name = "shannon_diversity",
-        indicator = "Sediment/ Geology characeristics",
+        indicator = "Sediment/ Geology characteristics",
         type = "in situ",
         units = "mm",
         scoring = "mpa effect: calculation comparison",
@@ -2236,6 +2236,10 @@ tar_target(ind_surface_height, command = {
   dplyr::select(x, -plot)
 }),
 
+
+## WHALE INDICATORS
+
+
   # NON-VALIDATED INDICATORS
 
   tar_target(ind_otn_proportion_tags_detected_in_multiple_mpas, command = {
@@ -2884,47 +2888,6 @@ tar_target(ind_surface_height, command = {
     dplyr::select(x, -plot)
   }),
 
-  tar_target(name = ind_species_richness_eDNA, command = {
-    data_edna_data
-    MPAs
-    control_polygons
-    message(class(data_edna_data))
-
-    #names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
-    data <- data_edna_data
-    data$year_of_publication <- 2026
-
-    x <- process_indicator(
-      data = data_edna_data,
-      indicator_var_name = "species_richness",
-      indicator = "Species Richness (eDNA)",
-      type = "in situ",
-      units = NA,
-      scoring = "desired state: increase",
-      PPTID = 450,
-      source = "eDNA",
-      project_short_title = "Advancing eDNA",
-      bin_rationale = "FIXME",
-      climate_expectation = "FIXME",
-      SME = "Unknown",
-      indicator_rationale = "FIXME",
-      areas = MPAs,
-      control_polygon = control_polygons,
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      theme = "Fish and Fishery Resources", #TODO This theme is probably not correct?
-      objectives = c(
-        "Maintain Species Biodiversity",
-        "Maintain Functional Biodiversity",
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      )
-    )
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
   tar_target(name = ind_MAR_cum_impact, command = {
     x <- process_indicator(
       data = data_MAR_cumulative_impacts$Cumul_Impact_Maritimes_ALL.tif,
@@ -3126,6 +3089,7 @@ tar_target(ind_surface_height, command = {
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
+
   tar_target(name = ind_musquash_dissolved_oxygen, command = {
     data <- data_musquash_eutrophication |>
       rename(DO_mg_L = `DO (mg/L)`) |>
