@@ -2195,6 +2195,16 @@ tar_target(ind_surface_height, command = {
     dplyr::select(longitude, latitude, year, sea_surface_height)
   names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
 
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  eD <- rep(30, length(MPAs$NAME_E))
+
+
   x <- process_indicator(
     data = data,
     indicator_var_name = "sea_surface_height",
@@ -2214,7 +2224,12 @@ tar_target(ind_surface_height, command = {
     plot_type = c('time-series', 'map'),
     plot_lm = FALSE,
     theme = "Ocean Structure and Movement",
-    objectives = NA
+    objectives = c(
+      "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
+      "Maintain and monitor the quality of water and sediments of the Gully; and",
+      "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+    ),
+    externalData=eD
   )
 
   save_plots(dplyr::select(x, -data, -adjacent_data))
