@@ -2237,7 +2237,407 @@ tar_target(ind_surface_height, command = {
 }),
 
 
-## WHALE INDICATORS
+## WHALE INDICATORS (WAITING)
+
+
+
+
+## RV INDICATORS
+
+tar_target(ind_fish_length_groundfish, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Size distribution of groundfish in appropriate portions of the MPA",
+    type = "in situ",
+    units = "cm",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    theme = "Fish and Fishery Resources",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species = c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus")
+    )),
+
+tar_target(ind_fish_length_invertebrate, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Size distribution of invertebrate in appropriate portions of the MPA",
+    type = "in situ",
+    units = "cm",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    theme = "Fish and Fishery Resources",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =  c(
+        "HOMARUS AMERICANUS",
+        "CHIONOECETES OPILIO",
+        "PANDALUS BOREALIS",
+        "PLACOPECTEN MAGELLANICUS",
+        "STRONGYLOCENTROTUS DROEBACHIENSIS",
+        "ARCTICA ISLANDICA",
+        "MODIOLUS MODIOLUS",
+        "LOPHELIA PERTUSA"
+      )
+    )),
+
+tar_target(ind_fish_weight_groundfish, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_weight",
+    indicator = "Biomass of selected groundfish species",
+    type = "in situ",
+    units = "g",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("map", 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species'),
+    SME = "Unknown",
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>  tar_map(
+  names = top_species,
+  values = tibble::tibble(
+    top_species = c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus")
+  )),
+
+tar_target(ind_fish_weight_invertebrate, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_weight",
+    indicator = "Biomass of selected invertebrate species",
+    type = "in situ",
+    units = "g",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("map", 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species'),
+    SME = "Unknown",
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>  tar_map(
+  names = top_species,
+  values = tibble::tibble(
+    top_species = top_species =  c(
+      "HOMARUS AMERICANUS",
+      "CHIONOECETES OPILIO",
+      "PANDALUS BOREALIS",
+      "PLACOPECTEN MAGELLANICUS",
+      "STRONGYLOCENTROTUS DROEBACHIENSIS",
+      "ARCTICA ISLANDICA",
+      "MODIOLUS MODIOLUS",
+      "LOPHELIA PERTUSA"
+    )
+  )),
+
+
+
+
+## GETTING TO
+
+tar_target(ind_haddock_counts, command = {
+  data <- data_rv |>
+    filter(COMM %in% c("HADDOCK")) |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      haddock_counts = TOTNO,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      year_of_data_collection,
+      haddock_counts,
+      year_of_publication
+    )
+
+  if (any(is.na(data$latitude) | is.na(data$longitude))) {
+    data <- data[-which(is.na(data$latitude) | is.na(data$longitude)), ]
+  }
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "haddock_counts",
+    indicator = "Haddock Number per Tow",
+    type = "in situ",
+    units = "Number per Tow",
+    scoring = "desired state: increase",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("boxplot", "map"),
+    plot_lm = FALSE,
+    SME = "Unknown",
+    control_polygon = control_polygons,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+tar_target(ind_haddock_biomass, command = {
+  data <- data_rv |>
+    filter(COMM %in% c("HADDOCK")) |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      haddock_biomass = TOTWGT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      year_of_data_collection,
+      haddock_biomass,
+      year_of_publication
+    )
+
+  if (any(is.na(data$latitude) | is.na(data$longitude))) {
+    data <- data[-which(is.na(data$latitude) | is.na(data$longitude)), ]
+  }
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "haddock_biomass",
+    indicator = "Biomass of Haddock per Tow",
+    type = "in situ",
+    units = "kg per tow",
+    scoring = "desired state: increase",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    control_polygon = control_polygons,
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("boxplot", "map"),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    SME = "Unknown",
+    objectives = c(
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
 
 
   # NON-VALIDATED INDICATORS
@@ -2514,213 +2914,6 @@ tar_target(ind_surface_height, command = {
     dplyr::select(x, -plot)
   }),
 
-  tar_target(ind_fish_length, command = {
-    data <- data_rv_det |>
-      mutate(
-        longitude = LONGITUDE,
-        latitude = LATITUDE,
-        fish_length = FLEN,
-        year_of_data_collection = YEAR,
-        year_of_publication = 2025
-      ) |>
-      dplyr::select(
-        longitude,
-        latitude,
-        year_of_data_collection,
-        fish_length,
-        year_of_publication
-      )
-
-    data$year_of_publication <- as.numeric(format(Sys.Date(), "%Y"))
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "fish_length",
-      indicator = "Fish Length",
-      type = "in situ",
-      units = "cm",
-      scoring = "desired state: increase",
-      PPTID = 726,
-      source = "RV Survey",
-      project_short_title = "RV Survey",
-      areas = MPAs,
-      climate_expectation = "FIXME",
-      indicator_rationale = "FIXME",
-      bin_rationale = "FIXME",
-      plot_type = c("boxplot", "map"),
-      objectives = c(
-        "Maintain productivity of harvested species",
-        "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-        "Allow sufficient escapement from exploitation for spawning",
-        "Contribute to the recovery and conservation of depleted species"
-      ),
-      theme = "Fish and Fishery Resources",
-      SME = "Unknown",
-      control_polygon = control_polygons,
-      plot_lm = FALSE
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_fish_weight, command = {
-    data <- data_rv_det |>
-      mutate(
-        longitude = LONGITUDE,
-        latitude = LATITUDE,
-        fish_weight = FWT,
-        year_of_data_collection = YEAR,
-        year_of_publication = 2025
-      ) |>
-      dplyr::select(
-        longitude,
-        latitude,
-        year_of_data_collection,
-        fish_weight,
-        year_of_publication
-      )
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "fish_weight",
-      indicator = "Fish Weight",
-      type = "in situ",
-      units = "g",
-      scoring = "desired state: increase",
-      PPTID = 726,
-      source = "RV Survey",
-      climate_expectation = "FIXME",
-      indicator_rationale = "FIXME",
-      bin_rationale = "FIXME",
-      project_short_title = "RV Survey",
-      areas = MPAs,
-      plot_type = c("boxplot", "map"),
-      plot_lm = FALSE,
-      theme = "Fish and Fishery Resources",
-      SME = "Unknown",
-      control_polygon = control_polygons,
-      objectives = c(
-        "Maintain productivity of harvested species",
-        "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-        "Allow sufficient escapement from exploitation for spawning",
-        "Contribute to the recovery and conservation of depleted species"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_haddock_counts, command = {
-    data <- data_rv |>
-      filter(COMM %in% c("HADDOCK")) |>
-      mutate(
-        longitude = LONGITUDE,
-        latitude = LATITUDE,
-        haddock_counts = TOTNO,
-        year_of_data_collection = YEAR,
-        year_of_publication = 2025
-      ) |>
-      dplyr::select(
-        longitude,
-        latitude,
-        year_of_data_collection,
-        haddock_counts,
-        year_of_publication
-      )
-
-    if (any(is.na(data$latitude) | is.na(data$longitude))) {
-      data <- data[-which(is.na(data$latitude) | is.na(data$longitude)), ]
-    }
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "haddock_counts",
-      indicator = "Haddock Number per Tow",
-      type = "in situ",
-      units = "Number per Tow",
-      scoring = "desired state: increase",
-      PPTID = 726,
-      source = "RV Survey",
-      climate_expectation = "FIXME",
-      indicator_rationale = "FIXME",
-      bin_rationale = "FIXME",
-      project_short_title = "RV Survey",
-      areas = MPAs,
-      plot_type = c("boxplot", "map"),
-      plot_lm = FALSE,
-      SME = "Unknown",
-      control_polygon = control_polygons,
-      theme = "Fish and Fishery Resources",
-      objectives = c(
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
-        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-        "Maintain productivity of harvested species",
-        "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-        "Allow sufficient escapement from exploitation for spawning",
-        "Contribute to the recovery and conservation of depleted species"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
-
-  tar_target(ind_haddock_biomass, command = {
-    data <- data_rv |>
-      filter(COMM %in% c("HADDOCK")) |>
-      mutate(
-        longitude = LONGITUDE,
-        latitude = LATITUDE,
-        haddock_biomass = TOTWGT,
-        year_of_data_collection = YEAR,
-        year_of_publication = 2025
-      ) |>
-      dplyr::select(
-        longitude,
-        latitude,
-        year_of_data_collection,
-        haddock_biomass,
-        year_of_publication
-      )
-
-    if (any(is.na(data$latitude) | is.na(data$longitude))) {
-      data <- data[-which(is.na(data$latitude) | is.na(data$longitude)), ]
-    }
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "haddock_biomass",
-      indicator = "Biomass of Haddock per Tow",
-      type = "in situ",
-      units = "kg per tow",
-      scoring = "desired state: increase",
-      PPTID = 726,
-      source = "RV Survey",
-      climate_expectation = "FIXME",
-      control_polygon = control_polygons,
-      indicator_rationale = "FIXME",
-      bin_rationale = "FIXME",
-      project_short_title = "RV Survey",
-      areas = MPAs,
-      plot_type = c("boxplot", "map"),
-      plot_lm = FALSE,
-      theme = "Fish and Fishery Resources",
-      SME = "Unknown",
-      objectives = c(
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
-        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-        "Maintain productivity of harvested species",
-        "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-        "Allow sufficient escapement from exploitation for spawning",
-        "Contribute to the recovery and conservation of depleted species"
-      )
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }),
 
   tar_target(name = ind_QC_gulf_biogenic_habitat_representation, command = {
     x <- process_indicator(
@@ -3009,6 +3202,8 @@ tar_target(ind_surface_height, command = {
     save_plots(dplyr::select(x, -data, -adjacent_data))
     dplyr::select(x, -plot)
   }),
+
+
   tar_target(name = ind_musquash_nekton_diversity, command = {
     data <- data_musquash_nekton_occurence |>
       group_by(scientificName) |>
