@@ -1640,7 +1640,7 @@ indicator_targets <- list(
       profiles[[i]]$n2 <- c(NA, n2)
     }
 
-    data <- do.call(rbind, profiles) ## JAIM (TEST)
+    data <- do.call(rbind, profiles)
 
     data <- data %>% select(depth, n2, year_of_publication, year_of_data_collection)
 
@@ -1731,7 +1731,7 @@ tar_map(
   ),
 
   names = "n_type",
-  tar_target(ind_nutrient, command = { # KYLO
+  tar_target(ind_nutrient, command = {
 
     ## AZMP
     data <- data_azmp_Discrete_Occupations_Sections |>
@@ -1739,8 +1739,6 @@ tar_map(
 
     names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
     data$source <- 'azmp'
-
-    ## ARGO JAIM TEST
 
     d2 <- data_argo_df_bgc |>
       dplyr::select(
@@ -1965,7 +1963,7 @@ tar_target(ind_carbonate,
              )
            }),
 
-tar_target(ind_zooplankton_community_composition, command = { # JAIM
+tar_target(ind_zooplankton_community_composition, command = {
   ## Calculating what proportion of the total zooplankton biomass each zooplankton taxa represents
   ## 1. Puts all zooplankton into one column
   ## 2. Converts the log10 biomass back to regular biomass
@@ -2307,7 +2305,7 @@ tar_target(ind_fish_length_groundfish, command = {
   tar_map(
     names = top_species,
     values = tibble::tibble(
-      top_species = c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus")
+      top_species = c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus","Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata")
     )),
 
 tar_target(ind_fish_length_invertebrate, command = {
@@ -2447,7 +2445,7 @@ tar_target(ind_fish_weight_groundfish, command = {
 }) |>  tar_map(
   names = top_species,
   values = tibble::tibble(
-    top_species = c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus")
+    top_species = c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus" , "Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata")
   )),
 
 tar_target(ind_fish_weight_invertebrate, command = {
@@ -2512,7 +2510,7 @@ tar_target(ind_fish_weight_invertebrate, command = {
 }) |>  tar_map(
   names = top_species,
   values = tibble::tibble(
-    top_species = top_species =  c(
+    top_species =  c(
       "HOMARUS AMERICANUS",
       "CHIONOECETES OPILIO",
       "PANDALUS BOREALIS",
@@ -2523,6 +2521,802 @@ tar_target(ind_fish_weight_invertebrate, command = {
       "LOPHELIA PERTUSA"
     )
   )),
+
+tar_target(name = ind_fecundity_proxy_groundfish, command = {
+  mature_females <- data_rv_det |>
+    dplyr::filter(
+      FSEX %in% c(2, 3),
+      FMAT %in% 4:8
+    )
+
+  data <- mature_females |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species = SPEC.GSSPECIES,
+      fish_sex = FSEX,
+      fish_maturity = FMAT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species,
+      fish_sex,
+      fish_maturity,
+      year_of_data_collection,
+      year_of_publication
+    )
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+ data$detections <- 1
+ data <- data %>% select(-fish_sex, -fish_maturity)
+
+ data <- data[tolower(data$species) %in% tolower(c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua",
+                                                   "Leucoraja ocellata", "Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata")),]
+
+ ## For same lat, lng, species, and year of data collection we are summing the detections
+ data <- data |>
+   dplyr::group_by(
+     species,
+     longitude,
+     latitude,
+     year_of_data_collection
+   ) |>
+   dplyr::summarise(
+     detections = sum(detections, na.rm = TRUE),
+     year_of_publication = max(year_of_publication, na.rm = TRUE),
+     .groups = "drop"
+   ) |>
+   sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "detections",
+    indicator = "Number of Mature Female Groundfish (Fecundity Proxy)",
+    type = "in situ",
+    units = "",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c('detections','time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('year_of_data_collection','year_of_publication', 'species'),
+    SME = "Unknown",
+    objectives = c(
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    ),
+    proxy='fecundity : positive'
+  )
+
+  }),
+
+tar_target(name = ind_fecundity_proxy_invertebrates, command = {
+  mature_females <- data_rv_det |>
+    dplyr::filter(
+      FSEX %in% c(2, 3),
+      FMAT %in% 4:8
+    )
+
+  data <- mature_females |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species = SPEC.GSSPECIES,
+      fish_sex = FSEX,
+      fish_maturity = FMAT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species,
+      fish_sex,
+      fish_maturity,
+      year_of_data_collection,
+      year_of_publication
+    )
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data$detections <- 1
+  data <- data %>% select(-fish_sex, -fish_maturity)
+
+  data <- data[tolower(data$species) %in% tolower(c(
+    "HOMARUS AMERICANUS",
+    "CHIONOECETES OPILIO",
+    "PANDALUS BOREALIS",
+    "PLACOPECTEN MAGELLANICUS",
+    "STRONGYLOCENTROTUS DROEBACHIENSIS",
+    "ARCTICA ISLANDICA",
+    "MODIOLUS MODIOLUS",
+    "LOPHELIA PERTUSA"
+  )),]
+
+  ## For same lat, lng, species, and year of data collection we are summing the detections
+  data <- data |>
+    dplyr::group_by(
+      species,
+      longitude,
+      latitude,
+      year_of_data_collection
+    ) |>
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      year_of_publication = max(year_of_publication, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "detections",
+    indicator = "Number of Mature Female Invertebrates (Fecundity Proxy)",
+    type = "in situ",
+    units = "",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c('detections','time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('year_of_data_collection','year_of_publication', 'species'),
+    SME = "Unknown",
+    objectives = c(
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    ),
+    proxy='fecundity : positive'
+  )
+
+}),
+
+tar_target(name = ind_species_diversity_trawl_vunerable, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  vulnerable_trawl_species <- c(
+    "Amblyraja radiata",
+    "Somniosus microcephalus",
+    "Anarhichas denticulatus",
+    "Anarhichas minor",
+    "Anarhichas lupus",
+    "Brosme brosme",
+    "Urophycis tenuis"
+  )
+
+  data <- data[tolower(data$species) %in% tolower(vulnerable_trawl_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+  data$detections <- 1
+
+  ## For same lat, lng, species, and year of data collection we are summing the detections
+  data <- data |>
+    dplyr::group_by(
+      species,
+      longitude,
+      latitude,
+      year_of_data_collection
+    ) |>
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      year_of_publication = max(year_of_publication, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "detections",
+    indicator = "Species diversity of trawl-vunerable species",
+    type = "in situ",
+    units = "",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("detections", 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species'),
+    SME = "Unknown",
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
+    )
+  )
+}), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
+
+## some inside vs outside indicators (RV)
+
+tar_target(ind_fish_weight_groundfish_inside_vs_outside, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- data[-which(is.na(data$fish_weight)),]
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_weight",
+    indicator = "Biomass of selected groundfish species inside outside comparison",
+    type = "in situ",
+    units = "g",
+    scoring = "mpa effect: median difference",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("map", 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species', 'latitude', 'longitude'),
+    SME = "Unknown",
+    control_polygon = control_polygons,
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>  tar_map(
+  names = top_species,
+  values = tibble::tibble(
+    top_species = c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus", "Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata")
+  )),
+
+tar_target(ind_fish_weight_invertebrates_inside_vs_outside, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- data[-which(is.na(data$fish_weight)),]
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_weight",
+    indicator = "Biomass of selected groundfish species inside outside comparison",
+    type = "in situ",
+    units = "g",
+    scoring = "mpa effect: median difference",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("map", 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species', 'latitude', 'longitude'),
+    SME = "Unknown",
+    control_polygon = control_polygons,
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>  tar_map(
+  names = top_species,
+  values = tibble::tibble(
+    top_species = c("HOMARUS AMERICANUS","CHIONOECETES OPILIO","PANDALUS BOREALIS","PLACOPECTEN MAGELLANICUS","STRONGYLOCENTROTUS DROEBACHIENSIS",
+      "ARCTICA ISLANDICA","MODIOLUS MODIOLUS","LOPHELIA PERTUSA")
+  )),
+
+tar_target(ind_fish_length_groundfish_inside_vs_outside, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- data[-which(is.na(data$fish_length)),]
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Length of selected groundfish species inside outside comparison",
+    type = "in situ",
+    units = "cm",
+    scoring = "mpa effect: median difference",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("map", 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species', 'latitude', 'longitude'),
+    SME = "Unknown",
+    control_polygon = control_polygons,
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>  tar_map(
+  names = top_species,
+  values = tibble::tibble(
+    top_species = c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus", "Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata")
+  )),
+
+tar_target(ind_fish_length_invertebrates_inside_vs_outside, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- data[-which(is.na(data$fish_length)),]
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Length of selected groundfish species inside outside comparison",
+    type = "in situ",
+    units = "cm",
+    scoring = "mpa effect: median difference",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("map", 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species', 'latitude', 'longitude'),
+    SME = "Unknown",
+    control_polygon = control_polygons,
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>  tar_map(
+  names = top_species,
+  values = tibble::tibble(
+    top_species = c("HOMARUS AMERICANUS","CHIONOECETES OPILIO","PANDALUS BOREALIS","PLACOPECTEN MAGELLANICUS","STRONGYLOCENTROTUS DROEBACHIENSIS",
+                    "ARCTICA ISLANDICA","MODIOLUS MODIOLUS","LOPHELIA PERTUSA")
+  )),
+
+tar_target(name = ind_fecundity_proxy_groundfish_inside_outside_comparison, command = {
+  mature_females <- data_rv_det |>
+    dplyr::filter(
+      FSEX %in% c(2, 3),
+      FMAT %in% 4:8
+    )
+
+  data <- mature_females |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species = SPEC.GSSPECIES,
+      fish_sex = FSEX,
+      fish_maturity = FMAT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species,
+      fish_sex,
+      fish_maturity,
+      year_of_data_collection,
+      year_of_publication
+    )
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data$detections <- 1
+  data <- data %>% select(-fish_sex, -fish_maturity)
+
+  data <- data[tolower(data$species) %in% tolower(c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus", "Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata","Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata")),]
+
+  ## For same lat, lng, species, and year of data collection we are summing the detections
+  data <- data |>
+    dplyr::group_by(
+      species,
+      longitude,
+      latitude,
+      year_of_data_collection
+    ) |>
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      year_of_publication = max(year_of_publication, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "detections",
+    indicator = "Number of Mature Female Groundfish (Fecundity Proxy)",
+    type = "in situ",
+    units = "",
+    scoring = "mpa effect: median difference",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c('map','time-series'),
+    plot_lm = FALSE,
+    control_polygon = control_polygons,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('year_of_data_collection','year_of_publication', 'species'),
+    SME = "Unknown",
+    objectives = c(
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    ),
+    proxy='fecundity : positive'
+  )
+
+}),
+
+tar_target(name = ind_fecundity_proxy_invertebrates_inside_outside_comparison, command = {
+  mature_females <- data_rv_det |>
+    dplyr::filter(
+      FSEX %in% c(2, 3),
+      FMAT %in% 4:8
+    )
+
+  data <- mature_females |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species = SPEC.GSSPECIES,
+      fish_sex = FSEX,
+      fish_maturity = FMAT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species,
+      fish_sex,
+      fish_maturity,
+      year_of_data_collection,
+      year_of_publication
+    )
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data$detections <- 1
+  data <- data %>% select(-fish_sex, -fish_maturity)
+
+  data <- data[tolower(data$species) %in% tolower(c("HOMARUS AMERICANUS","CHIONOECETES OPILIO","PANDALUS BOREALIS","PLACOPECTEN MAGELLANICUS","STRONGYLOCENTROTUS DROEBACHIENSIS",
+                                                    "ARCTICA ISLANDICA","MODIOLUS MODIOLUS","LOPHELIA PERTUSA")),]
+
+  ## For same lat, lng, species, and year of data collection we are summing the detections
+  data <- data |>
+    dplyr::group_by(
+      species,
+      longitude,
+      latitude,
+      year_of_data_collection
+    ) |>
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      year_of_publication = max(year_of_publication, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "detections",
+    indicator = "Number of Mature Female Invertebates (Fecundity Proxy)",
+    type = "in situ",
+    units = "",
+    scoring = "mpa effect: median difference",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c('map','time-series'),
+    plot_lm = FALSE,
+    control_polygon = control_polygons,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('year_of_data_collection','year_of_publication', 'species'),
+    SME = "Unknown",
+    objectives = c(
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    ),
+    proxy='fecundity : positive'
+  )
+
+}),
+
+
+tar_target(name = ind_species_diversity_trawl_vunerable_inside_outside_comparison, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  vulnerable_trawl_species <- c(
+    "Amblyraja radiata",
+    "Somniosus microcephalus",
+    "Anarhichas denticulatus",
+    "Anarhichas minor",
+    "Anarhichas lupus",
+    "Brosme brosme",
+    "Urophycis tenuis"
+  )
+
+  data <- data[tolower(data$species) %in% tolower(vulnerable_trawl_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+  data$detections <- 1
+
+  ## For same lat, lng, species, and year of data collection we are summing the detections
+  data <- data |>
+    dplyr::group_by(
+      species,
+      longitude,
+      latitude,
+      year_of_data_collection
+    ) |>
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      year_of_publication = max(year_of_publication, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "detections",
+    indicator = "Species diversity of trawl-vunerable species",
+    type = "in situ",
+    units = "",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "RV Survey",
+    areas = MPAs,
+    plot_type = c("detections", 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species'),
+    SME = "Unknown",
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
+    )
+  )
+}), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
+
+
+
+
+
+
+# ROXANNE END
+
+
+
 
 
 
@@ -2570,61 +3364,6 @@ tar_target(ind_haddock_counts, command = {
     SME = "Unknown",
     control_polygon = control_polygons,
     theme = "Fish and Fishery Resources",
-    objectives = c(
-      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
-      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-      "Maintain productivity of harvested species",
-      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-      "Allow sufficient escapement from exploitation for spawning",
-      "Contribute to the recovery and conservation of depleted species"
-    )
-  )
-
-  save_plots(dplyr::select(x, -data, -adjacent_data))
-  dplyr::select(x, -plot)
-}),
-
-tar_target(ind_haddock_biomass, command = {
-  data <- data_rv |>
-    filter(COMM %in% c("HADDOCK")) |>
-    mutate(
-      longitude = LONGITUDE,
-      latitude = LATITUDE,
-      haddock_biomass = TOTWGT,
-      year_of_data_collection = YEAR,
-      year_of_publication = 2025
-    ) |>
-    dplyr::select(
-      longitude,
-      latitude,
-      year_of_data_collection,
-      haddock_biomass,
-      year_of_publication
-    )
-
-  if (any(is.na(data$latitude) | is.na(data$longitude))) {
-    data <- data[-which(is.na(data$latitude) | is.na(data$longitude)), ]
-  }
-
-  x <- process_indicator(
-    data = data,
-    indicator_var_name = "haddock_biomass",
-    indicator = "Biomass of Haddock per Tow",
-    type = "in situ",
-    units = "kg per tow",
-    scoring = "desired state: increase",
-    PPTID = 726,
-    source = "RV Survey",
-    climate_expectation = "FIXME",
-    control_polygon = control_polygons,
-    indicator_rationale = "FIXME",
-    bin_rationale = "FIXME",
-    project_short_title = "RV Survey",
-    areas = MPAs,
-    plot_type = c("boxplot", "map"),
-    plot_lm = FALSE,
-    theme = "Fish and Fishery Resources",
-    SME = "Unknown",
     objectives = c(
       "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
       "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
@@ -4413,21 +5152,6 @@ tar_target(ind_haddock_biomass, command = {
     )
   }), # Biomass Metrics, Fish and Fishery Resources
 
-  tar_target(name = ind_fecundity_groundfish, command = {
-    ind_placeholder(
-      ind_name = "Fecundity of Select Groundfish Species",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "RV Survey",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities",
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
-      ),
-      theme = "Fish and Fishery Resources"
-    )
-  }), # Biomass Metrics, Fish and Fishery Resources
 
   tar_target(name = ind_community_comp_demersal, command = {
     ind_placeholder(
@@ -4967,21 +5691,7 @@ tar_target(ind_haddock_biomass, command = {
     )
   }), # Threats to Productivity, Benthic Environment, Trophic Structure and Function
 
-  tar_target(name = ind_trawl_vunerable, command = {
-    ind_placeholder(
-      ind_name = "Relative abundances, size distributions and diversity of selected groundfish and trawl-vunerable invertebrates in Zone 3 of the MPA",
-      areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"), ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Maintain productivity of harvested species",
-        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-        "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-        "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
-      ),
-      theme = "Fish and Fishery Resources"
-    )
-  }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
+# JAIMSTER
 
   tar_target(name = ind_longline_vunerable, command = {
     ind_placeholder(
