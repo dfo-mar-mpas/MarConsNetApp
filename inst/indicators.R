@@ -3283,10 +3283,10 @@ tar_target(name = ind_species_diversity_trawl_vunerable_inside_outside_compariso
   x <- process_indicator(
     data = data,
     indicator_var_name = "detections",
-    indicator = "Species diversity of trawl-vunerable species",
+    indicator = "Species diversity of trawl-vunerable species inside outside comparison",
     type = "in situ",
     units = "",
-    scoring = "desired trend: no decrease",
+    scoring = "mpa effect: control proportion", #mpa effect: regional proportion
     PPTID = 726,
     source = "RV Survey",
     climate_expectation = "FIXME",
@@ -3294,11 +3294,12 @@ tar_target(name = ind_species_diversity_trawl_vunerable_inside_outside_compariso
     bin_rationale = "FIXME",
     project_short_title = "RV Survey",
     areas = MPAs,
-    plot_type = c("detections", 'time-series'),
+    plot_type = c("detections", 'region-mpa-comparison'),
     plot_lm = FALSE,
     theme = "Fish and Fishery Resources",
     other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species'),
     SME = "Unknown",
+    control_polygon = control_polygons,
     objectives = c(
       "Maintain productivity of harvested species",
       "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
