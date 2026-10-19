@@ -3513,7 +3513,6 @@ tar_target(ind_fish_length_trap_vulnerable_zone_1_and_2, command = {
     remove = FALSE
   )
 
-
   zone1_and_2 <- gullyzones[grepl("Zone 1|Zone 2", gullyzones$ZONE_E), ] |>
     dplyr::summarise(geoms = sf::st_union(geoms)) |>
     dplyr::mutate(
@@ -3986,9 +3985,99 @@ tar_target(ind_fish_weight_micronekton_laurentian_channel, command = {
       )
     )),
 
+tar_target(ind_demeral_community_composition, command = {
+  ## Calculating what proportion of the total fish biomass each fish taxa represents
+  ## 1. Puts all fish into one column
+  ## 2. Groups data by station and year
+  ## Calculates each taxon's share of the total biomass
+
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species = SPEC.GSSPECIES,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025,
+      detections=1
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species,
+      year_of_data_collection,
+      year_of_publication,
+      detections
+    )
 
 
+  ## Only looking at demersal species
+  data <- data[data$species %in% c("GADUS MORHUA","GADUS OGAC","MELANOGRAMMUS AEGLEFINUS","UROPHYCIS TENUIS",
+                                   "UROPHYCIS CHUSS","UROPHYCIS CHESTERI", "UROPHYCIS REGIA","MERLUCCIUS BILINEARIS","MERLUCCIUS ALBIDUS",
+                                   "POLLACHIUS VIRENS","BROSME BROSME","HIPPOGLOSSOIDES PLATESSOIDES","GLYPTOCEPHALUS CYNOGLOSSUS",
+                                   "PSEUDOPLEURONECTES AMERICANUS","LIMANDA FERRUGINEA", "HIPPOGLOSSUS HIPPOGLOSSUS","REINHARDTIUS HIPPOGLOSSOIDES",
+                                   "HIPPOGLOSSINA OBLONGA","SCOPHTHALMUS AQUOSUS","CITHARICHTHYS ARCTIFRONS","ETROPUS MICROSTOMUS","MONOLENE SESSILICAUDA",
+                                   "AMBLYRAJA RADIATA","MALACORAJA SENTA","LEUCORAJA ERINACEA","LEUCORAJA OCELLATA","DIPTURUS LAEVIS","BATHYRAJA SPINICAUDA",
+                                   "RAJELLA FYLLAE","RAJA EGLANTERIA","RAJA BATHYPHILA","RAJA GARMANI","HEMITRIPTERUS AMERICANUS","MYOXOCEPHALUS OCTODECEMSPINOSUS",
+                                   "MYOXOCEPHALUS SCORPIUS","MYOXOCEPHALUS AENAEUS", "MYOXOCEPHALUS SCORPIOIDES","TRIGLOPS MURRAYI","TRIGLOPS PINGELI",
+                                   "TRIGLOPS NYBELINI","ARTEDIELLUS UNCINATUS","ARTEDIELLUS ATLANTICUS","ZOARCES AMERICANUS","ANARHICHAS LUPUS",
+                                   "ANARHICHAS DENTICULATUS","ANARHICHAS MINOR","LUMPENUS LUMPRETAEFORMIS","CYCLOPTERUS LUMPUS","LOPHIUS AMERICANUS",
+                                   "MYXINE GLUTINOSA"
+  ),]
 
+  # Create a unique ID using location and year
+  data$ID <- paste0(data$longitude, "_",data$latitude, "_", data$year_of_data_collection)
+
+  # Convert the data to spatial points using longitude and latitude
+  data <- data |>  sf::st_as_sf(coords = c("longitude", "latitude"),crs = 4326)
+
+  data <- data |>
+    group_by(ID, year_of_data_collection) |>
+    # mutate(
+    #   relative_biomass = fish_weight / sum(fish_weight, na.rm = TRUE),
+    #   detections=1
+    # ) |>
+    ungroup()
+
+  environmental_layers <- c(
+    data_epibenthic_communities_environmental[
+      c(
+        "bottom_current_mean",
+        "bottom_temperature_mean",
+        "sediment_grain_size"
+      )
+    ],
+    list(data_benthoscape = data_benthoscape)
+  )
+
+  x <- process_indicator(
+    data = data,
+    indicator = "Demersal Fish Community Composition",
+    indicator_var_name = "detections",
+    type = "in situ",
+    units = NA,
+    scoring = "desired trend: no decrease",
+    PPTID = 579,
+    source = "AZMP",
+    climate_expectation = "FIXME",
+    indicator_rationale = "Zooplankton shifts driven by climate change can cause declines in food quality for fish (e.g., Heneghan et al. 2023).",
+    bin_rationale = "FIXME",
+    project_short_title = "AZMP",
+    other_nest_variables = c("ID", 'species','year_of_data_collection', 'fish_weight'),
+    areas = MPAs,
+    plot_type = c('detections', 'indicator_by_taxa'), # species-detection. This may not work anymore.
+    plot_lm = FALSE,
+    SME = "Unknown",
+    habitat_display = NULL,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
 
 # ROXANNE END
 
@@ -5813,23 +5902,6 @@ tar_target(ind_haddock_counts, command = {
     )
   }), # Biomass Metrics, Fish and Fishery Resources
 
-
-  tar_target(name = ind_community_comp_demersal, command = {
-    ind_placeholder(
-      ind_name = "Community Composition of Demersal Fish",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Readily Available",
-      source = "RV Survey",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities",
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
-      ),
-      theme = "Fish and Fishery Resources"
-    )
-  }), # Biomass Metrics, Fish and Fishery Resources
-
   tar_target(name = ind_distribution_juv_haddock_habitat, command = {
     ind_placeholder(
       ind_name = "Distriburion of Juvenile Haddock Habitat",
@@ -6352,39 +6424,6 @@ tar_target(ind_haddock_counts, command = {
     )
   }), # Threats to Productivity, Benthic Environment, Trophic Structure and Function
 
-# JAIMSTER
-
-  tar_target(name = ind_longline_vunerable, command = {
-    ind_placeholder(
-      ind_name = "Relative abundances, size distributions and diversity of selected longline-vunerable species in Zones 2 and 3 of the MPA",
-      areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"), ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Maintain productivity of harvested species",
-        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-        "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-        "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
-      ),
-      theme = "Fish and Fishery Resources"
-    )
-  }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
-
-  tar_target(name = ind_trap_vunerable, command = {
-    ind_placeholder(
-      ind_name = "Relative abundances, size distributions and diversity of selected trap-vunerable species in Zonea 1 and 2 of the MPA",
-      areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"), ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Maintain productivity of harvested species",
-        "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-        "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-        "Conserve and protect marine areas of high biodiversity at the community, species, population and genetic levels within the MPA"
-      ),
-      theme = "Fish and Fishery Resources"
-    )
-  }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_environmental_conditions_azmp_lines, command = {
     ind_placeholder(
@@ -6696,22 +6735,6 @@ tar_target(ind_haddock_counts, command = {
     )
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
-  tar_target(name = ind_physandbio_properties, command = {
-    ind_placeholder(
-      ind_name = "Temperature, salinity, oxygen concentration, light levels, chlorophyll, pigments, nutrients and zooplankton within the AOI and both upstream and downstream",
-      areas = MPAs[
-        which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = "AZMP",
-      objectives = c(
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), #Environmental Representativity, Ocean Conditions
-
   tar_target(name = ind_physandbio_seasurface_properties, command = {
     ind_placeholder(
       ind_name = "Physical (e.g. temperature, salinity, wind, sea-surface height) and biological (e.g. ocean colour) sea surface properties in the MPA and the surrounding region",
@@ -6898,39 +6921,7 @@ tar_target(ind_haddock_counts, command = {
     )
   }), #Biomass Metrics, Fish and Fishery Resources
 
-  tar_target(name = ind_compared_groundfish_abundance, command = {
-    ind_placeholder(
-      ind_name = "Relative abundances, biomasses, size distributions and population fecundities of selected groundfish and invertebrates, plus diversity and community composition of trawl-vulnerable species, in comparable areas outside the MPA",
-      areas = MPAs[
-        which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Maintain productivity of harvested species",
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"
-      ),
-      theme = "Fish and Fishery Resources"
-    )
-  }), #Biomass Metrics, Fish and Fishery Resources
 
-  tar_target(name = ind_compared_longline_vunerable, command = {
-    ind_placeholder(
-      ind_name = "Relative abundances, biomasses, size distributions and population fecundities of selected longline-vulnerable species in comparable areas outside the MPA",
-      areas = MPAs[
-        which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Maintain productivity of harvested species",
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"
-      ),
-      theme = "Anthropogenic Pressure and Impacts"
-    )
-  }), #Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
   tar_target(name = ind_fish_nekton_fluxes, command = {
     ind_placeholder(
