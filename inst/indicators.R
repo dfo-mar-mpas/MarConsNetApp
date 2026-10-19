@@ -3310,6 +3310,682 @@ tar_target(name = ind_species_diversity_trawl_vunerable_inside_outside_compariso
 }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
 
+tar_target(ind_fish_length_groundfish_zone3, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  gullyzones <- get_spatial_layer(
+    "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/oceans_act_marine_protected_areas_zones_de_protection_marines_de_la_loi_sur_les_oceans/MapServer/0",
+    where = "NAME_E LIKE '%Gully%'"
+  )
+
+  zone3 <- gullyzones[grepl("Zone 3", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone3$NAME_E <- paste0(zone3$NAME_E, " Zone 3")
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Size distribution of groundfish in appropriate portions of the MPA",
+    type = "in situ",
+    units = "cm",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = zone3,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    theme = "Fish and Fishery Resources",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species = c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus","Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata")
+    )),
+
+tar_target(ind_fish_length_invertebrate_zone3, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  zone3 <- gullyzones[grepl("Zone 3", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone3$NAME_E <- paste0(zone3$NAME_E, " Zone 3")
+
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Size distribution of invertebrate in appropriate portions of the MPA",
+    type = "in situ",
+    units = "cm",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = zone3,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    theme = "Fish and Fishery Resources",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =  c(
+        "HOMARUS AMERICANUS",
+        "CHIONOECETES OPILIO",
+        "PANDALUS BOREALIS",
+        "PLACOPECTEN MAGELLANICUS",
+        "STRONGYLOCENTROTUS DROEBACHIENSIS",
+        "ARCTICA ISLANDICA",
+        "MODIOLUS MODIOLUS",
+        "LOPHELIA PERTUSA"
+      )
+    )),
+
+tar_target(ind_fish_length_trap_vulnerable_zone_1_and_2, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+
+  zone1_and_2 <- gullyzones[grepl("Zone 1|Zone 2", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone1_and_2$NAME_E <- paste0("Gully Marine Protected Area", " Zone 1 and 2")
+
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Size distribution of trap vulnerable species in Zone 1 and 2 of the MPA",
+    type = "in situ",
+    units = "cm",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = zone1_and_2,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    theme = "Fish and Fishery Resources",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =  c(
+        "GADUS MORHUA",
+        "BROSME BROSME",
+        "TAUTOGOLABRUS ADSPERSUS",
+        "CANCER BOREALIS",
+        "CANCER IRRORATUS",
+        "HOMARUS AMERICANUS"
+      )
+    )),
+
+tar_target(ind_fish_length_mesopelagic_nekton_laurentian_channel, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[gsub("\\.$", "", tolower(data$species)) %in%
+                  gsub("\\.$", "", tolower(top_species)), ]
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  ## Find Laurential Channel Portion of SAB
+
+  lc <- MPAs[which(grepl("Anns Bank", MPAs$NAME_E)),]
+  lc$NAME_E <- paste0("St. Anns Bank Marine Protected Area (Laurentian Channel Portion)")
+  lc$geoms <- data_laurential_channel_portion_SAB$geometry
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Size distribution of mesopelagic nekton in the Laurentian Channel Portion of the MPA",
+    type = "in situ",
+    units = "cm",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = lc,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+      "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"
+    ),
+    theme = "Trophic Structure and Function",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species = c(
+        "BENTHOSEMA GLACIALE",
+        "CERATOSCOPELUS MADERENSIS",
+        "MYCTOPHUM PUNCTATUM",
+        "MYCTOPHIDAE",
+        "LAMPANYCTUS MACDONALDI",
+        "LAMPANYCTUS ATER",
+        "LAMPANYCTUS PUSILLUS",
+        "LAMPANYCTUS PHOTONOTUS",
+        "DIAPHUS DUMERILII",
+        "DIAPHUS EFFULGENS",
+        "NOTOSCOPELUS SP",
+        "NOTOSCOPELUS ELONGATUS KROYERI",
+        "NOTOSCOPELUS BOLINI",
+        "NOTOSCOPELUS RESPLENDENS",
+        "NOTOSCOPELUS CAUDISPINOSUS",
+        "MAUROLICUS MUELLERI",
+        "ARGYROPELECUS GIGAS",
+        "ARGYROPELECUS ACULEATUS",
+        "ARGYROPELECUS AFFINIS",
+        "STERNOPTYX DIAPHANA",
+        "GONOSTOMA ELONGATUM",
+        "GONOSTOMA SP",
+        "GONOSTOMA BATHYPHILUM",
+        "CYCLOTHONE MICRODON",
+        "CYCLOTHONE SP",
+        "STOMIAS BOA",
+        "CHAULIODUS SLOANI",
+        "MALACOSTEUS NIGER",
+        "PHOTOSTOMIAS GUERNEI",
+        "POLYIPNUS CLARUS",
+        "POLYIPNUS SP",
+        "VINCIGUERRIA NIMBARIA",
+        "HYGOPHUM HYGOMI",
+        "ALEPISAURUS FEROX",
+        "ALEPISAURUS BREVIROSTRIS",
+        "PARALEPIS ATLANTICA",
+        "PARALEPIS ELONGATA",
+        "PARALEPIS BREVIROSTRIS"
+      )
+    )),
+
+
+tar_target(ind_fish_length_micronekton_laurentian_channel, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[gsub("\\.$", "", tolower(data$species)) %in% gsub("\\.$", "", tolower(top_species)), ]
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  ## Find Laurential Channel Portion of SAB
+
+  lc <- MPAs[which(grepl("Anns Bank", MPAs$NAME_E)),]
+  lc$NAME_E <- paste0("St. Anns Bank Marine Protected Area (Laurentian Channel Portion)")
+  lc$geoms <- data_laurential_channel_portion_SAB$geometry
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Size distribution of micronekton in the Laurentian Channel Portion of the MPA",
+    type = "in situ",
+    units = "cm",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = lc,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+      "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"
+    ),
+    theme = "Trophic Structure and Function",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =c(
+        "EUPHAUSIACEA O",
+        "EUPHAUSIIDAE F",
+        "MEGANYCTIPHANES NORVEGICA",
+        "THYSANOESSA RASCHII",
+        "EUPHAUSIA SP",
+        "GNATHOPHAUSIA ZOEA",
+        "NEOGNATHOPHAUSIA GIGAS",
+        "BOREOMYSIS TRIDENS",
+        "EUCOPIA SP",
+        "ACANTHEPHYRA SP",
+        "ACANTHEPHYRA PURPUREA",
+        "ACANTHEPHYRA PELAGICA",
+        "ACANTHEPHYRA EXEMIA",
+        "PASIPHAEA MULTIDENTATA",
+        "PASIPHAEA TARDA",
+        "PASIPHAEIDAE F",
+        "SERGIA ROBUSTA",
+        "SERGESTES ARCTICUS",
+        "SERGESTES SP",
+        "PLESONIKA MARTIA",
+        "NEMATOCARCINUS ROTUNDUS",
+        "NOTOSTOMUS ELEGANS",
+        "OPLOPHORUS SPINOSUS",
+        "THEMISTO SP",
+        "HYPERIA SP",
+        "HYPERIA GALBA"
+      )
+    )),
+
+tar_target(ind_fish_weight_mesopelagic_nekton_laurentian_channel, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[gsub("\\.$", "", tolower(data$species)) %in% gsub("\\.$", "", tolower(top_species)), ]
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- data[!(is.na(data$fish_weight)),]
+
+  ## Find Laurential Channel Portion of SAB
+
+  lc <- MPAs[which(grepl("Anns Bank", MPAs$NAME_E)),]
+  lc$NAME_E <- paste0("St. Anns Bank Marine Protected Area (Laurentian Channel Portion)")
+  lc$geoms <- data_laurential_channel_portion_SAB$geometry
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_weight",
+    indicator = "Biomass of mesopelagic nekton in the Laurentian Channel Portion of the MPA",
+    type = "in situ",
+    units = "g",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = lc,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+      "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"
+    ),
+    theme = "Trophic Structure and Function",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species = c(
+        "BENTHOSEMA GLACIALE",
+        "CERATOSCOPELUS MADERENSIS",
+        "MYCTOPHUM PUNCTATUM",
+        "MYCTOPHIDAE",
+        "LAMPANYCTUS MACDONALDI",
+        "LAMPANYCTUS ATER",
+        "LAMPANYCTUS PUSILLUS",
+        "LAMPANYCTUS PHOTONOTUS",
+        "DIAPHUS DUMERILII",
+        "DIAPHUS EFFULGENS",
+        "NOTOSCOPELUS SP",
+        "NOTOSCOPELUS ELONGATUS KROYERI",
+        "NOTOSCOPELUS BOLINI",
+        "NOTOSCOPELUS RESPLENDENS",
+        "NOTOSCOPELUS CAUDISPINOSUS",
+        "MAUROLICUS MUELLERI",
+        "ARGYROPELECUS GIGAS",
+        "ARGYROPELECUS ACULEATUS",
+        "ARGYROPELECUS AFFINIS",
+        "STERNOPTYX DIAPHANA",
+        "GONOSTOMA ELONGATUM",
+        "GONOSTOMA SP",
+        "GONOSTOMA BATHYPHILUM",
+        "CYCLOTHONE MICRODON",
+        "CYCLOTHONE SP",
+        "STOMIAS BOA",
+        "CHAULIODUS SLOANI",
+        "MALACOSTEUS NIGER",
+        "PHOTOSTOMIAS GUERNEI",
+        "POLYIPNUS CLARUS",
+        "POLYIPNUS SP",
+        "VINCIGUERRIA NIMBARIA",
+        "HYGOPHUM HYGOMI",
+        "ALEPISAURUS FEROX",
+        "ALEPISAURUS BREVIROSTRIS",
+        "PARALEPIS ATLANTICA",
+        "PARALEPIS ELONGATA",
+        "PARALEPIS BREVIROSTRIS"
+      )
+    )),
+
+
+tar_target(ind_fish_weight_micronekton_laurentian_channel, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[gsub("\\.$", "", tolower(data$species)) %in% gsub("\\.$", "", tolower(top_species)), ]
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- data[which(!(is.na(data$fish_weight))),]
+
+  ## Find Laurential Channel Portion of SAB
+
+  lc <- MPAs[which(grepl("Anns Bank", MPAs$NAME_E)),]
+  lc$NAME_E <- paste0("St. Anns Bank Marine Protected Area (Laurentian Channel Portion)")
+  lc$geoms <- data_laurential_channel_portion_SAB$geometry
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_weight",
+    indicator = "Biomass of micronekton in the Laurentian Channel Portion of the MPA",
+    type = "in situ",
+    units = "g",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = lc,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+      "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"
+    ),
+    theme = "Trophic Structure and Function",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =c(
+        "EUPHAUSIACEA O",
+        "EUPHAUSIIDAE F",
+        "MEGANYCTIPHANES NORVEGICA",
+        "THYSANOESSA RASCHII",
+        "EUPHAUSIA SP",
+        "GNATHOPHAUSIA ZOEA",
+        "NEOGNATHOPHAUSIA GIGAS",
+        "BOREOMYSIS TRIDENS",
+        "EUCOPIA SP",
+        "ACANTHEPHYRA SP",
+        "ACANTHEPHYRA PURPUREA",
+        "ACANTHEPHYRA PELAGICA",
+        "ACANTHEPHYRA EXEMIA",
+        "PASIPHAEA MULTIDENTATA",
+        "PASIPHAEA TARDA",
+        "PASIPHAEIDAE F",
+        "SERGIA ROBUSTA",
+        "SERGESTES ARCTICUS",
+        "SERGESTES SP",
+        "PLESONIKA MARTIA",
+        "NEMATOCARCINUS ROTUNDUS",
+        "NOTOSTOMUS ELEGANS",
+        "OPLOPHORUS SPINOSUS",
+        "THEMISTO SP",
+        "HYPERIA SP",
+        "HYPERIA GALBA"
+      )
+    )),
+
 
 
 
@@ -5121,22 +5797,6 @@ tar_target(ind_haddock_counts, command = {
     )
   }), # Environmental Representativity, Ocean Structure and Movement?
 
-  tar_target(name = ind_size_distribution_groundfish, command = {
-    ind_placeholder(
-      ind_name = "Size Distribution of Select Groundfish Species",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "RV Survey",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities",
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
-      ),
-      theme = "Fish and Fishery Resources"
-    )
-  }), # Biomass Metrics, Fish and Fishery Resources
-
   tar_target(name = ind_condition_groundfish, command = {
     ind_placeholder(
       ind_name = "Condition of Select Groundfish Species",
@@ -5726,21 +6386,6 @@ tar_target(ind_haddock_counts, command = {
     )
   }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
-  tar_target(name = ind_mesopelagic_nektonic, command = {
-    ind_placeholder(
-      ind_name = "Relative abundances, size distributions and diversity of selected mesopelagic nektonic species in Zones 1 and 2 of the MPA",
-      areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"), ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Maintain biodiversity of individual species, communities and populations within the different ecotypes"
-      ),
-      theme = "Trophic Structure and Function"
-    )
-  }), # Biomass Metrics,Trophic Structure and Function
-
   tar_target(name = ind_environmental_conditions_azmp_lines, command = {
     ind_placeholder(
       ind_name = "Temperature, salinity, oxygen concentration, light levels, chlorophyll, pigments and nutrients in waters flowing into and past the MPA, as measured on the Louisbourg Line, the Halifax Line and the Extended Halifax Line",
@@ -6252,22 +6897,6 @@ tar_target(ind_haddock_counts, command = {
       theme = "Fish and Fishery Resources"
     )
   }), #Biomass Metrics, Fish and Fishery Resources
-
-  tar_target(name = ind_nekton_abundance, command = {
-    ind_placeholder(
-      ind_name = "Relative abundances, biomasses and size distributions of selected mesopelagic nekton and micronekton species in the Laurentian Channel portion of the MPA",
-      areas = MPAs[
-        which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes"
-      ),
-      theme = "Trophic Structure and Function"
-    )
-  }), #Biomass Metrics, Trophic Structure and Function?
 
   tar_target(name = ind_compared_groundfish_abundance, command = {
     ind_placeholder(

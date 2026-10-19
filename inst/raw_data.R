@@ -454,6 +454,44 @@ raw_data_targets <- list(
     areas_full
   }),
 
+  tar_target(name=gullyzones,
+             command={
+                get_spatial_layer(
+                 "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/oceans_act_marine_protected_areas_zones_de_protection_marines_de_la_loi_sur_les_oceans/MapServer/0",
+                 where = "NAME_E LIKE '%Gully%'"
+               )
+             }),
+
+  tar_target(name=data_laurential_channel_portion_SAB,
+          command={
+            # Explain in indicator 22
+            # https://086gc.sharepoint.com/:w:/r/sites/MaritimesConservationNetworkApp-MeetingMaterials/_layouts/15/Doc.aspx?action=edit&sourcedoc=%7Bb354fe7e-b46b-45d3-bd12-6beff32f1e73%7D&wdExp=TEAMS-TREATMENT&web=1
+
+            mpas <- terra::vect(MPAs[c(42, 21), ])
+
+            spat <- data_epibenthic_communities_environmental[[3]]
+
+            temp_42 <- terra::mask(terra::crop(spat, mpas[1, ]), mpas[1, ])
+            temp_21 <- terra::mask(terra::crop(spat, mpas[2, ]), mpas[2, ])
+
+            range_21 <- terra::global(temp_21, range, na.rm = TRUE)
+
+            temp_42_comparable <- terra::ifel(
+              temp_42 >= range_21[1, 1] & temp_42 <= range_21[2, 1],
+              temp_42,
+              NA
+            )
+
+            temp_42_polygon <- terra::as.polygons(
+              terra::ifel(!is.na(temp_42_comparable), 1, NA),
+              dissolve = TRUE,
+              na.rm = TRUE
+            ) |>
+              sf::st_as_sf()
+
+            temp_42_polygon
+          }),
+
   tar_target(name = data_eez, command = {
     # TECHNICALLY SHOULD HAVE A STAGNANT_SOURCE AND YEAR_OF_PUBLICATION BUT IGNORING FOR NOW
     data_eez <- mregions2::gaz_geometry(8493)
