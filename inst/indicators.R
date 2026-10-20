@@ -3483,6 +3483,408 @@ tar_target(ind_fish_length_invertebrate_zone3, command = {
       )
     )),
 
+
+
+tar_target(ind_community_composition_groundfish_zone3, command = {
+  ## Calculating what proportion of the total fish biomass each fish taxa represents
+  ## 1. Puts all fish into one column
+  ## 2. Groups data by station and year
+  ## Calculates each taxon's share of the total biomass
+
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species = SPEC.GSSPECIES,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025,
+      detections=1
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species,
+      year_of_data_collection,
+      year_of_publication,
+      detections
+    )
+
+
+  ## Only looking at demersal species
+  data <- data[tolower(data$species) %in% tolower(c("Clupea harengus","Tautogolabrus adspersus",
+                                                    "Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus",
+                                                    "Hippoglossoides platessoides", "Hippoglossus hippoglossus",
+                                                    "Leucoraja ocellata")),]
+
+  # Create a unique ID using location and year
+  data$ID <- paste0(data$longitude, "_",data$latitude, "_", data$year_of_data_collection)
+
+  # Convert the data to spatial points using longitude and latitude
+  data <- data |>  sf::st_as_sf(coords = c("longitude", "latitude"),crs = 4326)
+
+  data <- data |>
+    group_by(ID, year_of_data_collection) |>
+    ungroup()
+
+  environmental_layers <- c(
+    data_epibenthic_communities_environmental[
+      c(
+        "bottom_current_mean",
+        "bottom_temperature_mean",
+        "sediment_grain_size"
+      )
+    ],
+    list(data_benthoscape = data_benthoscape)
+  )
+
+  zone3 <- gullyzones[grepl("Zone 3", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone3$NAME_E <- paste0(zone3$NAME_E, " Zone 3")
+
+
+  x <- process_indicator(
+    data = data,
+    indicator = "Groundfish Community Composition in Zone 3",
+    indicator_var_name = "detections",
+    type = "in situ",
+    units = NA,
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "AZMP",
+    other_nest_variables = c("ID", 'species','year_of_data_collection', 'fish_weight'),
+    areas = zone3,
+    plot_type = c('detections', 'indicator_by_taxa'), # species-detection. This may not work anymore.
+    plot_lm = FALSE,
+    SME = "Unknown",
+    habitat_display = NULL,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+tar_target(ind_community_composition_invertebrates_zone3, command = {
+  ## Calculating what proportion of the total fish biomass each fish taxa represents
+  ## 1. Puts all fish into one column
+  ## 2. Groups data by station and year
+  ## Calculates each taxon's share of the total biomass
+
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species = SPEC.GSSPECIES,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025,
+      detections=1
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species,
+      year_of_data_collection,
+      year_of_publication,
+      detections
+    )
+
+
+  ## Only looking at demersal species
+  data <- data[tolower(data$species) %in% tolower(c(
+    "HOMARUS AMERICANUS",
+    "CHIONOECETES OPILIO",
+    "PANDALUS BOREALIS",
+    "PLACOPECTEN MAGELLANICUS",
+    "STRONGYLOCENTROTUS DROEBACHIENSIS",
+    "ARCTICA ISLANDICA",
+    "MODIOLUS MODIOLUS",
+    "LOPHELIA PERTUSA"
+  )),]
+
+  # Create a unique ID using location and year
+  data$ID <- paste0(data$longitude, "_",data$latitude, "_", data$year_of_data_collection)
+
+  # Convert the data to spatial points using longitude and latitude
+  data <- data |>  sf::st_as_sf(coords = c("longitude", "latitude"),crs = 4326)
+
+  data <- data |>
+    group_by(ID, year_of_data_collection) |>
+    ungroup()
+
+  environmental_layers <- c(
+    data_epibenthic_communities_environmental[
+      c(
+        "bottom_current_mean",
+        "bottom_temperature_mean",
+        "sediment_grain_size"
+      )
+    ],
+    list(data_benthoscape = data_benthoscape)
+  )
+
+  zone3 <- gullyzones[grepl("Zone 3", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone3$NAME_E <- paste0(zone3$NAME_E, " Zone 3")
+
+
+  x <- process_indicator(
+    data = data,
+    indicator = "Invertebrate Community Composition in Zone 3",
+    indicator_var_name = "detections",
+    type = "in situ",
+    units = NA,
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "AZMP",
+    other_nest_variables = c("ID", 'species','year_of_data_collection', 'fish_weight'),
+    areas = zone3,
+    plot_type = c('detections', 'indicator_by_taxa'), # species-detection. This may not work anymore.
+    plot_lm = FALSE,
+    SME = "Unknown",
+    habitat_display = NULL,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+tar_target(ind_fish_length_longline_vulnerable_zone_2_and_3, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_length = FLEN,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_length,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(top_species), ]
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  zone2_and_3 <- gullyzones[grepl("Zone 2|Zone 3", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone2_and_3$NAME_E <- paste0("Gully Marine Protected Area", " Zone 2 and 3")
+
+
+  x <- process_indicator(
+    data = data,
+    indicator_var_name = "fish_length",
+    indicator = "Size distribution of trap vulnerable species in Zone 1 and 2 of the MPA",
+    type = "in situ",
+    units = "cm",
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = zone2_and_3,
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    plot_type = c('map', 'time-series'),
+    objectives = c(
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    theme = "Fish and Fishery Resources",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species = c(
+        "GADUS MORHUA",
+        "MELANOGRAMMUS AEGLEFINUS",
+        "UROPHYCIS TENUIS",
+        "HIPPOGLOSSUS HIPPOGLOSSUS",
+        "REINHARDTIUS HIPPOGLOSSOIDES",
+        "BROSME BROSME",
+        "ANARHICHAS LUPUS",
+        "ANARHICHAS DENTICULATUS",
+        "ANARHICHAS MINOR",
+        "LAMNA NASUS",
+        "XIPHIAS GLADIUS",
+        "AMBLYRAJA RADIATA",
+        "MALACORAJA SENTA",
+        "LEUCORAJA ERINACEA",
+        "LEUCORAJA OCELLATA",
+        "DIPTURUS LAEVIS"
+      )
+    )),
+
+tar_target(ind_community_composition_longline_vulnerable_zone2and3, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species = SPEC.GSSPECIES,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025,
+      detections=1
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species,
+      year_of_data_collection,
+      year_of_publication,
+      detections
+    )
+
+
+  ## Only looking at demersal species
+  data <- data[tolower(data$species) %in% tolower(c(
+    "GADUS MORHUA",
+    "MELANOGRAMMUS AEGLEFINUS",
+    "UROPHYCIS TENUIS",
+    "HIPPOGLOSSUS HIPPOGLOSSUS",
+    "REINHARDTIUS HIPPOGLOSSOIDES",
+    "BROSME BROSME",
+    "ANARHICHAS LUPUS",
+    "ANARHICHAS DENTICULATUS",
+    "ANARHICHAS MINOR",
+    "LAMNA NASUS",
+    "XIPHIAS GLADIUS",
+    "AMBLYRAJA RADIATA",
+    "MALACORAJA SENTA",
+    "LEUCORAJA ERINACEA",
+    "LEUCORAJA OCELLATA",
+    "DIPTURUS LAEVIS"
+  )),]
+
+  # Create a unique ID using location and year
+  data$ID <- paste0(data$longitude, "_",data$latitude, "_", data$year_of_data_collection)
+
+  # Convert the data to spatial points using longitude and latitude
+  data <- data |>  sf::st_as_sf(coords = c("longitude", "latitude"),crs = 4326)
+
+  data <- data |>
+    group_by(ID, year_of_data_collection) |>
+    ungroup()
+
+  environmental_layers <- c(
+    data_epibenthic_communities_environmental[
+      c(
+        "bottom_current_mean",
+        "bottom_temperature_mean",
+        "sediment_grain_size"
+      )
+    ],
+    list(data_benthoscape = data_benthoscape)
+  )
+
+  zone2_and_3 <- gullyzones[grepl("Zone 2|Zone 3", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone2_and_3$NAME_E <- paste0("Gully Marine Protected Area", " Zone 2 and 3")
+
+
+  x <- process_indicator(
+    data = data,
+    indicator = "Community Composition of longline vulnerable species in Zone 2 and 3",
+    indicator_var_name = "detections",
+    type = "in situ",
+    units = NA,
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "AZMP",
+    other_nest_variables = c("ID", 'species','year_of_data_collection', 'fish_weight'),
+    areas = zone2_and_3,
+    plot_type = c('detections', 'indicator_by_taxa'), # species-detection. This may not work anymore.
+    plot_lm = FALSE,
+    SME = "Unknown",
+    habitat_display = NULL,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
 tar_target(ind_fish_length_trap_vulnerable_zone_1_and_2, command = {
   data <- data_rv_det |>
     mutate(
@@ -3569,6 +3971,108 @@ tar_target(ind_fish_length_trap_vulnerable_zone_1_and_2, command = {
         "HOMARUS AMERICANUS"
       )
     )),
+
+
+
+tar_target(ind_community_composition_trap_vulnerable_zone1and2, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species = SPEC.GSSPECIES,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025,
+      detections=1
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species,
+      year_of_data_collection,
+      year_of_publication,
+      detections
+    )
+
+
+  ## Only looking at demersal species
+  data <- data[tolower(data$species) %in% tolower(c(
+    "GADUS MORHUA",
+    "BROSME BROSME",
+    "TAUTOGOLABRUS ADSPERSUS",
+    "CANCER BOREALIS",
+    "CANCER IRRORATUS",
+    "HOMARUS AMERICANUS"
+  )),]
+
+  # Create a unique ID using location and year
+  data$ID <- paste0(data$longitude, "_",data$latitude, "_", data$year_of_data_collection)
+
+  # Convert the data to spatial points using longitude and latitude
+  data <- data |>  sf::st_as_sf(coords = c("longitude", "latitude"),crs = 4326)
+
+  data <- data |>
+    group_by(ID, year_of_data_collection) |>
+    ungroup()
+
+  environmental_layers <- c(
+    data_epibenthic_communities_environmental[
+      c(
+        "bottom_current_mean",
+        "bottom_temperature_mean",
+        "sediment_grain_size"
+      )
+    ],
+    list(data_benthoscape = data_benthoscape)
+  )
+
+  zone1_and_2 <- gullyzones[grepl("Zone 1|Zone 2", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone1_and_2$NAME_E <- paste0("Gully Marine Protected Area", " Zone 1 and 2")
+
+
+  x <- process_indicator(
+    data = data,
+    indicator = "Community Composition of longline vulnerable species in Zone 1 and 2",
+    indicator_var_name = "detections",
+    type = "in situ",
+    units = NA,
+    scoring = "desired trend: no decrease",
+    PPTID = 726,
+    source = "RV Survey",
+    climate_expectation = "FIXME",
+    indicator_rationale = "FIXME",
+    bin_rationale = "FIXME",
+    project_short_title = "AZMP",
+    other_nest_variables = c("ID", 'species','year_of_data_collection', 'fish_weight'),
+    areas = zone1_and_2,
+    plot_type = c('detections', 'indicator_by_taxa'), # species-detection. This may not work anymore.
+    plot_lm = FALSE,
+    SME = "Unknown",
+    habitat_display = NULL,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}),
+
+
+
+
+
 
 tar_target(ind_fish_length_mesopelagic_nekton_laurentian_channel, command = {
   data <- data_rv_det |>
