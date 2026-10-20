@@ -2242,6 +2242,122 @@ tar_target(ind_surface_height, command = {
 
 ## RV INDICATORS
 
+
+tar_target(name = ind_rel_abundance_invertebrates, command = {
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(c(
+    "HOMARUS AMERICANUS",
+    "CHIONOECETES OPILIO",
+    "PANDALUS BOREALIS",
+    "PLACOPECTEN MAGELLANICUS",
+    "STRONGYLOCENTROTUS DROEBACHIENSIS",
+    "ARCTICA ISLANDICA",
+    "MODIOLUS MODIOLUS",
+    "LOPHELIA PERTUSA"
+  )), ]
+
+  ## Adding detections and relative biomass
+
+  data$detections <- 1
+
+  data <- data |>
+    # Group by location, year, and species
+    dplyr::group_by(longitude, latitude, year_of_data_collection, species) |>
+
+    # Sum detections and fish weight for each species at each location and year
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      fish_weight = sum(fish_weight, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+
+    # Calculate each species' percentage of total biomass at that location and year
+    dplyr::group_by(longitude, latitude, year_of_data_collection) |>
+    dplyr::mutate(
+      #relative_biomass = fish_weight / sum(fish_weight, na.rm = TRUE) * 100,
+      relative_abundance = detections / sum(detections, na.rm = TRUE) * 100
+    ) |>
+    dplyr::ungroup()
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- data[tolower(data$species) == tolower(top_species),]
+
+  x <- process_indicator(
+    data = data,
+    readiness = "Ready",
+    indicator_var_name = "relative_abundance",
+    indicator = "Relative abundance and biomass of select invertebrate species",
+    type = "in situ",
+    units = "%",
+    scoring = "desired trend: stable",
+    PPTID = 395,
+    source = "RV",
+    project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+    bin_rationale = "FIXME",
+    climate = FALSE,
+    SME = "Javier Murillo Perez",
+    indicator_rationale = "Direct biodiversity measure",
+    areas = MPAs,
+    plot_type = c('detections', 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    SME_validated = TRUE,
+    other_nest_variables = c(
+      'latitude', 'longitude', 'species', 'fish_weight', 'detections', 'year_of_data_collection'
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =  c(
+        "HOMARUS AMERICANUS",
+        "CHIONOECETES OPILIO",
+        "PANDALUS BOREALIS",
+        "PLACOPECTEN MAGELLANICUS",
+        "STRONGYLOCENTROTUS DROEBACHIENSIS",
+        "ARCTICA ISLANDICA",
+        "MODIOLUS MODIOLUS",
+        "LOPHELIA PERTUSA"
+      )
+    )),
+
+
 tar_target(ind_fish_length_groundfish, command = {
   data <- data_rv_det |>
     mutate(
@@ -3309,6 +3425,264 @@ tar_target(name = ind_species_diversity_trawl_vunerable_inside_outside_compariso
   )
 }), # Biomass Metrics, Fish and Fishery Resources, Anthropogenic Pressure and Impacts
 
+tar_target(name = ind_rel_abundance_groundfish_zone3, command = {
+  gullyzones <- get_spatial_layer(
+    "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/oceans_act_marine_protected_areas_zones_de_protection_marines_de_la_loi_sur_les_oceans/MapServer/0",
+    where = "NAME_E LIKE '%Gully%'"
+  )
+
+  zone3 <- gullyzones[grepl("Zone 3", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone3$NAME_E <- paste0(zone3$NAME_E, " Zone 3")
+
+
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower( c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus", "Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata")), ]
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- sf::st_filter(data, zone3)
+
+
+  ## Adding detections and relative biomass
+
+  data$detections <- 1
+
+  data <- data |>
+    # Group by location, year, and species
+    dplyr::group_by(longitude, latitude, year_of_data_collection, species) |>
+
+    # Sum detections and fish weight for each species at each location and year
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      fish_weight = sum(fish_weight, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+
+    # Calculate each species' percentage of total biomass at that location and year
+    dplyr::group_by(longitude, latitude, year_of_data_collection) |>
+    dplyr::mutate(
+      #relative_biomass = fish_weight / sum(fish_weight, na.rm = TRUE) * 100,
+      relative_abundance = detections / sum(detections, na.rm = TRUE) * 100
+    ) |>
+    dplyr::ungroup()
+
+
+  data <- data[tolower(data$species) == tolower(top_species),]
+
+  x <- process_indicator(
+    data = data,
+    readiness = "Ready",
+    indicator_var_name = "relative_abundance",
+    indicator = "Relative abundance and biomass of select groundfish species in Zone 3",
+    type = "in situ",
+    units = "%",
+    scoring = "desired trend: stable",
+    PPTID = 395,
+    source = "RV",
+    project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+    bin_rationale = "FIXME",
+    climate = FALSE,
+    SME = "Javier Murillo Perez",
+    indicator_rationale = "Direct biodiversity measure",
+    areas = zone3,
+    plot_type = c('detections', 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    SME_validated = TRUE,
+    other_nest_variables = c(
+      'latitude', 'longitude', 'species', 'fish_weight', 'detections', 'year_of_data_collection'
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =   c("Clupea harengus","Tautogolabrus adspersus","Scomber scombrus","Gadus morhua","Melanogrammus aeglefinus", "Hippoglossoides platessoides", "Hippoglossus hippoglossus","Leucoraja ocellata")
+    )),
+
+tar_target(name = ind_rel_abundance_invertebrates_zone3, command = {
+  gullyzones <- get_spatial_layer(
+    "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/oceans_act_marine_protected_areas_zones_de_protection_marines_de_la_loi_sur_les_oceans/MapServer/0",
+    where = "NAME_E LIKE '%Gully%'"
+  )
+
+  zone3 <- gullyzones[grepl("Zone 3", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone3$NAME_E <- paste0(zone3$NAME_E, " Zone 3")
+
+
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(c(
+    "HOMARUS AMERICANUS",
+    "CHIONOECETES OPILIO",
+    "PANDALUS BOREALIS",
+    "PLACOPECTEN MAGELLANICUS",
+    "STRONGYLOCENTROTUS DROEBACHIENSIS",
+    "ARCTICA ISLANDICA",
+    "MODIOLUS MODIOLUS",
+    "LOPHELIA PERTUSA"
+  )), ]
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- sf::st_filter(data, zone3)
+
+
+  ## Adding detections and relative biomass
+
+  data$detections <- 1
+
+  data <- data |>
+    # Group by location, year, and species
+    dplyr::group_by(longitude, latitude, year_of_data_collection, species) |>
+
+    # Sum detections and fish weight for each species at each location and year
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      fish_weight = sum(fish_weight, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+
+    # Calculate each species' percentage of total biomass at that location and year
+    dplyr::group_by(longitude, latitude, year_of_data_collection) |>
+    dplyr::mutate(
+      #relative_biomass = fish_weight / sum(fish_weight, na.rm = TRUE) * 100,
+      relative_abundance = detections / sum(detections, na.rm = TRUE) * 100
+    ) |>
+    dplyr::ungroup()
+
+
+  data <- data[tolower(data$species) == tolower(top_species),]
+
+  x <- process_indicator(
+    data = data,
+    readiness = "Ready",
+    indicator_var_name = "relative_abundance",
+    indicator = "Relative abundance and biomass of select invertebrate species in Zone 3",
+    type = "in situ",
+    units = "%",
+    scoring = "desired trend: stable",
+    PPTID = 395,
+    source = "RV",
+    project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+    bin_rationale = "FIXME",
+    climate = FALSE,
+    SME = "Javier Murillo Perez",
+    indicator_rationale = "Direct biodiversity measure",
+    areas = zone3,
+    plot_type = c('detections', 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    SME_validated = TRUE,
+    other_nest_variables = c(
+      'latitude', 'longitude', 'species', 'fish_weight', 'detections', 'year_of_data_collection'
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =  c(
+        "HOMARUS AMERICANUS",
+        "CHIONOECETES OPILIO",
+        "PANDALUS BOREALIS",
+        "PLACOPECTEN MAGELLANICUS",
+        "STRONGYLOCENTROTUS DROEBACHIENSIS",
+        "ARCTICA ISLANDICA",
+        "MODIOLUS MODIOLUS",
+        "LOPHELIA PERTUSA"
+      )
+    )),
+
+
+
 
 tar_target(ind_fish_length_groundfish_zone3, command = {
   data <- data_rv_det |>
@@ -4142,44 +4516,15 @@ tar_target(ind_fish_length_mesopelagic_nekton_laurentian_channel, command = {
     names = top_species,
     values = tibble::tibble(
       top_species = c(
-        "BENTHOSEMA GLACIALE",
-        "CERATOSCOPELUS MADERENSIS",
-        "MYCTOPHUM PUNCTATUM",
-        "MYCTOPHIDAE",
-        "LAMPANYCTUS MACDONALDI",
-        "LAMPANYCTUS ATER",
-        "LAMPANYCTUS PUSILLUS",
-        "LAMPANYCTUS PHOTONOTUS",
-        "DIAPHUS DUMERILII",
-        "DIAPHUS EFFULGENS",
-        "NOTOSCOPELUS SP",
-        "NOTOSCOPELUS ELONGATUS KROYERI",
-        "NOTOSCOPELUS BOLINI",
-        "NOTOSCOPELUS RESPLENDENS",
-        "NOTOSCOPELUS CAUDISPINOSUS",
-        "MAUROLICUS MUELLERI",
-        "ARGYROPELECUS GIGAS",
-        "ARGYROPELECUS ACULEATUS",
-        "ARGYROPELECUS AFFINIS",
-        "STERNOPTYX DIAPHANA",
-        "GONOSTOMA ELONGATUM",
-        "GONOSTOMA SP",
-        "GONOSTOMA BATHYPHILUM",
-        "CYCLOTHONE MICRODON",
-        "CYCLOTHONE SP",
-        "STOMIAS BOA",
-        "CHAULIODUS SLOANI",
-        "MALACOSTEUS NIGER",
-        "PHOTOSTOMIAS GUERNEI",
-        "POLYIPNUS CLARUS",
-        "POLYIPNUS SP",
-        "VINCIGUERRIA NIMBARIA",
-        "HYGOPHUM HYGOMI",
-        "ALEPISAURUS FEROX",
-        "ALEPISAURUS BREVIROSTRIS",
-        "PARALEPIS ATLANTICA",
-        "PARALEPIS ELONGATA",
-        "PARALEPIS BREVIROSTRIS"
+        "BENTHOSEMA GLACIALE","CERATOSCOPELUS MADERENSIS","MYCTOPHUM PUNCTATUM","MYCTOPHIDAE","LAMPANYCTUS MACDONALDI",
+        "LAMPANYCTUS ATER", "LAMPANYCTUS PUSILLUS","LAMPANYCTUS PHOTONOTUS","DIAPHUS DUMERILII","DIAPHUS EFFULGENS",
+        "NOTOSCOPELUS SP","NOTOSCOPELUS ELONGATUS KROYERI", "NOTOSCOPELUS BOLINI","NOTOSCOPELUS RESPLENDENS",
+        "NOTOSCOPELUS CAUDISPINOSUS","MAUROLICUS MUELLERI","ARGYROPELECUS GIGAS","ARGYROPELECUS ACULEATUS",
+        "ARGYROPELECUS AFFINIS","STERNOPTYX DIAPHANA","GONOSTOMA ELONGATUM","GONOSTOMA SP","GONOSTOMA BATHYPHILUM",
+        "CYCLOTHONE MICRODON", "CYCLOTHONE SP", "STOMIAS BOA","CHAULIODUS SLOANI", "MALACOSTEUS NIGER",
+        "PHOTOSTOMIAS GUERNEI","POLYIPNUS CLARUS","POLYIPNUS SP","VINCIGUERRIA NIMBARIA",
+        "HYGOPHUM HYGOMI","ALEPISAURUS FEROX","ALEPISAURUS BREVIROSTRIS","PARALEPIS ATLANTICA",
+        "PARALEPIS ELONGATA","PARALEPIS BREVIROSTRIS"
       )
     )),
 
@@ -4251,32 +4596,13 @@ tar_target(ind_fish_length_micronekton_laurentian_channel, command = {
     names = top_species,
     values = tibble::tibble(
       top_species =c(
-        "EUPHAUSIACEA O",
-        "EUPHAUSIIDAE F",
-        "MEGANYCTIPHANES NORVEGICA",
-        "THYSANOESSA RASCHII",
-        "EUPHAUSIA SP",
-        "GNATHOPHAUSIA ZOEA",
-        "NEOGNATHOPHAUSIA GIGAS",
-        "BOREOMYSIS TRIDENS",
-        "EUCOPIA SP",
-        "ACANTHEPHYRA SP",
-        "ACANTHEPHYRA PURPUREA",
-        "ACANTHEPHYRA PELAGICA",
-        "ACANTHEPHYRA EXEMIA",
-        "PASIPHAEA MULTIDENTATA",
-        "PASIPHAEA TARDA",
-        "PASIPHAEIDAE F",
-        "SERGIA ROBUSTA",
-        "SERGESTES ARCTICUS",
-        "SERGESTES SP",
-        "PLESONIKA MARTIA",
-        "NEMATOCARCINUS ROTUNDUS",
-        "NOTOSTOMUS ELEGANS",
-        "OPLOPHORUS SPINOSUS",
-        "THEMISTO SP",
-        "HYPERIA SP",
-        "HYPERIA GALBA"
+        "EUPHAUSIACEA O", "EUPHAUSIIDAE F","MEGANYCTIPHANES NORVEGICA","THYSANOESSA RASCHII",
+        "EUPHAUSIA SP", "GNATHOPHAUSIA ZOEA","NEOGNATHOPHAUSIA GIGAS","BOREOMYSIS TRIDENS",
+        "EUCOPIA SP","ACANTHEPHYRA SP","ACANTHEPHYRA PURPUREA","ACANTHEPHYRA PELAGICA",
+        "ACANTHEPHYRA EXEMIA","PASIPHAEA MULTIDENTATA","PASIPHAEA TARDA","PASIPHAEIDAE F",
+        "SERGIA ROBUSTA","SERGESTES ARCTICUS","SERGESTES SP","PLESONIKA MARTIA",
+        "NEMATOCARCINUS ROTUNDUS","NOTOSTOMUS ELEGANS","OPLOPHORUS SPINOSUS","THEMISTO SP",
+        "HYPERIA SP","HYPERIA GALBA"
       )
     )),
 
