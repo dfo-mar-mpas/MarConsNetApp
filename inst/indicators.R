@@ -4057,17 +4057,7 @@ tar_target(ind_community_composition_invertebrates_zone3, command = {
   dplyr::select(x, -plot)
 }),
 
-
-
-
-
-
-
-
-
-
 tar_target(name = ind_rel_abundance_longline_vulnerable_zone_2_and_3, command = {
-  #JAIM
   gullyzones <- get_spatial_layer(
     "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/oceans_act_marine_protected_areas_zones_de_protection_marines_de_la_loi_sur_les_oceans/MapServer/0",
     where = "NAME_E LIKE '%Gully%'"
@@ -4221,20 +4211,6 @@ tar_target(name = ind_rel_abundance_longline_vulnerable_zone_2_and_3, command = 
         "DIPTURUS LAEVIS"
       )
     )),
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 tar_target(ind_fish_length_longline_vulnerable_zone_2_and_3, command = {
   data <- data_rv_det |>
@@ -4438,6 +4414,143 @@ tar_target(ind_community_composition_longline_vulnerable_zone2and3, command = {
   dplyr::select(x, -plot)
 }),
 
+
+tar_target(name = ind_rel_abundance_trap_vulnerable_zone_1_and_2, command = {
+  gullyzones <- get_spatial_layer(
+    "https://egisp.dfo-mpo.gc.ca/arcgis/rest/services/open_data_donnees_ouvertes/oceans_act_marine_protected_areas_zones_de_protection_marines_de_la_loi_sur_les_oceans/MapServer/0",
+    where = "NAME_E LIKE '%Gully%'"
+  )
+
+  zone1_and_2 <- gullyzones[grepl("Zone 1|Zone 2", gullyzones$ZONE_E), ] |>
+    dplyr::summarise(geoms = sf::st_union(geoms)) |>
+    dplyr::mutate(
+      NAME_E = MPAs$NAME_E[grepl("Gully", MPAs$NAME_E)][1],
+      NAME_F = MPAs$NAME_F[grepl("Gully", MPAs$NAME_E)][1],
+      region = MPAs$region[grepl("Gully", MPAs$NAME_E)][1],
+      date_of_establishment = MPAs$date_of_establishment[
+        grepl("Gully", MPAs$NAME_E)
+      ][1]
+    ) |>
+    dplyr::select(names(MPAs))
+  zone1_and_2$NAME_E <- paste0("Gully Marine Protected Area", " Zone 1 and 2")
+
+
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(c(
+    "GADUS MORHUA",
+    "BROSME BROSME",
+    "TAUTOGOLABRUS ADSPERSUS",
+    "CANCER BOREALIS",
+    "CANCER IRRORATUS",
+    "HOMARUS AMERICANUS"
+  )),]
+
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- sf::st_filter(data, zone1_and_2)
+
+
+  ## Adding detections and relative biomass
+
+  data$detections <- 1
+
+  data <- data |>
+    # Group by location, year, and species
+    dplyr::group_by(longitude, latitude, year_of_data_collection, species) |>
+
+    # Sum detections and fish weight for each species at each location and year
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      fish_weight = sum(fish_weight, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+
+    # Calculate each species' percentage of total biomass at that location and year
+    dplyr::group_by(longitude, latitude, year_of_data_collection) |>
+    dplyr::mutate(
+      #relative_biomass = fish_weight / sum(fish_weight, na.rm = TRUE) * 100,
+      relative_abundance = detections / sum(detections, na.rm = TRUE) * 100
+    ) |>
+    dplyr::ungroup()
+
+
+  data <- data[tolower(data$species) == tolower(top_species),]
+
+  x <- process_indicator(
+    data = data,
+    readiness = "Ready",
+    indicator_var_name = "relative_abundance",
+    indicator = "Relative abundance of trap vulnerable species in Zones 1 and 2",
+    type = "in situ",
+    units = "%",
+    scoring = "desired trend: stable",
+    PPTID = 395,
+    source = "RV",
+    project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+    bin_rationale = "FIXME",
+    climate = FALSE,
+    SME = "Javier Murillo Perez",
+    indicator_rationale = "Direct biodiversity measure",
+    areas = zone2_and_3,
+    plot_type = c('detections', 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    SME_validated = TRUE,
+    other_nest_variables = c(
+      'latitude', 'longitude', 'species', 'fish_weight', 'detections', 'year_of_data_collection'
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =  c(
+        "GADUS MORHUA",
+        "BROSME BROSME",
+        "TAUTOGOLABRUS ADSPERSUS",
+        "CANCER BOREALIS",
+        "CANCER IRRORATUS",
+        "HOMARUS AMERICANUS"
+      )
+    )),
+
+
 tar_target(ind_fish_length_trap_vulnerable_zone_1_and_2, command = {
   data <- data_rv_det |>
     mutate(
@@ -4621,6 +4734,272 @@ tar_target(ind_community_composition_trap_vulnerable_zone1and2, command = {
   save_plots(dplyr::select(x, -data, -adjacent_data))
   dplyr::select(x, -plot)
 }),
+
+
+tar_target(name = ind_rel_abundance_mesopelagic_nekton_laurentian_channel, command = {
+  lc <- MPAs[which(grepl("Anns Bank", MPAs$NAME_E)),]
+  lc$NAME_E <- paste0("St. Anns Bank Marine Protected Area (Laurentian Channel Portion)")
+  lc$geoms <- data_laurential_channel_portion_SAB$geometry
+
+
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(c(
+    "BENTHOSEMA GLACIALE","CERATOSCOPELUS MADERENSIS","MYCTOPHUM PUNCTATUM","MYCTOPHIDAE","LAMPANYCTUS MACDONALDI",
+    "LAMPANYCTUS ATER", "LAMPANYCTUS PUSILLUS","LAMPANYCTUS PHOTONOTUS","DIAPHUS DUMERILII","DIAPHUS EFFULGENS",
+    "NOTOSCOPELUS SP","NOTOSCOPELUS ELONGATUS KROYERI", "NOTOSCOPELUS BOLINI","NOTOSCOPELUS RESPLENDENS",
+    "NOTOSCOPELUS CAUDISPINOSUS","MAUROLICUS MUELLERI","ARGYROPELECUS GIGAS","ARGYROPELECUS ACULEATUS",
+    "ARGYROPELECUS AFFINIS","STERNOPTYX DIAPHANA","GONOSTOMA ELONGATUM","GONOSTOMA SP","GONOSTOMA BATHYPHILUM",
+    "CYCLOTHONE MICRODON", "CYCLOTHONE SP", "STOMIAS BOA","CHAULIODUS SLOANI", "MALACOSTEUS NIGER",
+    "PHOTOSTOMIAS GUERNEI","POLYIPNUS CLARUS","POLYIPNUS SP","VINCIGUERRIA NIMBARIA",
+    "HYGOPHUM HYGOMI","ALEPISAURUS FEROX","ALEPISAURUS BREVIROSTRIS","PARALEPIS ATLANTICA",
+    "PARALEPIS ELONGATA","PARALEPIS BREVIROSTRIS"
+  )),]
+
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- sf::st_filter(data, lc)
+
+
+  ## Adding detections and relative biomass
+
+  data$detections <- 1
+
+  data <- data |>
+    # Group by location, year, and species
+    dplyr::group_by(longitude, latitude, year_of_data_collection, species) |>
+
+    # Sum detections and fish weight for each species at each location and year
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      fish_weight = sum(fish_weight, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+
+    # Calculate each species' percentage of total biomass at that location and year
+    dplyr::group_by(longitude, latitude, year_of_data_collection) |>
+    dplyr::mutate(
+      #relative_biomass = fish_weight / sum(fish_weight, na.rm = TRUE) * 100,
+      relative_abundance = detections / sum(detections, na.rm = TRUE) * 100
+    ) |>
+    dplyr::ungroup()
+
+
+  data <- data[tolower(data$species) == tolower(top_species),]
+
+  x <- process_indicator(
+    data = data,
+    readiness = "Ready",
+    indicator_var_name = "relative_abundance",
+    indicator = "Relative abundance of mesopelagic nekton in the Laurentian Channel Portion",
+    type = "in situ",
+    units = "%",
+    scoring = "desired trend: stable",
+    PPTID = 395,
+    source = "RV",
+    project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+    bin_rationale = "FIXME",
+    climate = FALSE,
+    SME = "Javier Murillo Perez",
+    indicator_rationale = "Direct biodiversity measure",
+    areas = lc,
+    plot_type = c('detections', 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    SME_validated = TRUE,
+    other_nest_variables = c(
+      'latitude', 'longitude', 'species', 'fish_weight', 'detections', 'year_of_data_collection'
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =  c(
+        "BENTHOSEMA GLACIALE","CERATOSCOPELUS MADERENSIS","MYCTOPHUM PUNCTATUM","MYCTOPHIDAE","LAMPANYCTUS MACDONALDI",
+        "LAMPANYCTUS ATER", "LAMPANYCTUS PUSILLUS","LAMPANYCTUS PHOTONOTUS","DIAPHUS DUMERILII","DIAPHUS EFFULGENS",
+        "NOTOSCOPELUS SP","NOTOSCOPELUS ELONGATUS KROYERI", "NOTOSCOPELUS BOLINI","NOTOSCOPELUS RESPLENDENS",
+        "NOTOSCOPELUS CAUDISPINOSUS","MAUROLICUS MUELLERI","ARGYROPELECUS GIGAS","ARGYROPELECUS ACULEATUS",
+        "ARGYROPELECUS AFFINIS","STERNOPTYX DIAPHANA","GONOSTOMA ELONGATUM","GONOSTOMA SP","GONOSTOMA BATHYPHILUM",
+        "CYCLOTHONE MICRODON", "CYCLOTHONE SP", "STOMIAS BOA","CHAULIODUS SLOANI", "MALACOSTEUS NIGER",
+        "PHOTOSTOMIAS GUERNEI","POLYIPNUS CLARUS","POLYIPNUS SP","VINCIGUERRIA NIMBARIA",
+        "HYGOPHUM HYGOMI","ALEPISAURUS FEROX","ALEPISAURUS BREVIROSTRIS","PARALEPIS ATLANTICA",
+        "PARALEPIS ELONGATA","PARALEPIS BREVIROSTRIS"
+      )
+    )),
+
+
+tar_target(name = ind_rel_abundance_micro_nekton_laurentian_channel, command = {
+  lc <- MPAs[which(grepl("Anns Bank", MPAs$NAME_E)),]
+  lc$NAME_E <- paste0("St. Anns Bank Marine Protected Area (Laurentian Channel Portion)")
+  lc$geoms <- data_laurential_channel_portion_SAB$geometry
+
+
+  data <- data_rv_det |>
+    mutate(
+      longitude = LONGITUDE,
+      latitude = LATITUDE,
+      species_id = SPEC,
+      species = SPEC.GSSPECIES,
+      fish_weight = FWT,
+      year_of_data_collection = YEAR,
+      year_of_publication = 2025
+    ) |>
+    dplyr::select(
+      longitude,
+      latitude,
+      species_id,
+      species,
+      year_of_data_collection,
+      fish_weight,
+      year_of_publication
+    )
+
+  data <- data[tolower(data$species) %in% tolower(c(
+    "EUPHAUSIACEA O", "EUPHAUSIIDAE F","MEGANYCTIPHANES NORVEGICA","THYSANOESSA RASCHII",
+    "EUPHAUSIA SP", "GNATHOPHAUSIA ZOEA","NEOGNATHOPHAUSIA GIGAS","BOREOMYSIS TRIDENS",
+    "EUCOPIA SP","ACANTHEPHYRA SP","ACANTHEPHYRA PURPUREA","ACANTHEPHYRA PELAGICA",
+    "ACANTHEPHYRA EXEMIA","PASIPHAEA MULTIDENTATA","PASIPHAEA TARDA","PASIPHAEIDAE F",
+    "SERGIA ROBUSTA","SERGESTES ARCTICUS","SERGESTES SP","PLESONIKA MARTIA",
+    "NEMATOCARCINUS ROTUNDUS","NOTOSTOMUS ELEGANS","OPLOPHORUS SPINOSUS","THEMISTO SP",
+    "HYPERIA SP","HYPERIA GALBA"
+  )),]
+
+
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+
+  data <- sf::st_filter(data, lc)
+
+
+  ## Adding detections and relative biomass
+
+  data$detections <- 1
+
+  data <- data |>
+    # Group by location, year, and species
+    dplyr::group_by(longitude, latitude, year_of_data_collection, species) |>
+
+    # Sum detections and fish weight for each species at each location and year
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      fish_weight = sum(fish_weight, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+
+    # Calculate each species' percentage of total biomass at that location and year
+    dplyr::group_by(longitude, latitude, year_of_data_collection) |>
+    dplyr::mutate(
+      #relative_biomass = fish_weight / sum(fish_weight, na.rm = TRUE) * 100,
+      relative_abundance = detections / sum(detections, na.rm = TRUE) * 100
+    ) |>
+    dplyr::ungroup()
+
+
+  data <- data[tolower(data$species) == tolower(top_species),]
+
+  x <- process_indicator(
+    data = data,
+    readiness = "Ready",
+    indicator_var_name = "relative_abundance",
+    indicator = "Relative abundance of micronekton in the Laurentian Channel Portion",
+    type = "in situ",
+    units = "%",
+    scoring = "desired trend: stable",
+    PPTID = 395,
+    source = "RV",
+    project_short_title = "Mapping biodiversity and ecosystem services of benthic communities",
+    bin_rationale = "FIXME",
+    climate = FALSE,
+    SME = "Javier Murillo Perez",
+    indicator_rationale = "Direct biodiversity measure",
+    areas = lc,
+    plot_type = c('detections', 'time-series'),
+    plot_lm = FALSE,
+    theme = "Fish and Fishery Resources",
+    objectives = c(
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
+      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
+      "Maintain productivity of harvested species",
+      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
+      "Allow sufficient escapement from exploitation for spawning",
+      "Contribute to the recovery and conservation of depleted species"
+    ),
+    SME_validated = TRUE,
+    other_nest_variables = c(
+      'latitude', 'longitude', 'species', 'fish_weight', 'detections', 'year_of_data_collection'
+    )
+  )
+
+  save_plots(dplyr::select(x, -data, -adjacent_data))
+  dplyr::select(x, -plot)
+}) |>
+  tar_map(
+    names = top_species,
+    values = tibble::tibble(
+      top_species =  c(
+        "EUPHAUSIACEA O", "EUPHAUSIIDAE F","MEGANYCTIPHANES NORVEGICA","THYSANOESSA RASCHII",
+        "EUPHAUSIA SP", "GNATHOPHAUSIA ZOEA","NEOGNATHOPHAUSIA GIGAS","BOREOMYSIS TRIDENS",
+        "EUCOPIA SP","ACANTHEPHYRA SP","ACANTHEPHYRA PURPUREA","ACANTHEPHYRA PELAGICA",
+        "ACANTHEPHYRA EXEMIA","PASIPHAEA MULTIDENTATA","PASIPHAEA TARDA","PASIPHAEIDAE F",
+        "SERGIA ROBUSTA","SERGESTES ARCTICUS","SERGESTES SP","PLESONIKA MARTIA",
+        "NEMATOCARCINUS ROTUNDUS","NOTOSTOMUS ELEGANS","OPLOPHORUS SPINOSUS","THEMISTO SP",
+        "HYPERIA SP","HYPERIA GALBA"
+      )
+    )),
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
