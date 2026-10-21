@@ -7442,22 +7442,6 @@ tar_target(name = ind_distribution_juvenile_haddock, command = {
     )
   }), # Threats to Habitat, Anthropogenic Pressure and Impacts
 
-  tar_target(name = ind_biomass_abund_distribution_musquash, command = {
-    ind_placeholder(
-      ind_name = "Total biomass, abundance, and dustribution of key species in each trophic level",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Musquash Estuary Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Maintain productivity of harvested species",
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA"
-      ),
-      theme = "Trophic Structure and Function"
-    )
-  }), # Biomass Metrics, Trophic Structure and Function
-
   tar_target(name = ind_species_at_risk, command = {
     ind_placeholder(
       ind_name = "Number of at risk species within MPA",
