@@ -4988,24 +4988,6 @@ tar_target(name = ind_rel_abundance_micro_nekton_laurentian_channel, command = {
     )),
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 tar_target(ind_fish_length_mesopelagic_nekton_laurentian_channel, command = {
   data <- data_rv_det |>
     mutate(
@@ -5467,70 +5449,85 @@ tar_target(ind_demeral_community_composition, command = {
   dplyr::select(x, -plot)
 }),
 
-# ROXANNE END
 
 
 
+tar_target(name = ind_distribution_juvenile_haddock, command = {
+ jeuvenile_haddock <- data_rv_det |>
+    dplyr::filter(
+      FMAT %in% 1,
+      tolower(SPEC.GSSPECIES) %in% tolower("Melanogrammus aeglefinus")
+    )
 
-
-
-
-## GETTING TO
-
-tar_target(ind_haddock_counts, command = {
-  data <- data_rv |>
-    filter(COMM %in% c("HADDOCK")) |>
+  data <- jeuvenile_haddock |>
     mutate(
       longitude = LONGITUDE,
       latitude = LATITUDE,
-      haddock_counts = TOTNO,
+      species = SPEC.GSSPECIES,
+      fish_maturity = FMAT,
       year_of_data_collection = YEAR,
       year_of_publication = 2025
     ) |>
     dplyr::select(
       longitude,
       latitude,
+      species,
+      fish_maturity,
       year_of_data_collection,
-      haddock_counts,
       year_of_publication
     )
 
-  if (any(is.na(data$latitude) | is.na(data$longitude))) {
-    data <- data[-which(is.na(data$latitude) | is.na(data$longitude)), ]
-  }
+  data <- st_as_sf(
+    data,
+    coords = c("longitude", "latitude"),
+    crs = 4326,
+    remove = FALSE
+  )
+  data$detections <- 1
+  data <- data %>% select(-fish_maturity)
+
+  ## For same lat, lng, species, and year of data collection we are summing the detections
+  data <- data |>
+    dplyr::group_by(
+      species,
+      longitude,
+      latitude,
+      year_of_data_collection
+    ) |>
+    dplyr::summarise(
+      detections = sum(detections, na.rm = TRUE),
+      year_of_publication = max(year_of_publication, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
 
   x <- process_indicator(
     data = data,
-    indicator_var_name = "haddock_counts",
-    indicator = "Haddock Number per Tow",
+    indicator_var_name = "detections",
+    indicator = "Distribution of Juvenile Haddock",
     type = "in situ",
-    units = "Number per Tow",
-    scoring = "desired state: increase",
+    units = "",
+    scoring = "representation: regional relative ranking",
     PPTID = 726,
     source = "RV Survey",
+    project_short_title = "RV Survey",
+    areas = MPAs,
     climate_expectation = "FIXME",
     indicator_rationale = "FIXME",
     bin_rationale = "FIXME",
-    project_short_title = "RV Survey",
-    areas = MPAs,
-    plot_type = c("boxplot", "map"),
-    plot_lm = FALSE,
-    SME = "Unknown",
-    control_polygon = control_polygons,
-    theme = "Fish and Fishery Resources",
+    plot_type = c('detections'),
     objectives = c(
-      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock",
-      "Manage the disturbance of benthic habitat that supports juvenile and adult haddock and other groundfish species",
-      "Maintain productivity of harvested species",
-      "Help maintain healthy populations of species of Aboriginal, commercial, and/or recreational importance",
-      "Allow sufficient escapement from exploitation for spawning",
-      "Contribute to the recovery and conservation of depleted species"
-    )
+      "Protect continental shelf habitats and associated benthic and demersal communities",
+      "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
+    ),
+    theme = "Fish and Fishery Resources",
+    SME = "Unknown",
+    plot_lm = FALSE,
+    other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
   )
 
-  save_plots(dplyr::select(x, -data, -adjacent_data))
-  dplyr::select(x, -plot)
-}),
+# ROXANNE END
 
 
   # NON-VALIDATED INDICATORS
@@ -7290,21 +7287,6 @@ tar_target(ind_haddock_counts, command = {
     )
   }), # Biomass Metrics, Fish and Fishery Resources
 
-  tar_target(name = ind_distribution_juv_haddock_habitat, command = {
-    ind_placeholder(
-      ind_name = "Distriburion of Juvenile Haddock Habitat",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "RV Survey",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities",
-        "Support productivity objectives for groundfish species of Aboriginal, commercial, and/or recreational importance, particularly NAFO Division 4VW haddock"
-      ),
-      theme = "Fish and Fishery Resources"
-    )
-  }), # Key Fish Habitat, Fish and Fishery Resources?
 
   tar_target(name = ind_distribution_key_fish_habitat, command = {
     ind_placeholder(
