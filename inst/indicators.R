@@ -5527,6 +5527,8 @@ tar_target(name = ind_distribution_juvenile_haddock, command = {
     other_nest_variables = c('species_id', 'year_of_data_collection','year_of_publication', 'species')
   )
 
+}),
+
 # ROXANNE END
 
 
