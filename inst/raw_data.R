@@ -1441,6 +1441,34 @@ raw_data_targets <- list(
     deployment = "worker"
   ),
 
+  tar_target(data_rv_det_classes,
+             command={
+               message(class(data_rv_det))
+               x <- data_rv_det
+
+               x$subclass <- NA
+               x$class <- NA
+               x$common_name <- NA
+
+               names(x)[which(names(x) == 'SPEC.GSSPECIES')] <- 'species'
+
+
+               for (i in seq_along(unique(x$species))) {
+                 message(paste0("For loop ", i, " of ", length(unique(x$species))))
+                 x$subclass[which(
+                   x$species == unique(x$species)[i]
+                 )] <- taxize_species(unique(x$species)[i], level = "Subclass")
+                 x$class[which(
+                   x$species == unique(x$species)[i]
+                 )] <- taxize_species(unique(x$species)[i], level = 'Class')
+                 x$common_name[which(
+                   x$species == unique(x$species)[i]
+                 )] <- taxize_species(unique(x$species)[i], level = 'common_name')
+               }
+
+               x
+             }),
+
   tar_target(name = fish_weight_per_1.75kn_tow, command = {
     data_rv |>
       filter(

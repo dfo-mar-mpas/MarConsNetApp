@@ -5449,9 +5449,6 @@ tar_target(ind_demeral_community_composition, command = {
   dplyr::select(x, -plot)
 }),
 
-
-
-
 tar_target(name = ind_distribution_juvenile_haddock, command = {
  jeuvenile_haddock <- data_rv_det |>
     dplyr::filter(
@@ -5529,7 +5526,117 @@ tar_target(name = ind_distribution_juvenile_haddock, command = {
 
 }),
 
-# ROXANNE END
+
+tar_target(
+  name = ind_species_per_trophic_rv,
+  {
+    data <- data_rv_det_classes |>
+      mutate(
+        longitude = LONGITUDE,
+        latitude = LATITUDE,
+        species =species,
+        year_of_data_collection = YEAR,
+        year_of_publication = 2025,
+        class=class
+      ) |>
+      dplyr::select(
+        longitude,
+        latitude,
+        species,
+        year_of_data_collection,
+        year_of_publication,
+        class
+      )
+
+    # Convert the data to spatial points using longitude and latitude
+    trophic_levels <- read_excel(
+      paste0(
+        dirname(path_to_store()),
+        "/data/AI_trophic_groups.xlsx"
+      )
+    )
+
+ data <- data[which(data$class %in% unique(trophic_levels$class[which(trophic_levels$trophic_group == trophic)])),]
+
+ data <- data |>
+   dplyr::slice_sample(prop = 0.01) # keep 2% of data for demo
+
+    data <- data |>  sf::st_as_sf(coords = c("longitude", "latitude"),crs = 4326)
+
+    # Create a unique ID using location and year
+    data$ID <- paste0(data$longitude, "_",data$latitude, "_", data$year_of_data_collection)
+
+
+    ## Get number of species per year
+    data <- data %>%
+      group_by(year_of_data_collection) %>%
+      mutate(number_of_species_per_year = n_distinct(species)) %>%
+      ungroup()
+
+    data$ai_trophic_level <- trophic
+
+
+    x <- process_indicator(
+      data = data[data$ai_trophic_level == trophic, ],
+      readiness = "Ready",
+      indicator_var_name = "number_of_species_per_year",
+      indicator = "Number of species per trophic level",
+      type = "in situ",
+      units = "",
+      scoring = "desired trend: no decrease",
+      PPTID = 726,
+      source = "RV",
+      project_short_title = "RV Survey",
+      bin_rationale = "FIXME",
+      climate = FALSE,
+      SME = "FIXME",
+      indicator_rationale = "Direct biodiversity measure",
+      areas = MPAs,
+      plot_type = c('time-series'),
+      plot_lm = FALSE,
+      theme = "Trophic Structure and Function",
+      objectives = c(
+        "Maintain biodiversity of individual species, communities and populations within the different ecotypes"
+      ),
+      SME_validated = TRUE,
+      other_nest_variables = c(
+        "species",
+        "year_of_data_collection",
+        'ID',
+        'date',
+        'class',
+        'ai_trophic_level',
+        'geometry',
+        'year_of_publication'
+      ),
+      indicator_assumptions = paste(
+        "The trophic level of each species was assigned by AI and verified by humans.",
+        "We are assuming this is correct. If a species is not classified, it is not included in the analysis"
+      )
+    )
+
+    save_plots(
+      dplyr::select(x, -data, -adjacent_data)
+    )
+
+    dplyr::select(x, -plot)
+  }
+) |>
+  tar_map(
+    values = tibble::tibble(
+      trophic = read_excel(
+        paste0(
+          dirname(path_to_store()),
+          "/data/AI_trophic_groups.xlsx"
+        ) |>
+        pull(trophic_group) |>
+        unique() |>
+        sort()
+    ),
+    names = trophic
+  ),
+
+# ROXANNE
 
 
   # NON-VALIDATED INDICATORS
@@ -7002,6 +7109,23 @@ tar_target(name = ind_distribution_juvenile_haddock, command = {
     ind_placeholder(areas = MPAs, readiness = "Unknown")
   ),
 
+tar_target(name = ind_trophic_relationships, command = {
+  ind_placeholder(
+    ind_name = "Trophic relationships in the MPA",
+    areas = MPAs[
+      which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
+    ],
+    readiness = "Unknown",
+    source = NA,
+    objectives = c(
+      "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
+      "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
+      "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+    ),
+    theme = "Trophic Structure and Function"
+  )
+}), #Structure and Function, Trophic Structure and Function
+
   tar_target(name = ind_sst, command = {
     ind_placeholder(
       ind_name = "Sea Surface Temperature",
@@ -8347,22 +8471,6 @@ tar_target(name = ind_distribution_juvenile_haddock, command = {
     )
   }), #Biomass Metrics, Trophic Structure and Function?
 
-  tar_target(name = ind_trophic_relationships, command = {
-    ind_placeholder(
-      ind_name = "Trophic relationships in the MPA",
-      areas = MPAs[
-        which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Conserve and protect all major benthic, demersal (i.e., close to the sea floor) and pelagic (i.e., in the water column) habitats within the MPA, along with their associated physical, chemical, geological and biological properties and processes",
-        "Conserve and protect biological productivity across all trophic levels so that they are able to fulfill their ecological role in the ecosystems of the MPA",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      theme = "Trophic Structure and Function"
-    )
-  }), #Structure and Function, Trophic Structure and Function
 
   tar_target(name = ind_ecosystem_function, command = {
     ind_placeholder(
@@ -8380,19 +8488,6 @@ tar_target(name = ind_distribution_juvenile_haddock, command = {
       theme = "Trophic Structure and Function"
     )
   }), #Structure and Function, Trophic Structure and Function
-
-  tar_target(name = ind_marxan_input, command = {
-    ind_placeholder(
-      ind_name = "Data inputs to the MARXAN analysis",
-      areas = MPAs[
-        which(MPAs$NAME_E == "St. Anns Bank Marine Protected Area"),
-      ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = NA,
-      theme = 'Ocean Conditions'
-    )
-  }), #Environmental Representation, ??
 
   tar_target(name = ind_bottomset_length, command = {
     ind_placeholder(
