@@ -462,6 +462,119 @@ raw_data_targets <- list(
                )
              }),
 
+  tar_target(name=azmp_lines,
+             command={
+
+
+               ## LOUISBOURG LINE
+
+               louisbourg_line <- st_sfc(
+                 st_linestring(
+                   matrix(
+                     c(
+                       -59.85, 45.825,  # Northwest end
+                       -57.527, 43.473  # Southeast end
+                     ),
+                     ncol = 2,
+                     byrow = TRUE
+                   )
+                 ),
+                 crs = 4326
+               )
+
+               # Project to metres, buffer by 15 km, then return to longitude/latitude
+               louisbourg_polygon <- louisbourg_line |>
+                 st_transform(32620) |>
+                 st_buffer(15000) |>
+                 st_transform(4326)
+
+               ## HALIFAX LINE
+               halifax_coords <- matrix(
+                 c(
+                   -63.4500, 44.4000,  # HL_01
+                   -63.3170, 44.2670,  # HL_02
+                   -62.8830, 43.8830,  # HL_03
+                   -62.7527, 43.7635,  # HL_3.3
+                   -62.4510, 43.4790,  # HL_04
+                   -62.0980, 43.1830,  # HL_05
+                   -61.8326, 42.9402,  # HL_5.5
+                   -61.7330, 42.8500   # HL_06
+                 ),
+                 ncol = 2,
+                 byrow = TRUE
+               )
+
+               halifax_line <- st_sfc(
+                 st_linestring(halifax_coords),
+                 crs = 4326
+               )
+
+               # Buffer by 15 km on either side
+               halifax_polygon <- halifax_line |>
+                 st_transform(32620) |>
+                 st_buffer(15000) |>
+                 st_transform(4326)
+
+
+
+               ## HALIFAX LINE EXTENDED
+               xhl_coords <- matrix(
+                 c(
+                   -61.4332, 42.4751,  # HL_07
+                   -61.3413, 42.3630,  # HL_08
+                   -61.1637, 42.1996,  # HL_09
+                   -61.0609, 42.0303,  # HL_10
+                   -60.9054, 41.7754,  # HL_11
+                   -60.6766, 41.4096   # HL_12
+                 ),
+                 ncol = 2,
+                 byrow = TRUE
+               )
+
+               xhl_line <- st_sfc(
+                 st_linestring(xhl_coords),
+                 crs = 4326
+               )
+
+               # Buffer by 15 km on either side
+               xhl_polygon <- xhl_line |>
+                 st_transform(32620) |>
+                 st_buffer(15000) |>
+                 st_transform(4326)
+
+               al <- data.frame(
+                 NAME_E = c(
+                   "Louisbourg Line",
+                   "Halifax Line",
+                   "Extended Halifax Line"
+                 ),
+                 NAME_F = c(
+                   "Ligne de Louisbourg",
+                   "Ligne d'Halifax",
+                   "Ligne prolongée d’Halifax"
+                 ),
+                 region = rep("Maritimes", 3)
+               )
+
+               # Combine the three polygon geometries into one sfc column
+               al$geoms <- st_sfc(
+                 louisbourg_polygon[[1]],
+                 halifax_polygon[[1]],
+                 xhl_polygon[[1]],
+                 crs = 4326
+               )
+
+               # Convert to an sf object
+               al <- st_sf(al, sf_column_name = "geoms")
+
+               al$date_of_establishment <- 1900 # Always gets data
+
+               df <- al[, c("NAME_E", "NAME_F", "geoms", "region", "date_of_establishment",
+                            setdiff(names(al), c("NAME_E", "NAME_F", "geoms", "region", "date_of_establishment")))]
+
+                df
+             }),
+
   tar_target(name=data_laurential_channel_portion_SAB,
           command={
             # Explain in indicator 22

@@ -1349,10 +1349,78 @@ indicator_targets <- list(
       coords = c("longitude", "latitude"),
       crs = 4326
     )
+
+
+    all_areas <- rbind(MPAs, azmp_lines)
+
     x <- process_indicator(
       data = data,
       indicator_var_name = "temperature",
       indicator = "Temperature",
+      type = 'in situ',
+      units = "C",
+      scoring = "desired trend: decrease",
+      PPTID = c(579,385,428),
+      source = c("AZMP", 'gliders', 'Argo Floats'),
+      project_short_title = "AZMP",
+      climate = TRUE,
+      other_nest_variables = c("depth", 'source', 'year_of_data_collection', 'year_of_publication'),
+      areas = all_areas,
+      climate_expectation = "FIXME",
+      SME = "Unknown",
+      indicator_rationale = "Changes in temperature influence not only the distribution of species associated with particular water masses (e.g., Alvarez Perez and Santana 2022), but also affect growth and development rates, generation times and productivity of all species (e.g., Shoji et al. 2011; Szuwalski et al. 2021; Millington et al. 2022).",
+      bin_rationale = "FIXME",
+      plot_type = c('map', 'time-series','water column profile'),
+      plot_lm = FALSE,
+      theme = "Ocean Conditions",
+      objectives = c(
+        "Maintain/promote ecosystem structure and functioning",
+        "Maintain Ecosystem Resistance",
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      )
+    )
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
+  tar_target(ind_sst, command = {
+
+    ## AZMP
+    data <- data_azmp_Discrete_Occupations_Sections |>
+      dplyr::select(longitude, latitude, year, depth, temperature, year_of_publication)
+
+    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    data$source <- 'azmp'
+
+    ## GLIDERS
+
+    gliders <- data.frame(longitude=data_gliders$longitude, latitude=data_gliders$latitude,
+                          year_of_data_collection=as.numeric(format(data_gliders$time, "%Y")),
+                          depth=data_gliders$depth, temperature=data_gliders$TEMP,
+                          year_of_publication=data_gliders$year_of_publication, source='gliders')
+
+
+    ## ARGO
+    core_data <- data.frame(data_argo_df_core[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
+                                                'temperature', 'year_of_publication', 'source')])
+
+    data <- rbind(data, gliders, core_data)
+
+    data <- data[!is.na(data$latitude) &
+                   !is.na(data$longitude), ]
+
+    data <- st_as_sf(
+      data,
+      coords = c("longitude", "latitude"),
+      crs = 4326
+    )
+
+    data <- data[which(data$depth < 6),]
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "temperature",
+      indicator = "Sea surface Temperature (< 5 meters)",
       type = 'in situ',
       units = "C",
       scoring = "desired trend: decrease",
@@ -1408,6 +1476,8 @@ indicator_targets <- list(
       remove = FALSE
     )
 
+    all_areas <- rbind(MPAs, azmp_lines)
+
     x <- process_indicator(
       data = oxygen_data,
       indicator_var_name = "oxygen",
@@ -1424,7 +1494,7 @@ indicator_targets <- list(
       indicator_rationale = "Deoxygenation can impact marine life and its ecosystem directly and indirectly, and lead to changes in the abundance and distribution of fish, which, in turn, affects fisheries and productivity (e.g., Kim et al. 2023). This variable may be particularly important to monitor in deep habitats, where oxygen levels are depleted.",
       bin_rationale = "FIXME",
       other_nest_variables = c("depth", 'year_of_publication','source', 'year_of_data_collection'),
-      areas = MPAs,
+      areas = all_areas,
       plot_type = c('map', 'time-series', 'water column profile'),
       plot_lm = FALSE,
       theme = "Ocean Conditions",
@@ -1466,6 +1536,8 @@ indicator_targets <- list(
       remove = FALSE
     )
 
+    all_areas <- rbind(MPAs, azmp_lines)
+
     x <- process_indicator(
       data = data,
       indicator_var_name = "chlorophyll",
@@ -1478,7 +1550,7 @@ indicator_targets <- list(
       project_short_title = c("AZMP", "Argo"),
       other_nest_variables = c("depth", 'year_of_publication','source', 'year_of_data_collection'),
       SME = "Unknown",
-      areas = MPAs,
+      areas = all_areas,
       climate_expectation = "FIXME",
       indicator_rationale = "Chlorophyll a measurements are typically used as a proxy for primary production at the ocean surface, which, in turn, can influence ocean bottom conditions through benthic/pelagic coupling.",
       bin_rationale = "FIXME",
@@ -1525,6 +1597,69 @@ indicator_targets <- list(
       crs = 4326
     )
 
+    all_areas <- rbind(MPAs, azmp_lines)
+
+    x <- process_indicator(
+      data = data,
+      indicator_var_name = "salinity",
+      indicator = "Salinity",
+      type = 'in situ',
+      units = "psu",
+      scoring = "desired trend: stable",
+      PPTID = c(579,428),
+      source = c("AZMP", "Argo"),
+      project_short_title = c("AZMP", "Argo"),
+      other_nest_variables = c("depth", 'year_of_publication','source', 'year_of_data_collection'),
+      areas = all_areas,
+      climate_expectation = "FIXME",
+      SME = "Unknown",
+      indicator_rationale = "Salinity changes can impact ocean biological functions and may produce community shifts including trophic cascades (e.g., Röthig et al. 2023). Changes in salinity can also adversely affect the temperature tolerance of aquatic organisms (e.g., Farias et al. 2024)",
+      bin_rationale = "FIXME",
+      plot_type = c('map', 'time-series', 'water column profile'),
+      plot_lm = FALSE,
+      theme = "Ocean Conditions",
+      objectives = c(
+        "Maintain/promote ecosystem structure and functioning",
+        "Maintain Ecosystem Resistance",
+        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+      )
+    )
+
+    save_plots(dplyr::select(x, -data, -adjacent_data))
+    dplyr::select(x, -plot)
+  }),
+
+  tar_target(ind_salinity_surface, command = {
+    ## AZMP
+    data <- data_azmp_Discrete_Occupations_Sections |>
+      dplyr::select(longitude, latitude, year, depth, salinity, year_of_publication)
+
+    names(data)[which(names(data) == 'year')] <- 'year_of_data_collection'
+    data$source <- 'AZMP'
+
+    ## Gliders
+    gliders <- data.frame(longitude=data_gliders$longitude, latitude=data_gliders$latitude,
+                          year_of_data_collection=as.numeric(format(data_gliders$time, "%Y")),
+                          depth=data_gliders$depth, salinity=data_gliders$salinity,
+                          year_of_publication=data_gliders$year_of_publication, source='gliders')
+
+    ## ARGO
+    core_data <- data.frame(data_argo_df_core[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
+                                                'salinity', 'year_of_publication', 'source')])
+
+    data <- rbind(data, gliders, core_data)
+
+    data <- data[!is.na(data$latitude) &
+                   !is.na(data$longitude), ]
+
+    data <- st_as_sf(
+      data,
+      coords = c("longitude", "latitude"),
+      crs = 4326
+    )
+
+    data <- data[which(data$depth < 6),]
+
     x <- process_indicator(
       data = data,
       indicator_var_name = "salinity",
@@ -1555,6 +1690,7 @@ indicator_targets <- list(
     dplyr::select(x, -plot)
   }),
 
+
   tar_target(name = ind_light_availability, command = { #ind_environmental_conditions_near_seabed
     ## ARGO
     data <- data.frame(data_argo_df_bgc[c('latitude', 'longitude', 'year_of_data_collection', 'depth',
@@ -1569,6 +1705,8 @@ indicator_targets <- list(
       remove = FALSE
     )
 
+    all_areas <- rbind(MPAs, azmp_lines)
+
     x <- process_indicator(
       data = data,
       indicator_var_name = "CDOM",
@@ -1581,7 +1719,7 @@ indicator_targets <- list(
       project_short_title = "Argo Program",
       other_nest_variables = c("depth", 'year_of_publication','source', 'year_of_data_collection'),
       SME = "Unknown",
-      areas = MPAs,
+      areas = all_areas,
       climate_expectation = "FIXME",
       indicator_rationale = "FIXME",
       bin_rationale = "FIXME",
@@ -1762,6 +1900,8 @@ tar_map(
       crs = 4326
     )
 
+    all_areas <- rbind(MPAs, azmp_lines)
+
     x <- process_indicator(
       data = data,
       indicator_var_name = all_of(n_type),
@@ -1777,7 +1917,7 @@ tar_map(
       indicator_rationale = "Changes in nutrient levels can affect biological productivity of the ocean and lead to trophic cascades (e.g., Petersen et al. 2017; Thingstad 2020).",
       bin_rationale = "FIXME",
       other_nest_variables = "depth",
-      areas = MPAs,
+      areas = all_areas,
       plot_type = c('map', 'time-series', 'water column profile'),
       plot_lm = FALSE,
       theme = "Primary Production",
@@ -5634,7 +5774,7 @@ tar_target(
         sort()
     ),
     names = trophic
-  ),
+  )),
 
 # ROXANNE
 
@@ -7126,81 +7266,6 @@ tar_target(name = ind_trophic_relationships, command = {
   )
 }), #Structure and Function, Trophic Structure and Function
 
-  tar_target(name = ind_sst, command = {
-    ind_placeholder(
-      ind_name = "Sea Surface Temperature",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Readily Available",
-      source = "AZMP",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity
-
-  tar_target(name = ind_temp_at_depth, command = {
-    ind_placeholder(
-      ind_name = "Temperature at Depth",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Readily Available",
-      source = "AZMP",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
-
-  tar_target(name = ind_sea_surface_salinity, command = {
-    ind_placeholder(
-      ind_name = "Sea Surface Salinity",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Readily Available",
-      source = "AZMP",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
-
-  tar_target(name = ind_subsurface_salinity, command = {
-    ind_placeholder(
-      ind_name = "Subsurface Salinity",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Readily Available",
-      source = "AZMP",
-      objectives = c(
-        "Protect continental shelf habitats and associated benthic and demersal communities"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
-
-  tar_target(name = ind_ave_mixed_layer_depth, command = {
-    ind_placeholder(
-      ind_name = "Average Mixed Layer Depth",
-      areas = MPAs[
-        which(MPAs$NAME_E == "Western and Emerald Banks Marine Refuge"),
-      ],
-      readiness = "Unknown",
-      source = "BNAM",
-      objectives = c(
-        "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
-
   tar_target(name = ind_ave_position_of_shelf_slope_front, command = {
     ind_placeholder(
       ind_name = "Average Position of Shelf Slope Front",
@@ -7904,22 +7969,6 @@ tar_target(name = ind_trophic_relationships, command = {
     )
   }), # Threats to Productivity, Benthic Environment, Trophic Structure and Function
 
-
-  tar_target(name = ind_environmental_conditions_azmp_lines, command = {
-    ind_placeholder(
-      ind_name = "Temperature, salinity, oxygen concentration, light levels, chlorophyll, pigments and nutrients in waters flowing into and past the MPA, as measured on the Louisbourg Line, the Halifax Line and the Extended Halifax Line",
-      areas = MPAs[which(MPAs$NAME_E == "Gully Marine Protected Area"), ],
-      readiness = "Unknown",
-      source = NA,
-      objectives = c(
-        "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
-        "Maintain and monitor the quality of water and sediments of the Gully; and",
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      theme = "Ocean Conditions"
-    )
-  }), # Environmental Representativity, Ocean Conditions
-
   tar_target(name = ind_physical_biological_surface_properties, command = {
     ind_placeholder(
       ind_name = "Physical (temperature, salinity, wind, sea-surface height) and biological (ocean colour) sea surface properties in the MPA and the surrounding region",
@@ -8489,7 +8538,7 @@ tar_target(name = ind_trophic_relationships, command = {
     )
   }), #Structure and Function, Trophic Structure and Function
 
-  tar_target(name = ind_bottomset_length, command = {
+tar_target(name = ind_bottomset_length, command = {
     ind_placeholder(
       ind_name = "Length of bottom-set fixed commercial fishing, research and monitoring lines set within the MPA, both as totals and subdivided by zone or seabed habitat type",
       areas = MPAs[
