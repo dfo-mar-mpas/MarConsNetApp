@@ -5776,6 +5776,190 @@ tar_target(
     names = trophic
   )),
 
+
+## BUOY INDICATORS
+
+tar_target(name=ind_storminess,
+           command={
+             eD <- rep(150, length(MPAs$NAME_E))
+
+             data <- data_buoy
+
+             data <- data[data$station == bs,]
+
+             data$year_of_data_collection <- as.numeric(format(
+               as.POSIXct(data$date_revamped),
+               "%Y"
+             ))
+
+             data <- st_as_sf(data, coords = c("longitude", "latitude"), crs = 4326)
+
+             # Step 1: Below calculated the 5th and 95th percentiles for each indicator
+             # and gives us a baseline for identifying unusually high or low
+             # conditions
+             # Note that wind direction and air temperature are left out because their
+             # calculations depends on how they change over time
+
+             storm_thresholds <- data %>%
+               summarise(
+                 wind_speed_95 = quantile(wind_speed, 0.95, na.rm = TRUE),
+                 wave_height_95 = quantile(wave_height, 0.95, na.rm = TRUE),
+                 air_pressure_05 = quantile(air_pressure, 0.05, na.rm = TRUE),
+                 wave_period_95 = quantile(dominant_wave_period, 0.95, na.rm = TRUE)
+               )
+
+             ## Step 2: Identify storm signals at each 3-hour observation
+
+             ## Below flags observations where the measurements exceed thresholds
+
+             data <- data %>%
+               mutate(
+                 high_wind = wind_speed > storm_thresholds$wind_speed_95,
+                 high_waves = wave_height > storm_thresholds$wave_height_95,
+                 low_pressure = air_pressure < storm_thresholds$air_pressure_05,
+                 high_wave_period = dominant_wave_period > storm_thresholds$wave_period_95
+               )
+
+             ## Step 3: Identify potential storm conditions.
+             ## this happens when at least two of the 4 indicators indicators exceed their threshold
+
+             data <- data %>%
+               mutate(
+                 storm_signals = rowSums(
+                   across(c(high_wind, high_waves, low_pressure, high_wave_period)),
+                   na.rm = TRUE
+                 ),
+                 potential_storm = storm_signals >= 2
+               )
+
+             ## Step 4: Find consecutive flagged observations into individual storms
+             ## A new event is started after 6 hours
+
+             data <- data %>%
+               mutate(
+                 storm_signals = rowSums(
+                   across(c(high_wind, high_waves, low_pressure, high_wave_period)),
+                   na.rm = TRUE
+                 ),
+                 potential_storm = storm_signals >= 2
+               )
+
+
+             # Identify individual potential storm events by:
+             # 1. Sorting observations by date and time.
+             # 2. Calculating the time between consecutive observations.
+             # 3. Starting a new event when storm conditions begin, no previous observation exists, or more than 6 hours have passed.
+             # 4. Assigning the same event ID to consecutive observations that meet the storm criteria.
+             # 5. Leaving observations that do not meet the storm criteria without an event ID.
+             # 6. Removing temporary columns used to identify the events.
+             #
+             # This identifies potential storm events based on the selected thresholds and
+             # timing rules; it does not confirm that a meteorological storm occurred.
+
+
+             data <- data %>%
+               arrange(date_revamped) %>%
+               mutate(
+                 gap_hours = as.numeric(
+                   difftime(date_revamped, lag(date_revamped), units = "hours")
+                 ),
+                 new_event = potential_storm & (
+                   !coalesce(lag(potential_storm), FALSE) |
+                     is.na(gap_hours) |
+                     gap_hours > 6
+                 ),
+                 storm_event_id = cumsum(coalesce(new_event, FALSE)),
+                 storm_event_id = if_else(
+                   potential_storm,
+                   as.integer(storm_event_id),
+                   NA_integer_
+                 )
+               ) %>%
+               select(-gap_hours, -new_event)
+
+             ## Find storms per year.
+
+             storms_per_year <- data %>%
+               sf::st_drop_geometry() %>%
+               ungroup() %>%
+               filter(!is.na(storm_event_id)) %>%
+               distinct(storm_event_id, .keep_all = TRUE) %>%
+               mutate(year = as.numeric(format(date_revamped, "%Y"))) %>%
+               count(year, name = "number_of_storms")
+
+             storm_plot_data <- data %>%
+               #sf::st_drop_geometry() %>%
+               select(
+                 date_revamped,
+                 potential_storm,
+                 wind_speed,
+                 wind_direction,
+                 wave_height,
+                 air_pressure,
+                 dominant_wave_period,
+                 air_temperature
+               ) %>%
+               tidyr::pivot_longer(
+                 cols = c(
+                   wind_speed,
+                   wind_direction,
+                   wave_height,
+                   air_pressure,
+                   dominant_wave_period,
+                   air_temperature
+                 ),
+                 names_to = "parameter",
+                 values_to = "value"
+               )
+
+
+             # Add the annual storm count to storm_plot_data
+             storm_plot_data <- storm_plot_data %>%
+               mutate(year = as.numeric(format(date_revamped, "%Y"))) %>%
+               left_join(storms_per_year, by = "year") %>%
+               mutate(number_of_storms = coalesce(number_of_storms, 0L))
+
+             names(storm_plot_data)[which(names(storm_plot_data) == 'year')] <- 'year_of_data_collection'
+             mpas <- MPAs[MPAs$NAME_E == "Gully Marine Protected Area",]
+
+             x <- process_indicator(
+               data = storm_plot_data,
+               indicator_var_name = "number_of_storms",
+               indicator = "Number of Storms",
+               type = "in situ",
+               units = "",
+               scoring = "desired trend: decrease",
+               project_short_title = "MEDS and Smart Atlantic Buoy Data",
+               climate = TRUE,
+               climate_expectation = "FIXME",
+               indicator_rationale = "Water turbulence, inferred from wind speed, has been linked to the feeding success of various species of fish larvae (e.g., McLaren et al. 1997; Reiss et al. 2002). Natural disturbance of the seafloor may also be an important factor that needs to be considered when changes in benthic community composition are observed (Harris et al. 2025).",
+               SME = "Unknown",
+               bin_rationale = "FIXME",
+               other_nest_variables = c("date_revamped","potential_storm","parameter","value","year_of_data_collection"),
+               areas = mpas,
+               plot_type = c('storminess','time-series'),
+               plot_lm = FALSE,
+               year = 'year_of_data_collection',
+               theme = "Ocean Structure and Movement",
+               externalData = eD,
+               objectives =  c(
+                 "Safeguard habitat, including the physical and chemical properties of the ecosystem, by maintaining water and sediment quality",
+                 "Maintain and monitor the quality of water and sediments of the Gully; and",
+                 "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
+               ),
+               indicator_assumptions = paste0("Potential storm events are identified when at least two of four indicators (wind speed, wave height, air pressure, and dominant wave period) exceed historical percentile thresholds. Consecutive flagged observations separated by no more than 6 hours are grouped into one event. Annual counts represent the year each event begins. These thresholds are exploratory proxies and do not confirm meteorological storm events.",
+                                              "Banquereau Bank and Laurentian Fan are used as a proxy for the Gully Marine Protected Area.")
+             )
+
+
+
+
+
+           })|>
+  tar_make(values=tibble:tibble(
+    bs=c('Banquereau Bank', 'Laurentian Fan')
+  )),
+
 # ROXANNE
 
 
@@ -7018,50 +7202,6 @@ tar_target(
       values = conservation_targets
     ),
 
-  tar_target(name = ind_wind_speed_and_storminess, command = {
-    data <- data_buoy
-
-    data$year_of_data_collection <- as.numeric(format(
-      as.POSIXct(data$date_revamped),
-      "%Y"
-    ))
-    data <- data[, c(
-      "latitude",
-      'longitude',
-      'waveheight',
-      'year_of_data_collection'
-    )]
-    data <- data[-(which(is.na(data$latitude))), ]
-    data <- st_as_sf(data, coords = c("longitude", "latitude"), crs = 4326)
-
-    x <- process_indicator(
-      data = data,
-      indicator_var_name = "waveheight",
-      indicator = "Wave Height",
-      type = "in situ",
-      units = "m",
-      scoring = "desired state: decrease",
-      project_short_title = "MEDS and Smart Atlantic Buoy Data",
-      climate = TRUE,
-      climate_expectation = "FIXME",
-      indicator_rationale = "Water turbulence, inferred from wind speed, has been linked to the feeding success of various species of fish larvae (e.g., McLaren et al. 1997; Reiss et al. 2002). Natural disturbance of the seafloor may also be an important factor that needs to be considered when changes in benthic community composition are observed (Harris et al. 2025).",
-      control_polygon = control_polygons,
-      SME = "Unknown",
-      bin_rationale = "FIXME",
-      areas = MPAs,
-      plot_type = c('time-series', 'map'),
-      plot_lm = FALSE,
-      year = 'year_of_data_collection',
-      theme = "Ocean Structure and Movement",
-      objectives = c(
-        "Help maintain ecosystem structure, functioning and resilience (including resilience to climate change)"
-      ),
-      data_year_of_publication = as.numeric(format(Sys.Date(), "%Y"))
-    )
-
-    save_plots(dplyr::select(x, -data, -adjacent_data))
-    dplyr::select(x, -plot)
-  }), # Environmental Representativity, Ocean Conditions
 
   tar_target(name = ind_seasonal_presence_seals, command = {
     data <- data_seals

@@ -3069,9 +3069,6 @@ raw_data_targets <- list(
         d <- read.csv(file, skip = 2, col.names = col.names)
         names(d) <- tolower(names(d))
 
-        if ("vwh." %in% names(d)) {
-          d$waveheight <- d$vwh.
-        }
         if ('date' %in% names(d)) {
           d$date_revamped <- as.POSIXct(
             d$date,
@@ -3082,19 +3079,29 @@ raw_data_targets <- list(
           d$date_revamped <- NA
         }
 
+        #browser()
+        d$station <- arguments[i]
+
         dfs[[i]] <- d[, c(
           "latitude",
-          'longitude',
-          'date_revamped',
-          'waveheight'
+          "longitude",
+          "date_revamped",
+          "wdir", # Wind direction
+          "wspd", # Wind speed
+          "atms", # Atmospheric pressure
+          "dryt", # Air temperature
+          "sstp", # Sea Surface Temperature
+          "vwh.", # Significant Wave Height
+          "vtpk", # Dominant wave period
+          'station'
+
         )]
 
         unlink(destdir, recursive = TRUE)
       }
 
-      wave_height <- do.call(rbind, dfs)
+      wh <- do.call(rbind, dfs)
 
-      wh <- wave_height[-(which(is.na(wave_height$waveheight))), ]
       wh$longitude <- -1 * (wh$longitude)
 
       ## SECOND DATA SOURCE
@@ -3103,6 +3110,8 @@ raw_data_targets <- list(
 
       for (i in seq_along(arguments)) {
         message(i, " of ", length(arguments))
+        message("Location: ", arguments[i])
+        print(names(d))
         destdir <- tempdir(check = TRUE)
         file <- dod.buoy("smartatlantic", arguments[i], destdir = destdir)
         col.names <- strsplit(readLines(file, 1), ",")[[1]]
@@ -3131,23 +3140,106 @@ raw_data_targets <- list(
           d$date_revamped <- NA
         }
 
+        if (!'wind_dir_avg' %in% names(d)) {
+          d$wind_dir_avg <- NA
+        }
+        if (!'wind_spd_avg' %in% names(d)) {
+          d$wind_spd_avg <- NA
+        }
+
+        if (!'air_pressure_avg' %in% names(d)) {
+          d$air_pressure_avg <- NA
+        }
+
+        if (!'air_temp_avg' %in% names(d)) {
+          d$air_temp_avg <- NA
+        }
+
+        if (!'surface_temp_avg' %in% names(d)) {
+          d$surface_temp_avg <- NA
+        }
+
+        d$station <- arguments[i]
+
+
         dfs[[i]] <- d[, c(
           "latitude",
           'longitude',
           'date_revamped',
-          'waveheight'
+          'wind_dir_avg', # Wind Direction
+          "wind_spd_avg", # Wind Speed
+          "air_pressure_avg", # Air Pressure
+          "air_temp_avg", # Air Temperature
+          'surface_temp_avg', # Sea Surface Temperature
+          'wave_ht_sig', # Wave Height
+          'wave_period_max', # Dominant Wave Period
+          'station'
         )]
 
         unlink(destdir, recursive = TRUE)
       }
 
-      wave_height2 <- do.call(rbind, dfs)
+      wh2 <- do.call(rbind, dfs)
 
-      wh2 <- wave_height2[-(which(is.na(wave_height2$waveheight))), ]
       wh2$latitude <- round(wh2$latitude, 2)
       wh2$longitude <- round(wh2$longitude, 2)
 
-      final <- rbind(wh, wh2)
+
+      ## getting the same naming convention
+
+      # Rename MEDS columns
+      names(wh) <- c(
+        "latitude",
+        "longitude",
+        "date_revamped",
+        "wind_direction",
+        "wind_speed",
+        "air_pressure",
+        "air_temperature",
+        "sea_surface_temperature",
+        "wave_height",
+        "dominant_wave_period",
+        'station'
+      )
+
+      # Rename SmartAtlantic columns
+      names(wh2) <- c(
+        "latitude",
+        "longitude",
+        "date_revamped",
+        "wind_direction",
+        "wind_speed",
+        "air_pressure",
+        "air_temperature",
+        "sea_surface_temperature",
+        "wave_height",
+        "dominant_wave_period",
+        'station'
+      )
+
+      # Add missing waveheight column to MEDS
+      wh$waveheight <- NA_real_
+
+      # Reorder both datasets identically
+      column_order <- c(
+        "latitude",
+        "longitude",
+        "date_revamped",
+        "wind_direction",
+        "wind_speed",
+        "air_pressure",
+        "air_temperature",
+        "sea_surface_temperature",
+        "wave_height",
+        "dominant_wave_period",
+        'station'
+      )
+
+      wh <- wh[, column_order]
+      wh2 <- wh2[, column_order]
+
+      # Combine
+      final <- dplyr::bind_rows(wh, wh2)
 
       ## YEAR OF PUBLICATION (I go right to the source that the function uses)
       dirs <- getURL(
