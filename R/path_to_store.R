@@ -48,17 +48,17 @@ path_to_store <- function() {
     # in the project folder (e.g. on the shiny server)
     store = "MarConsNetTargets/app_targets"
   } else if (
-    dir.exists("/mnt/sambashare/MarConsNet/MarConsNetTargets/app_targets")
+    dir.exists("/srv/samba/MarConsNet/MarConsNetTargets/app_targets")
   ) {
     # on a linux machine on the sambashare
-    store = "/mnt/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+    store = "/srv/samba/MarConsNet/MarConsNetTargets/app_targets"
   } else if (
     dir.exists(
-      "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+      "//ci-9039519-r.mar.dfo-mpo.ca/samba/MarConsNet/MarConsNetTargets/app_targets"
     )
   ) {
     # on a windows machine on the sambashare
-    store <- "//wpnsbio9039519.mar.dfo-mpo.ca/sambashare/MarConsNet/MarConsNetTargets/app_targets"
+    store <- "//ci-9039519-r.mar.dfo-mpo.ca/samba/MarConsNet/MarConsNetTargets/app_targets"
   } else if (
     dir.exists(file.path(
       Sys.getenv("OneDriveCommercial"),
